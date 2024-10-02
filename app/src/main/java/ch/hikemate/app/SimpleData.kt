@@ -1,4 +1,4 @@
-package com.android.sample
+package ch.hikemate.app
 
 import kotlin.math.sqrt
 

@@ -1,4 +1,4 @@
-package com.android.sample
+package ch.hikemate.app
 
 import org.junit.Assert.*
 import org.junit.Test
