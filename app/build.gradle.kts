@@ -7,11 +7,11 @@ plugins {
 }
 
 android {
-    namespace = "com.android.sample"
+    namespace = "ch.hikemate.app"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.android.sample"
+        applicationId = "ch.hikemate.app"
         minSdk = 28
         targetSdk = 34
         versionCode = 1
@@ -93,9 +93,9 @@ android {
 
 sonar {
     properties {
-        property("sonar.projectName", "flepRename")
-        property("sonar.projectKey", "FLEPMate_flepRename")
-        property("sonar.organization", "flepmate")
+        property("sonar.projectName", "HikeMate")
+        property("sonar.projectKey", "HikeMate_hikeMateApp")
+        property("sonar.organization", "hikemate")
         property("sonar.host.url", "https://sonarcloud.io")
         // Comma-separated paths to the various directories containing the *.xml JUnit report files. Each path may be absolute or relative to the project base directory.
         property("sonar.junit.reportPaths", "${project.layout.buildDirectory.get()}/test-results/testDebugunitTest/")
