@@ -1,7 +1,6 @@
 package ch.hikemate.app
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,28 +14,21 @@ import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import ch.hikemate.app.resources.C
 import ch.hikemate.app.ui.theme.SampleAppTheme
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.ktx.Firebase
-
 
 class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContent {
-            SampleAppTheme {
-                // A surface container using the 'background' color from the theme
-                Surface(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .semantics { testTag = C.Tag.main_screen_container },
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    Greeting("Android")
-
-                }
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    setContent {
+      SampleAppTheme {
+        // A surface container using the 'background' color from the theme
+        Surface(
+            modifier = Modifier.fillMaxSize().semantics { testTag = C.Tag.main_screen_container },
+            color = MaterialTheme.colorScheme.background) {
+              Greeting("Android")
             }
-        }
+      }
     }
+  }
 }
 
 @Composable
@@ -49,4 +41,3 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 fun GreetingPreview() {
   SampleAppTheme { Greeting("Android") }
 }
-
