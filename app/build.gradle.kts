@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.ktfmt)
     alias(libs.plugins.sonar)
     id("jacoco")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -118,6 +119,7 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(platform(libs.compose.bom))
+    implementation(libs.firebase.firestore.ktx)
     testImplementation(libs.junit)
     globalTestImplementation(libs.androidx.junit)
     globalTestImplementation(libs.androidx.espresso.core)
@@ -148,7 +150,25 @@ dependencies {
 
     // ----------       Robolectric     ------------
     testImplementation(libs.robolectric)
+
+    // ----------        FireBase       ------------
+    implementation(platform(libs.firebase.bom))
+
+    // Adds a remote binary dependency only for local tests.
+    testImplementation(libs.junit.v412)
+
+
+    androidTestImplementation(libs.androidx.espresso.core) {
+        exclude(group = "com.google.protobuf", module = "protobuf-lite")
+    }
+
+    // To fix an issue with Firebase and the Protobuf library
+    configurations.configureEach {
+        exclude(group = "com.google.protobuf", module = "protobuf-lite")
+    }
 }
+
+
 
 tasks.withType<Test> {
     // Configure Jacoco for each tests
@@ -186,4 +206,5 @@ tasks.register("jacocoTestReport", JacocoReport::class) {
         include("outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec")
         include("outputs/code_coverage/debugAndroidTest/connected/*/coverage.ec")
     })
+
 }
