@@ -71,9 +71,7 @@ class FireBaseTest {
               .addOnSuccessListener {
                 Log.d("FireBaseTest", "DocumentSnapshot successfully deleted!")
               }
-              .addOnFailureListener { e ->
-                fail("Delete from Firebase failed. Got error: $e")
-              }
+              .addOnFailureListener { e -> fail("Delete from Firebase failed. Got error: $e") }
         }
       } else {
         fail("Read from Firebase failed. Got error: " + "${task.exception}")
