@@ -18,7 +18,7 @@
             android:label="@string/title_activity_second"
             android:theme="@style/Theme.SampleApp" />
         <activity
-            android:name="ch.hikemate.app.MainActivity"
+            android:name=".MainActivity"
             android:exported="true"
             android:label="@string/title_activity_main"
             android:theme="@style/Theme.SampleApp">

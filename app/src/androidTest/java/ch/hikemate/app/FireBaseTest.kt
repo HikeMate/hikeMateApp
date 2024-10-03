@@ -11,6 +11,7 @@ import java.time.format.DateTimeFormatter
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 
@@ -38,12 +39,11 @@ class FireBaseTest {
     db.collection("testCollection")
         .add(testData)
         .addOnSuccessListener { documentReference ->
-          assertTrue(true)
           Log.d("FireBaseTest", "DocumentSnapshot added with ID: " + documentReference.id)
           latchAdd.countDown()
         }
         .addOnFailureListener { e ->
-          assertTrue("Write to Firebase failed. Got error: $e", false)
+          fail("Write to Firebase failed. Got error: $e")
           latchAdd.countDown()
         }
 
@@ -54,7 +54,7 @@ class FireBaseTest {
       if (task.isSuccessful) {
         assertTrue(containsAddedValue(task.result, "testKey", testValue))
       } else {
-        assertTrue("Read from Firebase failed. Got error: " + "${task.exception}", false)
+        fail("Read from Firebase failed. Got error: " + "${task.exception}")
       }
       latchGet.countDown()
     }
@@ -69,15 +69,14 @@ class FireBaseTest {
               .document(document.id)
               .delete()
               .addOnSuccessListener {
-                assertTrue("Delete from Firebase worked. Deleted document: " + document.id, true)
                 Log.d("FireBaseTest", "DocumentSnapshot successfully deleted!")
               }
               .addOnFailureListener { e ->
-                assertTrue("Delete from Firebase failed. Got error: $e", false)
+                fail("Delete from Firebase failed. Got error: $e")
               }
         }
       } else {
-        assertTrue("Read from Firebase failed. Got error: " + "${task.exception}", false)
+        fail("Read from Firebase failed. Got error: " + "${task.exception}")
       }
 
       latchDel.countDown()
