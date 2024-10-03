@@ -155,12 +155,10 @@ dependencies {
     implementation(platform(libs.firebase.bom))
 
     // Adds a remote binary dependency only for local tests.
-    testImplementation(libs.junit.v412)
+    testImplementation(libs.junit)
 
 
-    androidTestImplementation(libs.androidx.espresso.core) {
-        exclude(group = "com.google.protobuf", module = "protobuf-lite")
-    }
+    androidTestImplementation(libs.androidx.espresso.core)
 
     // To fix an issue with Firebase and the Protobuf library
     configurations.configureEach {
