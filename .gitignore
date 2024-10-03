@@ -32,6 +32,7 @@ local.properties
 keystore.properties
 .gradle
 /app/google-services.json
+base64_google_services.txt
 /app/release
 upload-keystore.jks
 /scraping/firebase_credentials.json
