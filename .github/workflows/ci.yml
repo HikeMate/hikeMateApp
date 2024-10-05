@@ -114,6 +114,10 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: ./gradlew connectedCheck --parallel --build-cache
+            
+      # Generate coverage report
+      - name: Generate coverage
+        run: ./gradlew jacocoTestReport
 
       - name: Build and analyze
         env:
