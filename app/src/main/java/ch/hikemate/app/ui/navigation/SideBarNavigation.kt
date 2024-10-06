@@ -50,25 +50,29 @@ fun SideBarNavigation(
                         NavigationDrawerItem(
                             label = { Text(text = tab.textId) },
                             selected = tab.route == selectedItem,
-                            onClick = { onIconSelect(tab) }
+                            onClick = {
+                                onIconSelect(tab)
+                                scope.launch { drawerState.close() }
+                            },
+                            icon = { Icon(tab.icon, contentDescription = tab.textId) }
                         )
 
                     }
                 }
             },
             content = {
-                    IconButton(onClick = {
-                        scope.launch {
-                            drawerState.open()
-                        }
-                    },
-                        content = {
-                                Icon(
-                                    Icons.Filled.Menu,
-                                    contentDescription = "SideBar",
-                                )
-                        }
-                    )
+                IconButton(onClick = {
+                    scope.launch {
+                        drawerState.open()
+                    }
+                },
+                    content = {
+                        Icon(
+                            Icons.Filled.Menu,
+                            contentDescription = "SideBar",
+                        )
+                    }
+                )
             }
         )
     }

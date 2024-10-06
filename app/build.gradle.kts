@@ -158,7 +158,9 @@ dependencies {
 
     // Adds a remote binary dependency only for local tests.
     testImplementation(libs.junit)
-
+    testImplementation (libs.mockito.core)
+    testImplementation (libs.mockito.inline)
+    testImplementation (libs.mockito.android)
 
     androidTestImplementation(libs.androidx.espresso.core)
 

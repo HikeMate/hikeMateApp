@@ -15,6 +15,9 @@ composeActivity = "1.9.2"
 composeViewModel = "2.8.6"
 lifecycleRuntimeKtx = "2.8.6"
 kaspresso = "1.5.5"
+mockitoAndroid = "5.13.0"
+mockitoCore = "5.13.0"
+mockitoInline = "4.0.0"
 robolectric = "4.11.1"
 sonar = "4.4.1.3373"
 gms = "4.4.2"
@@ -54,6 +57,9 @@ compose-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifes
 kaspresso = { group = "com.kaspersky.android-components", name = "kaspresso", version.ref = "kaspresso" }
 kaspresso-compose = { group = "com.kaspersky.android-components", name = "kaspresso-compose-support", version.ref = "kaspresso" }
 
+mockito-android = { module = "org.mockito:mockito-android", version.ref = "mockitoAndroid" }
+mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockitoCore" }
+mockito-inline = { module = "org.mockito:mockito-inline", version.ref = "mockitoInline" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 
 # Firebase Libraries
