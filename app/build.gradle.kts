@@ -154,6 +154,9 @@ dependencies {
     // ----------        FireBase       ------------
     implementation(platform(libs.firebase.bom))
 
+    // ---------- OpenStreetMap ------------
+    implementation(libs.osmdroid)
+
     // Adds a remote binary dependency only for local tests.
     testImplementation(libs.junit)
 

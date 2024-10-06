@@ -2,9 +2,14 @@ package ch.hikemate.app.model.map
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.osmdroid.util.BoundingBox
 
 /**
  * ViewModel for the list of hike routes
@@ -21,6 +26,8 @@ open class ListOfHikeRoutesViewModel() : ViewModel() {
   private val selectedHikeRoute_ = MutableStateFlow<String?>(null) // TODO: should be a Route object
   open val selectedHikeRoute: StateFlow<String?> = selectedHikeRoute_.asStateFlow()
 
+  private val area_ = MutableStateFlow<BoundingBox?>(null)
+
   // Creates a factory
   companion object {
     val Factory: ViewModelProvider.Factory =
@@ -32,12 +39,26 @@ open class ListOfHikeRoutesViewModel() : ViewModel() {
         }
   }
 
+  private suspend fun getRoutesAsync() {
+    // TODO: Should call the API repository to get all the routes filtered by the area
+    withContext(Dispatchers.IO) { Thread.sleep(100) }
+    hikeRoutes_.value = listOf("Route 1", "Route 2", "Route 3")
+  }
+
   /** Gets all the routes from the database and updates the routes_ variable */
   fun getRoutes() {
-    // TODO: should call the repository to get all the routes
-    // repository.getRoutes(onSuccess = { routes_.value = it }, onFailure = {})
+    viewModelScope.launch(Dispatchers.IO) { getRoutesAsync() }
+  }
 
-    hikeRoutes_.value = listOf("Route 1", "Route 2", "Route 3")
+  /**
+   * Sets the current displayed area on the map and updates the list of routes displayed in the
+   * list.
+   *
+   * @param area The area to be displayed
+   */
+  fun setArea(area: BoundingBox) {
+    area_.value = area
+    getRoutes()
   }
 
   /**
