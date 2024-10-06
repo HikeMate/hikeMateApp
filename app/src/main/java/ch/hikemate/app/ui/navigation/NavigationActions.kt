@@ -8,9 +8,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 
-/**
- * Object containing route constants.
- */
+/** Object containing route constants. */
 object Route {
   const val OVERVIEW = "Overview"
   const val MAP = "Map"
@@ -18,9 +16,7 @@ object Route {
   const val PROFILE = "Profile"
 }
 
-/**
- * Object containing screen constants.
- */
+/** Object containing screen constants. */
 object Screen {
   const val AUTH = "Auth Screen"
   const val OVERVIEW = "Overview Screen"
@@ -38,20 +34,16 @@ object Screen {
  */
 data class TopLevelDestination(val route: String, val icon: ImageVector, val textId: String)
 
-/**
- * Object containing top-level destinations.
- */
+/** Object containing top-level destinations. */
 object TopLevelDestinations {
   val OVERVIEW = TopLevelDestination(Route.OVERVIEW, Icons.Outlined.Menu, "Overview")
   val MAP = TopLevelDestination(Route.MAP, Icons.Outlined.Place, "Map")
   val PROFILE = TopLevelDestination(Route.PROFILE, Icons.Outlined.Person, "Profile")
 }
 
-/**
- * List of top-level destinations.
- */
+/** List of top-level destinations. */
 val LIST_TOP_LEVEL_DESTINATIONS =
-  listOf(TopLevelDestinations.OVERVIEW, TopLevelDestinations.MAP, TopLevelDestinations.PROFILE)
+    listOf(TopLevelDestinations.OVERVIEW, TopLevelDestinations.MAP, TopLevelDestinations.PROFILE)
 
 /**
  * Class containing navigation actions.
@@ -59,15 +51,14 @@ val LIST_TOP_LEVEL_DESTINATIONS =
  * @property navController The navigation controller used to manage app navigation.
  */
 open class NavigationActions(
-  private val navController: NavHostController,
+    private val navController: NavHostController,
 ) {
   /**
    * Navigate to the specified [TopLevelDestination].
    *
-   * @param destination The top-level destination to navigate to.
-   * Clears the back stack when navigating to a new destination.
-   * This is useful when navigating to a new screen from the bottom navigation bar
-   * as we don't want to keep the previous screen in the back stack.
+   * @param destination The top-level destination to navigate to. Clears the back stack when
+   *   navigating to a new destination. This is useful when navigating to a new screen from the
+   *   bottom navigation bar as we don't want to keep the previous screen in the back stack.
    */
   open fun navigateTo(destination: TopLevelDestination) {
     navController.navigate(destination.route) {
