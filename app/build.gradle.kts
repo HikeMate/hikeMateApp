@@ -157,13 +157,39 @@ dependencies {
     implementation(platform(libs.firebase.bom))
 
     // Adds a remote binary dependency only for local tests.
-    testImplementation(libs.junit)
-    testImplementation (libs.mockito.core)
+
     testImplementation (libs.mockito.inline)
     testImplementation (libs.mockito.android)
+    testImplementation ("org.mockito:mockito-core:3.12.4")
+    testImplementation ("org.mockito.kotlin:mockito-kotlin:3.2.0")
+    androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation (libs.ui.test.junit4)
+    androidTestImplementation (libs.mockito.mockito.kotlin)
+    debugImplementation (libs.ui.test.manifest)
+    // JUnit
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.junit)
 
+    // AndroidX Test
+    androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
+    // Compose UI Testing
+    androidTestImplementation(libs.compose.test.junit)
+    debugImplementation(libs.compose.test.manifest)
+
+    // For both unit and instrumented tests
+    testImplementation(libs.compose.test.junit)
+    testImplementation(libs.compose.test.manifest)
+
+    // Mockito
+    testImplementation("org.mockito:mockito-core:3.12.4")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:3.2.0")
+    androidTestImplementation("org.mockito:mockito-android:3.12.4")
+    androidTestImplementation("org.mockito.kotlin:mockito-kotlin:3.2.0")
+
+    // Robolectric (for unit tests that require Android framework)
+    testImplementation(libs.robolectric)
     // To fix an issue with Firebase and the Protobuf library
     configurations.configureEach {
         exclude(group = "com.google.protobuf", module = "protobuf-lite")
