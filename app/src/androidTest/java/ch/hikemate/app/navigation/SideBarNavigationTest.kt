@@ -176,4 +176,45 @@ class SideBarNavigationTest {
       assertEquals(tab.route, selectedItem)
     }
   }
+  @Test
+  fun sideBarNavigation_drawerStaysClosedWhenEmptyTabList() {
+    composeTestRule.setContent {
+      SideBarNavigation(onIconSelect = {}, tabList = emptyList(), selectedItem = "")
+    }
+
+    composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
+
+    composeTestRule.onNodeWithTag(TEST_TAG_DRAWER_CONTENT).assertIsNotDisplayed()
+  }
+
+  @Test
+  fun sideBarNavigation_correctIconDisplayedForEachTab() {
+    composeTestRule.setContent {
+      SideBarNavigation(onIconSelect = {}, tabList = LIST_TOP_LEVEL_DESTINATIONS, selectedItem = "")
+    }
+
+    composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
+
+    LIST_TOP_LEVEL_DESTINATIONS.forEach { tab ->
+      composeTestRule.onNodeWithTag(TEST_TAG_DRAWER_ITEM_PREFIX + tab.route)
+        .assert(hasContentDescription(tab.textId))
+    }
+  }
+
+  @Test
+  fun sideBarNavigation_multipleClicksOnSameTabKeepDrawerClosed() {
+    val selectedItem = LIST_TOP_LEVEL_DESTINATIONS.first().route
+    composeTestRule.setContent {
+      SideBarNavigation(onIconSelect = {}, tabList = LIST_TOP_LEVEL_DESTINATIONS, selectedItem = selectedItem)
+    }
+
+    composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
+
+    val firstTabTag = TEST_TAG_DRAWER_ITEM_PREFIX + selectedItem
+    composeTestRule.onNodeWithTag(firstTabTag).performClick()
+    composeTestRule.onNodeWithTag(firstTabTag).performClick()
+
+    composeTestRule.onNodeWithTag(TEST_TAG_DRAWER_CONTENT).assertIsNotDisplayed()
+  }
+
 }

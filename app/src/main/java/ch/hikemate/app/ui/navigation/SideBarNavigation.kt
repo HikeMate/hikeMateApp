@@ -93,11 +93,3 @@ fun SideBarNavigation(
   }
 }
 
-@Preview
-@Composable
-fun SideBarNavigationPreview() {
-  val tabList =
-      listOf(TopLevelDestinations.OVERVIEW, TopLevelDestinations.MAP, TopLevelDestinations.PROFILE)
-  var selectedItem by remember { mutableStateOf(TopLevelDestinations.OVERVIEW.route) }
-  SideBarNavigation(onIconSelect = {}, tabList = tabList, selectedItem = selectedItem)
-}
