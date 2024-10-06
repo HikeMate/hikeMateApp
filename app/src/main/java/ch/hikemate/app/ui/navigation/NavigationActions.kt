@@ -39,6 +39,7 @@ object TopLevelDestinations {
   val OVERVIEW = TopLevelDestination(Route.OVERVIEW, Icons.Outlined.Menu, "Overview")
   val MAP = TopLevelDestination(Route.MAP, Icons.Outlined.Place, "Map")
   val PROFILE = TopLevelDestination(Route.PROFILE, Icons.Outlined.Person, "Profile")
+  val AUTH = TopLevelDestination(Route.AUTH, Icons.Outlined.Menu, "Auth")
 }
 
 /** List of top-level destinations. */

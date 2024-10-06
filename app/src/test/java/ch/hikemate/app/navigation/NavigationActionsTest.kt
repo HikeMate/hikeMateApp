@@ -52,4 +52,32 @@ class NavigationActionsTest {
 
     assertThat(navigationActions.currentRoute(), `is`(Route.OVERVIEW))
   }
+
+  @Test
+  fun currentRoute_isEmptyWhenNoDestination() {
+    `when`(navHostController.currentDestination).thenReturn(null)
+    assertThat(navigationActions.currentRoute(), `is`(""))
+  }
+
+  @Test
+  fun currentRoute_isEmptyWhenNoRoute() {
+    `when`(navHostController.currentDestination).thenReturn(navigationDestination)
+    `when`(navigationDestination.route).thenReturn(null)
+    assertThat(navigationActions.currentRoute(), `is`(""))
+  }
+
+  @Test
+  fun navigateToAuth_DoesNotRestoreState() {
+    navigationActions.navigateTo(TopLevelDestinations.OVERVIEW)
+    verify(navHostController).navigate(eq(Route.OVERVIEW), any<NavOptionsBuilder.() -> Unit>())
+
+    navigationActions.navigateTo(TopLevelDestinations.PROFILE)
+    verify(navHostController).navigate(eq(Route.PROFILE), any<NavOptionsBuilder.() -> Unit>())
+
+    navigationActions.navigateTo(TopLevelDestinations.MAP)
+    verify(navHostController).navigate(eq(Route.MAP), any<NavOptionsBuilder.() -> Unit>())
+
+    navigationActions.navigateTo(TopLevelDestinations.AUTH)
+    verify(navHostController).navigate(eq(Route.AUTH), any<NavOptionsBuilder.() -> Unit>())
+  }
 }

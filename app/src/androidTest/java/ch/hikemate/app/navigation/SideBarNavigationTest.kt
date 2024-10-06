@@ -108,4 +108,72 @@ class SideBarNavigationTest {
   private fun SemanticsNodeInteraction.assertIsSelected() {
     assert(SemanticsMatcher.expectValue(IsSelectedKey, true))
   }
+
+  @Test
+  fun sidebarNavigation_withSelectedItem() {
+    val selectedItem = Route.OVERVIEW
+    val onIconSelect: (TopLevelDestination) -> Unit = {}
+
+    composeTestRule.setContent {
+      SideBarNavigation(onIconSelect, LIST_TOP_LEVEL_DESTINATIONS, selectedItem)
+    }
+
+    composeTestRule.onNodeWithTag(TEST_TAG_DRAWER_ITEM_PREFIX + Route.OVERVIEW).assertIsSelected()
+    composeTestRule.onNodeWithTag(TEST_TAG_DRAWER_ITEM_PREFIX + Route.MAP).assertIsNotSelected()
+  }
+
+  @Test
+  fun sideBarNavigation_withEmptyTabList() {
+    composeTestRule.setContent {
+      SideBarNavigation(onIconSelect = {}, tabList = emptyList(), selectedItem = "")
+    }
+
+    composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
+
+    LIST_TOP_LEVEL_DESTINATIONS.forEach { tab ->
+      composeTestRule.onNodeWithTag(TEST_TAG_DRAWER_ITEM_PREFIX + tab.route).assertIsNotDisplayed()
+    }
+  }
+
+  @Test
+  fun sideBarNavigation_withInvalidSelectedItem() {
+    val invalidSelectedItem = "invalid_route"
+    composeTestRule.setContent {
+      SideBarNavigation(
+          onIconSelect = {},
+          tabList = LIST_TOP_LEVEL_DESTINATIONS,
+          selectedItem = invalidSelectedItem)
+    }
+
+    composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
+    LIST_TOP_LEVEL_DESTINATIONS.forEach { tab ->
+      if (tab.route == invalidSelectedItem) {
+        // It should not be marked as selected
+        composeTestRule.onNodeWithTag(TEST_TAG_DRAWER_ITEM_PREFIX + tab.route).assertIsNotSelected()
+      } else {
+        // Other tabs should not be affected
+        composeTestRule.onNodeWithTag(TEST_TAG_DRAWER_ITEM_PREFIX + tab.route).assertExists()
+      }
+    }
+  }
+
+  @Test
+  fun sideBarNavigation_allTabsAreClickable() {
+    var selectedItem: String = ""
+    val onIconSelect: (TopLevelDestination) -> Unit = { selectedItem = it.route }
+    composeTestRule.setContent {
+      SideBarNavigation(
+          onIconSelect = onIconSelect,
+          tabList = LIST_TOP_LEVEL_DESTINATIONS,
+          selectedItem = selectedItem)
+    }
+
+    composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
+
+    LIST_TOP_LEVEL_DESTINATIONS.forEach { tab ->
+      composeTestRule.onNodeWithTag(TEST_TAG_DRAWER_ITEM_PREFIX + tab.route).performClick()
+
+      assertEquals(tab.route, selectedItem)
+    }
+  }
 }

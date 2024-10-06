@@ -3,12 +3,12 @@ package ch.hikemate.app.ui.navigation
 import android.graphics.drawable.Icon
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Button
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsPropertyKey
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import ch.hikemate.app.ui.theme.SampleAppTheme
 import kotlinx.coroutines.launch
@@ -56,7 +57,7 @@ fun SideBarNavigation(
               Button(
                   onClick = { scope.launch { drawerState.close() } },
                   modifier = Modifier.testTag(TEST_TAG_DRAWER_CLOSE_BUTTON)) {
-                    Icon(Icons.Filled.Menu, contentDescription = "Close")
+                    Icon(Icons.Filled.Close, contentDescription = "Close")
                   }
               Text(TAG, modifier = Modifier.padding(16.dp))
             }
@@ -79,7 +80,7 @@ fun SideBarNavigation(
           }
         },
         content = {
-          IconButton(
+          Button(
               onClick = { scope.launch { drawerState.open() } },
               modifier = Modifier.testTag(TEST_TAG_SIDEBAR_BUTTON),
               content = {
@@ -90,4 +91,13 @@ fun SideBarNavigation(
               })
         })
   }
+}
+
+@Preview
+@Composable
+fun SideBarNavigationPreview() {
+  val tabList =
+      listOf(TopLevelDestinations.OVERVIEW, TopLevelDestinations.MAP, TopLevelDestinations.PROFILE)
+  var selectedItem by remember { mutableStateOf(TopLevelDestinations.OVERVIEW.route) }
+  SideBarNavigation(onIconSelect = {}, tabList = tabList, selectedItem = selectedItem)
 }
