@@ -19,7 +19,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsPropertyKey
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import ch.hikemate.app.ui.theme.SampleAppTheme
 import kotlinx.coroutines.launch
@@ -92,4 +91,3 @@ fun SideBarNavigation(
         })
   }
 }
-

@@ -176,15 +176,16 @@ class SideBarNavigationTest {
       assertEquals(tab.route, selectedItem)
     }
   }
+
   @Test
-  fun sideBarNavigation_drawerStaysClosedWhenEmptyTabList() {
+  fun sideBarNavigation_drawerOpensWhenListEmpty() {
     composeTestRule.setContent {
       SideBarNavigation(onIconSelect = {}, tabList = emptyList(), selectedItem = "")
     }
 
     composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
 
-    composeTestRule.onNodeWithTag(TEST_TAG_DRAWER_CONTENT).assertIsNotDisplayed()
+    composeTestRule.onNodeWithTag(TEST_TAG_DRAWER_CONTENT).assertIsDisplayed()
   }
 
   @Test
@@ -196,8 +197,9 @@ class SideBarNavigationTest {
     composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
 
     LIST_TOP_LEVEL_DESTINATIONS.forEach { tab ->
-      composeTestRule.onNodeWithTag(TEST_TAG_DRAWER_ITEM_PREFIX + tab.route)
-        .assert(hasContentDescription(tab.textId))
+      composeTestRule
+          .onNodeWithTag(TEST_TAG_DRAWER_ITEM_PREFIX + tab.route)
+          .assert(hasContentDescription(tab.textId))
     }
   }
 
@@ -205,7 +207,8 @@ class SideBarNavigationTest {
   fun sideBarNavigation_multipleClicksOnSameTabKeepDrawerClosed() {
     val selectedItem = LIST_TOP_LEVEL_DESTINATIONS.first().route
     composeTestRule.setContent {
-      SideBarNavigation(onIconSelect = {}, tabList = LIST_TOP_LEVEL_DESTINATIONS, selectedItem = selectedItem)
+      SideBarNavigation(
+          onIconSelect = {}, tabList = LIST_TOP_LEVEL_DESTINATIONS, selectedItem = selectedItem)
     }
 
     composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
@@ -216,5 +219,4 @@ class SideBarNavigationTest {
 
     composeTestRule.onNodeWithTag(TEST_TAG_DRAWER_CONTENT).assertIsNotDisplayed()
   }
-
 }
