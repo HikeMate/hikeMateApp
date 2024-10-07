@@ -1,7 +1,12 @@
 package ch.hikemate.app.navigation
 
+import androidx.compose.material3.DrawerValue.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.unit.dp
 import ch.hikemate.app.ui.navigation.*
 import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
 import ch.hikemate.app.ui.navigation.SideBarNavigation
@@ -218,5 +223,129 @@ class SideBarNavigationTest {
     composeTestRule.onNodeWithTag(firstTabTag).performClick()
 
     composeTestRule.onNodeWithTag(TEST_TAG_DRAWER_CONTENT).assertIsNotDisplayed()
+  }
+
+  @Test
+  fun sideBarNavigation_accessibilityTest() {
+    composeTestRule.setContent {
+      SideBarNavigation(onIconSelect = {}, tabList = LIST_TOP_LEVEL_DESTINATIONS, selectedItem = "")
+    }
+
+    composeTestRule
+        .onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON)
+        .assertHasClickAction()
+        .assertContentDescriptionEquals("SideBar")
+
+    composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
+
+    LIST_TOP_LEVEL_DESTINATIONS.forEach { tab ->
+      composeTestRule
+          .onNodeWithTag(TEST_TAG_DRAWER_ITEM_PREFIX + tab.route)
+          .assertHasClickAction()
+          .assertTextEquals(tab.textId)
+    }
+  }
+
+  @Test
+  fun sideBarNavigation_drawerGesturesDisabled() {
+    composeTestRule.setContent {
+      SideBarNavigation(onIconSelect = {}, tabList = LIST_TOP_LEVEL_DESTINATIONS, selectedItem = "")
+    }
+
+    composeTestRule.onNodeWithTag(TEST_TAG_DRAWER_CONTENT).assertIsNotDisplayed()
+
+    composeTestRule.onRoot().performTouchInput { swipeRight() }
+
+    composeTestRule.onNodeWithTag(TEST_TAG_DRAWER_CONTENT).assertIsNotDisplayed()
+  }
+
+  @Test
+  fun sideBarNavigation_drawerWidth() {
+    composeTestRule.setContent {
+      SideBarNavigation(onIconSelect = {}, tabList = LIST_TOP_LEVEL_DESTINATIONS, selectedItem = "")
+    }
+
+    composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
+
+    composeTestRule.onNodeWithTag(TEST_TAG_DRAWER_CONTENT).assertWidthIsEqualTo(180.dp)
+  }
+
+  @Test
+  fun sideBarNavigation_rapidTabSwitching() {
+    var selectedTab by mutableStateOf(LIST_TOP_LEVEL_DESTINATIONS.first().route)
+
+    composeTestRule.setContent {
+      SideBarNavigation(
+          onIconSelect = { selectedTab = it.route },
+          tabList = LIST_TOP_LEVEL_DESTINATIONS,
+          selectedItem = selectedTab)
+    }
+
+    composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
+
+    LIST_TOP_LEVEL_DESTINATIONS.forEach { tab ->
+      composeTestRule.onNodeWithTag(TEST_TAG_DRAWER_ITEM_PREFIX + tab.route).performClick()
+    }
+
+    assertEquals(LIST_TOP_LEVEL_DESTINATIONS.last().route, selectedTab)
+  }
+
+  @Test
+  fun sideBarNavigation_emptyTabList() {
+    composeTestRule.setContent {
+      SideBarNavigation(onIconSelect = {}, tabList = emptyList(), selectedItem = "")
+    }
+
+    composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
+    composeTestRule.onNodeWithTag(TEST_TAG_DRAWER_CONTENT).assertExists()
+    composeTestRule.onNodeWithTag(TEST_TAG_DRAWER_CONTENT).onChildren().assertCountEquals(2)
+  }
+
+  @Test
+  fun sideBarNavigation_singleItemTabList() {
+    val singleItem = LIST_TOP_LEVEL_DESTINATIONS.first()
+    composeTestRule.setContent {
+      SideBarNavigation(
+          onIconSelect = {}, tabList = listOf(singleItem), selectedItem = singleItem.route)
+    }
+
+    composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
+    composeTestRule
+        .onNodeWithTag(TEST_TAG_DRAWER_ITEM_PREFIX + singleItem.route)
+        .assertExists()
+        .assertIsSelected()
+  }
+
+  @Test
+  fun sideBarNavigation_selectedItemNotInList() {
+    val nonExistentRoute = "non_existent_route"
+    composeTestRule.setContent {
+      SideBarNavigation(
+          onIconSelect = {}, tabList = LIST_TOP_LEVEL_DESTINATIONS, selectedItem = nonExistentRoute)
+    }
+
+    composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
+    LIST_TOP_LEVEL_DESTINATIONS.forEach { tab ->
+      composeTestRule.onNodeWithTag(TEST_TAG_DRAWER_ITEM_PREFIX + tab.route).assertIsNotSelected()
+    }
+  }
+
+  @Test
+  fun sideBarNavigation_onIconSelectCallback() {
+    var selectedDestination: TopLevelDestination? = null
+
+    composeTestRule.setContent {
+      SideBarNavigation(
+          onIconSelect = { selectedDestination = it },
+          tabList = LIST_TOP_LEVEL_DESTINATIONS,
+          selectedItem = "")
+    }
+
+    composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
+
+    LIST_TOP_LEVEL_DESTINATIONS.forEach { destination ->
+      composeTestRule.onNodeWithTag(TEST_TAG_DRAWER_ITEM_PREFIX + destination.route).performClick()
+      assertEquals(destination, selectedDestination)
+    }
   }
 }
