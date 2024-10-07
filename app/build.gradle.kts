@@ -161,7 +161,6 @@ dependencies {
 
     testImplementation (libs.mockito.inline)
     testImplementation (libs.mockito.android)
-    //noinspection GradleDependency
     testImplementation (libs.mockito.core)
     testImplementation (libs.mockito.kotlin)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -185,13 +184,9 @@ dependencies {
     testImplementation(libs.compose.test.manifest)
 
     // Mockito
-    //noinspection GradleDependency
     testImplementation(libs.mockito.mockito.core.v3124)
-    //noinspection GradleDependency
     testImplementation(libs.kotlin.mockito.kotlin.v320)
-    //noinspection GradleDependency
     androidTestImplementation(libs.mockito.android.v3124)
-    //noinspection GradleDependency
     androidTestImplementation(libs.mockito.kotlin)
 
     // Robolectric (for unit tests that require Android framework)
