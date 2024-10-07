@@ -1,6 +1,5 @@
 package ch.hikemate.app.ui.navigation
 
-import android.graphics.drawable.Icon
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
