@@ -52,12 +52,12 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
 
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "11"
     }
 
     packaging {
@@ -161,8 +161,9 @@ dependencies {
 
     testImplementation (libs.mockito.inline)
     testImplementation (libs.mockito.android)
-    testImplementation ("org.mockito:mockito-core:3.12.4")
-    testImplementation ("org.mockito.kotlin:mockito-kotlin:3.2.0")
+    //noinspection GradleDependency
+    testImplementation (libs.mockito.core)
+    testImplementation (libs.mockito.kotlin)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation (libs.ui.test.junit4)
     androidTestImplementation (libs.mockito.mockito.kotlin)
@@ -184,10 +185,14 @@ dependencies {
     testImplementation(libs.compose.test.manifest)
 
     // Mockito
-    testImplementation("org.mockito:mockito-core:3.12.4")
-    testImplementation("org.mockito.kotlin:mockito-kotlin:3.2.0")
-    androidTestImplementation("org.mockito:mockito-android:3.12.4")
-    androidTestImplementation("org.mockito.kotlin:mockito-kotlin:3.2.0")
+    //noinspection GradleDependency
+    testImplementation(libs.mockito.mockito.core.v3124)
+    //noinspection GradleDependency
+    testImplementation(libs.kotlin.mockito.kotlin.v320)
+    //noinspection GradleDependency
+    androidTestImplementation(libs.mockito.android.v3124)
+    //noinspection GradleDependency
+    androidTestImplementation(libs.mockito.kotlin)
 
     // Robolectric (for unit tests that require Android framework)
     testImplementation(libs.robolectric)
