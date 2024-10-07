@@ -1,8 +1,12 @@
 package ch.hikemate.app.navigation
 
+import android.content.Context
 import androidx.navigation.NavDestination
+import androidx.navigation.NavGraph
 import androidx.navigation.NavHostController
 import androidx.navigation.NavOptionsBuilder
+import androidx.navigation.navOptions
+import androidx.navigation.testing.TestNavHostController
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
@@ -12,9 +16,11 @@ import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 
 class NavigationActionsTest {
@@ -23,11 +29,20 @@ class NavigationActionsTest {
   private lateinit var navHostController: NavHostController
   private lateinit var navigationActions: NavigationActions
 
+  private lateinit var navGraph: NavGraph
+  private lateinit var navController: TestNavHostController
+  private lateinit var context: Context
+  private var navOptionsCaptor = argumentCaptor<NavOptionsBuilder.() -> Unit>()
+
   @Before
   fun setUp() {
+    context = mock(Context::class.java)
     navigationDestination = mock(NavDestination::class.java)
     navHostController = mock(NavHostController::class.java)
     navigationActions = NavigationActions(navHostController)
+    navGraph = mock(NavGraph::class.java)
+    `when`(navHostController.graph).thenReturn(navGraph)
+    navController = spy(TestNavHostController(context))
   }
 
   @Test
@@ -67,17 +82,30 @@ class NavigationActionsTest {
   }
 
   @Test
-  fun navigateToAuth_DoesNotRestoreState() {
+  fun navigateToNotAuth_respectsProperties() {
     navigationActions.navigateTo(TopLevelDestinations.OVERVIEW)
-    verify(navHostController).navigate(eq(Route.OVERVIEW), any<NavOptionsBuilder.() -> Unit>())
 
-    navigationActions.navigateTo(TopLevelDestinations.PROFILE)
-    verify(navHostController).navigate(eq(Route.PROFILE), any<NavOptionsBuilder.() -> Unit>())
+    navHostController.navigate(currentRoute_isEmptyWhenNoRoute())
+    verify(navHostController).navigate(eq(Route.OVERVIEW), navOptionsCaptor.capture())
+    val navOptions = navOptions(navOptionsCaptor.firstValue)
 
-    navigationActions.navigateTo(TopLevelDestinations.MAP)
-    verify(navHostController).navigate(eq(Route.MAP), any<NavOptionsBuilder.() -> Unit>())
+    assertThat(navOptions.shouldRestoreState(), `is`(true))
+    assertThat(navOptions.isPopUpToInclusive(), `is`(true))
+    assertThat(navOptions.shouldPopUpToSaveState(), `is`(true))
+    assertThat(navOptions.shouldLaunchSingleTop(), `is`(true))
+  }
 
+  @Test
+  fun navigateToAuth_respectsProperties() {
     navigationActions.navigateTo(TopLevelDestinations.AUTH)
-    verify(navHostController).navigate(eq(Route.AUTH), any<NavOptionsBuilder.() -> Unit>())
+
+    navHostController.navigate(currentRoute_isEmptyWhenNoRoute())
+    verify(navHostController).navigate(eq(Route.AUTH), navOptionsCaptor.capture())
+    val navOptions = navOptions(navOptionsCaptor.firstValue)
+
+    assertThat(navOptions.shouldRestoreState(), `is`(false))
+    assertThat(navOptions.isPopUpToInclusive(), `is`(true))
+    assertThat(navOptions.shouldPopUpToSaveState(), `is`(true))
+    assertThat(navOptions.shouldLaunchSingleTop(), `is`(true))
   }
 }

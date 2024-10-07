@@ -348,4 +348,19 @@ class SideBarNavigationTest {
       assertEquals(destination, selectedDestination)
     }
   }
+
+  @Test
+  fun navigationItemDrawer_displaysLabel() {
+    composeTestRule.setContent {
+      SideBarNavigation(onIconSelect = {}, tabList = LIST_TOP_LEVEL_DESTINATIONS, selectedItem = "")
+    }
+
+    composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
+
+    LIST_TOP_LEVEL_DESTINATIONS.forEach { tab ->
+      composeTestRule
+          .onNodeWithTag(TEST_TAG_DRAWER_ITEM_PREFIX + tab.route)
+          .assertTextEquals(tab.textId)
+    }
+  }
 }

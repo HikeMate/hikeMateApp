@@ -70,7 +70,13 @@ fun SideBarNavigation(
                     onIconSelect(tab)
                     scope.launch { drawerState.close() }
                   },
-                  icon = { Icon(tab.icon, contentDescription = tab.textId) },
+                  icon = {
+                    Icon(
+                        tab.icon,
+                        contentDescription = tab.textId,
+                        modifier =
+                            Modifier.testTag(TEST_TAG_DRAWER_ITEM_PREFIX + tab.route + "Icon"))
+                  },
                   modifier =
                       Modifier.testTag(TEST_TAG_DRAWER_ITEM_PREFIX + tab.route).semantics {
                         set(IsSelectedKey, isSelected)
