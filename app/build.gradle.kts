@@ -63,6 +63,8 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            merges  += "META-INF/LICENSE.md"
+            merges += "META-INF/LICENSE-notice.md"
         }
     }
 
@@ -120,6 +122,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(platform(libs.compose.bom))
     implementation(libs.firebase.firestore.ktx)
+    implementation(libs.androidx.espresso.intents)
     testImplementation(libs.junit)
     globalTestImplementation(libs.androidx.junit)
     globalTestImplementation(libs.androidx.espresso.core)
@@ -153,20 +156,38 @@ dependencies {
 
     // ----------        FireBase       ------------
     implementation(platform(libs.firebase.bom))
+    implementation(libs.google.firebase.auth)
+    implementation(libs.play.services.auth)
 
     // Adds a remote binary dependency only for local tests.
     testImplementation(libs.junit)
 
-
     androidTestImplementation(libs.androidx.espresso.core)
+
+    // Mockito
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.mockito.kotlin)
+    androidTestImplementation(libs.mockito.android)
+    androidTestImplementation(libs.mockito.kotlin.v320)
+
+    // MockK
+    testImplementation(libs.mockk)
+    androidTestImplementation(libs.mockk.android.v11312)
+    androidTestImplementation(libs.mockk.agent)
+
+    // Google Sign in
+    implementation(libs.androidx.credentials.vlatestversion)
+    implementation(libs.androidx.credentials.play.services.auth.v10)
+    implementation(libs.googleid.vlatestversion)
 
     // To fix an issue with Firebase and the Protobuf library
     configurations.configureEach {
         exclude(group = "com.google.protobuf", module = "protobuf-lite")
     }
+
+
+
 }
-
-
 
 tasks.withType<Test> {
     // Configure Jacoco for each tests
