@@ -2,8 +2,6 @@ package ch.hikemate.app
 
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
@@ -14,14 +12,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import ch.hikemate.app.resources.C
 import ch.hikemate.app.ui.SignInButton
-import ch.hikemate.app.ui.SignOutButton
 import ch.hikemate.app.ui.theme.SampleAppTheme
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
@@ -34,11 +30,9 @@ class MainActivity : ComponentActivity() {
       SampleAppTheme {
         // A surface container using the 'background' color from the theme
         Surface(
-            modifier = Modifier
-              .fillMaxSize()
-              .semantics { testTag = C.Tag.main_screen_container },
+            modifier = Modifier.fillMaxSize().semantics { testTag = C.Tag.main_screen_container },
             color = MaterialTheme.colorScheme.background) {
-              //Greeting("Android")
+              // Greeting("Android")
             }
         Column() {
           Firebase.auth.signOut()
