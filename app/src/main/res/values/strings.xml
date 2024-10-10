@@ -2,4 +2,7 @@
     <string name="app_name">SampleApp</string>
     <string name="title_activity_main">MainActivity</string>
     <string name="title_activity_second">SecondActivity</string>
+
+    <!-- Map Screen -->
+    <string name="map_screen_menu_button_content_description">Menu</string>
 </resources>

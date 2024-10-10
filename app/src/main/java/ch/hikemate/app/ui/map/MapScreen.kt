@@ -25,11 +25,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import ch.hikemate.app.R
 import ch.hikemate.app.model.map.ListOfHikeRoutesViewModel
+import ch.hikemate.app.ui.theme.MapMenuButtonBackground
+import ch.hikemate.app.ui.theme.MapMenuButtonForeground
 import org.osmdroid.config.Configuration
 import org.osmdroid.events.MapListener
 import org.osmdroid.events.ScrollEvent
@@ -90,11 +92,13 @@ fun MapScreen(hikingRoutesViewModel: ListOfHikeRoutesViewModel) {
         .align(Alignment.TopStart)
         // Clip needs to be before background
         .clip(RoundedCornerShape(8.dp))
-        // TODO : Replace this hardcoded color
-        .background(Color.White)
+        .background(MapMenuButtonBackground)
     ) {
-      // TODO : Replace this hardcoded color
-      Icon(Icons.Default.Menu, contentDescription = "Menu", tint = Color.Black)
+      Icon(
+        Icons.Default.Menu,
+        contentDescription = context.getString(R.string.map_screen_menu_button_content_description),
+        tint = MapMenuButtonForeground
+      )
     }
 
     CollapsibleHikesList(hikingRoutesViewModel)
