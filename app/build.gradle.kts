@@ -193,6 +193,8 @@ dependencies {
     androidTestImplementation(libs.mockito.android.v3124)
     androidTestImplementation(libs.mockito.kotlin)
 
+    implementation(libs.okhttp)
+
     // Robolectric (for unit tests that require Android framework)
     testImplementation(libs.robolectric)
     // To fix an issue with Firebase and the Protobuf library
