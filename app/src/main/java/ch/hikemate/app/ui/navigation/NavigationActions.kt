@@ -10,7 +10,7 @@ import androidx.navigation.NavHostController
 
 /** Object containing route constants. */
 object Route {
-  const val OVERVIEW = "Overview"
+  const val PLANNED_HIKES = "PlannedHikes"
   const val MAP = "Map"
   const val AUTH = "Auth"
   const val PROFILE = "Profile"
@@ -19,7 +19,7 @@ object Route {
 /** Object containing screen constants. */
 object Screen {
   const val AUTH = "Auth Screen"
-  const val OVERVIEW = "Overview Screen"
+  const val PLANNED_HIKES = "PlannedHikes Screen"
   const val MAP = "Map Screen"
   const val PROFILE = "Profile Screen"
   const val EDIT_PROFILE = "Edit-profile Screen"
@@ -36,14 +36,15 @@ data class TopLevelDestination(val route: String, val icon: ImageVector, val tex
 
 /** Object containing top-level destinations. */
 object TopLevelDestinations {
-  val OVERVIEW = TopLevelDestination(Route.OVERVIEW, Icons.Outlined.Menu, "Overview")
+  val PLANNED_HIKES = TopLevelDestination(Route.PLANNED_HIKES, Icons.Outlined.Menu, "Planned Hikes")
   val MAP = TopLevelDestination(Route.MAP, Icons.Outlined.Place, "Map")
   val PROFILE = TopLevelDestination(Route.PROFILE, Icons.Outlined.Person, "Profile")
 }
 
 /** List of top-level destinations. */
 val LIST_TOP_LEVEL_DESTINATIONS =
-    listOf(TopLevelDestinations.OVERVIEW, TopLevelDestinations.MAP, TopLevelDestinations.PROFILE)
+    listOf(
+        TopLevelDestinations.PLANNED_HIKES, TopLevelDestinations.MAP, TopLevelDestinations.PROFILE)
 
 /**
  * Class containing navigation actions.
