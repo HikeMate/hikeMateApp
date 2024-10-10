@@ -16,8 +16,6 @@ import org.junit.Test
 class SignInScreenTest : TestCase() {
   @get:Rule val composeTestRule = createAndroidComposeRule<MainActivity>()
 
-  // The IntentsTestRule is not reliable.
-
   @Before
   fun setUp() {
     Intents.init()
