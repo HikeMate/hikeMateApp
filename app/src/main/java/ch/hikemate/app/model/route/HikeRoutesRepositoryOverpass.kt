@@ -130,7 +130,7 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
                 "minlat" -> boundsBuilder.setMinLat(elementReader.nextDouble())
                 "minlon" -> boundsBuilder.setMinLon(elementReader.nextDouble())
                 "maxlat" -> boundsBuilder.setMaxLat(elementReader.nextDouble())
-                "maxlon" -> boundsBuilder.setMaxLat(elementReader.nextDouble())
+                "maxlon" -> boundsBuilder.setMaxLon(elementReader.nextDouble())
                 else -> elementReader.skipValue()
               }
             }
