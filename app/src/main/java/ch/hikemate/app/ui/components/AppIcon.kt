@@ -16,9 +16,8 @@ import ch.hikemate.app.R
  */
 @Composable
 fun AppIcon(size: Dp) {
-    Image(
-        painter = painterResource(id = R.drawable.app_icon),
-        contentDescription = "App Logo",
-        modifier = Modifier.size(size).testTag("appIcon")
-    )
+  Image(
+      painter = painterResource(id = R.drawable.app_icon),
+      contentDescription = "App Logo",
+      modifier = Modifier.size(size).testTag("appIcon"))
 }

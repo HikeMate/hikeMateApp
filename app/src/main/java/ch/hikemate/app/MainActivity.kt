@@ -12,6 +12,6 @@ import ch.hikemate.app.ui.theme.SampleAppTheme
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-      setContent { SampleAppTheme { Surface(modifier = Modifier.fillMaxSize()) { SignInScreen() } } }
+    setContent { SampleAppTheme { Surface(modifier = Modifier.fillMaxSize()) { SignInScreen() } } }
   }
 }
