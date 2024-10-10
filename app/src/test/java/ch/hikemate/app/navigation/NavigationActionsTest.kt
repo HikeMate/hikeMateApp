@@ -1,8 +1,6 @@
 package ch.hikemate.app.navigation
 
 import android.content.Context
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBox
 import androidx.navigation.NavDestination
 import androidx.navigation.NavGraph
 import androidx.navigation.NavHostController
@@ -12,7 +10,6 @@ import androidx.navigation.testing.TestNavHostController
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
-import ch.hikemate.app.ui.navigation.TopLevelDestination
 import ch.hikemate.app.ui.navigation.TopLevelDestinations
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.MatcherAssert.assertThat
@@ -99,7 +96,7 @@ class NavigationActionsTest {
 
   @Test
   fun navigateToAuth_respectsProperties() {
-    navigationActions.navigateTo(TopLevelDestination(Route.AUTH, Icons.Default.AccountBox, "Auth"))
+    navigationActions.navigateTo(TopLevelDestinations.AUTH)
 
     navHostController.navigate(currentRoute_isEmptyWhenNoRoute())
     verify(navHostController).navigate(eq(Route.AUTH), navOptionsCaptor.capture())

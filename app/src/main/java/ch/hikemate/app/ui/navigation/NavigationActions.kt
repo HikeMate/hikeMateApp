@@ -39,6 +39,7 @@ object TopLevelDestinations {
   val PLANNED_HIKES = TopLevelDestination(Route.PLANNED_HIKES, Icons.Outlined.Menu, "Planned Hikes")
   val MAP = TopLevelDestination(Route.MAP, Icons.Outlined.Place, "Map")
   val PROFILE = TopLevelDestination(Route.PROFILE, Icons.Outlined.Person, "Profile")
+  val AUTH = TopLevelDestination(Route.AUTH, Icons.Outlined.Person, "Auth")
 }
 
 /** List of top-level destinations. */
