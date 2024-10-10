@@ -128,8 +128,7 @@ fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel) {
         }
       }
     },
-    // TODO : Adjust this value and the behavior of the sheet
-    sheetPeekHeight = 100.dp
+    sheetPeekHeight = 400.dp
   ) { }
 
   // TODO : Is this the right place to call getRoutes()?
