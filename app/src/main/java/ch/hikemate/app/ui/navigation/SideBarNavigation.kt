@@ -19,6 +19,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsPropertyKey
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import ch.hikemate.app.ui.components.AppIcon
 import kotlinx.coroutines.launch
 
 const val APP_NAME = "HikeMate"
@@ -56,7 +57,7 @@ fun SideBarNavigation(
             ) {
               Icon(Icons.Filled.Close, contentDescription = "Close")
             }
-            Text(APP_NAME, modifier = Modifier.padding(16.dp))
+            AppIcon(size = 100.dp)
           }
           HorizontalDivider()
           tabList.forEach { tab ->

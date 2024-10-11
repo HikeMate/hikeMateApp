@@ -35,10 +35,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ch.hikemate.app.R
 import ch.hikemate.app.ui.components.AppIcon
+import ch.hikemate.app.ui.navigation.NavigationActions
+import ch.hikemate.app.ui.navigation.Screen
 
 /** A composable function to display the sign in screen */
 @Composable
-fun SignInScreen() {
+fun SignInScreen(navigationActions: NavigationActions) {
   Scaffold(
       modifier = Modifier.fillMaxSize(),
       content = { padding ->
@@ -83,7 +85,10 @@ fun SignInScreen() {
               )
             }
 
-            SignInWithGoogleButton { /* Handle sign in click here */}
+            SignInWithGoogleButton {
+              // TODO: After implementing the sign in with Google, navigate to the Overview screen
+              navigationActions.navigateTo(Screen.PLANNED_HIKES)
+            }
           }
         }
       },

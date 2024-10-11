@@ -39,6 +39,7 @@ espressoIntents = "3.6.1"
 navigationRuntimeKtx = "2.8.2"
 navigationCommonKtx = "2.8.2"
 navigationTesting = "2.8.2"
+navigationCompose = "2.8.2"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -88,6 +89,7 @@ androidx-navigation-common-ktx = { group = "androidx.navigation", name = "naviga
 ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4" }
 ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
 androidx-navigation-testing = { group = "androidx.navigation", name = "navigation-testing", version.ref = "navigationTesting" }
+androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 
 
 [plugins]
