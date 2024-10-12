@@ -63,8 +63,15 @@ fun MapScreen(hikingRoutesViewModel: ListOfHikeRoutesViewModel) {
   Configuration.getInstance().apply {
     // Set user-agent to avoid rejected requests
     userAgentValue = context.packageName
-    // TODO : Are there more configuration options that need to be set?
-    // TODO : How does OSMDroid manage the cache?
+
+    // Allow for faster loading of tiles. Default OSMDroid value is 2.
+    tileDownloadThreads = 4
+
+    // Maximum number of tiles that can be downloaded at once. Default is 40.
+    tileDownloadMaxQueueSize = 40
+
+    // Maximum number of bytes that can be used by the tile file system cache. Default is 600MB.
+    tileFileSystemCacheMaxBytes = 600L * 1024L * 1024L
   }
 
   mapView.apply {
