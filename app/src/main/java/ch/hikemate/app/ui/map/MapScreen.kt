@@ -20,6 +20,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -103,6 +104,12 @@ fun MapScreen(hikingRoutesViewModel: ListOfHikeRoutesViewModel) {
 
     CollapsibleHikesList(hikingRoutesViewModel)
   }
+
+  // Initialize the list of hiking routes once when the map is loaded
+  // Leave subsequent updates to the map listener
+  LaunchedEffect(Unit) {
+    hikingRoutesViewModel.setArea(mapView.boundingBox)
+  }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -145,7 +152,4 @@ fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel) {
     },
     sheetPeekHeight = 400.dp
   ) { }
-
-  // TODO : Is this the right place to call getRoutes()?
-  hikingRoutesViewModel.getRoutes()
 }
