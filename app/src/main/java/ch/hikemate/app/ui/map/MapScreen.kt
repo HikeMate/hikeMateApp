@@ -5,18 +5,28 @@ import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
@@ -26,7 +36,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import ch.hikemate.app.R
@@ -121,6 +134,7 @@ fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel) {
 
   BottomSheetScaffold(
     scaffoldState = scaffoldState,
+    sheetContainerColor = MaterialTheme.colorScheme.surface,
     sheetContent = {
 
       Column(modifier = Modifier
@@ -143,8 +157,13 @@ fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel) {
           }
           else {
             items(routes.value.size) { index: Int ->
-              // TODO : Make a component for a route item
-              Text(routes.value[index])
+              HikingRouteItem(
+                title = routes.value[index],
+                altitudeDifference = 1000,
+                isSuitable = index % 2 == 0
+              )
+
+              Spacer(modifier = Modifier.height(12.dp))
             }
           }
         }
@@ -152,4 +171,102 @@ fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel) {
     },
     sheetPeekHeight = 400.dp
   ) { }
+}
+
+@Composable
+fun HikingRouteItem(
+  title: String,
+  altitudeDifference: Int,
+  isSuitable: Boolean,
+  modifier: Modifier = Modifier
+) {
+  Row(
+    modifier = modifier
+      .fillMaxWidth(),
+    verticalAlignment = Alignment.CenterVertically
+  ) {
+    Column(
+      modifier = Modifier.weight(1f)
+    ) {
+      Text(
+        text = title,
+        style = MaterialTheme.typography.titleLarge,
+        fontWeight = FontWeight.Bold
+      )
+      Spacer(modifier = Modifier.height(8.dp))
+
+      Row (
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+          .fillMaxWidth()
+          .height(IntrinsicSize.Min)
+      ) {
+        Box(
+          modifier = Modifier
+            .weight(1f)
+            .fillMaxHeight()
+            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), RoundedCornerShape(4.dp))
+        )
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        Column {
+          Text(
+            text = "Altitude difference",
+            style = MaterialTheme.typography.bodySmall
+          )
+          Text(
+            text = "${altitudeDifference}m",
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Bold
+          )
+        }
+      }
+
+      Spacer(modifier = Modifier.height(4.dp))
+
+      Row(
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        Icon(
+          imageVector = if (isSuitable) Icons.Default.Check else Icons.Default.Warning,
+          // The icon is only decorative, the following message is enough for accessibility
+          contentDescription = null,
+          // TODO : Replace suitable and challenging icon colors with theme colors
+          tint = if (isSuitable) Color(0xFF4CAF50) else Color(0xFFFFC107),
+          modifier = Modifier.size(16.dp)
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(
+          text =
+            if (isSuitable)
+              LocalContext.current.getString(R.string.map_screen_suitable_hike_label)
+            else
+              LocalContext.current.getString(R.string.map_screen_challenging_hike_label),
+          style = MaterialTheme.typography.bodySmall,
+          // TODO : Replace suitable and challenging icon colors with theme colors
+          color = if (isSuitable) Color(0xFF4CAF50) else Color(0xFFFFC107)
+        )
+      }
+    }
+
+    Spacer(modifier = Modifier.width(4.dp))
+
+    Icon(
+      imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+      contentDescription = LocalContext.current.getString(
+        R.string.map_screen_hike_details_content_description
+      ),
+      tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+      modifier = Modifier.size(24.dp)
+    )
+  }
+}
+
+@Composable
+@Preview
+fun BottomListPreview() {
+  val viewModel = ListOfHikeRoutesViewModel.Factory.create(ListOfHikeRoutesViewModel::class.java)
+  viewModel.getRoutes()
+  CollapsibleHikesList(viewModel)
 }
