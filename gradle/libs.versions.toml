@@ -15,6 +15,15 @@ composeActivity = "1.9.2"
 composeViewModel = "2.8.6"
 lifecycleRuntimeKtx = "2.8.6"
 kaspresso = "1.5.5"
+mockitoAndroid = "5.13.0"
+mockitoAndroidVersion = "4.0.0"
+mockitoCore = "5.13.0"
+mockitoCoreVersion = "4.0.0"
+mockitoInline = "4.0.0"
+mockitoKotlin = "5.4.0"
+mockitoMockitoAndroid = "3.12.4"
+mockitoMockitoCoreVersion = "3.12.4"
+mockitoMockitoKotlin = "3.2.0"
 robolectric = "4.11.1"
 sonar = "4.4.1.3373"
 gms = "4.4.2"
@@ -26,6 +35,10 @@ firebaseDatabaseKtx = "21.0.0"
 firebaseFirestore = "25.1.0"
 firebaseUiAuth = "8.0.0"
 firebaseFirestoreKtx = "25.1.0"
+espressoIntents = "3.6.1"
+navigationRuntimeKtx = "2.8.2"
+navigationCommonKtx = "2.8.2"
+navigationTesting = "2.8.2"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -34,7 +47,7 @@ junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
-junit-v412 = { module = "junit:junit", version.ref = "junitJunit" }
+kotlin-mockito-kotlin-v320 = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockitoMockitoKotlin" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
 
@@ -52,6 +65,13 @@ compose-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifes
 kaspresso = { group = "com.kaspersky.android-components", name = "kaspresso", version.ref = "kaspresso" }
 kaspresso-compose = { group = "com.kaspersky.android-components", name = "kaspresso-compose-support", version.ref = "kaspresso" }
 
+mockito-android = { module = "org.mockito:mockito-android", version.ref = "mockitoAndroid" }
+mockito-android-v3124 = { module = "org.mockito:mockito-android", version.ref = "mockitoMockitoAndroid" }
+mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockitoCore" }
+mockito-inline = { module = "org.mockito:mockito-inline", version.ref = "mockitoInline" }
+mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockitoKotlin" }
+mockito-mockito-core-v3124 = { module = "org.mockito:mockito-core", version.ref = "mockitoMockitoCoreVersion" }
+mockito-mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 osmdroid = { module = "org.osmdroid:osmdroid-android", version = "6.1.14" }
 
@@ -62,6 +82,12 @@ firebase-database-ktx = { module = "com.google.firebase:firebase-database-ktx", 
 firebase-firestore = { module = "com.google.firebase:firebase-firestore", version.ref = "firebaseFirestore" }
 firebase-ui-auth = { module = "com.firebaseui:firebase-ui-auth", version.ref = "firebaseUiAuth" }
 firebase-firestore-ktx = { group = "com.google.firebase", name = "firebase-firestore-ktx", version.ref = "firebaseFirestoreKtx" }
+androidx-espresso-intents = { group = "androidx.test.espresso", name = "espresso-intents", version.ref = "espressoIntents" }
+androidx-navigation-runtime-ktx = { group = "androidx.navigation", name = "navigation-runtime-ktx", version.ref = "navigationRuntimeKtx" }
+androidx-navigation-common-ktx = { group = "androidx.navigation", name = "navigation-common-ktx", version.ref = "navigationCommonKtx" }
+ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4" }
+ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
+androidx-navigation-testing = { group = "androidx.navigation", name = "navigation-testing", version.ref = "navigationTesting" }
 
 
 [plugins]
