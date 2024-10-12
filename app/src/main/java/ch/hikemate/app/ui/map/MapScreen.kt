@@ -56,7 +56,10 @@ import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 
 @Composable
-fun MapScreen(hikingRoutesViewModel: ListOfHikeRoutesViewModel = viewModel(factory = ListOfHikeRoutesViewModel.Factory)) {
+fun MapScreen(
+    hikingRoutesViewModel: ListOfHikeRoutesViewModel =
+        viewModel(factory = ListOfHikeRoutesViewModel.Factory)
+) {
   val context = LocalContext.current
   // Avoid re-creating the MapView on every recomposition
   val mapView = remember { MapView(context) }
@@ -82,53 +85,49 @@ fun MapScreen(hikingRoutesViewModel: ListOfHikeRoutesViewModel = viewModel(facto
     // Enable touch-controls such as pinch to zoom
     setMultiTouchControls(true)
     // Update hiking routes every time the user moves the map
-    // TODO : Those updates could be quite frequent, have a cooldown to avoid sending a request each time?
-    addMapListener(object : MapListener {
-      override fun onScroll(event: ScrollEvent?): Boolean {
-        hikingRoutesViewModel.setArea(mapView.boundingBox)
-        return true
-      }
+    // TODO : Those updates could be quite frequent, have a cooldown to avoid sending a request each
+    // time?
+    addMapListener(
+        object : MapListener {
+          override fun onScroll(event: ScrollEvent?): Boolean {
+            hikingRoutesViewModel.setArea(mapView.boundingBox)
+            return true
+          }
 
-      override fun onZoom(event: ZoomEvent?): Boolean {
-        hikingRoutesViewModel.setArea(mapView.boundingBox)
-        return true
-      }
-    })
+          override fun onZoom(event: ZoomEvent?): Boolean {
+            hikingRoutesViewModel.setArea(mapView.boundingBox)
+            return true
+          }
+        })
   }
 
   Box(modifier = Modifier.fillMaxSize()) {
-    AndroidView(
-      factory = { mapView },
-      modifier = Modifier.fillMaxSize()
-    )
+    AndroidView(factory = { mapView }, modifier = Modifier.fillMaxSize())
 
     IconButton(
-      onClick = {
-        // TODO : Adapt the map screen to navigation
-        Toast.makeText(context, "Menu not implemented yet", Toast.LENGTH_SHORT).show()
-      },
-      modifier = Modifier
-        .padding(16.dp)
-        .align(Alignment.TopStart)
-        // Clip needs to be before background
-        .clip(RoundedCornerShape(8.dp))
-        .background(MapMenuButtonBackground)
-    ) {
-      Icon(
-        Icons.Default.Menu,
-        contentDescription = context.getString(R.string.map_screen_menu_button_content_description),
-        tint = MapMenuButtonForeground
-      )
-    }
+        onClick = {
+          // TODO : Adapt the map screen to navigation
+          Toast.makeText(context, "Menu not implemented yet", Toast.LENGTH_SHORT).show()
+        },
+        modifier =
+            Modifier.padding(16.dp)
+                .align(Alignment.TopStart)
+                // Clip needs to be before background
+                .clip(RoundedCornerShape(8.dp))
+                .background(MapMenuButtonBackground)) {
+          Icon(
+              Icons.Default.Menu,
+              contentDescription =
+                  context.getString(R.string.map_screen_menu_button_content_description),
+              tint = MapMenuButtonForeground)
+        }
 
     CollapsibleHikesList(hikingRoutesViewModel)
   }
 
   // Initialize the list of hiking routes once when the map is loaded
   // Leave subsequent updates to the map listener
-  LaunchedEffect(Unit) {
-    hikingRoutesViewModel.setArea(mapView.boundingBox)
-  }
+  LaunchedEffect(Unit) { hikingRoutesViewModel.setArea(mapView.boundingBox) }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -139,146 +138,119 @@ fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel) {
   val context = LocalContext.current
 
   BottomSheetScaffold(
-    scaffoldState = scaffoldState,
-    sheetContainerColor = MaterialTheme.colorScheme.surface,
-    sheetContent = {
-
-      Column(modifier = Modifier
-        .fillMaxSize()
-      ) {
-        LazyColumn(
-          modifier = Modifier
-            .fillMaxSize()
-        ) {
-          if (routes.value.isEmpty()) {
-            item {
-              // Use a box to center the Text composable of the empty list message
-              Box(
-                modifier = Modifier
-                  .fillMaxWidth(),
-                contentAlignment = Alignment.Center
-              ) {
-                Text(
-                  text = context.getString(R.string.map_screen_empty_hikes_list_message),
-                  style = MaterialTheme.typography.bodyLarge,
-                  // Align the text within the Text composable to the center
-                  textAlign = TextAlign.Center
-                )
+      scaffoldState = scaffoldState,
+      sheetContainerColor = MaterialTheme.colorScheme.surface,
+      sheetContent = {
+        Column(modifier = Modifier.fillMaxSize()) {
+          LazyColumn(modifier = Modifier.fillMaxSize()) {
+            if (routes.value.isEmpty()) {
+              item {
+                // Use a box to center the Text composable of the empty list message
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                  Text(
+                      text = context.getString(R.string.map_screen_empty_hikes_list_message),
+                      style = MaterialTheme.typography.bodyLarge,
+                      // Align the text within the Text composable to the center
+                      textAlign = TextAlign.Center)
+                }
+              }
+            } else {
+              items(routes.value.size) { index: Int ->
+                HikingRouteItem(
+                    title = routes.value[index],
+                    altitudeDifference = 1000,
+                    isSuitable = index % 2 == 0,
+                    onClick = {
+                      // TODO : Navigate to the details of the selected hiking route
+                      Toast.makeText(
+                              context, "Hike details not implemented yet", Toast.LENGTH_SHORT)
+                          .show()
+                    })
               }
             }
           }
-          else {
-            items(routes.value.size) { index: Int ->
-              HikingRouteItem(
-                title = routes.value[index],
-                altitudeDifference = 1000,
-                isSuitable = index % 2 == 0,
-                onClick = {
-                  // TODO : Navigate to the details of the selected hiking route
-                  Toast.makeText(context, "Hike details not implemented yet", Toast.LENGTH_SHORT).show()
-                }
-              )
-            }
-          }
         }
-      }
-    },
-    sheetPeekHeight = 400.dp
-  ) { }
+      },
+      sheetPeekHeight = 400.dp) {}
 }
 
 @Composable
 fun HikingRouteItem(
-  title: String,
-  altitudeDifference: Int,
-  isSuitable: Boolean,
-  onClick: () -> Unit,
-  modifier: Modifier = Modifier
+    title: String,
+    altitudeDifference: Int,
+    isSuitable: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
   Row(
-    modifier = modifier
-      .fillMaxWidth()
-      .clickable(onClick = onClick)
-      .padding(16.dp, 8.dp)
-      .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp)),
-    verticalAlignment = Alignment.CenterVertically
-  ) {
-    Column(
-      modifier = Modifier.weight(1f)
-    ) {
-      Text(
-        text = title,
-        style = MaterialTheme.typography.titleLarge,
-        fontWeight = FontWeight.Bold
-      )
-      Spacer(modifier = Modifier.height(8.dp))
-
-      Row (
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-          .fillMaxWidth()
-          .height(IntrinsicSize.Min)
-      ) {
-        Box(
-          modifier = Modifier
-            .weight(1f)
-            .fillMaxHeight()
-            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), RoundedCornerShape(4.dp))
-        )
-
-        Spacer(modifier = Modifier.width(8.dp))
-
-        Column {
+      modifier =
+          modifier
+              .fillMaxWidth()
+              .clickable(onClick = onClick)
+              .padding(16.dp, 8.dp)
+              .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp)),
+      verticalAlignment = Alignment.CenterVertically) {
+        Column(modifier = Modifier.weight(1f)) {
           Text(
-            text = "Altitude difference",
-            style = MaterialTheme.typography.bodySmall
-          )
-          Text(
-            text = "${altitudeDifference}m",
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.Bold
-          )
+              text = title,
+              style = MaterialTheme.typography.titleLarge,
+              fontWeight = FontWeight.Bold)
+          Spacer(modifier = Modifier.height(8.dp))
+
+          Row(
+              verticalAlignment = Alignment.CenterVertically,
+              modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+                Box(
+                    modifier =
+                        Modifier.weight(1f)
+                            .fillMaxHeight()
+                            .background(
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                RoundedCornerShape(4.dp)))
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Column {
+                  Text(text = "Altitude difference", style = MaterialTheme.typography.bodySmall)
+                  Text(
+                      text = "${altitudeDifference}m",
+                      style = MaterialTheme.typography.bodyLarge,
+                      fontWeight = FontWeight.Bold)
+                }
+              }
+
+          Spacer(modifier = Modifier.height(4.dp))
+
+          Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = if (isSuitable) Icons.Default.Check else Icons.Default.Warning,
+                // The icon is only decorative, the following message is enough for accessibility
+                contentDescription = null,
+                // TODO : Replace suitable and challenging icon colors with theme colors
+                tint = if (isSuitable) Color(0xFF4CAF50) else Color(0xFFFFC107),
+                modifier = Modifier.size(16.dp))
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text =
+                    if (isSuitable)
+                        LocalContext.current.getString(R.string.map_screen_suitable_hike_label)
+                    else LocalContext.current.getString(R.string.map_screen_challenging_hike_label),
+                style = MaterialTheme.typography.bodySmall,
+                // TODO : Replace suitable and challenging icon colors with theme colors
+                color = if (isSuitable) Color(0xFF4CAF50) else Color(0xFFFFC107))
+          }
         }
-      }
 
-      Spacer(modifier = Modifier.height(4.dp))
-
-      Row(
-        verticalAlignment = Alignment.CenterVertically
-      ) {
-        Icon(
-          imageVector = if (isSuitable) Icons.Default.Check else Icons.Default.Warning,
-          // The icon is only decorative, the following message is enough for accessibility
-          contentDescription = null,
-          // TODO : Replace suitable and challenging icon colors with theme colors
-          tint = if (isSuitable) Color(0xFF4CAF50) else Color(0xFFFFC107),
-          modifier = Modifier.size(16.dp)
-        )
         Spacer(modifier = Modifier.width(4.dp))
-        Text(
-          text =
-            if (isSuitable)
-              LocalContext.current.getString(R.string.map_screen_suitable_hike_label)
-            else
-              LocalContext.current.getString(R.string.map_screen_challenging_hike_label),
-          style = MaterialTheme.typography.bodySmall,
-          // TODO : Replace suitable and challenging icon colors with theme colors
-          color = if (isSuitable) Color(0xFF4CAF50) else Color(0xFFFFC107)
-        )
+
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription =
+                LocalContext.current.getString(
+                    R.string.map_screen_hike_details_content_description),
+            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+            modifier = Modifier.size(24.dp))
       }
-    }
-
-    Spacer(modifier = Modifier.width(4.dp))
-
-    Icon(
-      imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-      contentDescription = LocalContext.current.getString(
-        R.string.map_screen_hike_details_content_description
-      ),
-      tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-      modifier = Modifier.size(24.dp)
-    )
-  }
 }
 
 @Composable
