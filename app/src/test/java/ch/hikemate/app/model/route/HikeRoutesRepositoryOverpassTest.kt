@@ -26,7 +26,7 @@ import org.robolectric.RobolectricTestRunner
 class HikeRoutesRepositoryOverpassTest {
   @Mock private lateinit var mockClient: OkHttpClient
   private lateinit var hikingRouteProviderRepositoryOverpass: HikeRoutesRepositoryOverpass
-  private val bounds = Bounds(46.52291, 6.55989, 46.51402, 6.58243)
+  private val bounds = Bounds(46.51402, 6.55989, 46.52291, 6.58243)
 
   private val emptyResponse =
       Response.Builder()
