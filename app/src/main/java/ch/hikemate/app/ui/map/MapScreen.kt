@@ -2,6 +2,7 @@ package ch.hikemate.app.ui.map
 
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -144,7 +145,6 @@ fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel) {
 
       Column(modifier = Modifier
         .fillMaxSize()
-        .padding(16.dp)
       ) {
         LazyColumn(
           modifier = Modifier
@@ -172,10 +172,12 @@ fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel) {
               HikingRouteItem(
                 title = routes.value[index],
                 altitudeDifference = 1000,
-                isSuitable = index % 2 == 0
+                isSuitable = index % 2 == 0,
+                onClick = {
+                  // TODO : Navigate to the details of the selected hiking route
+                  Toast.makeText(context, "Success", Toast.LENGTH_SHORT).show()
+                }
               )
-
-              Spacer(modifier = Modifier.height(12.dp))
             }
           }
         }
@@ -190,11 +192,15 @@ fun HikingRouteItem(
   title: String,
   altitudeDifference: Int,
   isSuitable: Boolean,
+  onClick: () -> Unit,
   modifier: Modifier = Modifier
 ) {
   Row(
     modifier = modifier
-      .fillMaxWidth(),
+      .fillMaxWidth()
+      .clickable(onClick = onClick)
+      .padding(16.dp, 8.dp)
+      .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp)),
     verticalAlignment = Alignment.CenterVertically
   ) {
     Column(
