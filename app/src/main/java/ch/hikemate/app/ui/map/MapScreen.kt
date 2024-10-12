@@ -110,6 +110,7 @@ fun MapScreen(hikingRoutesViewModel: ListOfHikeRoutesViewModel) {
 fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel) {
   val scaffoldState = rememberBottomSheetScaffoldState()
   val routes = hikingRoutesViewModel.hikeRoutes.collectAsState()
+  val context = LocalContext.current
 
   BottomSheetScaffold(
     scaffoldState = scaffoldState,
@@ -119,6 +120,7 @@ fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel) {
         .fillMaxSize()
         .padding(16.dp)
       ) {
+        // TODO : Make the title look like a title
         Text("Hikes")
         Spacer(modifier = Modifier.height(10.dp))
 
@@ -126,8 +128,17 @@ fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel) {
           modifier = Modifier
             .fillMaxSize()
         ) {
-          items(routes.value.size) { index: Int ->
-            Text(routes.value[index])
+          if (routes.value.isEmpty()) {
+            item {
+              // TODO : Center the empty list message
+              Text(context.getString(R.string.map_screen_empty_hikes_list_message))
+            }
+          }
+          else {
+            items(routes.value.size) { index: Int ->
+              // TODO : Make a component for a route item
+              Text(routes.value[index])
+            }
           }
         }
       }
