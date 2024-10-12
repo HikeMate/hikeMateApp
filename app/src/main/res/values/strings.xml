@@ -6,8 +6,7 @@
     <!-- Map Screen -->
     <string name="map_screen_menu_button_content_description">Menu</string>
     <string name="map_screen_empty_hikes_list_message">
-        No hikes found in the displayed area.\n\n
-        Try zooming out or moving the map to see more hikes.
+        No hikes found in the displayed area.\n\nTry zooming out or moving the map to see more hikes.
     </string>
     <string name="map_screen_suitable_hike_label">
         This hike is suitable for your level

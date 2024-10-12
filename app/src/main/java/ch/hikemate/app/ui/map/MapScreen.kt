@@ -39,6 +39,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -147,8 +148,19 @@ fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel) {
         ) {
           if (routes.value.isEmpty()) {
             item {
-              // TODO : Center the empty list message
-              Text(context.getString(R.string.map_screen_empty_hikes_list_message))
+              // Use a box to center the Text composable of the empty list message
+              Box(
+                modifier = Modifier
+                  .fillMaxWidth(),
+                contentAlignment = Alignment.Center
+              ) {
+                Text(
+                  text = context.getString(R.string.map_screen_empty_hikes_list_message),
+                  style = MaterialTheme.typography.bodyLarge,
+                  // Align the text within the Text composable to the center
+                  textAlign = TextAlign.Center
+                )
+              }
             }
           }
           else {
