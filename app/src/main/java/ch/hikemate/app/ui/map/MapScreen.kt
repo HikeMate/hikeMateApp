@@ -105,7 +105,7 @@ fun MapScreen(hikingRoutesViewModel: ListOfHikeRoutesViewModel = viewModel(facto
     IconButton(
       onClick = {
         // TODO : Adapt the map screen to navigation
-        Toast.makeText(context, "Success", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, "Menu not implemented yet", Toast.LENGTH_SHORT).show()
       },
       modifier = Modifier
         .padding(16.dp)
@@ -175,7 +175,7 @@ fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel) {
                 isSuitable = index % 2 == 0,
                 onClick = {
                   // TODO : Navigate to the details of the selected hiking route
-                  Toast.makeText(context, "Success", Toast.LENGTH_SHORT).show()
+                  Toast.makeText(context, "Hike details not implemented yet", Toast.LENGTH_SHORT).show()
                 }
               )
             }
