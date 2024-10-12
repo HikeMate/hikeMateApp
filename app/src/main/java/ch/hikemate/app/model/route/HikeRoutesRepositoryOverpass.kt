@@ -5,6 +5,11 @@ import java.io.Reader
 import okhttp3.OkHttpClient
 import okhttp3.Request
 
+/** The URL of the Overpass API interpreter. */
+private const val OVERPASS_API_URL: String = "https://overpass-api.de/api/interpreter"
+/** The type of format to request from the Overpass API, written in OverpassQL. */
+private const val JSON_OVERPASS_FORMAT_TAG = "[out:json]"
+
 /**
  * Overpass implementation of the hiking route provider repository.
  *
@@ -13,11 +18,6 @@ import okhttp3.Request
  * @see <a href="https://dev.overpass-api.de/overpass-doc/">Overpass API documentation</a>
  */
 class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesRepository {
-
-  /** The URL of the Overpass API interpreter. */
-  private val OVERPASS_API_URL: String = "https://overpass-api.de/api/interpreter"
-  /** The type of format to request from the Overpass API, written in OverpassQL. */
-  private val JSON_OVERPASS_FORMAT_TAG = "[out:json]"
 
   override fun getRoutes(
       bounds: Bounds,
@@ -58,7 +58,7 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
    * @param onSuccess The callback to be called when the routes are successfully fetched.
    * @param onFailure The callback to be called when the routes could not be fetched.
    */
-  inner class OverpassResponseHandler(
+  private inner class OverpassResponseHandler(
       val onSuccess: (List<HikeRoute>) -> Unit,
       val onFailure: (Exception) -> Unit
   ) : okhttp3.Callback {
