@@ -141,10 +141,6 @@ fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel) {
         .fillMaxSize()
         .padding(16.dp)
       ) {
-        // TODO : Make the title look like a title
-        Text("Hikes")
-        Spacer(modifier = Modifier.height(10.dp))
-
         LazyColumn(
           modifier = Modifier
             .fillMaxSize()
