@@ -2,6 +2,11 @@ package ch.hikemate.app.model.route
 
 /** A class representing a bounding box */
 data class Bounds(val minLat: Double, val minLon: Double, val maxLat: Double, val maxLon: Double) {
+
+  init {
+    require(!(minLat > maxLat || minLon > maxLon)) { "Invalid bounds" }
+  }
+
   class Builder {
     private var minLat = 0.0
     private var minLon = 0.0
