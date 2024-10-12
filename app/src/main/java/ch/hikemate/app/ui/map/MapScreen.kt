@@ -1,6 +1,5 @@
 package ch.hikemate.app.ui.map
 
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -84,13 +83,11 @@ fun MapScreen(hikingRoutesViewModel: ListOfHikeRoutesViewModel) {
     // TODO : Those updates could be quite frequent, have a cooldown to avoid sending a request each time?
     addMapListener(object : MapListener {
       override fun onScroll(event: ScrollEvent?): Boolean {
-        Log.d("MapScreen", "onScroll")
         hikingRoutesViewModel.setArea(mapView.boundingBox)
         return true
       }
 
       override fun onZoom(event: ZoomEvent?): Boolean {
-        Log.d("MapScreen", "onZoom")
         hikingRoutesViewModel.setArea(mapView.boundingBox)
         return true
       }
