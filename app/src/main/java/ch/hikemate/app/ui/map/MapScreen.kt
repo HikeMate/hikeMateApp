@@ -75,9 +75,8 @@ fun MapScreen(hikingRoutesViewModel: ListOfHikeRoutesViewModel) {
   }
 
   mapView.apply {
-    // TODO : Define a level of zoom to start at. User settings is too much for this sprint but could be a good idea in the long run.
     controller.setZoom(15.0)
-    // TODO : Define where the map should be centered. User location might be a bit too much for this sprint though.
+    // TODO : Set the center to the user's location
     controller.setCenter(GeoPoint(46.5, 6.6))
     // Enable touch-controls such as pinch to zoom
     setMultiTouchControls(true)
