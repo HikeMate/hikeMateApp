@@ -42,6 +42,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.hikemate.app.R
 import ch.hikemate.app.model.map.ListOfHikeRoutesViewModel
 import ch.hikemate.app.ui.theme.MapMenuButtonBackground
@@ -54,7 +55,7 @@ import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 
 @Composable
-fun MapScreen(hikingRoutesViewModel: ListOfHikeRoutesViewModel) {
+fun MapScreen(hikingRoutesViewModel: ListOfHikeRoutesViewModel = viewModel(factory = ListOfHikeRoutesViewModel.Factory)) {
   val context = LocalContext.current
   // Avoid re-creating the MapView on every recomposition
   val mapView = remember { MapView(context) }
@@ -277,7 +278,7 @@ fun HikingRouteItem(
 @Composable
 @Preview
 fun BottomListPreview() {
-  val viewModel = ListOfHikeRoutesViewModel.Factory.create(ListOfHikeRoutesViewModel::class.java)
+  val viewModel: ListOfHikeRoutesViewModel = viewModel(factory = ListOfHikeRoutesViewModel.Factory)
   viewModel.getRoutes()
   CollapsibleHikesList(viewModel)
 }
