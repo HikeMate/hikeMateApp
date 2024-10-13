@@ -38,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -54,6 +55,13 @@ import org.osmdroid.events.ScrollEvent
 import org.osmdroid.events.ZoomEvent
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
+
+object MapScreen {
+  const val TEST_TAG_MAP = "map"
+  const val TEST_TAG_MENU_BUTTON = "menuButton"
+  const val TEST_TAG_HIKES_LIST = "hikesList"
+  const val TEST_TAG_HIKE_ITEM = "hikeItem"
+}
 
 @Composable
 fun MapScreen(
@@ -102,7 +110,12 @@ fun MapScreen(
   }
 
   Box(modifier = Modifier.fillMaxSize()) {
-    AndroidView(factory = { mapView }, modifier = Modifier.fillMaxSize())
+    AndroidView(
+      factory = { mapView },
+      modifier = Modifier
+        .fillMaxSize()
+        .testTag(MapScreen.TEST_TAG_MAP)
+    )
 
     IconButton(
         onClick = {
@@ -114,7 +127,9 @@ fun MapScreen(
                 .align(Alignment.TopStart)
                 // Clip needs to be before background
                 .clip(RoundedCornerShape(8.dp))
-                .background(MapMenuButtonBackground)) {
+                .background(MapMenuButtonBackground)
+              .testTag(MapScreen.TEST_TAG_MENU_BUTTON)
+    ) {
           Icon(
               Icons.Default.Menu,
               contentDescription =
@@ -141,7 +156,11 @@ fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel) {
       scaffoldState = scaffoldState,
       sheetContainerColor = MaterialTheme.colorScheme.surface,
       sheetContent = {
-        Column(modifier = Modifier.fillMaxSize()) {
+        Column(
+          modifier = Modifier
+            .fillMaxSize()
+            .testTag(MapScreen.TEST_TAG_HIKES_LIST)
+        ) {
           LazyColumn(modifier = Modifier.fillMaxSize()) {
             if (routes.value.isEmpty()) {
               item {
@@ -188,7 +207,8 @@ fun HikingRouteItem(
               .fillMaxWidth()
               .clickable(onClick = onClick)
               .padding(16.dp, 8.dp)
-              .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp)),
+              .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp))
+            .testTag(MapScreen.TEST_TAG_HIKE_ITEM),
       verticalAlignment = Alignment.CenterVertically) {
         Column(modifier = Modifier.weight(1f)) {
           Text(
