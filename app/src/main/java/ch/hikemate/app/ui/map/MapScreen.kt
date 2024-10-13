@@ -111,11 +111,7 @@ fun MapScreen(
 
   Box(modifier = Modifier.fillMaxSize()) {
     AndroidView(
-      factory = { mapView },
-      modifier = Modifier
-        .fillMaxSize()
-        .testTag(MapScreen.TEST_TAG_MAP)
-    )
+        factory = { mapView }, modifier = Modifier.fillMaxSize().testTag(MapScreen.TEST_TAG_MAP))
 
     IconButton(
         onClick = {
@@ -128,8 +124,7 @@ fun MapScreen(
                 // Clip needs to be before background
                 .clip(RoundedCornerShape(8.dp))
                 .background(MapMenuButtonBackground)
-              .testTag(MapScreen.TEST_TAG_MENU_BUTTON)
-    ) {
+                .testTag(MapScreen.TEST_TAG_MENU_BUTTON)) {
           Icon(
               Icons.Default.Menu,
               contentDescription =
@@ -156,11 +151,7 @@ fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel) {
       scaffoldState = scaffoldState,
       sheetContainerColor = MaterialTheme.colorScheme.surface,
       sheetContent = {
-        Column(
-          modifier = Modifier
-            .fillMaxSize()
-            .testTag(MapScreen.TEST_TAG_HIKES_LIST)
-        ) {
+        Column(modifier = Modifier.fillMaxSize().testTag(MapScreen.TEST_TAG_HIKES_LIST)) {
           LazyColumn(modifier = Modifier.fillMaxSize()) {
             if (routes.value.isEmpty()) {
               item {
@@ -208,7 +199,7 @@ fun HikingRouteItem(
               .clickable(onClick = onClick)
               .padding(16.dp, 8.dp)
               .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp))
-            .testTag(MapScreen.TEST_TAG_HIKE_ITEM),
+              .testTag(MapScreen.TEST_TAG_HIKE_ITEM),
       verticalAlignment = Alignment.CenterVertically) {
         Column(modifier = Modifier.weight(1f)) {
           Text(
