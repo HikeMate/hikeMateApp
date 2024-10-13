@@ -47,8 +47,6 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.hikemate.app.R
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
-import ch.hikemate.app.ui.theme.MapMenuButtonBackground
-import ch.hikemate.app.ui.theme.MapMenuButtonForeground
 import org.osmdroid.config.Configuration
 import org.osmdroid.events.MapListener
 import org.osmdroid.events.ScrollEvent
@@ -123,13 +121,13 @@ fun MapScreen(
                 .align(Alignment.TopStart)
                 // Clip needs to be before background
                 .clip(RoundedCornerShape(8.dp))
-                .background(MapMenuButtonBackground)
+                .background(MaterialTheme.colorScheme.surface)
                 .testTag(MapScreen.TEST_TAG_MENU_BUTTON)) {
           Icon(
               Icons.Default.Menu,
               contentDescription =
                   context.getString(R.string.map_screen_menu_button_content_description),
-              tint = MapMenuButtonForeground)
+              tint = MaterialTheme.colorScheme.onSurface)
         }
 
     CollapsibleHikesList(hikingRoutesViewModel)
