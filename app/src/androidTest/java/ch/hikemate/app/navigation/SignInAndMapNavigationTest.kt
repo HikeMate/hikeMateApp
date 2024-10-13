@@ -33,7 +33,7 @@ class SignInAndMapNavigationTest {
     composeTestRule.onNodeWithTag(Screen.AUTH).assertIsDisplayed()
 
     composeTestRule.onNodeWithTag("loginButton").performClick()
-    composeTestRule.onNodeWithTag(Screen.PLANNED_HIKES).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(Screen.MAP).assertIsDisplayed()
   }
 
   @Test
@@ -42,17 +42,17 @@ class SignInAndMapNavigationTest {
     composeTestRule.onNodeWithTag(Screen.AUTH).assertIsDisplayed()
 
     composeTestRule.onNodeWithTag("loginButton").performClick()
-    composeTestRule.onNodeWithTag(Screen.PLANNED_HIKES).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(Screen.MAP).assertIsDisplayed()
 
     // Open the sidebar
     composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
 
     // Simulate navigation to Map Screen
-    composeTestRule.onNodeWithTag(TEST_TAG_DRAWER_ITEM_PREFIX + Route.MAP).performClick()
+    composeTestRule.onNodeWithTag(TEST_TAG_DRAWER_ITEM_PREFIX + Route.PLANNED_HIKES).performClick()
 
     // Assert that the Map screen is displayed
     composeTestRule
-        .onNodeWithTag(Screen.MAP) // Example accessibility description for the Map screen
+        .onNodeWithTag(Screen.PLANNED_HIKES) // Example accessibility description for the Map screen
         .assertIsDisplayed()
   }
 }
