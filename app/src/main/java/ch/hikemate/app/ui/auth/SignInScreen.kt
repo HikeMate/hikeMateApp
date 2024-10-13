@@ -87,7 +87,7 @@ fun SignInScreen(navigationActions: NavigationActions) {
 
             SignInWithGoogleButton {
               // TODO: After implementing the sign in with Google, navigate to the Overview screen
-              navigationActions.navigateTo(Screen.PLANNED_HIKES)
+              navigationActions.navigateTo(Screen.MAP)
             }
           }
         }
