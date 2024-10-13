@@ -52,12 +52,12 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
 
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "11"
     }
 
     packaging {
@@ -120,6 +120,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(platform(libs.compose.bom))
     implementation(libs.firebase.firestore.ktx)
+    implementation(libs.firebase.auth.ktx)
     testImplementation(libs.junit)
     globalTestImplementation(libs.androidx.junit)
     globalTestImplementation(libs.androidx.espresso.core)
@@ -160,6 +161,14 @@ dependencies {
     // Adds a remote binary dependency only for local tests.
     testImplementation(libs.junit)
 
+    // ----------        MockK          ------------
+    testImplementation(libs.mockk.v1133)
+    androidTestImplementation(libs.mockk.android.v1133)
+
+    // ----------       Mockito         ------------
+    androidTestImplementation(libs.mockito.android.v540)
+
+    // ----------        OkHttp          ------------
 
     androidTestImplementation(libs.androidx.espresso.core)
 
