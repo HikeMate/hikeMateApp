@@ -1,4 +1,4 @@
-package ch.hikemate.app.model.map
+package ch.hikemate.app.model.route
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
