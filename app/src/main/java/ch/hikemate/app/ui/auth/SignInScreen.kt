@@ -42,7 +42,7 @@ import ch.hikemate.app.ui.navigation.Screen
 @Composable
 fun SignInScreen(navigationActions: NavigationActions) {
   Scaffold(
-      modifier = Modifier.fillMaxSize(),
+      modifier = Modifier.fillMaxSize().testTag(Screen.AUTH),
       content = { padding ->
         Box(
             modifier = Modifier.fillMaxSize(),

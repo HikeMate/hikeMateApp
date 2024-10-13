@@ -4,37 +4,55 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
-import androidx.navigation.NavHostController
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.hikemate.app.HikeMateApp
-import ch.hikemate.app.ui.navigation.NavigationActions
-import ch.hikemate.app.ui.navigation.TopLevelDestinations
-import org.junit.Before
+import ch.hikemate.app.ui.navigation.Route
+import ch.hikemate.app.ui.navigation.Screen
+import ch.hikemate.app.ui.navigation.TEST_TAG_DRAWER_ITEM_PREFIX
+import ch.hikemate.app.ui.navigation.TEST_TAG_SIDEBAR_BUTTON
 import org.junit.Rule
 import org.junit.Test
-import org.mockito.ArgumentMatchers.eq
-import org.mockito.Mockito.mock
-import org.mockito.Mockito.verify
-import org.mockito.MockitoAnnotations
+import org.junit.runner.RunWith
 
+@RunWith(AndroidJUnit4::class)
 class SignInAndMapNavigationTest {
+  // Set up the Compose test rule
   @get:Rule val composeTestRule = createComposeRule()
 
-  private lateinit var navHostController: NavHostController
-  private lateinit var navigationActions: NavigationActions
+  @Test
+  fun testInitialScreenIsAuthScreen() {
+    composeTestRule.setContent { HikeMateApp() }
 
-  @Before
-  fun setUp() {
-    MockitoAnnotations.openMocks(this)
-    navHostController = mock(NavHostController::class.java)
-    navigationActions = NavigationActions(navHostController)
+    composeTestRule.onNodeWithTag(Screen.AUTH).assertIsDisplayed()
   }
 
   @Test
-  fun signInNavigates_toPlannedHikes() {
+  fun testNavigationToPlannedHikesScreen() {
     composeTestRule.setContent { HikeMateApp() }
-    composeTestRule.onNodeWithTag("loginButton").assertIsDisplayed()
-    composeTestRule.onNodeWithTag("loginButton").performClick()
 
-    verify(navigationActions).navigateTo(eq(TopLevelDestinations.PLANNED_HIKES))
+    composeTestRule.onNodeWithTag(Screen.AUTH).assertIsDisplayed()
+
+    composeTestRule.onNodeWithTag("loginButton").performClick()
+    composeTestRule.onNodeWithTag(Screen.PLANNED_HIKES).assertIsDisplayed()
+  }
+
+  @Test
+  fun testNavigationToMapScreen() {
+    composeTestRule.setContent { HikeMateApp() }
+    composeTestRule.onNodeWithTag(Screen.AUTH).assertIsDisplayed()
+
+    composeTestRule.onNodeWithTag("loginButton").performClick()
+    composeTestRule.onNodeWithTag(Screen.PLANNED_HIKES).assertIsDisplayed()
+
+    // Open the sidebar
+    composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
+
+    // Simulate navigation to Map Screen
+    composeTestRule.onNodeWithTag(TEST_TAG_DRAWER_ITEM_PREFIX + Route.MAP).performClick()
+
+    // Assert that the Map screen is displayed
+    composeTestRule
+        .onNodeWithTag(Screen.MAP) // Example accessibility description for the Map screen
+        .assertIsDisplayed()
   }
 }

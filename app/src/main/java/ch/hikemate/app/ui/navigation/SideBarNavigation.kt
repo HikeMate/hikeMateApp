@@ -14,6 +14,7 @@ import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsPropertyKey
@@ -50,15 +51,18 @@ fun SideBarNavigation(
       drawerState = drawerState,
       drawerContent = {
         ModalDrawerSheet(modifier = Modifier.width(180.dp).testTag(TEST_TAG_DRAWER_CONTENT)) {
-          Row {
-            Button(
-                onClick = { scope.launch { drawerState.close() } },
-                modifier = Modifier.testTag(TEST_TAG_DRAWER_CLOSE_BUTTON),
-            ) {
-              Icon(Icons.Filled.Close, contentDescription = "Close")
-            }
-            AppIcon(size = 100.dp)
-          }
+          Row(
+              verticalAlignment = Alignment.CenterVertically,
+              horizontalArrangement = Arrangement.SpaceBetween,
+              modifier = Modifier.fillMaxWidth()) {
+                Button(
+                    onClick = { scope.launch { drawerState.close() } },
+                    modifier = Modifier.testTag(TEST_TAG_DRAWER_CLOSE_BUTTON),
+                ) {
+                  Icon(Icons.Filled.Close, contentDescription = "Close")
+                }
+                AppIcon(size = 50.dp)
+              }
           HorizontalDivider()
           tabList.forEach { tab ->
             val isSelected = tab.route == selectedItem
