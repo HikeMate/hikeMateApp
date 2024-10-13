@@ -45,7 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.hikemate.app.R
-import ch.hikemate.app.model.map.ListOfHikeRoutesViewModel
+import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
 import ch.hikemate.app.ui.theme.MapMenuButtonBackground
 import ch.hikemate.app.ui.theme.MapMenuButtonForeground
 import org.osmdroid.config.Configuration

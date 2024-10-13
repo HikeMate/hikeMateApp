@@ -40,6 +40,10 @@ navigationRuntimeKtx = "2.8.2"
 navigationCommonKtx = "2.8.2"
 navigationTesting = "2.8.2"
 
+# OSM Librairies
+osmdroid = "6.1.20"
+okhttp = "4.12.0"
+
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
@@ -73,7 +77,7 @@ mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "
 mockito-mockito-core-v3124 = { module = "org.mockito:mockito-core", version.ref = "mockitoMockitoCoreVersion" }
 mockito-mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
-osmdroid = { module = "org.osmdroid:osmdroid-android", version = "6.1.14" }
+osmdroid = { module = "org.osmdroid:osmdroid-android", version.ref = "osmdroid" }
 
 # Firebase Libraries
 firebase-auth = { module = "com.google.firebase:firebase-auth", version.ref = "firebaseAuth" }
@@ -89,6 +93,7 @@ ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4" }
 ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
 androidx-navigation-testing = { group = "androidx.navigation", name = "navigation-testing", version.ref = "navigationTesting" }
 
+okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
