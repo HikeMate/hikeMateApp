@@ -162,10 +162,10 @@ dependencies {
     implementation(libs.google.firebase.auth)
     implementation(libs.play.services.auth)
 
-    // Adds a remote binary dependency only for local tests.
+    // ---------- OpenStreetMap ------------
+    implementation(libs.osmdroid)
 
-    // OSM
-    implementation(libs.osmdroid.android.v6110)
+    // Adds a remote binary dependency only for local tests.
 
     testImplementation (libs.mockito.inline)
     testImplementation (libs.mockito.android)
@@ -173,7 +173,6 @@ dependencies {
     testImplementation (libs.mockito.kotlin)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation (libs.ui.test.junit4)
-    androidTestImplementation (libs.mockito.mockito.kotlin)
     debugImplementation (libs.ui.test.manifest)
     
     // JUnit

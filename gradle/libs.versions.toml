@@ -102,7 +102,6 @@ mockito-inline = { module = "org.mockito:mockito-inline", version.ref = "mockito
 mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockitoKotlin" }
 mockito-mockito-core-v3124 = { module = "org.mockito:mockito-core", version.ref = "mockitoMockitoCoreVersion" }
 mockito-mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin" }
-mockito-kotlin-v320 = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockitoKotlinVersion" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 mockk-agent = { module = "io.mockk:mockk-agent", version.ref = "mockkAgent" }
 mockk-android = { module = "io.mockk:mockk-android" }
@@ -111,7 +110,6 @@ mockk-android-v1132 = { module = "io.mockk:mockk-android", version.ref = "mockkM
 mockk-mockk-android = { module = "io.mockk:mockk-android", version.ref = "mockkAndroid" }
 mockk-v1130 = { module = "io.mockk:mockk", version.ref = "mockkVersion" }
 mockk-v1132 = { module = "io.mockk:mockk", version.ref = "mockkMockk" }
-osmdroid-android-v6110 = { module = "org.osmdroid:osmdroid-android", version.ref = "osmdroidAndroid" }
 play-services-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "playServicesAuth" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 osmdroid = { module = "org.osmdroid:osmdroid-android", version.ref = "osmdroid" }
