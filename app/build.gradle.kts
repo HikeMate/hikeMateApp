@@ -123,6 +123,9 @@ dependencies {
     implementation(platform(libs.compose.bom))
     implementation(libs.firebase.firestore.ktx)
     implementation(libs.androidx.espresso.intents)
+    implementation(libs.androidx.navigation.runtime.ktx)
+    implementation(libs.androidx.navigation.common.ktx)
+    implementation(libs.androidx.navigation.testing)
     testImplementation(libs.junit)
     globalTestImplementation(libs.androidx.junit)
     globalTestImplementation(libs.androidx.espresso.core)
@@ -160,16 +163,41 @@ dependencies {
     implementation(libs.play.services.auth)
 
     // Adds a remote binary dependency only for local tests.
-    testImplementation(libs.junit)
 
+    // OSM
+    implementation(libs.osmdroid.android.v6110)
+
+    testImplementation (libs.mockito.inline)
+    testImplementation (libs.mockito.android)
+    testImplementation (libs.mockito.core)
+    testImplementation (libs.mockito.kotlin)
+    androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation (libs.ui.test.junit4)
+    androidTestImplementation (libs.mockito.mockito.kotlin)
+    debugImplementation (libs.ui.test.manifest)
+    
+    // JUnit
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.junit)
+
+    // AndroidX Test
+    androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
-    // Mockito
-    testImplementation(libs.mockito.core)
-    testImplementation(libs.mockito.kotlin)
-    androidTestImplementation(libs.mockito.android)
-    androidTestImplementation(libs.mockito.kotlin.v320)
+    // Compose UI Testing
+    androidTestImplementation(libs.compose.test.junit)
+    debugImplementation(libs.compose.test.manifest)
 
+    // For both unit and instrumented tests
+    testImplementation(libs.compose.test.junit)
+    testImplementation(libs.compose.test.manifest)
+
+    // Mockito
+    testImplementation(libs.mockito.mockito.core.v3124)
+    testImplementation(libs.kotlin.mockito.kotlin.v320)
+    androidTestImplementation(libs.mockito.android.v3124)
+    androidTestImplementation(libs.mockito.kotlin)
+    
     // MockK
     testImplementation(libs.mockk)
     androidTestImplementation(libs.mockk.android.v11312)
@@ -180,8 +208,11 @@ dependencies {
     implementation(libs.androidx.credentials.play.services.auth.v10)
     implementation(libs.googleid.vlatestversion)
 
-    // OSM
-    implementation(libs.osmdroid.android.v6110)
+    implementation(libs.okhttp)
+
+    // Robolectric (for unit tests that require Android framework)
+    testImplementation(libs.robolectric)
+
 
     // To fix an issue with Firebase and the Protobuf library
     configurations.configureEach {
