@@ -138,6 +138,9 @@ fun DependencyHandlerScope.globalTestImplementation(dep: Any) {
 }
 
 dependencies {
+    val composeBom = platform(libs.compose.bom)
+
+    // Dependencies
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
@@ -148,79 +151,48 @@ dependencies {
     implementation(libs.androidx.navigation.runtime.ktx)
     implementation(libs.androidx.navigation.common.ktx)
     implementation(libs.androidx.navigation.testing)
-    testImplementation(libs.junit)
-    globalTestImplementation(libs.androidx.junit)
-    globalTestImplementation(libs.androidx.espresso.core)
-
-    // ------------- Jetpack Compose ------------------
-    val composeBom = platform(libs.compose.bom)
     implementation(composeBom)
-    globalTestImplementation(composeBom)
-
     implementation(libs.compose.ui)
     implementation(libs.compose.ui.graphics)
-    // Material Design 3
     implementation(libs.compose.material3)
-    // Integration with activities
     implementation(libs.compose.activity)
-    // Integration with ViewModels
     implementation(libs.compose.viewmodel)
-    // Android Studio Preview support
     implementation(libs.compose.preview)
-    debugImplementation(libs.compose.tooling)
-    // UI Tests
-    globalTestImplementation(libs.compose.test.junit)
-    debugImplementation(libs.compose.test.manifest)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.osmdroid)
+    implementation(libs.okhttp)
 
-    // --------- Kaspresso test framework ----------
+    // Global test dependencies
+    globalTestImplementation(libs.androidx.junit)
+    globalTestImplementation(libs.androidx.espresso.core)
+    globalTestImplementation(composeBom)
+    globalTestImplementation(libs.compose.test.junit)
     globalTestImplementation(libs.kaspresso)
     globalTestImplementation(libs.kaspresso.compose)
 
-    // ----------       Robolectric     ------------
-    testImplementation(libs.robolectric)
-
-    // ----------        FireBase       ------------
-    implementation(platform(libs.firebase.bom))
-
-    // ---------- OpenStreetMap ------------
-    implementation(libs.osmdroid)
-
-    // Adds a remote binary dependency only for local tests.
-
-    testImplementation (libs.mockito.inline)
-    testImplementation (libs.mockito.android)
-    testImplementation (libs.mockito.core)
-    testImplementation (libs.mockito.kotlin)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation (libs.ui.test.junit4)
-    androidTestImplementation (libs.mockito.mockito.kotlin)
-    debugImplementation (libs.ui.test.manifest)
-    // JUnit
+    // Test dependencies
     testImplementation(libs.junit)
-    androidTestImplementation(libs.junit)
-
-    // AndroidX Test
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
-
-    // Compose UI Testing
-    androidTestImplementation(libs.compose.test.junit)
-    debugImplementation(libs.compose.test.manifest)
-
-    // For both unit and instrumented tests
+    testImplementation(libs.robolectric)
+    testImplementation(libs.mockito.inline)
+    testImplementation(libs.mockito.android)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.mockito.kotlin)
     testImplementation(libs.compose.test.junit)
     testImplementation(libs.compose.test.manifest)
 
-    // Mockito
-    testImplementation(libs.mockito.mockito.core.v3124)
-    testImplementation(libs.kotlin.mockito.kotlin.v320)
-    androidTestImplementation(libs.mockito.android.v3124)
-    androidTestImplementation(libs.mockito.kotlin)
+    // Android test dependencies
+    androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.ui.test.junit4)
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.compose.test.junit)
 
-    implementation(libs.okhttp)
+    // Debug dependencies
+    debugImplementation(libs.compose.tooling)
+    debugImplementation(libs.compose.test.manifest)
+    debugImplementation(libs.ui.test.manifest)
 
     // Robolectric (for unit tests that require Android framework)
-    testImplementation(libs.robolectric)
     // To fix an issue with Firebase and the Protobuf library
     configurations.configureEach {
         exclude(group = "com.google.protobuf", module = "protobuf-lite")
@@ -238,6 +210,8 @@ tasks.withType<Test> {
 }
 
 tasks.register("jacocoTestReport", JacocoReport::class) {
+    description = "Generates Jacoco test reports"
+    group = "verification"
     mustRunAfter("testDebugUnitTest", "connectedDebugAndroidTest")
 
     reports {
