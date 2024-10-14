@@ -248,7 +248,6 @@ fun HikingRouteItem(
             Text(
                 text = suitableLabelText,
                 style = MaterialTheme.typography.bodySmall,
-                // TODO : Replace suitable and challenging icon colors with theme colors
                 color = suitableLabelColor)
           }
         }
