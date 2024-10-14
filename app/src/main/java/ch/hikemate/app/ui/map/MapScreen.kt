@@ -264,11 +264,3 @@ fun HikingRouteItem(
             modifier = Modifier.size(24.dp))
       }
 }
-
-@Composable
-@Preview
-fun BottomListPreview() {
-  val viewModel: ListOfHikeRoutesViewModel = viewModel(factory = ListOfHikeRoutesViewModel.Factory)
-  viewModel.getRoutes()
-  CollapsibleHikesList(viewModel)
-}
