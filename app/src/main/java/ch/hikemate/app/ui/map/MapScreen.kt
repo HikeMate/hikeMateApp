@@ -190,6 +190,13 @@ fun HikingRouteItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+
+  // TODO : Replace suitable and challenging icon colors with theme colors
+  val suitableLabelColor = if (isSuitable) Color(0xFF4CAF50) else Color(0xFFFFC107)
+  val suitableLabelText =
+      if (isSuitable) LocalContext.current.getString(R.string.map_screen_suitable_hike_label)
+      else LocalContext.current.getString(R.string.map_screen_challenging_hike_label)
+
   Row(
       modifier =
           modifier
@@ -235,18 +242,14 @@ fun HikingRouteItem(
                 imageVector = if (isSuitable) Icons.Default.Check else Icons.Default.Warning,
                 // The icon is only decorative, the following message is enough for accessibility
                 contentDescription = null,
-                // TODO : Replace suitable and challenging icon colors with theme colors
-                tint = if (isSuitable) Color(0xFF4CAF50) else Color(0xFFFFC107),
+                tint = suitableLabelColor,
                 modifier = Modifier.size(16.dp))
             Spacer(modifier = Modifier.width(4.dp))
             Text(
-                text =
-                    if (isSuitable)
-                        LocalContext.current.getString(R.string.map_screen_suitable_hike_label)
-                    else LocalContext.current.getString(R.string.map_screen_challenging_hike_label),
+                text = suitableLabelText,
                 style = MaterialTheme.typography.bodySmall,
                 // TODO : Replace suitable and challenging icon colors with theme colors
-                color = if (isSuitable) Color(0xFF4CAF50) else Color(0xFFFFC107))
+                color = suitableLabelColor)
           }
         }
 
