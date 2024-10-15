@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.sp
 import ch.hikemate.app.R
 import ch.hikemate.app.ui.components.AppIcon
 import ch.hikemate.app.ui.navigation.NavigationActions
+import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.navigation.TopLevelDestinations
 import ch.hikemate.app.ui.theme.kaushanTitleFontFamily
 import ch.hikemate.app.ui.theme.primaryColor
@@ -42,7 +43,7 @@ import ch.hikemate.app.ui.theme.primaryColor
 @Composable
 fun SignInScreen(navigaionActions: NavigationActions) {
   Scaffold(
-      modifier = Modifier.fillMaxSize(),
+      modifier = Modifier.fillMaxSize().testTag(Screen.AUTH),
       content = { padding ->
         Box(
             modifier = Modifier.fillMaxSize(),

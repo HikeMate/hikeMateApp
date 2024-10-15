@@ -52,8 +52,8 @@ fun SideBarNavigation(
 ) {
   val drawerState = rememberDrawerState(DrawerValue.Closed)
   val scope = rememberCoroutineScope()
-    //This makes it so that when the drawer is open, the back gesture in android phones closes the
-    // drawer instead of going to the previous screen.
+  // This makes it so that when the drawer is open, the back gesture in android phones closes the
+  // drawer instead of going to the previous screen.
   BackHandler(enabled = drawerState.isOpen) { scope.launch { drawerState.close() } }
   ModalNavigationDrawer(
       gesturesEnabled = false,

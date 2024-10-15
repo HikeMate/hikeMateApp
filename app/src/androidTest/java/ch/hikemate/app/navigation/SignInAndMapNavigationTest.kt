@@ -28,7 +28,7 @@ class SignInAndMapNavigationTest {
   }
 
   @Test
-  fun testNavigationToPlannedHikesScreen() {
+  fun testNavigationToMapScreen() {
     composeTestRule.setContent { HikeMateApp() }
 
     composeTestRule.onNodeWithTag(Screen.AUTH).assertIsDisplayed()
@@ -38,7 +38,7 @@ class SignInAndMapNavigationTest {
   }
 
   @Test
-  fun testNavigationToMapScreen() {
+  fun testNavigationToPlannedHikesScreen() {
     composeTestRule.setContent { HikeMateApp() }
     composeTestRule.onNodeWithTag(Screen.AUTH).assertIsDisplayed()
 
@@ -48,12 +48,24 @@ class SignInAndMapNavigationTest {
     // Open the sidebar
     composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
 
-    // Simulate navigation to Map Screen
     composeTestRule.onNodeWithTag(TEST_TAG_DRAWER_ITEM_PREFIX + Route.PLANNED_HIKES).performClick()
 
-    // Assert that the Map screen is displayed
-    composeTestRule
-        .onNodeWithTag(Screen.PLANNED_HIKES) // Example accessibility description for the Map screen
-        .assertIsDisplayed()
+    composeTestRule.onNodeWithTag(Screen.PLANNED_HIKES).assertIsDisplayed()
+  }
+
+  @Test
+  fun testNavigationToProfileScreen() {
+    composeTestRule.setContent { HikeMateApp() }
+    composeTestRule.onNodeWithTag(Screen.AUTH).assertIsDisplayed()
+
+    composeTestRule.onNodeWithTag("loginButton").performClick()
+    composeTestRule.onNodeWithTag(Screen.MAP).assertIsDisplayed()
+
+    // Open the sidebar
+    composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
+
+    composeTestRule.onNodeWithTag(TEST_TAG_DRAWER_ITEM_PREFIX + Route.PROFILE).performClick()
+
+    composeTestRule.onNodeWithTag(Screen.PROFILE).assertIsDisplayed()
   }
 }

@@ -3,7 +3,6 @@ package ch.hikemate.app
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -59,7 +58,9 @@ fun HikeMateApp() {
             tabList = LIST_TOP_LEVEL_DESTINATIONS,
             selectedItem = Route.PLANNED_HIKES,
         ) {
-          Text(text = "Planned Hikes to be implemented")
+          Text(
+              text = "Planned Hikes to be implemented",
+              modifier = Modifier.testTag(Screen.PLANNED_HIKES))
         }
       }
     }
@@ -76,12 +77,12 @@ fun HikeMateApp() {
     ) {
       composable(Screen.PROFILE) {
         // TODO: Implement Profile Screen
-        Column(modifier = Modifier.fillMaxSize().testTag(Screen.PROFILE)) {
-          SideBarNavigation(
-              onTabSelect = { route -> navigationActions.navigateTo(route) },
-              tabList = LIST_TOP_LEVEL_DESTINATIONS,
-              selectedItem = Route.PROFILE,
-          ) {}
+        SideBarNavigation(
+            onTabSelect = { route -> navigationActions.navigateTo(route) },
+            tabList = LIST_TOP_LEVEL_DESTINATIONS,
+            selectedItem = Route.PROFILE,
+        ) {
+          Text(text = "Profile to be implemented", modifier = Modifier.testTag(Screen.PROFILE))
         }
       }
     }
