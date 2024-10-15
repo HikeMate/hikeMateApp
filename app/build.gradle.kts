@@ -138,6 +138,7 @@ fun DependencyHandlerScope.globalTestImplementation(dep: Any) {
 }
 
 dependencies {
+    implementation(libs.androidx.navigation.compose)
     val composeBom = platform(libs.compose.bom)
 
     // Dependencies
@@ -186,6 +187,7 @@ dependencies {
     androidTestImplementation(libs.ui.test.junit4)
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.compose.test.junit)
+    androidTestImplementation(libs.mockito.android)
 
     // Debug dependencies
     debugImplementation(libs.compose.tooling)

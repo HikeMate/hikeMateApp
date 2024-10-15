@@ -34,7 +34,6 @@ import androidx.compose.ui.unit.sp
 import ch.hikemate.app.R
 import ch.hikemate.app.ui.components.AppIcon
 import ch.hikemate.app.ui.navigation.NavigationActions
-import ch.hikemate.app.ui.navigation.TopLevelDestination
 import ch.hikemate.app.ui.navigation.TopLevelDestinations
 import ch.hikemate.app.ui.theme.kaushanTitleFontFamily
 import ch.hikemate.app.ui.theme.primaryColor
@@ -86,7 +85,7 @@ fun SignInScreen(navigaionActions: NavigationActions) {
               )
             }
 
-            SignInWithGoogleButton {navigaionActions.navigateTo(TopLevelDestinations.MAP)}
+            SignInWithGoogleButton { navigaionActions.navigateTo(TopLevelDestinations.MAP) }
           }
         }
       },

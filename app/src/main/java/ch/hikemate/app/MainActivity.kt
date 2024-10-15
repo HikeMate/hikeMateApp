@@ -10,12 +10,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.navigation.NavHost
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navigation
 import ch.hikemate.app.ui.auth.SignInScreen
+import ch.hikemate.app.ui.map.MapScreen
 import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
@@ -27,7 +27,7 @@ import ch.hikemate.app.ui.theme.HikeMateTheme
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-    setContent { HikeMateTheme { Surface(modifier = Modifier.fillMaxSize()) { HikeMateApp() } }
+    setContent { HikeMateTheme { Surface(modifier = Modifier.fillMaxSize()) { HikeMateApp() } } }
   }
 }
 
@@ -39,6 +39,7 @@ class MainActivity : ComponentActivity() {
 fun HikeMateApp() {
   val navController = rememberNavController()
   val navigationActions = NavigationActions(navController)
+
   NavHost(navController = navController, startDestination = TopLevelDestinations.AUTH.route) {
     navigation(
         startDestination = Screen.AUTH,
@@ -53,13 +54,12 @@ fun HikeMateApp() {
     ) {
       composable(Screen.PLANNED_HIKES) {
         // TODO: Implement Planned Hikes Screen
-        Column(modifier = Modifier.fillMaxSize().testTag(Screen.PLANNED_HIKES)) {
-          SideBarNavigation(
-              onTabSelect = { route -> navigationActions.navigateTo(route) },
-              tabList = LIST_TOP_LEVEL_DESTINATIONS,
-              selectedItem = Route.PLANNED_HIKES,
-          )
-          Text(text = "Planned Hikes")
+        SideBarNavigation(
+            onTabSelect = { route -> navigationActions.navigateTo(route) },
+            tabList = LIST_TOP_LEVEL_DESTINATIONS,
+            selectedItem = Route.PLANNED_HIKES,
+        ) {
+          Text(text = "Planned Hikes to be implemented")
         }
       }
     }
@@ -68,17 +68,22 @@ fun HikeMateApp() {
         startDestination = Screen.MAP,
         route = Route.MAP,
     ) {
-      composable(Screen.MAP) { // TODO: MAP SCREEN
-        Column(modifier = Modifier.fillMaxSize().testTag(Screen.MAP)) {
+      composable(Screen.MAP) { MapScreen(navigationActions = navigationActions) }
+    }
+    navigation(
+        startDestination = Screen.PROFILE,
+        route = Route.PROFILE,
+    ) {
+      composable(Screen.PROFILE) {
+        // TODO: Implement Profile Screen
+        Column(modifier = Modifier.fillMaxSize().testTag(Screen.PROFILE)) {
           SideBarNavigation(
               onTabSelect = { route -> navigationActions.navigateTo(route) },
               tabList = LIST_TOP_LEVEL_DESTINATIONS,
-              selectedItem = Route.MAP,
-          )
-          Text(text = "Map")
+              selectedItem = Route.PROFILE,
+          ) {}
         }
       }
     }
   }
-}
 }

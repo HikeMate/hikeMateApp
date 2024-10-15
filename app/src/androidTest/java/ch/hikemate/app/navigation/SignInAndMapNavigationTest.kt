@@ -10,6 +10,7 @@ import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.navigation.TEST_TAG_DRAWER_ITEM_PREFIX
 import ch.hikemate.app.ui.navigation.TEST_TAG_SIDEBAR_BUTTON
+import ch.hikemate.app.ui.theme.HikeMateTheme
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -21,7 +22,7 @@ class SignInAndMapNavigationTest {
 
   @Test
   fun testInitialScreenIsAuthScreen() {
-    composeTestRule.setContent { HikeMateApp() }
+    composeTestRule.setContent { HikeMateTheme { HikeMateApp() } }
 
     composeTestRule.onNodeWithTag(Screen.AUTH).assertIsDisplayed()
   }
