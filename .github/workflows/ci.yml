@@ -109,7 +109,7 @@ jobs:
           ./gradlew check --parallel --build-cache
 
       # Run connected tests on the emulator
-      - name: run tests
+      - name: Run Android tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
@@ -124,11 +124,6 @@ jobs:
       - name: Generate coverage
         run: ./gradlew jacocoTestReport
 
-      - name: Build and analyze
-        env:
-          GITHUB_TOKEN: ${{ secrets.TOKEN_GITHUB }}  # Needed to get PR information, if any
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: ./gradlew build sonar --info
       # Upload the various reports to sonar
       - name: Upload report to SonarCloud
         env:

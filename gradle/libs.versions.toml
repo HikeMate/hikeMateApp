@@ -1,7 +1,6 @@
 [versions]
-agp = "8.6.1"
+agp = "8.7.0"
 firebaseBom = "33.4.0"
-junitJunit = "4.12"
 kotlin =  "1.8.10"
 coreKtx = "1.13.1"
 ktfmt = "0.17.0"
@@ -10,23 +9,17 @@ junitVersion = "1.2.1"
 espressoCore = "3.6.1"
 appcompat = "1.7.0"
 material = "1.12.0"
-composeBom = "2024.09.02"
+composeBom = "2024.09.03"
 composeActivity = "1.9.2"
 composeViewModel = "2.8.6"
 lifecycleRuntimeKtx = "2.8.6"
 kaspresso = "1.5.5"
 mockitoAndroid = "5.13.0"
-mockitoAndroidVersion = "4.0.0"
 mockitoCore = "5.13.0"
-mockitoCoreVersion = "4.0.0"
 mockitoInline = "4.0.0"
 mockitoKotlin = "5.4.0"
-mockitoMockitoAndroid = "3.12.4"
-mockitoMockitoCoreVersion = "3.12.4"
-mockitoMockitoKotlin = "3.2.0"
 robolectric = "4.11.1"
 sonar = "4.4.1.3373"
-gms = "4.4.2"
 
 # Firebase Libraries
 firebaseAuth = "23.0.0"
@@ -51,7 +44,6 @@ junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
-kotlin-mockito-kotlin-v320 = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockitoMockitoKotlin" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
 
@@ -70,12 +62,9 @@ kaspresso = { group = "com.kaspersky.android-components", name = "kaspresso", ve
 kaspresso-compose = { group = "com.kaspersky.android-components", name = "kaspresso-compose-support", version.ref = "kaspresso" }
 
 mockito-android = { module = "org.mockito:mockito-android", version.ref = "mockitoAndroid" }
-mockito-android-v3124 = { module = "org.mockito:mockito-android", version.ref = "mockitoMockitoAndroid" }
 mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockitoCore" }
 mockito-inline = { module = "org.mockito:mockito-inline", version.ref = "mockitoInline" }
 mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockitoKotlin" }
-mockito-mockito-core-v3124 = { module = "org.mockito:mockito-core", version.ref = "mockitoMockitoCoreVersion" }
-mockito-mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 osmdroid = { module = "org.osmdroid:osmdroid-android", version.ref = "osmdroid" }
 
