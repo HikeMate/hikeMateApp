@@ -13,13 +13,14 @@ class AuthViewModel(private val repository: FirebaseAuthRepository) {
   private val _currentUser = MutableStateFlow(FirebaseAuth.getInstance().currentUser)
 
   // Public immutable version of _currentUser, exposed as StateFlow.
-  // This allows other components to observe changes to the authentication state without modifying it.
+  // This allows other components to observe changes to the authentication state without modifying
+  // it.
   val currentUser: StateFlow<FirebaseUser?>
     get() = _currentUser
 
   /**
-   * Initiates the sign-in process using Google Sign-In.*
-   * Note: This function only changes the state of currentUser, it has no return or onSuccess invocation.
+   * Initiates the sign-in process using Google Sign-In.* Note: This function only changes the state
+   * of currentUser, it has no return or onSuccess invocation.
    *
    * @param coroutineScope The CoroutineScope in which this operation will be executed.
    * @param context The context is used to start the Google Sign-In process.
@@ -32,10 +33,7 @@ class AuthViewModel(private val repository: FirebaseAuthRepository) {
         coroutineScope = coroutineScope)
   }
 
-  /**
-   * Signs out the current user.
-   * On successful sign-out, the _currentUser is set to null.
-   */
+  /** Signs out the current user. On successful sign-out, the _currentUser is set to null. */
   fun signOut() {
     repository.signOut(
         onSuccess = { _currentUser.value = null },

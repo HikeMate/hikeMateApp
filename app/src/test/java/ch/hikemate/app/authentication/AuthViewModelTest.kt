@@ -20,7 +20,6 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.mockStatic
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
-import org.mockito.MockitoAnnotations
 import org.mockito.kotlin.any
 
 class AuthViewModelTest {
@@ -83,7 +82,8 @@ class AuthViewModelTest {
           onSuccess(mockFirebaseUser) // Call the success callback with a mock user
           null
         }
-        .`when`(mockRepository).signInWithGoogle(any(), any(), any(), any(), any())
+        .`when`(mockRepository)
+        .signInWithGoogle(any(), any(), any(), any(), any())
 
     // Verify that currentUser is initially null
     assertNull(viewModel.currentUser.first())
@@ -132,9 +132,7 @@ class AuthViewModelTest {
         .signOut(any())
 
     // Verify that currentUser is initially mockFirebaseUser
-    assertEquals(
-        mockFirebaseUser,
-        viewModel.currentUser.first())
+    assertEquals(mockFirebaseUser, viewModel.currentUser.first())
 
     viewModel.signOut()
 
