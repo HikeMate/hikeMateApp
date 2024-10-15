@@ -9,14 +9,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
 import org.osmdroid.util.BoundingBox
 
-/**
- * ViewModel for the list of hike routes
- *
- * @param TODO: should take a repository as a parameter
- */
-open class ListOfHikeRoutesViewModel() : ViewModel() {
+/** ViewModel for the list of hike routes */
+open class ListOfHikeRoutesViewModel(private val hikeRoutesRepository: HikeRoutesRepository) : ViewModel() {
   // List of all routes in the database
   private val hikeRoutes_ =
       MutableStateFlow<List<String>>(emptyList()) // TODO: should be a list of Route objects
@@ -34,7 +31,7 @@ open class ListOfHikeRoutesViewModel() : ViewModel() {
         object : ViewModelProvider.Factory {
           @Suppress("UNCHECKED_CAST")
           override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return ListOfHikeRoutesViewModel() as T
+            return ListOfHikeRoutesViewModel(HikeRoutesRepositoryOverpass(OkHttpClient())) as T
           }
         }
   }

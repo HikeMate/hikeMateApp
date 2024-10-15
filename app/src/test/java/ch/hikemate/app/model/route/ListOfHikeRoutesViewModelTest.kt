@@ -3,15 +3,19 @@ package ch.hikemate.app.model.route
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
+import org.mockito.Mockito.mock
 import org.osmdroid.util.BoundingBox
 
 /** Testing the ListOfRoutesViewModel class */
 class ListOfHikeRoutesViewModelTest {
+  private lateinit var hikesRepository: HikeRoutesRepository
   private lateinit var listOfHikeRoutesViewModel: ListOfHikeRoutesViewModel
 
   @Before
   fun setUp() {
-    listOfHikeRoutesViewModel = ListOfHikeRoutesViewModel()
+    // TODO : Update the tests and make sure this mock works
+    hikesRepository = mock(HikeRoutesRepository::class.java)
+    listOfHikeRoutesViewModel = ListOfHikeRoutesViewModel(hikesRepository)
   }
 
   @Test
