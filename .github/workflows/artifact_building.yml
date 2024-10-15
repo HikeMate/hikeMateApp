@@ -15,8 +15,12 @@ jobs:
       - name: Decode secrets
         env:
           GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
+          KEYSTORE_PROPERTIES: ${{ secrets.KEYSTORE_PROPERTIES }}
+          KEYSTORE: ${{ secrets.KEYSTORE }}
         run: |
           echo "$GOOGLE_SERVICES" | base64 --decode > ./app/google-services.json
+          echo "$KEYSTORE_PROPERTIES" | base64 --decode > ./keystore.properties
+          echo "$KEYSTORE" | base64 --decode > ./keystore.jks
 
       - name: Setup JDK
         uses: actions/setup-java@v4
@@ -45,5 +49,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: app-release.apk
-          path: app/build/outputs/apk/release/app-release-unsigned.apk
+          path: app/build/outputs/apk/release/app-release.apk
 
