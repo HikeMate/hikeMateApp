@@ -26,7 +26,6 @@ import androidx.compose.ui.unit.dp
 import ch.hikemate.app.ui.components.AppIcon
 import kotlinx.coroutines.launch
 
-const val APP_NAME = "HikeMate"
 const val TEST_TAG_SIDEBAR_BUTTON = "TEST_TAG_SIDEBAR_BUTTON"
 const val TEST_TAG_DRAWER_CONTENT = "TEST_TAG_DRAWER_CONTENT"
 const val TEST_TAG_DRAWER_CLOSE_BUTTON = "TEST_TAG_DRAWER_CLOSE_BUTTON"
@@ -53,6 +52,8 @@ fun SideBarNavigation(
 ) {
   val drawerState = rememberDrawerState(DrawerValue.Closed)
   val scope = rememberCoroutineScope()
+    //This makes it so that when the drawer is open, the back gesture in android phones closes the
+    // drawer instead of going to the previous screen.
   BackHandler(enabled = drawerState.isOpen) { scope.launch { drawerState.close() } }
   ModalNavigationDrawer(
       gesturesEnabled = false,
