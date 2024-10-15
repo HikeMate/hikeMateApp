@@ -113,7 +113,6 @@ fun MapScreen(
     // Burger menu button in the top left corner of the screen
     IconButton(
         onClick = {
-          // TODO : Adapt the map screen to navigation
           Toast.makeText(context, "Menu not implemented yet", Toast.LENGTH_SHORT).show()
         },
         modifier =
@@ -145,9 +144,8 @@ fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel) {
   val routes = hikingRoutesViewModel.hikeRoutes.collectAsState()
   val context = LocalContext.current
 
-  // BottomSheetScaffold adds a layout at the bottom of the screen that the user can expand. This
-  // is ideal for showing a list of items on top of a map. The user can either expand the list and
-  // only view the hikes list, or collapse it and see the map.
+  // BottomSheetScaffold adds a layout at the bottom of the screen that the user can expand to view
+  // the list of hikes
   BottomSheetScaffold(
       scaffoldState = scaffoldState,
       sheetContainerColor = MaterialTheme.colorScheme.surface,
@@ -172,7 +170,6 @@ fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel) {
                     altitudeDifference = 1000,
                     isSuitable = index % 2 == 0,
                     onClick = {
-                      // TODO : Navigate to the details of the selected hiking route
                       Toast.makeText(
                               context, "Hike details not implemented yet", Toast.LENGTH_SHORT)
                           .show()
