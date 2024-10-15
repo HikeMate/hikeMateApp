@@ -22,12 +22,12 @@ import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.navigation.SideBarNavigation
 import ch.hikemate.app.ui.navigation.TopLevelDestinations
-import ch.hikemate.app.ui.theme.SampleAppTheme
+import ch.hikemate.app.ui.theme.HikeMateTheme
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-    setContent { SampleAppTheme { Surface(modifier = Modifier.fillMaxSize()) { HikeMateApp() } } }
+    setContent { HikeMateTheme { Surface(modifier = Modifier.fillMaxSize()) { HikeMateApp() } }
   }
 }
 
@@ -80,4 +80,5 @@ fun HikeMateApp() {
       }
     }
   }
+}
 }

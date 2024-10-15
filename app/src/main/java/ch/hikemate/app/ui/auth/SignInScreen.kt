@@ -28,21 +28,22 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ch.hikemate.app.R
 import ch.hikemate.app.ui.components.AppIcon
 import ch.hikemate.app.ui.navigation.NavigationActions
-import ch.hikemate.app.ui.navigation.Screen
+import ch.hikemate.app.ui.navigation.TopLevelDestination
+import ch.hikemate.app.ui.navigation.TopLevelDestinations
+import ch.hikemate.app.ui.theme.kaushanTitleFontFamily
+import ch.hikemate.app.ui.theme.primaryColor
 
 /** A composable function to display the sign in screen */
 @Composable
-fun SignInScreen(navigationActions: NavigationActions) {
+fun SignInScreen(navigaionActions: NavigationActions) {
   Scaffold(
-      modifier = Modifier.fillMaxSize().testTag(Screen.AUTH),
+      modifier = Modifier.fillMaxSize(),
       content = { padding ->
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -78,17 +79,14 @@ fun SignInScreen(navigationActions: NavigationActions) {
                   style =
                       TextStyle(
                           color = Color.White,
-                          fontFamily = FontFamily(Font(R.font.kaushan_script, FontWeight.Bold)),
+                          fontFamily = kaushanTitleFontFamily,
                           fontSize = 60.sp,
                           fontWeight = FontWeight.Bold,
                       ),
               )
             }
 
-            SignInWithGoogleButton {
-              // TODO: After implementing the sign in with Google, navigate to the Overview screen
-              navigationActions.navigateTo(Screen.MAP)
-            }
+            SignInWithGoogleButton {navigaionActions.navigateTo(TopLevelDestinations.MAP)}
           }
         }
       },
@@ -109,8 +107,7 @@ fun SignInWithGoogleButton(onSignInClick: () -> Unit) {
       modifier =
           Modifier.padding(8.dp)
               .height(48.dp)
-              .border(
-                  width = 3.dp, color = Color(0xFF3B9DE8), shape = RoundedCornerShape(size = 32.dp))
+              .border(width = 3.dp, color = primaryColor, shape = RoundedCornerShape(size = 32.dp))
               .testTag("loginButton")) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
