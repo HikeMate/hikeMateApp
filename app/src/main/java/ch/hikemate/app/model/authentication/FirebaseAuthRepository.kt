@@ -1,17 +1,9 @@
 package ch.hikemate.app.model.authentication
 
 import android.content.Context
-import android.util.Log
 import androidx.credentials.CredentialManager
-import androidx.credentials.GetCredentialRequest
-import ch.hikemate.app.R
-import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.auth.GoogleAuthProvider
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 
 class FirebaseAuthRepository {
 
