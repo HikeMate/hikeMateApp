@@ -41,7 +41,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -86,13 +85,10 @@ fun MapScreen(
 
   mapView.apply {
     controller.setZoom(15.0)
-    // TODO : Set the center to the user's location
     controller.setCenter(GeoPoint(46.5, 6.6))
     // Enable touch-controls such as pinch to zoom
     setMultiTouchControls(true)
     // Update hiking routes every time the user moves the map
-    // TODO : Those updates could be quite frequent, have a cooldown to avoid sending a request each
-    // time?
     addMapListener(
         object : MapListener {
           override fun onScroll(event: ScrollEvent?): Boolean {
@@ -108,9 +104,13 @@ fun MapScreen(
   }
 
   Box(modifier = Modifier.fillMaxSize()) {
+    // Jetpack Compose is a relatively recent framework for implementing Android UIs. OSMDroid is
+    // an older library that uses Activities, the previous way of doing. The composable AndroidView
+    // allows us to use OSMDroid's legacy MapView in a Jetpack Compose layout.
     AndroidView(
         factory = { mapView }, modifier = Modifier.fillMaxSize().testTag(MapScreen.TEST_TAG_MAP))
 
+    // Burger menu button in the top left corner of the screen
     IconButton(
         onClick = {
           // TODO : Adapt the map screen to navigation
@@ -133,8 +133,8 @@ fun MapScreen(
     CollapsibleHikesList(hikingRoutesViewModel)
   }
 
-  // Initialize the list of hiking routes once when the map is loaded
-  // Leave subsequent updates to the map listener
+  // Load hikes list on first composition of the map screen, but avoid reloading the list
+  // on each recomposition, as this will be handled by map events such as zoom or scroll
   LaunchedEffect(Unit) { hikingRoutesViewModel.setArea(mapView.boundingBox) }
 }
 
@@ -145,6 +145,9 @@ fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel) {
   val routes = hikingRoutesViewModel.hikeRoutes.collectAsState()
   val context = LocalContext.current
 
+  // BottomSheetScaffold adds a layout at the bottom of the screen that the user can expand. This
+  // is ideal for showing a list of items on top of a map. The user can either expand the list and
+  // only view the hikes list, or collapse it and see the map.
   BottomSheetScaffold(
       scaffoldState = scaffoldState,
       sheetContainerColor = MaterialTheme.colorScheme.surface,
@@ -191,7 +194,6 @@ fun HikingRouteItem(
     modifier: Modifier = Modifier
 ) {
 
-  // TODO : Replace suitable and challenging icon colors with theme colors
   val suitableLabelColor = if (isSuitable) Color(0xFF4CAF50) else Color(0xFFFFC107)
   val suitableLabelText =
       if (isSuitable) LocalContext.current.getString(R.string.map_screen_suitable_hike_label)
@@ -254,6 +256,7 @@ fun HikingRouteItem(
 
         Spacer(modifier = Modifier.width(4.dp))
 
+        // Arrow icon to indicate that the item is clickable
         Icon(
             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
             contentDescription =
