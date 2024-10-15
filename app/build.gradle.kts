@@ -240,4 +240,13 @@ tasks.register("jacocoTestReport", JacocoReport::class) {
         include("outputs/code_coverage/debugAndroidTest/connected/*/coverage.ec")
     })
 
+    // This is a fix for a bug in the Jacoco plugin that causes it to generate invalid XML files
+    // This issue is caused by the Jetpack Compose compiler plugin, which is managed by Google.
+    // See : https://medium.com/@theilacker/fixing-sonarqube-line-out-of-range-issue-when-using-jetpack-compose-5ba4c1f361f1
+    // See : https://issuetracker.google.com/issues/231616123
+    doLast {
+        val reportFile = reports.xml.outputLocation.asFile.get()
+        val newContent = reportFile.readText().replace("<line[^>]+nr=\"65535\"[^>]*>".toRegex(), "")
+        reportFile.writeText(newContent)
+    }
 }
