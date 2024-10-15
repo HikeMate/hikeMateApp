@@ -39,6 +39,8 @@ import ch.hikemate.app.ui.navigation.TopLevelDestinations
 import ch.hikemate.app.ui.theme.kaushanTitleFontFamily
 import ch.hikemate.app.ui.theme.primaryColor
 
+const val TEST_TAG_LOGIN_BUTTON = "login_button"
+
 /** A composable function to display the sign in screen */
 @Composable
 fun SignInScreen(navigaionActions: NavigationActions) {
@@ -86,7 +88,11 @@ fun SignInScreen(navigaionActions: NavigationActions) {
               )
             }
 
-            SignInWithGoogleButton { navigaionActions.navigateTo(TopLevelDestinations.MAP) }
+            SignInWithGoogleButton {
+              // TODO: Implement the sign in with Google functionality
+              // This bypasses all security and should not be used in production
+              navigaionActions.navigateTo(TopLevelDestinations.MAP)
+            }
           }
         }
       },
@@ -108,7 +114,7 @@ fun SignInWithGoogleButton(onSignInClick: () -> Unit) {
           Modifier.padding(8.dp)
               .height(48.dp)
               .border(width = 3.dp, color = primaryColor, shape = RoundedCornerShape(size = 32.dp))
-              .testTag("loginButton")) {
+              .testTag(TEST_TAG_LOGIN_BUTTON)) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,

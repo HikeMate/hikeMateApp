@@ -16,7 +16,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class SignInAndMapNavigationTest {
+class HikeMateAppNavigationTest {
   // Set up the Compose test rule
   @get:Rule val composeTestRule = createComposeRule()
 
@@ -58,7 +58,7 @@ class SignInAndMapNavigationTest {
     composeTestRule.setContent { HikeMateApp() }
     composeTestRule.onNodeWithTag(Screen.AUTH).assertIsDisplayed()
 
-    composeTestRule.onNodeWithTag("loginButton").performClick()
+    composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
     composeTestRule.onNodeWithTag(Screen.MAP).assertIsDisplayed()
 
     // Open the sidebar

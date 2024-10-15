@@ -53,6 +53,7 @@ fun HikeMateApp() {
     ) {
       composable(Screen.PLANNED_HIKES) {
         // TODO: Implement Planned Hikes Screen
+        // The Screen will need to be incorporated into the SideBarNavigation composable
         SideBarNavigation(
             onTabSelect = { route -> navigationActions.navigateTo(route) },
             tabList = LIST_TOP_LEVEL_DESTINATIONS,
@@ -77,6 +78,7 @@ fun HikeMateApp() {
     ) {
       composable(Screen.PROFILE) {
         // TODO: Implement Profile Screen
+        // The Screen will need to be incorporated into the SideBarNavigation composable
         SideBarNavigation(
             onTabSelect = { route -> navigationActions.navigateTo(route) },
             tabList = LIST_TOP_LEVEL_DESTINATIONS,

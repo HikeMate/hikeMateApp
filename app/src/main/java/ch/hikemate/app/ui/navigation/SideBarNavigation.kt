@@ -46,7 +46,8 @@ fun SideBarNavigation(
     onTabSelect: (TopLevelDestination) -> Unit,
     tabList: List<TopLevelDestination>,
     selectedItem: String,
-    // The reason the content of the screen has to be passed as a lambda is because the drawer to be
+    // The reason the content of the screen has to be passed as a lambda is because the drawer has
+    // to be
     // integrated with the screen.
     content: @Composable () -> Unit,
 ) {
