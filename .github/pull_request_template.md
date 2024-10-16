@@ -2,6 +2,7 @@
 
 - What is the objective? What is fixed/what feature is added/what was documented?
 - How is the objective implemented? What classes/doc files/CI were changed?
+
 # Details
 
 Depends on the nature of the PR :

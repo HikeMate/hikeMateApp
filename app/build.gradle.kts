@@ -1,3 +1,7 @@
+import org.apache.commons.compress.harmony.pack200.PackingUtils.config
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsKotlinAndroid)
@@ -6,6 +10,16 @@ plugins {
     id("jacoco")
     id("com.google.gms.google-services")
 }
+
+// Create a variable called keystorePropertiesFile, and initialize it to your
+// keystore.properties file, in the rootProject folder.
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+
+// Initialize a new Properties() object called keystoreProperties.
+val keystoreProperties = Properties()
+
+// Load your keystore.properties file into the keystoreProperties object.
+keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 
 android {
     namespace = "ch.hikemate.app"
@@ -24,6 +38,15 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            keyAlias = keystoreProperties["keyAlias"] as String
+            keyPassword = keystoreProperties["keyPassword"] as String
+            storeFile = file(keystoreProperties["storeFile"] as String)
+            storePassword = keystoreProperties["storePassword"] as String
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -31,6 +54,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
 
         debug {
@@ -63,8 +87,10 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            // To fix this error: 6 files found with path 'META-INF/LICENSE.md'.
             merges  += "META-INF/LICENSE.md"
             merges += "META-INF/LICENSE-notice.md"
+
         }
     }
 
@@ -116,81 +142,77 @@ fun DependencyHandlerScope.globalTestImplementation(dep: Any) {
 }
 
 dependencies {
+
+    val composeBom = platform(libs.compose.bom)
+
+    // Dependencies
+    implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(platform(libs.compose.bom))
     implementation(libs.firebase.firestore.ktx)
+    implementation(libs.firebase.auth.ktx)
     implementation(libs.androidx.espresso.intents)
-    testImplementation(libs.junit)
-    globalTestImplementation(libs.androidx.junit)
-    globalTestImplementation(libs.androidx.espresso.core)
-
-    // ------------- Jetpack Compose ------------------
-    val composeBom = platform(libs.compose.bom)
+    implementation(libs.androidx.navigation.runtime.ktx)
+    implementation(libs.androidx.navigation.common.ktx)
+    implementation(libs.androidx.navigation.testing)
     implementation(composeBom)
-    globalTestImplementation(composeBom)
-
     implementation(libs.compose.ui)
     implementation(libs.compose.ui.graphics)
-    // Material Design 3
     implementation(libs.compose.material3)
-    // Integration with activities
     implementation(libs.compose.activity)
-    // Integration with ViewModels
     implementation(libs.compose.viewmodel)
-    // Android Studio Preview support
     implementation(libs.compose.preview)
-    debugImplementation(libs.compose.tooling)
-    // UI Tests
-    globalTestImplementation(libs.compose.test.junit)
-    debugImplementation(libs.compose.test.manifest)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.osmdroid)
+    implementation(libs.okhttp)
+    implementation(libs.googleid)
 
-    // --------- Kaspresso test framework ----------
+
+    // Global test dependencies
+    globalTestImplementation(libs.androidx.junit)
+    globalTestImplementation(libs.androidx.espresso.core)
+    globalTestImplementation(composeBom)
+    globalTestImplementation(libs.compose.test.junit)
     globalTestImplementation(libs.kaspresso)
     globalTestImplementation(libs.kaspresso.compose)
 
-    // ----------       Robolectric     ------------
-    testImplementation(libs.robolectric)
-
-    // ----------        FireBase       ------------
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.google.firebase.auth)
-    implementation(libs.play.services.auth)
-
-    // Adds a remote binary dependency only for local tests.
+    // Test dependencies
     testImplementation(libs.junit)
-
-    androidTestImplementation(libs.androidx.espresso.core)
-
-    // Mockito
+    testImplementation(libs.robolectric)
+    testImplementation(libs.mockito.inline)
+    testImplementation(libs.mockito.android)
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.kotlin)
-    androidTestImplementation(libs.mockito.android)
-    androidTestImplementation(libs.mockito.kotlin.v320)
+    testImplementation(libs.compose.test.junit)
+    testImplementation(libs.compose.test.manifest)
 
-    // MockK
-    testImplementation(libs.mockk)
-    androidTestImplementation(libs.mockk.android.v11312)
+    // Android test dependencies
+    androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.ui.test.junit4)
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.compose.test.junit)
+    androidTestImplementation(libs.mockito.android)
+    androidTestImplementation(libs.mockk.android)
     androidTestImplementation(libs.mockk.agent)
 
-    // Google Sign in
-    implementation(libs.androidx.credentials.vlatestversion)
-    implementation(libs.androidx.credentials.play.services.auth.v10)
-    implementation(libs.googleid.vlatestversion)
 
-    // OSM
-    implementation(libs.osmdroid.android.v6110)
+    // Debug dependencies
+    debugImplementation(libs.compose.tooling)
+    debugImplementation(libs.compose.test.manifest)
+    debugImplementation(libs.ui.test.manifest)
 
+    // Robolectric (for unit tests that require Android framework)
     // To fix an issue with Firebase and the Protobuf library
     configurations.configureEach {
         exclude(group = "com.google.protobuf", module = "protobuf-lite")
     }
-
-
-
 }
+
+
 
 tasks.withType<Test> {
     // Configure Jacoco for each tests
@@ -201,6 +223,8 @@ tasks.withType<Test> {
 }
 
 tasks.register("jacocoTestReport", JacocoReport::class) {
+    description = "Generates Jacoco test reports"
+    group = "verification"
     mustRunAfter("testDebugUnitTest", "connectedDebugAndroidTest")
 
     reports {
@@ -229,4 +253,13 @@ tasks.register("jacocoTestReport", JacocoReport::class) {
         include("outputs/code_coverage/debugAndroidTest/connected/*/coverage.ec")
     })
 
+    // This is a fix for a bug in the Jacoco plugin that causes it to generate invalid XML files
+    // This issue is caused by the Jetpack Compose compiler plugin, which is managed by Google.
+    // See : https://medium.com/@theilacker/fixing-sonarqube-line-out-of-range-issue-when-using-jetpack-compose-5ba4c1f361f1
+    // See : https://issuetracker.google.com/issues/231616123
+    doLast {
+        val reportFile = reports.xml.outputLocation.asFile.get()
+        val newContent = reportFile.readText().replace("<line[^>]+nr=\"65535\"[^>]*>".toRegex(), "")
+        reportFile.writeText(newContent)
+    }
 }
