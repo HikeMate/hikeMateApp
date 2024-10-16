@@ -195,6 +195,7 @@ dependencies {
     androidTestImplementation(libs.ui.test.junit4)
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.compose.test.junit)
+    androidTestImplementation(libs.mockito.android)
     androidTestImplementation(libs.mockk.android)
     androidTestImplementation(libs.mockk.agent)
 
