@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,7 +15,10 @@ import okhttp3.OkHttpClient
 import org.osmdroid.util.BoundingBox
 
 /** ViewModel for the list of hike routes */
-open class ListOfHikeRoutesViewModel(private val hikeRoutesRepository: HikeRoutesRepository) : ViewModel() {
+open class ListOfHikeRoutesViewModel(
+  private val hikeRoutesRepository: HikeRoutesRepository,
+  private val dispatcher: CoroutineDispatcher = Dispatchers.IO
+) : ViewModel() {
   // List of all routes in the database
   private val hikeRoutes_ =
       MutableStateFlow<List<HikeRoute>>(emptyList())
@@ -43,7 +47,7 @@ open class ListOfHikeRoutesViewModel(private val hikeRoutesRepository: HikeRoute
     onSuccess: () -> Unit = {},
     onFailure: () -> Unit = {}
   ) {
-    withContext(Dispatchers.IO) {
+    withContext(dispatcher) {
       val area = area_.value ?: return@withContext
       hikeRoutesRepository.getRoutes(
         bounds = area.toBounds(),
@@ -64,7 +68,7 @@ open class ListOfHikeRoutesViewModel(private val hikeRoutesRepository: HikeRoute
     onSuccess: () -> Unit = {},
     onFailure: () -> Unit = {}
   ) {
-    viewModelScope.launch(Dispatchers.IO) {
+    viewModelScope.launch {
       getRoutesAsync(onSuccess = onSuccess, onFailure = onFailure)
     }
   }

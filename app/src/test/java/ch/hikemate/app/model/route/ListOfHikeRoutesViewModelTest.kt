@@ -1,5 +1,6 @@
 package ch.hikemate.app.model.route
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
@@ -10,16 +11,18 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.osmdroid.util.BoundingBox
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 
 /** Testing the ListOfRoutesViewModel class */
 class ListOfHikeRoutesViewModelTest {
   private lateinit var hikesRepository: HikeRoutesRepository
   private lateinit var listOfHikeRoutesViewModel: ListOfHikeRoutesViewModel
 
+  @OptIn(ExperimentalCoroutinesApi::class)
   @Before
   fun setUp() {
     hikesRepository = mock(HikeRoutesRepository::class.java)
-    listOfHikeRoutesViewModel = ListOfHikeRoutesViewModel(hikesRepository)
+    listOfHikeRoutesViewModel = ListOfHikeRoutesViewModel(hikesRepository, UnconfinedTestDispatcher())
   }
 
   @Test
@@ -31,10 +34,8 @@ class ListOfHikeRoutesViewModelTest {
 
   @Test
   fun getRoutesWithoutBoundingBoxDoesNotCallRepository() {
+    // Since we use UnconfinedTestDispatcher, we don't need to wait for the coroutine to finish
     listOfHikeRoutesViewModel.getRoutes()
-    // Wait for the coroutine to finish
-    // TODO : Try to remove the hardcoded dispatchers and see if it allows to remove the sleep
-    Thread.sleep(500)
     verify(hikesRepository, times(0)).getRoutes(any(), any(), any())
   }
 
@@ -49,10 +50,8 @@ class ListOfHikeRoutesViewModelTest {
       assertEquals(bounds, providedBounds.toBounds())
     }
 
+    // Since we use UnconfinedTestDispatcher, we don't need to wait for the coroutine to finish
     listOfHikeRoutesViewModel.getRoutes()
-    // Wait for the coroutine to finish
-    // TODO : Try to remove the hardcoded dispatchers and see if it allows to remove the sleep
-    Thread.sleep(500)
 
     verify(hikesRepository, times(2)).getRoutes(eq(providedBounds.toBounds()), any(), any())
   }
@@ -67,17 +66,15 @@ class ListOfHikeRoutesViewModelTest {
       onSuccess(listOf(HikeRoute("Route 1", Bounds(0.0, 0.0, 0.0, 0.0), emptyList())))
     }
 
+    // Since we use UnconfinedTestDispatcher, we don't need to wait for the coroutine to finish
     listOfHikeRoutesViewModel.getRoutes()
-    // Wait for the coroutine to finish
-    // TODO : Try to remove the hardcoded dispatchers and see if it allows to remove the sleep
-    Thread.sleep(500)
+
     assertEquals(1, listOfHikeRoutesViewModel.hikeRoutes.value.size)
   }
 
   @Test
   fun canSelectRoute() {
     listOfHikeRoutesViewModel.selectRoute(HikeRoute("Route 1", Bounds(0.0, 0.0, 0.0, 0.0), emptyList()))
-    // TODO : Is the StateFlow immediately updated? If not, how to test this?
     val route = listOfHikeRoutesViewModel.selectedHikeRoute.value
     assertNotNull(route)
     assertEquals(route!!.id, "Route 1")
@@ -88,10 +85,9 @@ class ListOfHikeRoutesViewModelTest {
 
   @Test
   fun setAreaCallsRepository() {
+    // Since we use UnconfinedTestDispatcher, we don't need to wait for the coroutine to finish
     listOfHikeRoutesViewModel.setArea(BoundingBox(0.0, 0.0, 0.0, 0.0))
-    // Wait for the coroutine to finish
-    // TODO : Try to remove the hardcoded dispatchers and see if it allows to remove the sleep
-    Thread.sleep(500)
+
     verify(hikesRepository, times(1)).getRoutes(eq(Bounds(0.0, 0.0, 0.0, 0.0)), any(), any())
   }
 }
