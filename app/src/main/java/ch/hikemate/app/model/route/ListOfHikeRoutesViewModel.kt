@@ -1,5 +1,6 @@
 package ch.hikemate.app.model.route
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -25,7 +26,7 @@ open class ListOfHikeRoutesViewModel(private val hikeRoutesRepository: HikeRoute
 
   private val area_ = MutableStateFlow<BoundingBox?>(null)
 
-  // Creates a factory
+  // Creates a factory and stores the tag used for logging
   companion object {
     val Factory: ViewModelProvider.Factory =
         object : ViewModelProvider.Factory {
@@ -34,6 +35,8 @@ open class ListOfHikeRoutesViewModel(private val hikeRoutesRepository: HikeRoute
             return ListOfHikeRoutesViewModel(HikeRoutesRepositoryOverpass(OkHttpClient())) as T
           }
         }
+
+    private const val LOG_TAG = "ListOfHikeRoutesViewModel"
   }
 
   private suspend fun getRoutesAsync(
@@ -49,7 +52,7 @@ open class ListOfHikeRoutesViewModel(private val hikeRoutesRepository: HikeRoute
           onSuccess()
         },
         onFailure = { exception ->
-          // TODO : Add feedback for the user when an API error occurs and test it
+          Log.d(LOG_TAG, "[getRoutesAsync] Failed to get routes: $exception")
           onFailure()
         }
       )

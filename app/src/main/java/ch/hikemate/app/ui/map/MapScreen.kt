@@ -1,5 +1,7 @@
 package ch.hikemate.app.ui.map
 
+import android.os.Handler
+import android.os.Looper
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -139,7 +141,13 @@ fun MapScreen(
           hikingRoutesViewModel.setArea(
             mapView.boundingBox,
             onSuccess = { isSearching = false },
-            onFailure = { isSearching = false }
+            onFailure = {
+              isSearching = false
+              Handler(Looper.getMainLooper()).post {
+                Toast.makeText(context, "Error while searching for hikes", Toast.LENGTH_SHORT)
+                  .show()
+              }
+            }
           )
         },
         modifier = Modifier
