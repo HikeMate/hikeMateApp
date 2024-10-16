@@ -7,6 +7,7 @@ import okhttp3.Request
 
 /** The URL of the Overpass API interpreter. */
 private const val OVERPASS_API_URL: String = "https://overpass-api.de/api/interpreter"
+
 /** The type of format to request from the Overpass API, written in OverpassQL. */
 private const val JSON_OVERPASS_FORMAT_TAG = "[out:json]"
 
@@ -18,12 +19,24 @@ private const val JSON_OVERPASS_FORMAT_TAG = "[out:json]"
  * @see <a href="https://dev.overpass-api.de/overpass-doc/">Overpass API documentation</a>
  */
 class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesRepository {
+  private val cachedHikeRoutes = mutableMapOf<Bounds, List<HikeRoute>>()
+
+  fun getCacheSize(): Int {
+    return cachedHikeRoutes.size
+  }
 
   override fun getRoutes(
       bounds: Bounds,
       onSuccess: (List<HikeRoute>) -> Unit,
       onFailure: (Exception) -> Unit
   ) {
+    cachedHikeRoutes.keys.forEach {
+      if (it.containsBounds(bounds)) {
+        onSuccess(cachedHikeRoutes[it]!!)
+        return
+      }
+    }
+
     val boundingBoxOverpass =
         "(${bounds.minLat},${bounds.minLon},${bounds.maxLat},${bounds.maxLon})"
 
@@ -40,7 +53,13 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
 
     setRequestHeaders(requestBuilder)
 
-    client.newCall(requestBuilder.build()).enqueue(OverpassResponseHandler(onSuccess, onFailure))
+    val onSuccessWithCache = { routes: List<HikeRoute> ->
+      cachedHikeRoutes[bounds] = routes
+      onSuccess(routes)
+    }
+    client
+        .newCall(requestBuilder.build())
+        .enqueue(OverpassResponseHandler(onSuccessWithCache, onFailure))
   }
 
   /**
