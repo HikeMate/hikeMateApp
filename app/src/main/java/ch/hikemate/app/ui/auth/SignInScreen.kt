@@ -39,7 +39,7 @@ import ch.hikemate.app.ui.navigation.TopLevelDestinations
 import ch.hikemate.app.ui.theme.kaushanTitleFontFamily
 import ch.hikemate.app.ui.theme.primaryColor
 
-const val TEST_TAG_LOGIN_BUTTON = "login_button"
+const val TEST_TAG_LOGIN_BUTTON = "loginButton"
 
 /** A composable function to display the sign in screen */
 @Composable
