@@ -1,6 +1,7 @@
 package ch.hikemate.app.model.route
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
@@ -11,7 +12,6 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.osmdroid.util.BoundingBox
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 
 /** Testing the ListOfRoutesViewModel class */
 class ListOfHikeRoutesViewModelTest {
@@ -22,7 +22,8 @@ class ListOfHikeRoutesViewModelTest {
   @Before
   fun setUp() {
     hikesRepository = mock(HikeRoutesRepository::class.java)
-    listOfHikeRoutesViewModel = ListOfHikeRoutesViewModel(hikesRepository, UnconfinedTestDispatcher())
+    listOfHikeRoutesViewModel =
+        ListOfHikeRoutesViewModel(hikesRepository, UnconfinedTestDispatcher())
   }
 
   @Test
@@ -74,7 +75,8 @@ class ListOfHikeRoutesViewModelTest {
 
   @Test
   fun canSelectRoute() {
-    listOfHikeRoutesViewModel.selectRoute(HikeRoute("Route 1", Bounds(0.0, 0.0, 0.0, 0.0), emptyList()))
+    listOfHikeRoutesViewModel.selectRoute(
+        HikeRoute("Route 1", Bounds(0.0, 0.0, 0.0, 0.0), emptyList()))
     val route = listOfHikeRoutesViewModel.selectedHikeRoute.value
     assertNotNull(route)
     assertEquals(route!!.id, "Route 1")

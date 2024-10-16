@@ -16,12 +16,11 @@ import org.osmdroid.util.BoundingBox
 
 /** ViewModel for the list of hike routes */
 open class ListOfHikeRoutesViewModel(
-  private val hikeRoutesRepository: HikeRoutesRepository,
-  private val dispatcher: CoroutineDispatcher = Dispatchers.IO
+    private val hikeRoutesRepository: HikeRoutesRepository,
+    private val dispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : ViewModel() {
   // List of all routes in the database
-  private val hikeRoutes_ =
-      MutableStateFlow<List<HikeRoute>>(emptyList())
+  private val hikeRoutes_ = MutableStateFlow<List<HikeRoute>>(emptyList())
   val hikeRoutes: StateFlow<List<HikeRoute>> = hikeRoutes_.asStateFlow()
 
   // Selected route, i.e the route for the detail view
@@ -43,34 +42,25 @@ open class ListOfHikeRoutesViewModel(
     private const val LOG_TAG = "ListOfHikeRoutesViewModel"
   }
 
-  private suspend fun getRoutesAsync(
-    onSuccess: () -> Unit = {},
-    onFailure: () -> Unit = {}
-  ) {
+  private suspend fun getRoutesAsync(onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}) {
     withContext(dispatcher) {
       val area = area_.value ?: return@withContext
       hikeRoutesRepository.getRoutes(
-        bounds = area.toBounds(),
-        onSuccess = { routes ->
-          hikeRoutes_.value = routes
-          onSuccess()
-        },
-        onFailure = { exception ->
-          Log.d(LOG_TAG, "[getRoutesAsync] Failed to get routes: $exception")
-          onFailure()
-        }
-      )
+          bounds = area.toBounds(),
+          onSuccess = { routes ->
+            hikeRoutes_.value = routes
+            onSuccess()
+          },
+          onFailure = { exception ->
+            Log.d(LOG_TAG, "[getRoutesAsync] Failed to get routes: $exception")
+            onFailure()
+          })
     }
   }
 
   /** Gets all the routes from the database and updates the routes_ variable */
-  fun getRoutes(
-    onSuccess: () -> Unit = {},
-    onFailure: () -> Unit = {}
-  ) {
-    viewModelScope.launch {
-      getRoutesAsync(onSuccess = onSuccess, onFailure = onFailure)
-    }
+  fun getRoutes(onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}) {
+    viewModelScope.launch { getRoutesAsync(onSuccess = onSuccess, onFailure = onFailure) }
   }
 
   /**
@@ -79,11 +69,7 @@ open class ListOfHikeRoutesViewModel(
    *
    * @param area The area to be displayed
    */
-  fun setArea(
-    area: BoundingBox,
-    onSuccess: () -> Unit = {},
-    onFailure: () -> Unit = {}
-  ) {
+  fun setArea(area: BoundingBox, onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}) {
     area_.value = area
     getRoutes(onSuccess = onSuccess, onFailure = onFailure)
   }

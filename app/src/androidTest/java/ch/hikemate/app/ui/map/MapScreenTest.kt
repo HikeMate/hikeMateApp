@@ -12,7 +12,6 @@ import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.TEST_TAG_SIDEBAR_BUTTON
 import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
-import kotlinx.coroutines.delay
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -35,10 +34,10 @@ class MapScreenTest : TestCase() {
     navigationActions = mock(NavigationActions::class.java)
     hikesRepository = mock(HikeRoutesRepository::class.java)
     listOfHikeRoutesViewModel = ListOfHikeRoutesViewModel(hikesRepository)
-    composeTestRule.setContent { MapScreen(
-      hikingRoutesViewModel = listOfHikeRoutesViewModel,
-      navigationActions = navigationActions
-    ) }
+    composeTestRule.setContent {
+      MapScreen(
+          hikingRoutesViewModel = listOfHikeRoutesViewModel, navigationActions = navigationActions)
+    }
   }
 
   @Test
@@ -97,7 +96,9 @@ class MapScreenTest : TestCase() {
   @Test
   fun clickingSearchDisplaysSearchingMessageAndClearsList() {
     composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCHING_MESSAGE).assertIsNotDisplayed()
-    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_LOADING_ANIMATION).assertIsNotDisplayed()
+    composeTestRule
+        .onNodeWithTag(MapScreen.TEST_TAG_SEARCH_LOADING_ANIMATION)
+        .assertIsNotDisplayed()
 
     composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).performClick()
 
@@ -116,7 +117,9 @@ class MapScreenTest : TestCase() {
     listOfHikeRoutesViewModel.setArea(BoundingBox(0.0, 0.0, 0.0, 0.0))
 
     // Click on the route item in the list
-    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_HIKE_ITEM, useUnmergedTree = true).performClick()
+    composeTestRule
+        .onNodeWithTag(MapScreen.TEST_TAG_HIKE_ITEM, useUnmergedTree = true)
+        .performClick()
 
     // Check that the selected route is the one that was clicked
     assert(listOfHikeRoutesViewModel.selectedHikeRoute.value == hikeRoute)

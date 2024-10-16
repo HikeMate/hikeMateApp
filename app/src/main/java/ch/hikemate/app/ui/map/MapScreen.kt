@@ -122,51 +122,44 @@ fun MapScreen(
               factory = { mapView },
               modifier = Modifier.fillMaxSize().testTag(MapScreen.TEST_TAG_MAP))
 
-    // Search button to request OSM for hikes in the displayed area
-    if (!isSearching) {
-      MapSearchButton(
-        onClick = {
-          if (isSearching) return@MapSearchButton
-          isSearching = true
-          hikingRoutesViewModel.setArea(
-            mapView.boundingBox,
-            onSuccess = { isSearching = false },
-            onFailure = {
-              isSearching = false
-              Handler(Looper.getMainLooper()).post {
-                Toast.makeText(context, "Error while searching for hikes", Toast.LENGTH_SHORT)
-                  .show()
-              }
-            }
-          )
-        },
-        modifier = Modifier
-          .align(Alignment.BottomCenter)
-          .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
-      )
-    }
+          // Search button to request OSM for hikes in the displayed area
+          if (!isSearching) {
+            MapSearchButton(
+                onClick = {
+                  if (isSearching) return@MapSearchButton
+                  isSearching = true
+                  hikingRoutesViewModel.setArea(
+                      mapView.boundingBox,
+                      onSuccess = { isSearching = false },
+                      onFailure = {
+                        isSearching = false
+                        Handler(Looper.getMainLooper()).post {
+                          Toast.makeText(
+                                  context, "Error while searching for hikes", Toast.LENGTH_SHORT)
+                              .show()
+                        }
+                      })
+                },
+                modifier =
+                    Modifier.align(Alignment.BottomCenter)
+                        .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
+          }
           CollapsibleHikesList(hikingRoutesViewModel, isSearching)
           // Put SideBarNavigation after to make it appear on top of the map and HikeList
         }
       }
-  }
+}
 
 @Composable
 fun MapSearchButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
   Button(
-    onClick = onClick,
-
-    modifier = modifier
-      .testTag(MapScreen.TEST_TAG_SEARCH_BUTTON),
-    colors = ButtonDefaults.buttonColors(
-      containerColor = MaterialTheme.colorScheme.surface
-    )
-  ) {
-    Text(
-      text = LocalContext.current.getString(R.string.map_screen_search_button_text),
-      color = MaterialTheme.colorScheme.onSurface
-    )
-  }
+      onClick = onClick,
+      modifier = modifier.testTag(MapScreen.TEST_TAG_SEARCH_BUTTON),
+      colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surface)) {
+        Text(
+            text = LocalContext.current.getString(R.string.map_screen_search_button_text),
+            color = MaterialTheme.colorScheme.onSurface)
+      }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -187,23 +180,20 @@ fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel, isSea
             if (isSearching) {
               item {
                 Column(
-                  horizontalAlignment = Alignment.CenterHorizontally,
-                  modifier = Modifier.fillMaxWidth()
-                ) {
-                  Text(
-                    text = "Searching for hikes...",
-                    style = MaterialTheme.typography.bodyLarge,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                      .padding(bottom = 16.dp)
-                      .testTag(MapScreen.TEST_TAG_SEARCHING_MESSAGE))
-                  CircularProgressIndicator(
-                    modifier = Modifier.testTag(MapScreen.TEST_TAG_SEARCH_LOADING_ANIMATION)
-                  )
-                }
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth()) {
+                      Text(
+                          text = "Searching for hikes...",
+                          style = MaterialTheme.typography.bodyLarge,
+                          textAlign = TextAlign.Center,
+                          modifier =
+                              Modifier.padding(bottom = 16.dp)
+                                  .testTag(MapScreen.TEST_TAG_SEARCHING_MESSAGE))
+                      CircularProgressIndicator(
+                          modifier = Modifier.testTag(MapScreen.TEST_TAG_SEARCH_LOADING_ANIMATION))
+                    }
               }
-            }
-            else if (routes.value.isEmpty()) {
+            } else if (routes.value.isEmpty()) {
               item {
                 // Use a box to center the Text composable of the empty list message
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
