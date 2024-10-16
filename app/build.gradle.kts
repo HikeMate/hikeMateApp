@@ -63,8 +63,6 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
-            merges  += "META-INF/LICENSE.md"
-            merges += "META-INF/LICENSE-notice.md"
         }
     }
 
@@ -126,6 +124,8 @@ dependencies {
     implementation(libs.androidx.navigation.runtime.ktx)
     implementation(libs.androidx.navigation.common.ktx)
     implementation(libs.androidx.navigation.testing)
+    implementation(libs.firebase.auth.ktx)
+    implementation(libs.googleid)
     testImplementation(libs.junit)
     globalTestImplementation(libs.androidx.junit)
     globalTestImplementation(libs.androidx.espresso.core)
@@ -159,8 +159,6 @@ dependencies {
 
     // ----------        FireBase       ------------
     implementation(platform(libs.firebase.bom))
-    implementation(libs.google.firebase.auth)
-    implementation(libs.play.services.auth)
 
     // ---------- OpenStreetMap ------------
     implementation(libs.osmdroid)
@@ -173,8 +171,8 @@ dependencies {
     testImplementation (libs.mockito.kotlin)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation (libs.ui.test.junit4)
+    androidTestImplementation (libs.mockito.mockito.kotlin)
     debugImplementation (libs.ui.test.manifest)
-    
     // JUnit
     testImplementation(libs.junit)
     androidTestImplementation(libs.junit)
@@ -196,31 +194,23 @@ dependencies {
     testImplementation(libs.kotlin.mockito.kotlin.v320)
     androidTestImplementation(libs.mockito.android.v3124)
     androidTestImplementation(libs.mockito.kotlin)
-    
-    // MockK
-    testImplementation(libs.mockk)
-    androidTestImplementation(libs.mockk.android.v11312)
-    androidTestImplementation(libs.mockk.agent)
 
-    // Google Sign in
-    implementation(libs.androidx.credentials.vlatestversion)
-    implementation(libs.androidx.credentials.play.services.auth.v10)
-    implementation(libs.googleid.vlatestversion)
+    // Mockk
+    androidTestImplementation(libs.mockk.android)
+    androidTestImplementation(libs.mockk.agent)
 
     implementation(libs.okhttp)
 
     // Robolectric (for unit tests that require Android framework)
     testImplementation(libs.robolectric)
-
-
     // To fix an issue with Firebase and the Protobuf library
     configurations.configureEach {
         exclude(group = "com.google.protobuf", module = "protobuf-lite")
     }
-
-
-
+    implementation(kotlin("script-runtime"))
 }
+
+
 
 tasks.withType<Test> {
     // Configure Jacoco for each tests

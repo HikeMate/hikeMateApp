@@ -1,13 +1,6 @@
 [versions]
 agp = "8.6.1"
-androidxCredentials = "<latest version>"
-credentials = "1.3.0"
-credentialsPlayServicesAuth = "1.5.0-alpha05"
-credentialsPlayServicesAuthVersion = "1.0"
-credentialsVersion = "1.5.0-alpha05"
 firebaseBom = "33.4.0"
-googleid = "1.3.0"
-googleidVersion = "<latest version>"
 junitJunit = "4.12"
 kotlin =  "1.8.10"
 coreKtx = "1.13.1"
@@ -31,14 +24,9 @@ mockitoKotlin = "5.4.0"
 mockitoMockitoAndroid = "3.12.4"
 mockitoMockitoCoreVersion = "3.12.4"
 mockitoMockitoKotlin = "3.2.0"
-mockk = "1.13.7"
+mockk = "1.13.12"
 mockkAgent = "1.13.12"
-mockkAndroid = "1.13.7"
-mockkAndroidVersion = "1.13.12"
-mockkMockk = "1.13.2"
-mockkMockkAndroid = "1.13.2"
-mockkVersion = "1.13.0"
-playServicesAuth = "21.2.0"
+mockkAndroid = "1.13.12"
 robolectric = "4.11.1"
 sonar = "4.4.1.3373"
 gms = "4.4.2"
@@ -51,28 +39,18 @@ firebaseFirestore = "25.1.0"
 firebaseUiAuth = "8.0.0"
 firebaseFirestoreKtx = "25.1.0"
 espressoIntents = "3.6.1"
-
 navigationRuntimeKtx = "2.8.2"
 navigationCommonKtx = "2.8.2"
 navigationTesting = "2.8.2"
 
-
 # OSM Librairies
 osmdroid = "6.1.20"
 okhttp = "4.12.0"
+googleid = "1.1.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
-androidx-credentials = { module = "androidx.credentials:credentials", version.ref = "credentials" }
-androidx-credentials-play-services-auth = { module = "androidx.credentials:credentials-play-services-auth", version.ref = "credentials" }
-androidx-credentials-play-services-auth-v10 = { module = "androidx.credentials:credentials-play-services-auth", version.ref = "credentialsPlayServicesAuthVersion" }
-androidx-credentials-play-services-auth-v150alpha05 = { module = "androidx.credentials:credentials-play-services-auth", version.ref = "credentialsPlayServicesAuth" }
-androidx-credentials-v150alpha05 = { module = "androidx.credentials:credentials", version.ref = "credentialsVersion" }
-androidx-credentials-vlatestversion = { module = "androidx.credentials:credentials", version.ref = "androidxCredentials" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
-google-firebase-auth = { module = "com.google.firebase:firebase-auth" }
-googleid = { module = "com.google.android.libraries.identity.googleid:googleid", version.ref = "googleid" }
-googleid-vlatestversion = { module = "com.google.android.libraries.identity.googleid:googleid", version = "1.1.1" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -104,13 +82,7 @@ mockito-mockito-core-v3124 = { module = "org.mockito:mockito-core", version.ref 
 mockito-mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 mockk-agent = { module = "io.mockk:mockk-agent", version.ref = "mockkAgent" }
-mockk-android = { module = "io.mockk:mockk-android" }
-mockk-android-v11312 = { module = "io.mockk:mockk-android", version.ref = "mockkAndroidVersion" }
-mockk-android-v1132 = { module = "io.mockk:mockk-android", version.ref = "mockkMockkAndroid" }
-mockk-mockk-android = { module = "io.mockk:mockk-android", version.ref = "mockkAndroid" }
-mockk-v1130 = { module = "io.mockk:mockk", version.ref = "mockkVersion" }
-mockk-v1132 = { module = "io.mockk:mockk", version.ref = "mockkMockk" }
-play-services-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "playServicesAuth" }
+mockk-android = { module = "io.mockk:mockk-android", version.ref = "mockkAndroid" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 osmdroid = { module = "org.osmdroid:osmdroid-android", version.ref = "osmdroid" }
 
@@ -121,7 +93,6 @@ firebase-database-ktx = { module = "com.google.firebase:firebase-database-ktx", 
 firebase-firestore = { module = "com.google.firebase:firebase-firestore", version.ref = "firebaseFirestore" }
 firebase-ui-auth = { module = "com.firebaseui:firebase-ui-auth", version.ref = "firebaseUiAuth" }
 firebase-firestore-ktx = { group = "com.google.firebase", name = "firebase-firestore-ktx", version.ref = "firebaseFirestoreKtx" }
-
 androidx-espresso-intents = { group = "androidx.test.espresso", name = "espresso-intents", version.ref = "espressoIntents" }
 androidx-navigation-runtime-ktx = { group = "androidx.navigation", name = "navigation-runtime-ktx", version.ref = "navigationRuntimeKtx" }
 androidx-navigation-common-ktx = { group = "androidx.navigation", name = "navigation-common-ktx", version.ref = "navigationCommonKtx" }
@@ -130,6 +101,7 @@ ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
 androidx-navigation-testing = { group = "androidx.navigation", name = "navigation-testing", version.ref = "navigationTesting" }
 
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
+googleid = { group = "com.google.android.libraries.identity.googleid", name = "googleid", version.ref = "googleid" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

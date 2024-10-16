@@ -31,8 +31,12 @@ jobs:
       - name: Decode secrets
         env:
           GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
+          KEYSTORE_PROPERTIES: ${{ secrets.KEYSTORE_PROPERTIES }}
+          KEYSTORE: ${{ secrets.KEYSTORE }}
         run: |
           echo "$GOOGLE_SERVICES" | base64 --decode > ./app/google-services.json
+          echo "$KEYSTORE_PROPERTIES" | base64 --decode > ./keystore.properties
+          echo "$KEYSTORE" | base64 --decode > ./keystore.jks
 
       # Kernel-based Virtual Machine (KVM) is an open source virtualization technology built into Linux. Enabling it allows the Android emulator to run faster.
       - name: Enable KVM group perms
@@ -105,7 +109,7 @@ jobs:
           ./gradlew check --parallel --build-cache
 
       # Run connected tests on the emulator
-      - name: run tests
+      - name: Run Android tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
@@ -120,11 +124,6 @@ jobs:
       - name: Generate coverage
         run: ./gradlew jacocoTestReport
 
-      - name: Build and analyze
-        env:
-          GITHUB_TOKEN: ${{ secrets.TOKEN_GITHUB }}  # Needed to get PR information, if any
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: ./gradlew build sonar --info
       # Upload the various reports to sonar
       - name: Upload report to SonarCloud
         env:
