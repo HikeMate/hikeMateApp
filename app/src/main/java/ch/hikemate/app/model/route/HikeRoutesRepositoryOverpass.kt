@@ -192,7 +192,6 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
             // Lat and Long are in the object, no need to change the reader
             "node" -> points.add(parseLatLong(memberReader))
             "way" -> points.addAll(parseWay(memberReader))
-            else -> memberReader.skipValue()
           }
         } else {
           memberReader.skipValue()
