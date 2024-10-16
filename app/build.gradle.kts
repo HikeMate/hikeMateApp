@@ -63,6 +63,9 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            // To fix this error: 6 files found with path 'META-INF/LICENSE.md'.
+            merges  += "META-INF/LICENSE.md"
+            merges += "META-INF/LICENSE-notice.md"
         }
     }
 
