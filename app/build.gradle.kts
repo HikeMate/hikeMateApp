@@ -146,6 +146,7 @@ dependencies {
     val composeBom = platform(libs.compose.bom)
 
     // Dependencies
+    implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
@@ -196,7 +197,7 @@ dependencies {
     androidTestImplementation(libs.compose.test.junit)
     androidTestImplementation(libs.mockk.android)
     androidTestImplementation("io.mockk:mockk-agent:1.13.12")
-
+    androidTestImplementation(libs.mockito.android)
 
     // Debug dependencies
     debugImplementation(libs.compose.tooling)
