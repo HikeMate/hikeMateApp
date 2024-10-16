@@ -157,6 +157,107 @@ class HikeRoutesRepositoryOverpassTest {
           .request(mock())
           .build()
 
+  private val responseWithAlternativeRoutes =
+      Response.Builder()
+          .code(200)
+          .message("OK")
+          .body(
+              """
+{
+    "version": 0.6,
+    "generator": "Overpass API 0.7.62.1 084b4234",
+    "osm3s": {
+        "timestamp_osm_base": "2024-10-10T19:14:42Z",
+        "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+    },
+    "elements": [
+        {
+            "type": "relation",
+            "id": 124582,
+            "bounds": {
+                "minlat": 45.8689061,
+                "minlon": 6.4395807,
+                "maxlat": 46.8283926,
+                "maxlon": 7.2109599
+            },
+            "members": [
+                {
+                    "type": "way",
+                    "ref": 936770892,
+                    "role": "",
+                    "geometry": [
+                        {
+                            "lat": 46.8240018,
+                            "lon": 6.4395807
+                        },
+                        {
+                            "lat": 46.823965,
+                            "lon": 6.4396698
+                        }
+                    ]
+                },
+                {
+                    "type": "way",
+                    "ref": 24956166,
+                    "role": "",
+                    "geometry": [
+                        {
+                            "lat": 46.8236197,
+                            "lon": 6.4400574
+                        },
+                        {
+                            "lat": 46.8235322,
+                            "lon": 6.4401168
+                        },
+                        {
+                            "lat": 46.8234367,
+                            "lon": 6.4401715
+                        }
+                    ]
+                },
+                {
+                    "type": "node",
+                    "ref": 1107816214,
+                    "role": "",
+                    "lat": 46.8232651,
+                    "lon": 6.4402355
+                },
+                {
+                    "type": "relation",
+                    "ref": 124582,
+                    "role": "alternative"
+                }
+            ],
+            "tags": {
+                "distance": "31",
+                "from": "Lausanne",
+                "int_name": "Camino de Santiago",
+                "name": "ViaJacobi",
+                "network": "nwn",
+                "operator": "Wanderland Schweiz",
+                "osmc:symbol": "green:green::4:white",
+                "pilgrimage": "Camino de Santiago",
+                "ref": "4",
+                "religion": "christian",
+                "route": "hiking",
+                "stage": "17",
+                "symbol": "weisse 4 auf grünem Rechteck und in südwestlicher Richtung Jakobsmuschel",
+                "to": "Roll",
+                "type": "route",
+                "url": "https://www.schweizmobil.ch/fr/wanderland/etappe4.17"
+            }
+        }
+    ]
+}
+"""
+                  .trimIndent()
+                  .replace("\n", "")
+                  .toResponseBody())
+          .protocol(Protocol.HTTP_1_1)
+          .header("Content-Type", "application/json")
+          .request(mock())
+          .build()
+
   private val simpleRoutes: List<HikeRoute> =
       listOf(
           HikeRoute(
@@ -260,5 +361,23 @@ class HikeRoutesRepositoryOverpassTest {
       failureCounter.incrementAndGet()
     }
     assertEquals(1, failureCounter.get())
+  }
+
+  // We currently only support the main route, not alternative routes
+  @Test
+  fun getRoutes_worksOnAlternativeRoutes() {
+    val mockCall = mock(Call::class.java)
+    `when`(mockClient.newCall(any())).thenReturn(mockCall)
+
+    val callbackCapture = argumentCaptor<okhttp3.Callback>()
+
+    `when`(mockCall.enqueue(callbackCapture.capture())).then {
+      callbackCapture.firstValue.onResponse(mockCall, responseWithAlternativeRoutes)
+    }
+
+    hikingRouteProviderRepositoryOverpass.getRoutes(
+        bounds, { routes -> assertEquals(simpleRoutes, routes) }) {
+          fail("Failed to fetch routes from Overpass API")
+        }
   }
 }
