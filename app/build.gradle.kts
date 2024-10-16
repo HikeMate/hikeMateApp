@@ -195,7 +195,7 @@ dependencies {
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.compose.test.junit)
     androidTestImplementation(libs.mockk.android)
-    androidTestImplementation("io.mockk:mockk-agent:1.13.12")
+    androidTestImplementation(libs.mockk.agent)
 
 
     // Debug dependencies

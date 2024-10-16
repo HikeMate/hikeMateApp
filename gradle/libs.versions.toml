@@ -18,6 +18,7 @@ mockitoAndroid = "5.13.0"
 mockitoCore = "5.13.0"
 mockitoInline = "4.0.0"
 mockitoKotlin = "5.4.0"
+mockkAgent = "1.13.12"
 mockkAndroid = "1.13.12"
 robolectric = "4.11.1"
 sonar = "4.4.1.3373"
@@ -67,6 +68,7 @@ mockito-android = { module = "org.mockito:mockito-android", version.ref = "mocki
 mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockitoCore" }
 mockito-inline = { module = "org.mockito:mockito-inline", version.ref = "mockitoInline" }
 mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockitoKotlin" }
+mockk-agent = { module = "io.mockk:mockk-agent", version.ref = "mockkAgent" }
 mockk-android = { module = "io.mockk:mockk-android", version.ref = "mockkAndroid" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 osmdroid = { module = "org.osmdroid:osmdroid-android", version.ref = "osmdroid" }
