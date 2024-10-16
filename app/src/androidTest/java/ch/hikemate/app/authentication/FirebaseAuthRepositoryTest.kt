@@ -25,6 +25,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import kotlin.time.Duration.Companion.seconds
 
 @ExperimentalCoroutinesApi
 @RunWith(AndroidJUnit4::class)
@@ -97,7 +98,7 @@ class FirebaseAuthRepositoryTest {
   }
 
   @Test
-  fun testSignInWithGoogle_successful() = runTest {
+  fun testSignInWithGoogle_successful() = runTest (timeout = 5.seconds) {
     // Mocks a successful call to FirebaseAuth.signInWithCredential
     every { mockTask.isSuccessful } returns true
 
@@ -127,7 +128,7 @@ class FirebaseAuthRepositoryTest {
   }
 
   @Test
-  fun testSignInWithGoogle_unsuccessful() = runTest {
+  fun testSignInWithGoogle_unsuccessful() = runTest (timeout = 5.seconds) {
     every { mockTask.isSuccessful } returns false
     every { mockTask.exception } returns Exception("Test Error")
 
@@ -150,7 +151,7 @@ class FirebaseAuthRepositoryTest {
   }
 
   @Test
-  fun testSignInWithGoogle_Error() = runTest {
+  fun testSignInWithGoogle_Error() = runTest (timeout = 5.seconds) {
     val testException = GetCredentialUnknownException("Test Error")
     coEvery { mockCredentialManager.getCredential(any(), any<GetCredentialRequest>()) } throws
         testException
@@ -174,7 +175,7 @@ class FirebaseAuthRepositoryTest {
   }
 
   @Test
-  fun testSignOut_successful() = runTest {
+  fun testSignOut_successful() = runTest (timeout = 5.seconds) {
     every { mockFirebaseAuth.currentUser } returns mockFirebaseUser
 
     val onSuccess: () -> Unit = mockk(relaxed = true)
