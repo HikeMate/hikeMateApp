@@ -34,6 +34,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -42,6 +43,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.hikemate.app.R
+import ch.hikemate.app.model.route.Bounds
+import ch.hikemate.app.model.route.HikeRoute
+import ch.hikemate.app.model.route.LatLong
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
 import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
 import ch.hikemate.app.ui.navigation.NavigationActions
@@ -54,11 +58,69 @@ import org.osmdroid.events.ScrollEvent
 import org.osmdroid.events.ZoomEvent
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Polyline
 
 object MapScreen {
   const val TEST_TAG_MAP = "map"
   const val TEST_TAG_HIKES_LIST = "hikesList"
   const val TEST_TAG_HIKE_ITEM = "hikeItem"
+
+  const val MIN_HUE = 0
+  const val MAX_HUE = 360
+  const val MIN_SATURATION = 42
+  const val MAX_SATURATION = 98
+  const val MIN_LIGHTNESS = 40
+  const val MAX_LIGHTNESS = 90
+
+  const val STROKE_WIDTH = 10f
+}
+
+/**
+ * Generates a random color in the HSL color space. This function uses the HSL color space to
+ * generate a random color as the HSL is better to generate more visually appealing colors.
+ *
+ * @return The generated color as an [Int].
+ */
+fun getRandomColor(): Int {
+  fun randomInt(min: Int, max: Int): Int {
+    return (min..max).random()
+  }
+
+  val h = randomInt(MapScreen.MIN_HUE, MapScreen.MAX_HUE).toFloat() // All colors
+  val s =
+      randomInt(MapScreen.MIN_SATURATION, MapScreen.MAX_SATURATION) /
+          100.0f // Saturation between 42% and 98%
+  val l =
+      randomInt(MapScreen.MIN_LIGHTNESS, MapScreen.MAX_LIGHTNESS) /
+          100.0f // Lightness between 40% and 90%
+
+  return Color.hsl(h, s, l).toArgb()
+}
+
+/**
+ * Shows a hike on the map.
+ *
+ * @param mapView The map view where the hike will be shown.
+ * @param hike The hike to be shown.
+ * @param color The color of the hike.
+ */
+fun showHikeOnMap(mapView: MapView, hike: HikeRoute, color: Int) {
+  val line = Polyline()
+
+  line.setPoints(hike.ways.map { GeoPoint(it.lat, it.lon) })
+  line.outlinePaint.color = color
+  line.outlinePaint.strokeWidth = MapScreen.STROKE_WIDTH
+
+  line.setOnClickListener { _, _, _ ->
+    Toast.makeText(
+            mapView.context,
+            "Hike details not implemented yet. Hike ID: ${hike.id}",
+            Toast.LENGTH_SHORT)
+        .show()
+    true
+  }
+
+  mapView.overlays.add(line)
 }
 
 @Composable
@@ -70,6 +132,31 @@ fun MapScreen(
   val context = LocalContext.current
   // Avoid re-creating the MapView on every recomposition
   val mapView = remember { MapView(context) }
+
+  // Associate each hike with a random color to show it on the map and in the list
+  val hikesWithColors: MutableList<Pair<HikeRoute, Int>> = mutableListOf()
+
+  // TODO: Replace the following code with the actual repository implementation
+  val hikes =
+      listOf(
+          HikeRoute(
+              id = "1",
+              bounds = Bounds(46.5, 6.6, 46.6, 6.7),
+              ways = listOf(LatLong(46.5, 6.6), LatLong(46.55, 6.65), LatLong(46.6, 6.7))),
+          HikeRoute(
+              id = "2",
+              bounds = Bounds(46.6, 6.7, 46.7, 6.8),
+              ways = listOf(LatLong(46.6, 6.7), LatLong(46.65, 6.75), LatLong(46.7, 6.8))),
+          HikeRoute(
+              id = "3",
+              bounds = Bounds(46.7, 6.8, 46.8, 6.9),
+              ways = listOf(LatLong(46.7, 6.8), LatLong(46.75, 6.85), LatLong(46.8, 6.9))))
+
+  hikes.forEach {
+    val color = getRandomColor()
+    showHikeOnMap(mapView, it, color)
+    hikesWithColors.add(Pair(it, color))
+  }
 
   Configuration.getInstance().apply {
     // Set user-agent to avoid rejected requests
@@ -86,7 +173,7 @@ fun MapScreen(
   }
 
   mapView.apply {
-    controller.setZoom(15.0)
+    controller.setZoom(12.0)
     controller.setCenter(GeoPoint(46.5, 6.6))
     // Enable touch-controls such as pinch to zoom
     setMultiTouchControls(true)
