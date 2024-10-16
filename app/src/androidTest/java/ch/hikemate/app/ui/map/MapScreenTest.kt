@@ -9,6 +9,8 @@ import ch.hikemate.app.model.route.Bounds
 import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.HikeRoutesRepository
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
+import ch.hikemate.app.ui.navigation.NavigationActions
+import ch.hikemate.app.ui.navigation.TEST_TAG_SIDEBAR_BUTTON
 import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
 import kotlinx.coroutines.delay
 import org.junit.Before
@@ -26,12 +28,17 @@ class MapScreenTest : TestCase() {
   private lateinit var listOfHikeRoutesViewModel: ListOfHikeRoutesViewModel
 
   @get:Rule val composeTestRule = createComposeRule()
+  lateinit var navigationActions: NavigationActions
 
   @Before
   fun setUp() {
+    navigationActions = mock(NavigationActions::class.java)
     hikesRepository = mock(HikeRoutesRepository::class.java)
     listOfHikeRoutesViewModel = ListOfHikeRoutesViewModel(hikesRepository)
-    composeTestRule.setContent { MapScreen(listOfHikeRoutesViewModel) }
+    composeTestRule.setContent { MapScreen(
+      hikingRoutesViewModel = listOfHikeRoutesViewModel,
+      navigationActions = navigationActions
+    ) }
   }
 
   @Test
@@ -46,7 +53,7 @@ class MapScreenTest : TestCase() {
 
   @Test
   fun menuButtonIsDisplayed() {
-    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_MENU_BUTTON).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).assertIsDisplayed()
   }
 
   @Test

@@ -22,7 +22,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
@@ -30,7 +29,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
@@ -43,7 +41,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -54,13 +51,17 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.hikemate.app.R
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
+import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
+import ch.hikemate.app.ui.navigation.NavigationActions
+import ch.hikemate.app.ui.navigation.Route
+import ch.hikemate.app.ui.navigation.Screen
+import ch.hikemate.app.ui.navigation.SideBarNavigation
 import org.osmdroid.config.Configuration
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 
 object MapScreen {
   const val TEST_TAG_MAP = "map"
-  const val TEST_TAG_MENU_BUTTON = "menuButton"
   const val TEST_TAG_SEARCH_BUTTON = "searchButton"
   const val TEST_TAG_HIKES_LIST = "hikesList"
   const val TEST_TAG_HIKE_ITEM = "hikeItem"
@@ -74,7 +75,8 @@ object MapScreen {
 @Composable
 fun MapScreen(
     hikingRoutesViewModel: ListOfHikeRoutesViewModel =
-        viewModel(factory = ListOfHikeRoutesViewModel.Factory)
+        viewModel(factory = ListOfHikeRoutesViewModel.Factory),
+    navigationActions: NavigationActions
 ) {
   val context = LocalContext.current
   // Avoid re-creating the MapView on every recomposition
@@ -106,31 +108,19 @@ fun MapScreen(
     }
   }
 
-  Box(modifier = Modifier.fillMaxSize()) {
-    // Jetpack Compose is a relatively recent framework for implementing Android UIs. OSMDroid is
-    // an older library that uses Activities, the previous way of doing. The composable AndroidView
-    // allows us to use OSMDroid's legacy MapView in a Jetpack Compose layout.
-    AndroidView(
-        factory = { mapView }, modifier = Modifier.fillMaxSize().testTag(MapScreen.TEST_TAG_MAP))
-
-    // Burger menu button in the top left corner of the screen
-    IconButton(
-        onClick = {
-          Toast.makeText(context, "Menu not implemented yet", Toast.LENGTH_SHORT).show()
-        },
-        modifier =
-            Modifier.padding(16.dp)
-                .align(Alignment.TopStart)
-                // Clip needs to be before background
-                .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colorScheme.surface)
-                .testTag(MapScreen.TEST_TAG_MENU_BUTTON)) {
-          Icon(
-              Icons.Default.Menu,
-              contentDescription =
-                  context.getString(R.string.map_screen_menu_button_content_description),
-              tint = MaterialTheme.colorScheme.onSurface)
-        }
+  SideBarNavigation(
+      onTabSelect = { navigationActions.navigateTo(it) },
+      tabList = LIST_TOP_LEVEL_DESTINATIONS,
+      selectedItem = Route.MAP) {
+        Box(modifier = Modifier.fillMaxSize().testTag(Screen.MAP)) {
+          // Jetpack Compose is a relatively recent framework for implementing Android UIs. OSMDroid
+          // is
+          // an older library that uses Activities, the previous way of doing. The composable
+          // AndroidView
+          // allows us to use OSMDroid's legacy MapView in a Jetpack Compose layout.
+          AndroidView(
+              factory = { mapView },
+              modifier = Modifier.fillMaxSize().testTag(MapScreen.TEST_TAG_MAP))
 
     // Search button to request OSM for hikes in the displayed area
     if (!isSearching) {
@@ -155,10 +145,11 @@ fun MapScreen(
           .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
       )
     }
-
-    CollapsibleHikesList(hikingRoutesViewModel, isSearching)
+          CollapsibleHikesList(hikingRoutesViewModel, isSearching)
+          // Put SideBarNavigation after to make it appear on top of the map and HikeList
+        }
+      }
   }
-}
 
 @Composable
 fun MapSearchButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
