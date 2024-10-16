@@ -33,14 +33,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ch.hikemate.app.R
 import ch.hikemate.app.ui.components.AppIcon
+import ch.hikemate.app.ui.navigation.NavigationActions
+import ch.hikemate.app.ui.navigation.Screen
+import ch.hikemate.app.ui.navigation.TopLevelDestinations
 import ch.hikemate.app.ui.theme.kaushanTitleFontFamily
 import ch.hikemate.app.ui.theme.primaryColor
 
+const val TEST_TAG_LOGIN_BUTTON = "loginButton"
+
 /** A composable function to display the sign in screen */
 @Composable
-fun SignInScreen() {
+fun SignInScreen(navigaionActions: NavigationActions) {
   Scaffold(
-      modifier = Modifier.fillMaxSize(),
+      modifier = Modifier.fillMaxSize().testTag(Screen.AUTH),
       content = { padding ->
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -83,7 +88,11 @@ fun SignInScreen() {
               )
             }
 
-            SignInWithGoogleButton { /* Handle sign in click here */}
+            SignInWithGoogleButton {
+              // TODO: Implement the sign in with Google functionality
+              // This bypasses all security and should not be used in production
+              navigaionActions.navigateTo(TopLevelDestinations.MAP)
+            }
           }
         }
       },
@@ -105,7 +114,7 @@ fun SignInWithGoogleButton(onSignInClick: () -> Unit) {
           Modifier.padding(8.dp)
               .height(48.dp)
               .border(width = 3.dp, color = primaryColor, shape = RoundedCornerShape(size = 32.dp))
-              .testTag("loginButton")) {
+              .testTag(TEST_TAG_LOGIN_BUTTON)) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,

@@ -3,17 +3,22 @@ package ch.hikemate.app.ui.map
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import ch.hikemate.app.ui.navigation.NavigationActions
+import ch.hikemate.app.ui.navigation.TEST_TAG_SIDEBAR_BUTTON
 import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.mockito.Mockito.mock
 
 class MapScreenTest : TestCase() {
   @get:Rule val composeTestRule = createComposeRule()
+  lateinit var navigationActions: NavigationActions
 
   @Before
   fun setUp() {
-    composeTestRule.setContent { MapScreen() }
+    navigationActions = mock(NavigationActions::class.java)
+    composeTestRule.setContent { MapScreen(navigationActions = navigationActions) }
   }
 
   @Test
@@ -28,7 +33,7 @@ class MapScreenTest : TestCase() {
 
   @Test
   fun menuButtonIsDisplayed() {
-    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_MENU_BUTTON).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).assertIsDisplayed()
   }
 
   @Test
