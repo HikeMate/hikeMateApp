@@ -169,16 +169,15 @@ dependencies {
     globalTestImplementation(libs.compose.test.junit)
     globalTestImplementation(libs.kaspresso)
     globalTestImplementation(libs.kaspresso.compose)
+    globalTestImplementation(libs.mockito.kotlin)
 
     // Test dependencies
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)
-    testImplementation(libs.mockito.inline)
-    testImplementation(libs.mockito.android)
-    testImplementation(libs.mockito.core)
-    testImplementation(libs.mockito.kotlin)
     testImplementation(libs.compose.test.junit)
     testImplementation(libs.compose.test.manifest)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.mockito.inline)
 
     // Android test dependencies
     androidTestImplementation(libs.androidx.espresso.core)
@@ -186,6 +185,7 @@ dependencies {
     androidTestImplementation(libs.ui.test.junit4)
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.compose.test.junit)
+    androidTestImplementation(libs.mockito.android)
 
     // Debug dependencies
     debugImplementation(libs.compose.tooling)
