@@ -16,12 +16,12 @@ import org.osmdroid.util.BoundingBox
 open class ListOfHikeRoutesViewModel(private val hikeRoutesRepository: HikeRoutesRepository) : ViewModel() {
   // List of all routes in the database
   private val hikeRoutes_ =
-      MutableStateFlow<List<String>>(emptyList()) // TODO: should be a list of Route objects
-  val hikeRoutes: StateFlow<List<String>> = hikeRoutes_.asStateFlow()
+      MutableStateFlow<List<HikeRoute>>(emptyList())
+  val hikeRoutes: StateFlow<List<HikeRoute>> = hikeRoutes_.asStateFlow()
 
   // Selected route, i.e the route for the detail view
-  private val selectedHikeRoute_ = MutableStateFlow<String?>(null) // TODO: should be a Route object
-  open val selectedHikeRoute: StateFlow<String?> = selectedHikeRoute_.asStateFlow()
+  private val selectedHikeRoute_ = MutableStateFlow<HikeRoute?>(null)
+  open val selectedHikeRoute: StateFlow<HikeRoute?> = selectedHikeRoute_.asStateFlow()
 
   private val area_ = MutableStateFlow<BoundingBox?>(null)
 
@@ -37,9 +37,16 @@ open class ListOfHikeRoutesViewModel(private val hikeRoutesRepository: HikeRoute
   }
 
   private suspend fun getRoutesAsync() {
-    // TODO: Should call the API repository to get all the routes filtered by the area
-    withContext(Dispatchers.IO) { Thread.sleep(100) }
-    hikeRoutes_.value = listOf("Route 1", "Route 2", "Route 3")
+    withContext(Dispatchers.IO) {
+      val area = area_.value ?: return@withContext
+      hikeRoutesRepository.getRoutes(
+        bounds = area.toBounds(),
+        onSuccess = { routes -> hikeRoutes_.value = routes},
+        onFailure = { exception ->
+          // TODO : Add feedback for the user when an API error occurs and test it
+        }
+      )
+    }
   }
 
   /** Gets all the routes from the database and updates the routes_ variable */
@@ -63,7 +70,7 @@ open class ListOfHikeRoutesViewModel(private val hikeRoutesRepository: HikeRoute
    *
    * @param hikeRoute The route to be displayed
    */
-  fun selectRoute(hikeRoute: String) { // TODO: should take a Route object
+  fun selectRoute(hikeRoute: HikeRoute) {
     selectedHikeRoute_.value = hikeRoute
   }
 }

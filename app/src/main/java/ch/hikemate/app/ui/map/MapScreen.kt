@@ -165,11 +165,14 @@ fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel) {
               }
             } else {
               items(routes.value.size) { index: Int ->
+                val route = routes.value[index]
                 HikingRouteItem(
-                    title = routes.value[index],
+                    title = route.id,
                     altitudeDifference = 1000,
                     isSuitable = index % 2 == 0,
                     onClick = {
+                      // The user clicked on the route to select it
+                      hikingRoutesViewModel.selectRoute(route)
                       Toast.makeText(
                               context, "Hike details not implemented yet", Toast.LENGTH_SHORT)
                           .show()
