@@ -21,6 +21,7 @@ private const val JSON_OVERPASS_FORMAT_TAG = "[out:json]"
 class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesRepository {
   private val cachedHikeRoutes = mutableMapOf<Bounds, List<HikeRoute>>()
 
+  /** @return The size of the cache. */
   fun getCacheSize(): Int {
     return cachedHikeRoutes.size
   }
@@ -30,6 +31,9 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
       onSuccess: (List<HikeRoute>) -> Unit,
       onFailure: (Exception) -> Unit
   ) {
+
+    //Check if the cache contains the bounds
+    //If so just return the content of the cache
     cachedHikeRoutes.keys.forEach {
       if (it.containsBounds(bounds)) {
         onSuccess(cachedHikeRoutes[it]!!)
@@ -53,6 +57,7 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
 
     setRequestHeaders(requestBuilder)
 
+    // The callback updates the cache
     val onSuccessWithCache = { routes: List<HikeRoute> ->
       cachedHikeRoutes[bounds] = routes
       onSuccess(routes)

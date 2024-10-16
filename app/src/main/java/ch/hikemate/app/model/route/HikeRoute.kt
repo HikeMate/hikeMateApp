@@ -1,13 +1,13 @@
 package ch.hikemate.app.model.route
 
-const val MAX_LATITUDE = 90.0
-const val MIN_LATITUDE = -90.0
-const val MAX_LONGITUDE = 180.0
-const val MIN_LONGITUDE = -180.0
-const val GRID_CELL_SIZE = 0.01
-
 /** A class representing a bounding box */
 data class Bounds(val minLat: Double, val minLon: Double, val maxLat: Double, val maxLon: Double) {
+  /**
+   * Check if this bounds contains another bounds
+   *
+   * @param other The other bounds
+   * @return True if this bounds contains the other bounds, false otherwise
+   */
   fun containsBounds(other: Bounds): Boolean {
     return minLat <= other.minLat &&
         minLon <= other.minLon &&
@@ -62,9 +62,3 @@ data class LatLong(val lat: Double, val lon: Double)
  * @param ways The points of the route
  */
 data class HikeRoute(val id: String, val bounds: Bounds, val ways: List<LatLong>)
-
-data class GridCell(val bounds: Bounds)
-
-fun Double.floor(): Double = kotlin.math.floor(this)
-
-fun Double.ceil(): Double = kotlin.math.ceil(this)
