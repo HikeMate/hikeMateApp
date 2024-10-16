@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -34,7 +35,10 @@ import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -49,9 +53,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.hikemate.app.R
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
 import org.osmdroid.config.Configuration
-import org.osmdroid.events.MapListener
-import org.osmdroid.events.ScrollEvent
-import org.osmdroid.events.ZoomEvent
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 
@@ -73,26 +74,31 @@ fun MapScreen(
   val context = LocalContext.current
   // Avoid re-creating the MapView on every recomposition
   val mapView = remember { MapView(context) }
+  // Keep track of whether a search for hikes is ongoing
+  var isSearching by remember { mutableStateOf(false) }
 
-  Configuration.getInstance().apply {
-    // Set user-agent to avoid rejected requests
-    userAgentValue = context.packageName
+  // Only do the configuration on the first composition, not on every recomposition
+  LaunchedEffect(Unit) {
+    Configuration.getInstance().apply {
+      // Set user-agent to avoid rejected requests
+      userAgentValue = context.packageName
 
-    // Allow for faster loading of tiles. Default OSMDroid value is 2.
-    tileDownloadThreads = 4
+      // Allow for faster loading of tiles. Default OSMDroid value is 2.
+      tileDownloadThreads = 4
 
-    // Maximum number of tiles that can be downloaded at once. Default is 40.
-    tileDownloadMaxQueueSize = 40
+      // Maximum number of tiles that can be downloaded at once. Default is 40.
+      tileDownloadMaxQueueSize = 40
 
-    // Maximum number of bytes that can be used by the tile file system cache. Default is 600MB.
-    tileFileSystemCacheMaxBytes = 600L * 1024L * 1024L
-  }
+      // Maximum number of bytes that can be used by the tile file system cache. Default is 600MB.
+      tileFileSystemCacheMaxBytes = 600L * 1024L * 1024L
+    }
 
-  mapView.apply {
-    controller.setZoom(15.0)
-    controller.setCenter(GeoPoint(46.5, 6.6))
-    // Enable touch-controls such as pinch to zoom
-    setMultiTouchControls(true)
+    mapView.apply {
+      controller.setZoom(15.0)
+      controller.setCenter(GeoPoint(46.5, 6.6))
+      // Enable touch-controls such as pinch to zoom
+      setMultiTouchControls(true)
+    }
   }
 
   Box(modifier = Modifier.fillMaxSize()) {
@@ -122,25 +128,32 @@ fun MapScreen(
         }
 
     // Search button to request OSM for hikes in the displayed area
-    MapSearchButton(
-      onClick = { hikingRoutesViewModel.setArea(mapView.boundingBox) },
-      modifier = Modifier
-        .align(Alignment.BottomCenter)
-        .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
-    )
+    if (!isSearching) {
+      MapSearchButton(
+        onClick = {
+          if (isSearching) return@MapSearchButton
+          isSearching = true
+          hikingRoutesViewModel.setArea(
+            mapView.boundingBox,
+            onSuccess = { isSearching = false },
+            onFailure = { isSearching = false }
+          )
+        },
+        modifier = Modifier
+          .align(Alignment.BottomCenter)
+          .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
+      )
+    }
 
     CollapsibleHikesList(hikingRoutesViewModel)
   }
-
-  // Load hikes list on first composition of the map screen, but avoid reloading the list
-  // on each recomposition, as this will be handled by map events such as zoom or scroll
-  LaunchedEffect(Unit) { hikingRoutesViewModel.setArea(mapView.boundingBox) }
 }
 
 @Composable
 fun MapSearchButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
   Button(
     onClick = onClick,
+
     modifier = modifier
       .testTag(MapScreen.TEST_TAG_SEARCH_BUTTON),
     colors = ButtonDefaults.buttonColors(

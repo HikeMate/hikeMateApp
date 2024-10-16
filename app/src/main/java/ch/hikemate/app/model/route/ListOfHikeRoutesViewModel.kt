@@ -36,22 +36,34 @@ open class ListOfHikeRoutesViewModel(private val hikeRoutesRepository: HikeRoute
         }
   }
 
-  private suspend fun getRoutesAsync() {
+  private suspend fun getRoutesAsync(
+    onSuccess: () -> Unit = {},
+    onFailure: () -> Unit = {}
+  ) {
     withContext(Dispatchers.IO) {
       val area = area_.value ?: return@withContext
       hikeRoutesRepository.getRoutes(
         bounds = area.toBounds(),
-        onSuccess = { routes -> hikeRoutes_.value = routes},
+        onSuccess = { routes ->
+          hikeRoutes_.value = routes
+          onSuccess()
+        },
         onFailure = { exception ->
           // TODO : Add feedback for the user when an API error occurs and test it
+          onFailure()
         }
       )
     }
   }
 
   /** Gets all the routes from the database and updates the routes_ variable */
-  fun getRoutes() {
-    viewModelScope.launch(Dispatchers.IO) { getRoutesAsync() }
+  fun getRoutes(
+    onSuccess: () -> Unit = {},
+    onFailure: () -> Unit = {}
+  ) {
+    viewModelScope.launch(Dispatchers.IO) {
+      getRoutesAsync(onSuccess = onSuccess, onFailure = onFailure)
+    }
   }
 
   /**
@@ -60,9 +72,13 @@ open class ListOfHikeRoutesViewModel(private val hikeRoutesRepository: HikeRoute
    *
    * @param area The area to be displayed
    */
-  fun setArea(area: BoundingBox) {
+  fun setArea(
+    area: BoundingBox,
+    onSuccess: () -> Unit = {},
+    onFailure: () -> Unit = {}
+  ) {
     area_.value = area
-    getRoutes()
+    getRoutes(onSuccess = onSuccess, onFailure = onFailure)
   }
 
   /**
