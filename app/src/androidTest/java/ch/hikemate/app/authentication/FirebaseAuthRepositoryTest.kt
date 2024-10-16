@@ -1,3 +1,5 @@
+package ch.hikemate.app.authentication
+
 import android.content.Context
 import androidx.credentials.Credential
 import androidx.credentials.CredentialManager
