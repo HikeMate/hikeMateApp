@@ -145,7 +145,7 @@ fun MapScreen(
       )
     }
 
-    CollapsibleHikesList(hikingRoutesViewModel)
+    CollapsibleHikesList(hikingRoutesViewModel, isSearching)
   }
 }
 
@@ -169,7 +169,7 @@ fun MapSearchButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel) {
+fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel, isSearching: Boolean) {
   val scaffoldState = rememberBottomSheetScaffoldState()
   val routes = hikingRoutesViewModel.hikeRoutes.collectAsState()
   val context = LocalContext.current
@@ -182,7 +182,22 @@ fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel) {
       sheetContent = {
         Column(modifier = Modifier.fillMaxSize().testTag(MapScreen.TEST_TAG_HIKES_LIST)) {
           LazyColumn(modifier = Modifier.fillMaxSize()) {
-            if (routes.value.isEmpty()) {
+            if (isSearching) {
+              item {
+                Column(
+                  horizontalAlignment = Alignment.CenterHorizontally,
+                  modifier = Modifier.fillMaxWidth()
+                ) {
+                  Text(
+                    text = "Searching for hikes...",
+                    style = MaterialTheme.typography.bodyLarge,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(bottom = 16.dp))
+                  CircularProgressIndicator()
+                }
+              }
+            }
+            else if (routes.value.isEmpty()) {
               item {
                 // Use a box to center the Text composable of the empty list message
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
