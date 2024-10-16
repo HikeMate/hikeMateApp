@@ -34,63 +34,56 @@ class FirebaseAuthRepository {
       coroutineScope: CoroutineScope,
       credentialManager: CredentialManager = CredentialManager.create(context),
   ) {
+    // Initialize Firebase authentication and retrieve the web client ID from resources
+    val auth = Firebase.auth
+    val token = context.getString(R.string.default_web_client_id)
 
-    try {
+    // Configure Google ID options to request credentials from authorized accounts and the server
+    // client ID
+    val googleIdOption: GetGoogleIdOption =
+        GetGoogleIdOption.Builder()
+            .setFilterByAuthorizedAccounts(
+                true) // Only allow accounts already signed in on the device
+            .setServerClientId(token) // Server client ID for OAuth
+            .setAutoSelectEnabled(true) // Auto-select if only one account is available
+            .build()
 
-      // Initialize Firebase authentication and retrieve the web client ID from resources
-      val auth = Firebase.auth
-      val token = context.getString(R.string.default_web_client_id)
+    // Build the credential request with the Google ID option
+    val request: GetCredentialRequest =
+        GetCredentialRequest.Builder().addCredentialOption(googleIdOption).build()
 
-      // Configure Google ID options to request credentials from authorized accounts and the server
-      // client ID
-      val googleIdOption: GetGoogleIdOption =
-          GetGoogleIdOption.Builder()
-              .setFilterByAuthorizedAccounts(
-                  true) // Only allow accounts already signed in on the device
-              .setServerClientId(token) // Server client ID for OAuth
-              .setAutoSelectEnabled(true) // Auto-select if only one account is available
-              .build()
+    // Launch a coroutine for the login process to avoid blocking the main thread
+    coroutineScope.launch {
+      try {
+        // Request credentials from the credential manager
+        val result =
+            credentialManager.getCredential(
+                request = request, // Send the request we built
+                context = context // Provide the context for the request
+                )
 
-      // Build the credential request with the Google ID option
-      val request: GetCredentialRequest =
-          GetCredentialRequest.Builder().addCredentialOption(googleIdOption).build()
+        // Extract the ID token from the result and create a Firebase credential
+        val firebaseCredential =
+            GoogleAuthProvider.getCredential(
+                result.credential.data.getString(
+                    "com.google.android.libraries.identity.googleid.BUNDLE_KEY_ID_TOKEN")!!, // Non-null assertion because the token must exist if login is successful
+                null // No access token needed
+                )
 
-      // Launch a coroutine for the login process to avoid blocking the main thread
-      coroutineScope.launch {
-        try {
-          // Request credentials from the credential manager
-          val result =
-              credentialManager.getCredential(
-                  request = request, // Send the request we built
-                  context = context // Provide the context for the request
-                  )
-
-          // Extract the ID token from the result and create a Firebase credential
-          val firebaseCredential =
-              GoogleAuthProvider.getCredential(
-                  result.credential.data.getString(
-                      "com.google.android.libraries.identity.googleid.BUNDLE_KEY_ID_TOKEN")!!, // Non-null assertion because the token must exist if login is successful
-                  null // No access token needed
-                  )
-
-          // Sign in with the Firebase credential (async task)
-          auth.signInWithCredential(firebaseCredential).addOnCompleteListener { task ->
-            if (task.isSuccessful) {
-              Log.d("SignInButton", "signInWithCredential:success")
-              onSuccess(auth.currentUser)
-            } else {
-              Log.d("SignInButton", "signInWithCredential:failure")
-              onErrorAction(task.exception ?: Exception("Unknown error"))
-            }
+        // Sign in with the Firebase credential (async task)
+        auth.signInWithCredential(firebaseCredential).addOnCompleteListener { task ->
+          if (task.isSuccessful) {
+            Log.d("SignInButton", "signInWithCredential:success")
+            onSuccess(auth.currentUser)
+          } else {
+            Log.d("SignInButton", "signInWithCredential:failure")
+            onErrorAction(task.exception ?: Exception("Unknown error"))
           }
-        } catch (e: Exception) {
-          Log.d("SignInButton", "Login error: ${e.message}")
-          onErrorAction(e)
         }
+      } catch (e: Exception) {
+        Log.d("SignInButton", "Login error: ${e.message}")
+        onErrorAction(e)
       }
-    } catch (e: Exception) {
-      Log.d("SignInButton", "Login error: ${e.message}")
-      onErrorAction(e)
     }
   }
 
