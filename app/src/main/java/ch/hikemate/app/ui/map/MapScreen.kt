@@ -62,6 +62,9 @@ object MapScreen {
   const val TEST_TAG_SEARCH_BUTTON = "searchButton"
   const val TEST_TAG_HIKES_LIST = "hikesList"
   const val TEST_TAG_HIKE_ITEM = "hikeItem"
+  const val TEST_TAG_EMPTY_HIKES_LIST_MESSAGE = "emptyHikesListMessage"
+  const val TEST_TAG_SEARCHING_MESSAGE = "searchingMessage"
+  const val TEST_TAG_SEARCH_LOADING_ANIMATION = "searchLoadingAnimation"
 
   val BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT = 400.dp
 }
@@ -192,8 +195,12 @@ fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel, isSea
                     text = "Searching for hikes...",
                     style = MaterialTheme.typography.bodyLarge,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(bottom = 16.dp))
-                  CircularProgressIndicator()
+                    modifier = Modifier
+                      .padding(bottom = 16.dp)
+                      .testTag(MapScreen.TEST_TAG_SEARCHING_MESSAGE))
+                  CircularProgressIndicator(
+                    modifier = Modifier.testTag(MapScreen.TEST_TAG_SEARCH_LOADING_ANIMATION)
+                  )
                 }
               }
             }
@@ -205,7 +212,8 @@ fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel, isSea
                       text = context.getString(R.string.map_screen_empty_hikes_list_message),
                       style = MaterialTheme.typography.bodyLarge,
                       // Align the text within the Text composable to the center
-                      textAlign = TextAlign.Center)
+                      textAlign = TextAlign.Center,
+                      modifier = Modifier.testTag(MapScreen.TEST_TAG_EMPTY_HIKES_LIST_MESSAGE))
                 }
               }
             } else {
