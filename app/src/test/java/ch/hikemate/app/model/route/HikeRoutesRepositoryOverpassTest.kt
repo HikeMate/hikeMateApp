@@ -27,6 +27,8 @@ class HikeRoutesRepositoryOverpassTest {
   @Mock private lateinit var mockClient: OkHttpClient
   private lateinit var hikingRouteProviderRepositoryOverpass: HikeRoutesRepositoryOverpass
   private val bounds = Bounds(46.51402, 6.55989, 46.52291, 6.58243)
+  private val containedBounds = Bounds(46.51502, 6.56989, 46.52191, 6.58143)
+  private val nonContainedBounds = Bounds(46.51502, 6.56989, 47.52191, 6.58143)
 
   private val emptyResponse =
       Response.Builder()
@@ -379,5 +381,62 @@ class HikeRoutesRepositoryOverpassTest {
         bounds, { routes -> assertEquals(simpleRoutes, routes) }) {
           fail("Failed to fetch routes from Overpass API")
         }
+  }
+
+  @Test
+  fun getRoutes_cacheWorks() {
+    // We currently only support the main route, not alternative routes
+    val mockCall = mock(Call::class.java)
+    `when`(mockClient.newCall(any())).thenReturn(mockCall)
+
+    val callbackCapture = argumentCaptor<okhttp3.Callback>()
+
+    `when`(mockCall.enqueue(callbackCapture.capture())).then {
+      callbackCapture.firstValue.onResponse(mockCall, simpleResponse)
+    }
+    assertEquals(hikingRouteProviderRepositoryOverpass.getCacheSize(), 0)
+    callbackCapture.firstValue.onResponse(mockCall, responseWithAlternativeRoutes)
+
+    hikingRouteProviderRepositoryOverpass.getRoutes(
+        bounds, { routes -> assertEquals(simpleRoutes, routes) }) {
+          fail("Failed to fetch routes from Overpass API")
+        }
+
+    assertEquals(hikingRouteProviderRepositoryOverpass.getCacheSize(), 1)
+
+    hikingRouteProviderRepositoryOverpass.getRoutes(
+        containedBounds, { routes -> assertEquals(simpleRoutes, routes) }) {
+          fail("Failed to fetch routes from Overpass API")
+        }
+    assertEquals(hikingRouteProviderRepositoryOverpass.getCacheSize(), 1)
+  }
+
+  @Test
+  fun getRoutes_retrievesFromApiWhenNotInCache() {
+
+    // We currently only support the main route, not alternative routes
+    val mockCall = mock(Call::class.java)
+    `when`(mockClient.newCall(any())).thenReturn(mockCall)
+
+    val callbackCapture = argumentCaptor<okhttp3.Callback>()
+
+    `when`(mockCall.enqueue(callbackCapture.capture())).then {
+      callbackCapture.firstValue.onResponse(mockCall, simpleResponse)
+    }
+    assertEquals(hikingRouteProviderRepositoryOverpass.getCacheSize(), 0)
+    callbackCapture.firstValue.onResponse(mockCall, responseWithAlternativeRoutes)
+
+    hikingRouteProviderRepositoryOverpass.getRoutes(
+        bounds, { routes -> assertEquals(simpleRoutes, routes) }) {
+          fail("Failed to fetch routes from Overpass API")
+        }
+
+    assertEquals(hikingRouteProviderRepositoryOverpass.getCacheSize(), 1)
+
+    hikingRouteProviderRepositoryOverpass.getRoutes(
+        nonContainedBounds, { routes -> assertEquals(simpleRoutes, routes) }) {
+          fail("Failed to fetch routes from Overpass API")
+        }
+    assertEquals(hikingRouteProviderRepositoryOverpass.getCacheSize(), 2)
   }
 }

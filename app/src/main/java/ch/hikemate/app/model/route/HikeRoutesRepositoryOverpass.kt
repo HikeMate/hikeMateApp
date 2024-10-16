@@ -32,8 +32,8 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
       onFailure: (Exception) -> Unit
   ) {
 
-    //Check if the cache contains the bounds
-    //If so just return the content of the cache
+    // Check if the cache contains the bounds
+    // If so just return the content of the cache
     cachedHikeRoutes.keys.forEach {
       if (it.containsBounds(bounds)) {
         onSuccess(cachedHikeRoutes[it]!!)
