@@ -1,7 +1,9 @@
 package ch.hikemate.app.model.route
 
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.setMain
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
@@ -21,6 +23,8 @@ class ListOfHikeRoutesViewModelTest {
   @OptIn(ExperimentalCoroutinesApi::class)
   @Before
   fun setUp() {
+    Dispatchers.setMain(UnconfinedTestDispatcher())
+
     hikesRepository = mock(HikeRoutesRepository::class.java)
     listOfHikeRoutesViewModel =
         ListOfHikeRoutesViewModel(hikesRepository, UnconfinedTestDispatcher())
