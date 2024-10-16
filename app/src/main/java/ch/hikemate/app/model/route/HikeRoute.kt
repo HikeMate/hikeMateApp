@@ -1,5 +1,7 @@
 package ch.hikemate.app.model.route
 
+import org.osmdroid.util.BoundingBox
+
 /** A class representing a bounding box */
 data class Bounds(val minLat: Double, val minLon: Double, val maxLat: Double, val maxLon: Double) {
 
@@ -37,6 +39,14 @@ data class Bounds(val minLat: Double, val minLon: Double, val maxLat: Double, va
       return Bounds(minLat, minLon, maxLat, maxLon)
     }
   }
+}
+
+fun BoundingBox.toBounds(): Bounds {
+  return Bounds(latSouth, lonWest, latNorth, lonEast)
+}
+
+fun Bounds.toBoundingBox(): BoundingBox {
+  return BoundingBox(maxLat, maxLon, minLat, minLon)
 }
 
 /** A simple data class to represent a latitude and longitude */
