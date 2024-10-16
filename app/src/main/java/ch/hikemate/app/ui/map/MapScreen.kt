@@ -23,6 +23,8 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.BottomSheetScaffold
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -56,8 +58,11 @@ import org.osmdroid.views.MapView
 object MapScreen {
   const val TEST_TAG_MAP = "map"
   const val TEST_TAG_MENU_BUTTON = "menuButton"
+  const val TEST_TAG_SEARCH_BUTTON = "searchButton"
   const val TEST_TAG_HIKES_LIST = "hikesList"
   const val TEST_TAG_HIKE_ITEM = "hikeItem"
+
+  val BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT = 400.dp
 }
 
 @Composable
@@ -88,19 +93,6 @@ fun MapScreen(
     controller.setCenter(GeoPoint(46.5, 6.6))
     // Enable touch-controls such as pinch to zoom
     setMultiTouchControls(true)
-    // Update hiking routes every time the user moves the map
-    addMapListener(
-        object : MapListener {
-          override fun onScroll(event: ScrollEvent?): Boolean {
-            hikingRoutesViewModel.setArea(mapView.boundingBox)
-            return true
-          }
-
-          override fun onZoom(event: ZoomEvent?): Boolean {
-            hikingRoutesViewModel.setArea(mapView.boundingBox)
-            return true
-          }
-        })
   }
 
   Box(modifier = Modifier.fillMaxSize()) {
@@ -129,12 +121,37 @@ fun MapScreen(
               tint = MaterialTheme.colorScheme.onSurface)
         }
 
+    // Search button to request OSM for hikes in the displayed area
+    MapSearchButton(
+      onClick = { hikingRoutesViewModel.setArea(mapView.boundingBox) },
+      modifier = Modifier
+        .align(Alignment.BottomCenter)
+        .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
+    )
+
     CollapsibleHikesList(hikingRoutesViewModel)
   }
 
   // Load hikes list on first composition of the map screen, but avoid reloading the list
   // on each recomposition, as this will be handled by map events such as zoom or scroll
   LaunchedEffect(Unit) { hikingRoutesViewModel.setArea(mapView.boundingBox) }
+}
+
+@Composable
+fun MapSearchButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+  Button(
+    onClick = onClick,
+    modifier = modifier
+      .testTag(MapScreen.TEST_TAG_SEARCH_BUTTON),
+    colors = ButtonDefaults.buttonColors(
+      containerColor = MaterialTheme.colorScheme.surface
+    )
+  ) {
+    Text(
+      text = LocalContext.current.getString(R.string.map_screen_search_button_text),
+      color = MaterialTheme.colorScheme.onSurface
+    )
+  }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -182,7 +199,7 @@ fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel) {
           }
         }
       },
-      sheetPeekHeight = 400.dp) {}
+      sheetPeekHeight = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT) {}
 }
 
 @Composable
