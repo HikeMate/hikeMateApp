@@ -9,12 +9,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navigation
 import ch.hikemate.app.model.authentication.AuthViewModel
-import ch.hikemate.app.model.authentication.FirebaseAuthRepository
 import ch.hikemate.app.ui.auth.SignInScreen
 import ch.hikemate.app.ui.map.MapScreen
 import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
@@ -41,8 +41,7 @@ fun HikeMateApp() {
   val navController = rememberNavController()
   val navigationActions = NavigationActions(navController)
 
-  val authRepository = FirebaseAuthRepository()
-  val authViewModel = AuthViewModel(authRepository)
+  val authViewModel: AuthViewModel = viewModel(factory = AuthViewModel.Factory)
 
   NavHost(navController = navController, startDestination = TopLevelDestinations.AUTH.route) {
     navigation(
