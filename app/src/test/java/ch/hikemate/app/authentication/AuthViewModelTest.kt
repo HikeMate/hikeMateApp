@@ -90,7 +90,12 @@ class AuthViewModelTest {
 
     viewModel.signInWithGoogle(this, mockContext)
 
+    // Verify call to the repository
+    verify(mockRepository).signInWithGoogle(any(), any(), any(), any(), any())
+
     val currentUser = viewModel.currentUser.first() // Get the first (current) value of the flow
+
+    // Confirm that currentUser is now logged in
     assertEquals(mockFirebaseUser, currentUser)
   }
 
@@ -113,6 +118,9 @@ class AuthViewModelTest {
     viewModel.signInWithGoogle(this, mockContext)
 
     val currentUser = viewModel.currentUser.first()
+
+    // Verify call to the repository
+    verify(mockRepository).signInWithGoogle(any(), any(), any(), any(), any())
 
     // Confirm that currentUser is still null
     assertEquals(null, currentUser)
