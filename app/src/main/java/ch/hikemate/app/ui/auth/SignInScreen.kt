@@ -18,6 +18,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
@@ -25,6 +26,7 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -32,18 +34,27 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ch.hikemate.app.R
+import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.ui.components.AppIcon
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.navigation.TopLevelDestinations
 import ch.hikemate.app.ui.theme.kaushanTitleFontFamily
 import ch.hikemate.app.ui.theme.primaryColor
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 
 const val TEST_TAG_LOGIN_BUTTON = "loginButton"
 
 /** A composable function to display the sign in screen */
 @Composable
-fun SignInScreen(navigaionActions: NavigationActions) {
+fun SignInScreen(navigaionActions: NavigationActions, authViewModel: AuthViewModel) {
+  val context = LocalContext.current
+
+  authViewModel.currentUser.collectAsState().value.let {
+    if (it != null) navigaionActions.navigateTo(TopLevelDestinations.MAP)
+  }
+
   Scaffold(
       modifier = Modifier.fillMaxSize().testTag(Screen.AUTH),
       content = { padding ->
@@ -89,9 +100,7 @@ fun SignInScreen(navigaionActions: NavigationActions) {
             }
 
             SignInWithGoogleButton {
-              // TODO: Implement the sign in with Google functionality
-              // This bypasses all security and should not be used in production
-              navigaionActions.navigateTo(TopLevelDestinations.MAP)
+              authViewModel.signInWithGoogle(CoroutineScope(Dispatchers.IO), context)
             }
           }
         }
