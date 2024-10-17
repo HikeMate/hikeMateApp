@@ -4,15 +4,19 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Button
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navigation
+import ch.hikemate.app.model.authentication.AuthViewModel
+import ch.hikemate.app.model.authentication.FirebaseAuthRepository
 import ch.hikemate.app.ui.auth.SignInScreen
 import ch.hikemate.app.ui.map.MapScreen
 import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
@@ -22,11 +26,25 @@ import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.navigation.SideBarNavigation
 import ch.hikemate.app.ui.navigation.TopLevelDestinations
 import ch.hikemate.app.ui.theme.HikeMateTheme
+import com.google.rpc.context.AttributeContext.Auth
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-    setContent { HikeMateTheme { Surface(modifier = Modifier.fillMaxSize()) { HikeMateApp() } } }
+
+    val firebaseAuthRepository: FirebaseAuthRepository = FirebaseAuthRepository()
+    val authViewModel: AuthViewModel = AuthViewModel(firebaseAuthRepository);
+    var currUser = authViewModel.currentUser.value
+    setContent{
+      Text("$currUser")
+      val coroutineScope = rememberCoroutineScope()
+      Button(
+        onClick = { authViewModel.signInWithGoogle(coroutineScope, this) },
+      ) {
+        Text("Sign in with Google")
+      }
+    }
+    //setContent { HikeMateTheme { Surface(modifier = Modifier.fillMaxSize()) { HikeMateApp() } } }
   }
 }
 

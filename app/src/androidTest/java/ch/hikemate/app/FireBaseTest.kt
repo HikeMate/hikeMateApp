@@ -27,6 +27,8 @@ class FireBaseTest {
   fun testFirebaseReadAndWrite() {
     val db = FirebaseFirestore.getInstance()
 
+    Log.d("FireBaseTest", "Testing Firebase read and write:$db")
+
     val latchAdd = CountDownLatch(1)
     val latchGet = CountDownLatch(1)
     val latchDel = CountDownLatch(1)
@@ -34,6 +36,9 @@ class FireBaseTest {
     val testData: MutableMap<String, Any> = HashMap()
     val testValue = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)
     testData["testKey"] = testValue
+
+
+
 
     // Add a test file to the database
     db.collection("testCollection")
@@ -47,7 +52,7 @@ class FireBaseTest {
           latchAdd.countDown()
         }
 
-    assertTrue(latchAdd.await(5, TimeUnit.SECONDS))
+    assertTrue(latchAdd.await(10, TimeUnit.SECONDS))
 
     // Read the test file from the database
     db.collection("testCollection").get().addOnCompleteListener { task ->

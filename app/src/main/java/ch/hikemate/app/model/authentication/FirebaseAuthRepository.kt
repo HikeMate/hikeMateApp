@@ -42,8 +42,7 @@ class FirebaseAuthRepository {
     // client ID
     val googleIdOption: GetGoogleIdOption =
         GetGoogleIdOption.Builder()
-            .setFilterByAuthorizedAccounts(
-                true) // Only allow accounts already signed in on the device
+            //.setFilterByAuthorizedAccounts(true) // Only allow accounts already signed in on the device
             .setServerClientId(token) // Server client ID for OAuth
             .setAutoSelectEnabled(true) // Auto-select if only one account is available
             .build()
@@ -55,12 +54,15 @@ class FirebaseAuthRepository {
     // Launch a coroutine for the login process to avoid blocking the main thread
     coroutineScope.launch {
       try {
+        Log.d("Test", "Trying to get credential")
         // Request credentials from the credential manager
         val result =
             credentialManager.getCredential(
                 request = request, // Send the request we built
                 context = context // Provide the context for the request
                 )
+
+        Log.d("test", "${result}")
 
         // Extract the ID token from the result and create a Firebase credential
         val firebaseCredential =
@@ -69,6 +71,8 @@ class FirebaseAuthRepository {
                     "com.google.android.libraries.identity.googleid.BUNDLE_KEY_ID_TOKEN")!!, // Non-null assertion because the token must exist if login is successful
                 null // No access token needed
                 )
+
+        Log.d("firebase auth repository", "${firebaseCredential}")
 
         // Sign in with the Firebase credential (async task)
         auth.signInWithCredential(firebaseCredential).addOnCompleteListener { task ->
