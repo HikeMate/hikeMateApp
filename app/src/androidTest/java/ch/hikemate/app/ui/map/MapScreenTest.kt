@@ -3,6 +3,7 @@ package ch.hikemate.app.ui.map
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import ch.hikemate.app.model.route.Bounds
@@ -118,7 +119,12 @@ class MapScreenTest : TestCase() {
 
     // Wait for the recomposition to terminate before clicking on the route item
     // The test does not seem to work without this line
-    composeTestRule.waitForIdle()
+    composeTestRule.waitUntil(timeoutMillis = 5000) {
+      composeTestRule
+          .onAllNodesWithTag(MapScreen.TEST_TAG_HIKE_ITEM)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
 
     // Click on the route item in the list
     composeTestRule
