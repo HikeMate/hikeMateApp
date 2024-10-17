@@ -25,9 +25,9 @@ import org.osmdroid.util.BoundingBox
 class MapScreenTest : TestCase() {
   private lateinit var hikesRepository: HikeRoutesRepository
   private lateinit var listOfHikeRoutesViewModel: ListOfHikeRoutesViewModel
+  private lateinit var navigationActions: NavigationActions
 
   @get:Rule val composeTestRule = createComposeRule()
-  lateinit var navigationActions: NavigationActions
 
   @Before
   fun setUp() {
