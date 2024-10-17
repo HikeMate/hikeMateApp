@@ -65,6 +65,10 @@ class FirebaseAuthRepository {
                 request = request, // Send the request we built
                 context = context // Provide the context for the request
                 )
+
+        // Check if the credential is a Google ID token credential
+        // Google can return other types of credentials, but we only need the ID token
+        // We don't handle other type of credentials below, so we must do this check
         if (result.credential.type != GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL)
             throw Exception("Invalid credential type")
 
