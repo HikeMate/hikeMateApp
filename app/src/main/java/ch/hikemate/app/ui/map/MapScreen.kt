@@ -212,9 +212,13 @@ fun MapScreen(
       routes.forEach { showHikeOnMap(mapView, it, getRandomColor()) }
       Log.d(MapScreen.LOG_TAG, "Displayed ${routes.size} hikes on the map")
     } else {
+      routes.subList(0, MapScreen.MAX_HIKES_DRAWN_ON_MAP).forEach {
+        showHikeOnMap(mapView, it, getRandomColor())
+      }
       Toast.makeText(
               context,
-              context.getString(R.string.map_screen_too_many_hikes_message),
+              context.getString(
+                  R.string.map_screen_too_many_hikes_message, MapScreen.MAX_HIKES_DRAWN_ON_MAP),
               Toast.LENGTH_LONG)
           .show()
       Log.d(MapScreen.LOG_TAG, "Too many hikes (${routes.size}) to display on the map")
