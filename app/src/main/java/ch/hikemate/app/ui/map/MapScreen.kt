@@ -87,12 +87,12 @@ object MapScreen {
   const val STROKE_WIDTH = 10f
 
   /**
-   * (Config) Arbitrary number defined empirically to avoid performance issues caused by drawing
-   * too many hikes on the map when the user zoomed out too much and launched a search.
+   * (Config) Arbitrary number defined empirically to avoid performance issues caused by drawing too
+   * many hikes on the map when the user zoomed out too much and launched a search.
    *
    * The number is arbitrary and can be adjusted based on the performance of the app. As an
-   * indication, it was tested with 149 hikes and already skipped a few frames, enough for a user
-   * to be surprised by the lag.
+   * indication, it was tested with 149 hikes and already skipped a few frames, enough for a user to
+   * be surprised by the lag.
    */
   const val MAX_HIKES_DRAWN_ON_MAP = 100
 }
@@ -111,11 +111,11 @@ fun getRandomColor(): Int {
 
   val h = randomInt(MapScreen.MIN_HUE, MapScreen.MAX_HUE).toFloat() // All colors
   val s =
-    randomInt(MapScreen.MIN_SATURATION, MapScreen.MAX_SATURATION) /
-            100.0f // Saturation between 42% and 98%
+      randomInt(MapScreen.MIN_SATURATION, MapScreen.MAX_SATURATION) /
+          100.0f // Saturation between 42% and 98%
   val l =
-    randomInt(MapScreen.MIN_LIGHTNESS, MapScreen.MAX_LIGHTNESS) /
-            100.0f // Lightness between 40% and 90%
+      randomInt(MapScreen.MIN_LIGHTNESS, MapScreen.MAX_LIGHTNESS) /
+          100.0f // Lightness between 40% and 90%
 
   return Color.hsl(h, s, l).toArgb()
 }
@@ -136,10 +136,10 @@ fun showHikeOnMap(mapView: MapView, hike: HikeRoute, color: Int) {
 
   line.setOnClickListener { _, _, _ ->
     Toast.makeText(
-      mapView.context,
-      "Hike details not implemented yet. Hike ID: ${hike.id}",
-      Toast.LENGTH_SHORT)
-      .show()
+            mapView.context,
+            "Hike details not implemented yet. Hike ID: ${hike.id}",
+            Toast.LENGTH_SHORT)
+        .show()
     true
   }
 
@@ -197,22 +197,21 @@ fun MapScreen(
     if (routes.size <= MapScreen.MAX_HIKES_DRAWN_ON_MAP) {
       routes.forEach { showHikeOnMap(mapView, it, getRandomColor()) }
       Log.d(MapScreen.LOG_TAG, "Displayed ${routes.size} hikes on the map")
-    }
-    else {
+    } else {
       Toast.makeText(
-        context,
-        context.getString(R.string.map_screen_too_many_hikes_message),
-        Toast.LENGTH_LONG).show()
+              context,
+              context.getString(R.string.map_screen_too_many_hikes_message),
+              Toast.LENGTH_LONG)
+          .show()
       Log.d(MapScreen.LOG_TAG, "Too many hikes (${routes.size}) to display on the map")
     }
   }
 
   SideBarNavigation(
-    onTabSelect = { navigationActions.navigateTo(it) },
-    tabList = LIST_TOP_LEVEL_DESTINATIONS,
-    selectedItem = Route.MAP
-  ) {
-    Box(modifier = Modifier.fillMaxSize().testTag(Screen.MAP)) {
+      onTabSelect = { navigationActions.navigateTo(it) },
+      tabList = LIST_TOP_LEVEL_DESTINATIONS,
+      selectedItem = Route.MAP) {
+        Box(modifier = Modifier.fillMaxSize().testTag(Screen.MAP)) {
           // Jetpack Compose is a relatively recent framework for implementing Android UIs. OSMDroid
           // is
           // an older library that uses Activities, the previous way of doing. The composable
