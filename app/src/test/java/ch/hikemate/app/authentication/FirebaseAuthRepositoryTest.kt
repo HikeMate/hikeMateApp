@@ -6,11 +6,13 @@ import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.GetCredentialResponse
 import androidx.credentials.exceptions.GetCredentialUnknownException
+import androidx.credentials.exceptions.NoCredentialException
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.hikemate.app.model.authentication.FirebaseAuthRepository
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.android.gms.tasks.Task
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.AuthResult
@@ -79,6 +81,9 @@ class FirebaseAuthRepositoryTest {
     every { mockCredentialResponse.credential } returns mockCredential
     coEvery { mockCredentialManager.getCredential(any(), any<GetCredentialRequest>()) } returns
         mockCredentialResponse
+
+    // Mock behavior for the Credentials
+    every { mockCredential.type } returns GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
 
     // Mock behavior authentication with Firebase
     every { mockFirebaseAuth.signInWithCredential(any()) } returns mockTask
@@ -177,6 +182,56 @@ class FirebaseAuthRepositoryTest {
         verify(exactly = 0) { mockFirebaseAuth.signInWithCredential(mockAuthCredential) }
         verify(exactly = 0) { onSuccess(any()) }
         verify { onError(any<GetCredentialUnknownException>()) }
+      }
+
+  @Test
+  fun testSignInWithGoogle_ErrorIncorrectCredentialType() =
+      runTest(timeout = 5.seconds) {
+        // Mock behavior for the Credentials
+        every { mockCredential.type } returns
+            GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_SIWG_CREDENTIAL
+
+        val onSuccess: (FirebaseUser?) -> Unit = mockk(relaxed = true)
+        val onError: (Throwable) -> Unit = mockk(relaxed = true)
+
+        repository.signInWithGoogle(
+            onSuccess = onSuccess,
+            onErrorAction = onError,
+            context = context,
+            credentialManager = mockCredentialManager,
+            coroutineScope = this)
+
+        advanceUntilIdle()
+
+        coVerify { mockCredentialManager.getCredential(any(), any<GetCredentialRequest>()) }
+        verify(exactly = 0) { mockFirebaseAuth.signInWithCredential(mockAuthCredential) }
+        verify(exactly = 0) { onSuccess(any()) }
+        verify { onError(any<GetCredentialUnknownException>()) }
+      }
+
+  @Test
+  fun testSignInWithGoogle_ErrorNoCredentials() =
+      runTest(timeout = 5.seconds) {
+        val testException = NoCredentialException("Test Error")
+        coEvery { mockCredentialManager.getCredential(any(), any<GetCredentialRequest>()) } throws
+            testException
+
+        val onSuccess: (FirebaseUser?) -> Unit = mockk(relaxed = true)
+        val onError: (Throwable) -> Unit = mockk(relaxed = true)
+
+        repository.signInWithGoogle(
+            onSuccess = onSuccess,
+            onErrorAction = onError,
+            context = context,
+            credentialManager = mockCredentialManager,
+            coroutineScope = this)
+
+        advanceUntilIdle()
+
+        coVerify { mockCredentialManager.getCredential(any(), any<GetCredentialRequest>()) }
+        verify(exactly = 0) { mockFirebaseAuth.signInWithCredential(mockAuthCredential) }
+        verify(exactly = 0) { onSuccess(any()) }
+        verify { onError(any<NoCredentialException>()) }
       }
 
   @Test

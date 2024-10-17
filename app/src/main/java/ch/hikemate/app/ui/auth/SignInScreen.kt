@@ -1,5 +1,7 @@
 package ch.hikemate.app.ui.auth
 
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -25,25 +27,33 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.credentials.exceptions.NoCredentialException
 import ch.hikemate.app.R
+import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.ui.components.AppIcon
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.navigation.TopLevelDestinations
 import ch.hikemate.app.ui.theme.kaushanTitleFontFamily
 import ch.hikemate.app.ui.theme.primaryColor
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 const val TEST_TAG_LOGIN_BUTTON = "loginButton"
 
 /** A composable function to display the sign in screen */
 @Composable
-fun SignInScreen(navigaionActions: NavigationActions) {
+fun SignInScreen(navigaionActions: NavigationActions, authViewModel: AuthViewModel) {
+  val context = LocalContext.current
+
   Scaffold(
       modifier = Modifier.fillMaxSize().testTag(Screen.AUTH),
       content = { padding ->
@@ -89,9 +99,25 @@ fun SignInScreen(navigaionActions: NavigationActions) {
             }
 
             SignInWithGoogleButton {
-              // TODO: Implement the sign in with Google functionality
-              // This bypasses all security and should not be used in production
-              navigaionActions.navigateTo(TopLevelDestinations.MAP)
+              authViewModel.signInWithGoogle(
+                  CoroutineScope(Dispatchers.IO),
+                  context,
+                  {
+                    // On successful sign in, navigate to the map screen
+                    navigaionActions.navigateTo(TopLevelDestinations.MAP)
+                  },
+                  {
+                    if (it is NoCredentialException) {
+                      // In case no credentials are found, show a toast message and invoke the error
+                      // callback
+                      Log.d("SignInButton", "No credentials found: ${it.message}")
+                      CoroutineScope(Dispatchers.Main).launch {
+                        Toast.makeText(
+                                context, "No Google account found on the device", Toast.LENGTH_LONG)
+                            .show()
+                      }
+                    }
+                  })
             }
           }
         }

@@ -11,6 +11,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mock
@@ -88,7 +89,8 @@ class AuthViewModelTest {
     // Verify that currentUser is initially null
     assertNull(viewModel.currentUser.first())
 
-    viewModel.signInWithGoogle(this, mockContext)
+    viewModel.signInWithGoogle(
+        this, mockContext, {}, { fail("Called the onFailure callback on success") })
 
     // Verify call to the repository
     verify(mockRepository).signInWithGoogle(any(), any(), any(), any(), any())
@@ -115,7 +117,8 @@ class AuthViewModelTest {
     // Verify that currentUser is initially null
     assertNull(viewModel.currentUser.first())
 
-    viewModel.signInWithGoogle(this, mockContext)
+    viewModel.signInWithGoogle(
+        this, mockContext, { fail("Called the onSuccess callback on failure") }, {})
 
     val currentUser = viewModel.currentUser.first()
 

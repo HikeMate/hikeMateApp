@@ -1,4 +1,3 @@
-import org.apache.commons.compress.harmony.pack200.PackingUtils.config
 import java.io.FileInputStream
 import java.util.Properties
 
@@ -178,6 +177,8 @@ dependencies {
     globalTestImplementation(libs.compose.test.junit)
     globalTestImplementation(libs.kaspresso)
     globalTestImplementation(libs.kaspresso.compose)
+    globalTestImplementation(libs.mockk.agent)
+    globalTestImplementation(libs.mockk.android)
 
     // Test dependencies
     testImplementation(libs.junit)
@@ -196,8 +197,6 @@ dependencies {
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.compose.test.junit)
     androidTestImplementation(libs.mockito.android)
-    androidTestImplementation(libs.mockk.android)
-    androidTestImplementation(libs.mockk.agent)
 
 
     // Debug dependencies

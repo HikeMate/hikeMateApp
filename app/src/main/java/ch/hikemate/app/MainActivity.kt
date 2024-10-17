@@ -9,10 +9,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navigation
+import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.ui.auth.SignInScreen
 import ch.hikemate.app.ui.map.MapScreen
 import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
@@ -22,6 +24,8 @@ import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.navigation.SideBarNavigation
 import ch.hikemate.app.ui.navigation.TopLevelDestinations
 import ch.hikemate.app.ui.theme.HikeMateTheme
+
+const val TEST_TAG_NAV_HOST = "navHost"
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,54 +43,59 @@ fun HikeMateApp() {
   val navController = rememberNavController()
   val navigationActions = NavigationActions(navController)
 
-  NavHost(navController = navController, startDestination = TopLevelDestinations.AUTH.route) {
-    navigation(
-        startDestination = Screen.AUTH,
-        route = Route.AUTH,
-    ) {
-      composable(Screen.AUTH) { SignInScreen(navigationActions) }
-    }
+  val authViewModel: AuthViewModel = viewModel(factory = AuthViewModel.Factory)
 
-    navigation(
-        startDestination = Screen.PLANNED_HIKES,
-        route = Route.PLANNED_HIKES,
-    ) {
-      composable(Screen.PLANNED_HIKES) {
-        // TODO: Implement Planned Hikes Screen
-        // The Screen will need to be incorporated into the SideBarNavigation composable
-        SideBarNavigation(
-            onTabSelect = { route -> navigationActions.navigateTo(route) },
-            tabList = LIST_TOP_LEVEL_DESTINATIONS,
-            selectedItem = Route.PLANNED_HIKES,
+  NavHost(
+      navController = navController,
+      startDestination = TopLevelDestinations.AUTH.route,
+      modifier = Modifier.testTag(TEST_TAG_NAV_HOST)) {
+        navigation(
+            startDestination = Screen.AUTH,
+            route = Route.AUTH,
         ) {
-          Text(
-              text = "Planned Hikes to be implemented",
-              modifier = Modifier.testTag(Screen.PLANNED_HIKES))
+          composable(Screen.AUTH) { SignInScreen(navigationActions, authViewModel) }
+        }
+
+        navigation(
+            startDestination = Screen.PLANNED_HIKES,
+            route = Route.PLANNED_HIKES,
+        ) {
+          composable(Screen.PLANNED_HIKES) {
+            // TODO: Implement Planned Hikes Screen
+            // The Screen will need to be incorporated into the SideBarNavigation composable
+            SideBarNavigation(
+                onTabSelect = { route -> navigationActions.navigateTo(route) },
+                tabList = LIST_TOP_LEVEL_DESTINATIONS,
+                selectedItem = Route.PLANNED_HIKES,
+            ) {
+              Text(
+                  text = "Planned Hikes to be implemented",
+                  modifier = Modifier.testTag(Screen.PLANNED_HIKES))
+            }
+          }
+        }
+
+        navigation(
+            startDestination = Screen.MAP,
+            route = Route.MAP,
+        ) {
+          composable(Screen.MAP) { MapScreen(navigationActions = navigationActions) }
+        }
+        navigation(
+            startDestination = Screen.PROFILE,
+            route = Route.PROFILE,
+        ) {
+          composable(Screen.PROFILE) {
+            // TODO: Implement Profile Screen
+            // The Screen will need to be incorporated into the SideBarNavigation composable
+            SideBarNavigation(
+                onTabSelect = { route -> navigationActions.navigateTo(route) },
+                tabList = LIST_TOP_LEVEL_DESTINATIONS,
+                selectedItem = Route.PROFILE,
+            ) {
+              Text(text = "Profile to be implemented", modifier = Modifier.testTag(Screen.PROFILE))
+            }
+          }
         }
       }
-    }
-
-    navigation(
-        startDestination = Screen.MAP,
-        route = Route.MAP,
-    ) {
-      composable(Screen.MAP) { MapScreen(navigationActions = navigationActions) }
-    }
-    navigation(
-        startDestination = Screen.PROFILE,
-        route = Route.PROFILE,
-    ) {
-      composable(Screen.PROFILE) {
-        // TODO: Implement Profile Screen
-        // The Screen will need to be incorporated into the SideBarNavigation composable
-        SideBarNavigation(
-            onTabSelect = { route -> navigationActions.navigateTo(route) },
-            tabList = LIST_TOP_LEVEL_DESTINATIONS,
-            selectedItem = Route.PROFILE,
-        ) {
-          Text(text = "Profile to be implemented", modifier = Modifier.testTag(Screen.PROFILE))
-        }
-      }
-    }
-  }
 }
