@@ -116,6 +116,10 @@ class MapScreenTest : TestCase() {
     // Have an initial list of routes with a single route to display on the map
     listOfHikeRoutesViewModel.setArea(BoundingBox(0.0, 0.0, 0.0, 0.0))
 
+    // Wait for the recomposition to terminate before clicking on the route item
+    // The test does not seem to work without this line
+    composeTestRule.waitForIdle()
+
     // Click on the route item in the list
     composeTestRule
         .onNodeWithTag(MapScreen.TEST_TAG_HIKE_ITEM, useUnmergedTree = true)
