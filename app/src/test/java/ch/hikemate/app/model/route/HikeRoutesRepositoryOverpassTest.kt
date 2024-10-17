@@ -27,6 +27,8 @@ class HikeRoutesRepositoryOverpassTest {
   @Mock private lateinit var mockClient: OkHttpClient
   private lateinit var hikingRouteProviderRepositoryOverpass: HikeRoutesRepositoryOverpass
   private val bounds = Bounds(46.51402, 6.55989, 46.52291, 6.58243)
+  private val containedBounds = Bounds(46.51502, 6.56989, 46.52191, 6.58143)
+  private val nonContainedBounds = Bounds(46.51402, 6.55989, 46.52291, 6.68243)
 
   private val emptyResponse =
       Response.Builder()
@@ -49,6 +51,102 @@ class HikeRoutesRepositoryOverpassTest {
                   .toResponseBody())
           .header("Content-Type", "application/json")
           .protocol(Protocol.HTTP_1_1)
+          .request(mock())
+          .build()
+
+  private val simpleResponse2 =
+      Response.Builder()
+          .code(200)
+          .message("OK")
+          .body(
+              """
+        {
+    "version": 0.6,
+    "generator": "Overpass API 0.7.62.1 084b4234",
+    "osm3s": {
+        "timestamp_osm_base": "2024-10-10T19:14:42Z",
+        "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+    },
+    "elements": [
+        {
+            "type": "relation",
+            "id": 124582,
+            "bounds": {
+                "minlat": 45.8689061,
+                "minlon": 6.4395807,
+                "maxlat": 46.8283926,
+                "maxlon": 7.2109599
+            },
+            "members": [
+                {
+                    "type": "way",
+                    "ref": 936770892,
+                    "role": "",
+                    "geometry": [
+                        {
+                            "lat": 46.8240018,
+                            "lon": 6.4395807
+                        },
+                        {
+                            "lat": 46.823965,
+                            "lon": 6.4396698
+                        }
+                    ]
+                },
+                {
+                    "type": "way",
+                    "ref": 24956166,
+                    "role": "",
+                    "geometry": [
+                        {
+                            "lat": 46.8236197,
+                            "lon": 6.4400574
+                        },
+                        {
+                            "lat": 46.8235322,
+                            "lon": 6.4401168
+                        },
+                        {
+                            "lat": 46.8234367,
+                            "lon": 6.4401715
+                        }
+                    ]
+                },
+                {
+                    "type": "node",
+                    "ref": 1107816214,
+                    "role": "",
+                    "lat": 46.8232651,
+                    "lon": 6.4402355
+                }
+            ],
+            "tags": {
+                "distance": "31",
+                "from": "Lausanne",
+                "int_name": "Camino de Santiago",
+                "name": "ViaJacobi",
+                "network": "nwn",
+                "operator": "Wanderland Schweiz",
+                "osmc:symbol": "green:green::4:white",
+                "pilgrimage": "Camino de Santiago",
+                "ref": "4",
+                "religion": "christian",
+                "route": "hiking",
+                "stage": "17",
+                "symbol": "weisse 4 auf grünem Rechteck und in südwestlicher Richtung Jakobsmuschel",
+                "to": "Roll",
+                "type": "route",
+                "url": "https://www.schweizmobil.ch/fr/wanderland/etappe4.17"
+            }
+        }
+    ]
+}
+                  """
+                  .trimIndent()
+                  .replace("\n", "")
+                  .toResponseBody())
+          .protocol(Protocol.HTTP_1_1)
+          .header("Content-Type", "application/json")
           .request(mock())
           .build()
 
@@ -379,5 +477,71 @@ class HikeRoutesRepositoryOverpassTest {
         bounds, { routes -> assertEquals(simpleRoutes, routes) }) {
           fail("Failed to fetch routes from Overpass API")
         }
+  }
+
+  @Test
+  fun getRoutes_cacheWorks() {
+    val mockCall = mock(Call::class.java)
+    `when`(mockClient.newCall(any())).thenReturn(mockCall)
+
+    val callbackCapture = argumentCaptor<okhttp3.Callback>()
+
+    `when`(mockCall.enqueue(callbackCapture.capture())).then {
+      callbackCapture.firstValue.onResponse(mockCall, simpleResponse)
+    }
+    assertEquals(hikingRouteProviderRepositoryOverpass.getCacheSize(), 0)
+
+    hikingRouteProviderRepositoryOverpass.getRoutes(
+        bounds, { routes -> assertEquals(simpleRoutes, routes) }) {
+          fail("Failed to fetch routes from Overpass API")
+        }
+
+    assertEquals(hikingRouteProviderRepositoryOverpass.getCacheSize(), 1)
+
+    hikingRouteProviderRepositoryOverpass.getRoutes(
+        containedBounds, { routes -> assertEquals(simpleRoutes, routes) }) {
+          fail("Failed to fetch routes from Overpass API")
+        }
+    assertEquals(hikingRouteProviderRepositoryOverpass.getCacheSize(), 1)
+  }
+
+  @Test
+  fun getRoutes_retrievesFromApiWhenNotInCache() {
+    val mockCall = mock(Call::class.java)
+    `when`(mockClient.newCall(any())).thenReturn(mockCall)
+
+    val callbackCapture = argumentCaptor<okhttp3.Callback>()
+
+    // Mock the first response
+    `when`(mockCall.enqueue(callbackCapture.capture())).then {
+      callbackCapture.firstValue.onResponse(mockCall, simpleResponse)
+    }
+
+    assertEquals(0, hikingRouteProviderRepositoryOverpass.getCacheSize())
+
+    // Test fetching routes not in cache
+    hikingRouteProviderRepositoryOverpass.getRoutes(
+        bounds, { routes -> assertEquals(simpleRoutes, routes) }) {
+          fail("Failed to fetch routes from Overpass API")
+        }
+
+    assertEquals(1, hikingRouteProviderRepositoryOverpass.getCacheSize())
+
+    val mockCall2 = mock(Call::class.java)
+    `when`(mockClient.newCall(any())).thenReturn(mockCall2)
+
+    val callbackCapture2 = argumentCaptor<okhttp3.Callback>()
+
+    // Mock the first response
+    `when`(mockCall2.enqueue(callbackCapture2.capture())).then {
+      callbackCapture2.firstValue.onResponse(mockCall2, simpleResponse2)
+    }
+
+    hikingRouteProviderRepositoryOverpass.getRoutes(
+        nonContainedBounds, { routes -> assertEquals(simpleRoutes, routes) }) {
+          fail("Failed to fetch routes from Overpass API")
+        }
+
+    assertEquals(2, hikingRouteProviderRepositoryOverpass.getCacheSize())
   }
 }

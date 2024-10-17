@@ -3,6 +3,31 @@ package ch.hikemate.app.model.route
 /** A class representing a bounding box */
 data class Bounds(val minLat: Double, val minLon: Double, val maxLat: Double, val maxLon: Double) {
 
+  /**
+   * Check if this bounds intersects another bounds
+   *
+   * @param other The other bounds
+   * @return True if this bounds intersects the other bounds, false otherwise
+   */
+  fun intersectsBounds(other: Bounds): Boolean {
+    return !(this.minLat > other.maxLat ||
+        this.maxLat < other.minLat ||
+        this.minLon > other.maxLon ||
+        this.maxLon < other.minLon)
+  }
+  /**
+   * Check if this bounds contains another bounds
+   *
+   * @param other The other bounds
+   * @return True if this bounds contains the other bounds, false otherwise
+   */
+  fun containsBounds(other: Bounds): Boolean {
+    return minLat <= other.minLat &&
+        minLon <= other.minLon &&
+        maxLat >= other.maxLat &&
+        maxLon >= other.maxLon
+  }
+
   init {
     require(!(minLat > maxLat || minLon > maxLon)) { "Invalid bounds" }
   }
