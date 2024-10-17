@@ -21,16 +21,23 @@ class AuthViewModel(private val repository: FirebaseAuthRepository) : ViewModel(
     get() = _currentUser
 
   /**
-   * Initiates the sign-in process using Google Sign-In.* Note: This function only changes the state
-   * of currentUser, it has no return or onSuccess invocation.
+   * Initiates the sign-in process using Google Sign-In..
    *
    * @param coroutineScope The CoroutineScope in which this operation will be executed.
    * @param context The context is used to start the Google Sign-In process.
    */
-  fun signInWithGoogle(coroutineScope: CoroutineScope, context: Context) {
+  fun signInWithGoogle(
+      coroutineScope: CoroutineScope,
+      context: Context,
+      onSuccess: () -> Unit,
+      onError: (Exception) -> Unit
+  ) {
     repository.signInWithGoogle(
-        onSuccess = { user: FirebaseUser? -> _currentUser.value = user },
-        onErrorAction = {},
+        onSuccess = { user: FirebaseUser? ->
+          _currentUser.value = user
+          onSuccess()
+        },
+        onErrorAction = onError,
         context = context,
         coroutineScope = coroutineScope)
   }

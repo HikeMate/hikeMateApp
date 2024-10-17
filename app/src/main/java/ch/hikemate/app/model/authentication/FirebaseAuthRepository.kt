@@ -2,10 +2,8 @@ package ch.hikemate.app.model.authentication
 
 import android.content.Context
 import android.util.Log
-import android.widget.Toast
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
-import androidx.credentials.exceptions.NoCredentialException
 import ch.hikemate.app.R
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
@@ -14,7 +12,6 @@ import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class FirebaseAuthRepository {
@@ -90,13 +87,6 @@ class FirebaseAuthRepository {
             onErrorAction(task.exception ?: Exception("Unknown error"))
           }
         }
-      } catch (e: NoCredentialException) {
-        // In case no credentials are found, show a toast message and invoke the error callback
-        Log.d("SignInButton", "No credentials found: ${e.message}")
-        CoroutineScope(Dispatchers.Main).launch {
-          Toast.makeText(context, "No Google account found on the device", Toast.LENGTH_LONG).show()
-        }
-        onErrorAction(e)
       } catch (e: Exception) {
         Log.d("SignInButton", "Login error: ${e.message}")
         onErrorAction(e)
