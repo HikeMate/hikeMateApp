@@ -36,7 +36,8 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
     // If so just return the content of the cache
     cachedHikeRoutes.forEach {
       if (it.key.containsBounds(bounds)) {
-        onSuccess(it.value)
+        val filteredRoutes = it.value.filter { route -> bounds.intersectsBounds(route.bounds) }
+        onSuccess(filteredRoutes)
         return
       }
     }
@@ -57,14 +58,9 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
 
     setRequestHeaders(requestBuilder)
 
-    // The callback updates the cache
-    val onSuccessWithCache = { routes: List<HikeRoute> ->
-      cachedHikeRoutes[bounds] = routes
-      onSuccess(routes)
-    }
     client
         .newCall(requestBuilder.build())
-        .enqueue(OverpassResponseHandler(onSuccessWithCache, onFailure))
+        .enqueue(OverpassResponseHandler(bounds,onSuccess, onFailure))
   }
 
   /**
@@ -83,6 +79,7 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
    * @param onFailure The callback to be called when the routes could not be fetched.
    */
   private inner class OverpassResponseHandler(
+    val requestedBounds: Bounds,
       val onSuccess: (List<HikeRoute>) -> Unit,
       val onFailure: (Exception) -> Unit
   ) : okhttp3.Callback {
@@ -99,6 +96,8 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
 
       val responseBody = response.body?.charStream() ?: throw Exception("Response body is null")
       val routes = parseRoutes(responseBody)
+
+      cachedHikeRoutes[requestedBounds] = routes
 
       onSuccess(routes)
     }
