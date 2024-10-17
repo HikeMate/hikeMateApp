@@ -65,6 +65,8 @@ class FirebaseAuthRepository {
                 request = request, // Send the request we built
                 context = context // Provide the context for the request
                 )
+        if (result.credential.type != GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL)
+            throw Exception("Invalid credential type")
 
         // Extract the ID token from the result and create a Firebase credential
         val firebaseCredential =
