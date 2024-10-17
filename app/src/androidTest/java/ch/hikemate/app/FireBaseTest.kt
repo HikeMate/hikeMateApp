@@ -37,9 +37,6 @@ class FireBaseTest {
     val testValue = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)
     testData["testKey"] = testValue
 
-
-
-
     // Add a test file to the database
     db.collection("testCollection")
         .add(testData)

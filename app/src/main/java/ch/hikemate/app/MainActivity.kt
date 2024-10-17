@@ -3,9 +3,7 @@ package ch.hikemate.app
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Button
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
@@ -25,26 +23,24 @@ import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.navigation.SideBarNavigation
 import ch.hikemate.app.ui.navigation.TopLevelDestinations
-import ch.hikemate.app.ui.theme.HikeMateTheme
-import com.google.rpc.context.AttributeContext.Auth
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
 
     val firebaseAuthRepository: FirebaseAuthRepository = FirebaseAuthRepository()
-    val authViewModel: AuthViewModel = AuthViewModel(firebaseAuthRepository);
+    val authViewModel: AuthViewModel = AuthViewModel(firebaseAuthRepository)
     var currUser = authViewModel.currentUser.value
-    setContent{
+    setContent {
       Text("$currUser")
       val coroutineScope = rememberCoroutineScope()
       Button(
-        onClick = { authViewModel.signInWithGoogle(coroutineScope, this) },
+          onClick = { authViewModel.signInWithGoogle(coroutineScope, this) },
       ) {
         Text("Sign in with Google")
       }
     }
-    //setContent { HikeMateTheme { Surface(modifier = Modifier.fillMaxSize()) { HikeMateApp() } } }
+    // setContent { HikeMateTheme { Surface(modifier = Modifier.fillMaxSize()) { HikeMateApp() } } }
   }
 }
 
