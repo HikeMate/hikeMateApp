@@ -1,53 +1,66 @@
 package ch.hikemate.app.model.route
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
 import org.osmdroid.util.BoundingBox
 
-/**
- * ViewModel for the list of hike routes
- *
- * @param TODO: should take a repository as a parameter
- */
-open class ListOfHikeRoutesViewModel() : ViewModel() {
+/** ViewModel for the list of hike routes */
+open class ListOfHikeRoutesViewModel(
+    private val hikeRoutesRepository: HikeRoutesRepository,
+    private val dispatcher: CoroutineDispatcher = Dispatchers.IO
+) : ViewModel() {
   // List of all routes in the database
-  private val hikeRoutes_ =
-      MutableStateFlow<List<String>>(emptyList()) // TODO: should be a list of Route objects
-  val hikeRoutes: StateFlow<List<String>> = hikeRoutes_.asStateFlow()
+  private val hikeRoutes_ = MutableStateFlow<List<HikeRoute>>(emptyList())
+  val hikeRoutes: StateFlow<List<HikeRoute>> = hikeRoutes_.asStateFlow()
 
   // Selected route, i.e the route for the detail view
-  private val selectedHikeRoute_ = MutableStateFlow<String?>(null) // TODO: should be a Route object
-  open val selectedHikeRoute: StateFlow<String?> = selectedHikeRoute_.asStateFlow()
+  private val selectedHikeRoute_ = MutableStateFlow<HikeRoute?>(null)
+  open val selectedHikeRoute: StateFlow<HikeRoute?> = selectedHikeRoute_.asStateFlow()
 
   private val area_ = MutableStateFlow<BoundingBox?>(null)
 
-  // Creates a factory
+  // Creates a factory and stores the tag used for logging
   companion object {
     val Factory: ViewModelProvider.Factory =
         object : ViewModelProvider.Factory {
           @Suppress("UNCHECKED_CAST")
           override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return ListOfHikeRoutesViewModel() as T
+            return ListOfHikeRoutesViewModel(HikeRoutesRepositoryOverpass(OkHttpClient())) as T
           }
         }
+
+    private const val LOG_TAG = "ListOfHikeRoutesViewModel"
   }
 
-  private suspend fun getRoutesAsync() {
-    // TODO: Should call the API repository to get all the routes filtered by the area
-    withContext(Dispatchers.IO) { Thread.sleep(100) }
-    hikeRoutes_.value = listOf("Route 1", "Route 2", "Route 3")
+  private suspend fun getRoutesAsync(onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}) {
+    withContext(dispatcher) {
+      val area = area_.value ?: return@withContext
+      hikeRoutesRepository.getRoutes(
+          bounds = area.toBounds(),
+          onSuccess = { routes ->
+            hikeRoutes_.value = routes
+            onSuccess()
+          },
+          onFailure = { exception ->
+            Log.d(LOG_TAG, "[getRoutesAsync] Failed to get routes: $exception")
+            onFailure()
+          })
+    }
   }
 
   /** Gets all the routes from the database and updates the routes_ variable */
-  fun getRoutes() {
-    viewModelScope.launch(Dispatchers.IO) { getRoutesAsync() }
+  fun getRoutes(onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}) {
+    viewModelScope.launch { getRoutesAsync(onSuccess = onSuccess, onFailure = onFailure) }
   }
 
   /**
@@ -56,9 +69,9 @@ open class ListOfHikeRoutesViewModel() : ViewModel() {
    *
    * @param area The area to be displayed
    */
-  fun setArea(area: BoundingBox) {
+  fun setArea(area: BoundingBox, onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}) {
     area_.value = area
-    getRoutes()
+    getRoutes(onSuccess = onSuccess, onFailure = onFailure)
   }
 
   /**
@@ -66,7 +79,7 @@ open class ListOfHikeRoutesViewModel() : ViewModel() {
    *
    * @param hikeRoute The route to be displayed
    */
-  fun selectRoute(hikeRoute: String) { // TODO: should take a Route object
+  fun selectRoute(hikeRoute: HikeRoute) {
     selectedHikeRoute_.value = hikeRoute
   }
 }
