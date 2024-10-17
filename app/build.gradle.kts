@@ -188,6 +188,8 @@ dependencies {
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.compose.test.junit)
     testImplementation(libs.compose.test.manifest)
+    testImplementation(libs.mockk.agent)
+    testImplementation(libs.mockk.android)
 
     // Android test dependencies
     androidTestImplementation(libs.androidx.espresso.core)
@@ -196,8 +198,6 @@ dependencies {
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.compose.test.junit)
     androidTestImplementation(libs.mockito.android)
-    androidTestImplementation(libs.mockk.android)
-    androidTestImplementation(libs.mockk.agent)
 
 
     // Debug dependencies
