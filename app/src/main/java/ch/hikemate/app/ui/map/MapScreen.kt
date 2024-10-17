@@ -2,6 +2,7 @@ package ch.hikemate.app.ui.map
 
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -51,9 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.hikemate.app.R
-import ch.hikemate.app.model.route.Bounds
 import ch.hikemate.app.model.route.HikeRoute
-import ch.hikemate.app.model.route.LatLong
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
 import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
 import ch.hikemate.app.ui.navigation.NavigationActions
@@ -66,6 +65,8 @@ import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Polyline
 
 object MapScreen {
+  const val LOG_TAG = "MapScreen"
+
   const val TEST_TAG_MAP = "map"
   const val TEST_TAG_SEARCH_BUTTON = "searchButton"
   const val TEST_TAG_HIKES_LIST = "hikesList"
@@ -84,6 +85,16 @@ object MapScreen {
   const val MAX_LIGHTNESS = 90
 
   const val STROKE_WIDTH = 10f
+
+  /**
+   * (Config) Arbitrary number defined empirically to avoid performance issues caused by drawing
+   * too many hikes on the map when the user zoomed out too much and launched a search.
+   *
+   * The number is arbitrary and can be adjusted based on the performance of the app. As an
+   * indication, it was tested with 149 hikes and already skipped a few frames, enough for a user
+   * to be surprised by the lag.
+   */
+  const val MAX_HIKES_DRAWN_ON_MAP = 100
 }
 
 /**
@@ -135,6 +146,14 @@ fun showHikeOnMap(mapView: MapView, hike: HikeRoute, color: Int) {
   mapView.overlays.add(line)
 }
 
+/**
+ * Clears all hikes that are displayed on the map. Intended to be used when the list of hikes
+ * changes and new hikes need to be drawn.
+ */
+fun clearHikesFromMap(mapView: MapView) {
+  mapView.overlays.clear()
+}
+
 @Composable
 fun MapScreen(
     hikingRoutesViewModel: ListOfHikeRoutesViewModel =
@@ -169,34 +188,22 @@ fun MapScreen(
       // Enable touch-controls such as pinch to zoom
       setMultiTouchControls(true)
     }
+  }
 
-    // Associate each hike with a random color to show it on the map and in the list
-    val hikesWithColors: MutableList<Pair<HikeRoute, Int>> = mutableListOf()
-
-    // TODO: Replace the following code with the actual repository implementation
-    val hikes =
-      listOf(
-        HikeRoute(
-          id = "1",
-          bounds = Bounds(46.5, 6.6, 46.6, 6.7),
-          ways = listOf(LatLong(46.5, 6.6), LatLong(46.55, 6.65), LatLong(46.6, 6.7))
-        ),
-        HikeRoute(
-          id = "2",
-          bounds = Bounds(46.6, 6.7, 46.7, 6.8),
-          ways = listOf(LatLong(46.6, 6.7), LatLong(46.65, 6.75), LatLong(46.7, 6.8))
-        ),
-        HikeRoute(
-          id = "3",
-          bounds = Bounds(46.7, 6.8, 46.8, 6.9),
-          ways = listOf(LatLong(46.7, 6.8), LatLong(46.75, 6.85), LatLong(46.8, 6.9))
-        )
-      )
-
-    hikes.forEach {
-      val color = getRandomColor()
-      showHikeOnMap(mapView, it, color)
-      hikesWithColors.add(Pair(it, color))
+  // Show hikes on the map
+  val routes by hikingRoutesViewModel.hikeRoutes.collectAsState()
+  LaunchedEffect(routes) {
+    clearHikesFromMap(mapView)
+    if (routes.size <= MapScreen.MAX_HIKES_DRAWN_ON_MAP) {
+      routes.forEach { showHikeOnMap(mapView, it, getRandomColor()) }
+      Log.d(MapScreen.LOG_TAG, "Displayed ${routes.size} hikes on the map")
+    }
+    else {
+      Toast.makeText(
+        context,
+        context.getString(R.string.map_screen_too_many_hikes_message),
+        Toast.LENGTH_LONG).show()
+      Log.d(MapScreen.LOG_TAG, "Too many hikes (${routes.size}) to display on the map")
     }
   }
 

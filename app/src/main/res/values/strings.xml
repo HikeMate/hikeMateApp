@@ -21,4 +21,7 @@
     <string name="map_screen_hike_details_content_description">
         Go to hike details
     </string>
+    <string name="map_screen_too_many_hikes_message">
+        Too many hikes to display on the map. Try zooming in or moving the map.
+    </string>
 </resources>
