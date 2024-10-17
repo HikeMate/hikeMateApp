@@ -11,6 +11,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.hikemate.app.model.authentication.FirebaseAuthRepository
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.android.gms.tasks.Task
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.AuthResult
@@ -79,6 +80,9 @@ class FirebaseAuthRepositoryTest {
     every { mockCredentialResponse.credential } returns mockCredential
     coEvery { mockCredentialManager.getCredential(any(), any<GetCredentialRequest>()) } returns
         mockCredentialResponse
+
+    // Mock behavior for the Credentials
+    every { mockCredential.type } returns GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
 
     // Mock behavior authentication with Firebase
     every { mockFirebaseAuth.signInWithCredential(any()) } returns mockTask
