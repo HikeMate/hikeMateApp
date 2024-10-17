@@ -60,7 +60,7 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
 
     client
         .newCall(requestBuilder.build())
-        .enqueue(OverpassResponseHandler(bounds,onSuccess, onFailure))
+        .enqueue(OverpassResponseHandler(bounds, onSuccess, onFailure))
   }
 
   /**
@@ -79,7 +79,7 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
    * @param onFailure The callback to be called when the routes could not be fetched.
    */
   private inner class OverpassResponseHandler(
-    val requestedBounds: Bounds,
+      val requestedBounds: Bounds,
       val onSuccess: (List<HikeRoute>) -> Unit,
       val onFailure: (Exception) -> Unit
   ) : okhttp3.Callback {
