@@ -76,8 +76,9 @@ object MapScreen {
 }
 
 /**
- * Generates a random color in the HSL color space. This function uses the HSL color space to
- * generate a random color as the HSL is better to generate more visually appealing colors.
+ * Generates a random color in the HSL color space. The function uses HSL to generate a color
+ * instead of ARGB because it makes it easier to have a range of colors that we know will render
+ * well on the map.
  *
  * @return The generated color as an [Int].
  */
