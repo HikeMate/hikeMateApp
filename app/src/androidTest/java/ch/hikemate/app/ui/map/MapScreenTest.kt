@@ -64,6 +64,7 @@ class MapScreenTest : TestCase() {
   @Test
   fun searchButtonCallsRepositoryWhenClicked() {
     composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).performClick()
+    Thread.sleep(500)
     verify(hikesRepository, times(1)).getRoutes(any(), any(), any())
   }
 
