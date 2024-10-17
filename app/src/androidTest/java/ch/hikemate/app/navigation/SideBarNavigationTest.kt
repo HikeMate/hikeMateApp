@@ -21,7 +21,8 @@ class SideBarNavigationTest {
   @Test
   fun sideBarNavigation_displaysCorrectContent() {
     composeTestRule.setContent {
-      SideBarNavigation(onTabSelect = {}, tabList = LIST_TOP_LEVEL_DESTINATIONS, selectedItem = "")
+      SideBarNavigation(
+          onTabSelect = {}, tabList = LIST_TOP_LEVEL_DESTINATIONS, selectedItem = "") {}
     }
 
     composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).assertExists()
@@ -30,7 +31,8 @@ class SideBarNavigationTest {
   @Test
   fun sideBarNavigation_opensDrawerOnClick() {
     composeTestRule.setContent {
-      SideBarNavigation(onTabSelect = {}, tabList = LIST_TOP_LEVEL_DESTINATIONS, selectedItem = "")
+      SideBarNavigation(
+          onTabSelect = {}, tabList = LIST_TOP_LEVEL_DESTINATIONS, selectedItem = "") {}
     }
 
     composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
@@ -40,7 +42,8 @@ class SideBarNavigationTest {
   @Test
   fun sideBarNavigation_displaysAllTabs() {
     composeTestRule.setContent {
-      SideBarNavigation(onTabSelect = {}, tabList = LIST_TOP_LEVEL_DESTINATIONS, selectedItem = "")
+      SideBarNavigation(
+          onTabSelect = {}, tabList = LIST_TOP_LEVEL_DESTINATIONS, selectedItem = "") {}
     }
 
     composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
@@ -55,7 +58,7 @@ class SideBarNavigationTest {
     val selectedItem = LIST_TOP_LEVEL_DESTINATIONS.first().route
     composeTestRule.setContent {
       SideBarNavigation(
-          onTabSelect = {}, tabList = LIST_TOP_LEVEL_DESTINATIONS, selectedItem = selectedItem)
+          onTabSelect = {}, tabList = LIST_TOP_LEVEL_DESTINATIONS, selectedItem = selectedItem) {}
     }
 
     composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
@@ -72,7 +75,7 @@ class SideBarNavigationTest {
 
     composeTestRule.setContent {
       SideBarNavigation(
-          onTabSelect = onIconSelect, tabList = LIST_TOP_LEVEL_DESTINATIONS, selectedItem = "")
+          onTabSelect = onIconSelect, tabList = LIST_TOP_LEVEL_DESTINATIONS, selectedItem = "") {}
     }
 
     composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
@@ -86,7 +89,8 @@ class SideBarNavigationTest {
   @Test
   fun sideBarNavigation_closesDrawerWhenTabClicked() {
     composeTestRule.setContent {
-      SideBarNavigation(onTabSelect = {}, tabList = LIST_TOP_LEVEL_DESTINATIONS, selectedItem = "")
+      SideBarNavigation(
+          onTabSelect = {}, tabList = LIST_TOP_LEVEL_DESTINATIONS, selectedItem = "") {}
     }
 
     composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
@@ -100,7 +104,8 @@ class SideBarNavigationTest {
   @Test
   fun sideBarNavigation_closesDrawerWhenCloseButtonClicked() {
     composeTestRule.setContent {
-      SideBarNavigation(onTabSelect = {}, tabList = LIST_TOP_LEVEL_DESTINATIONS, selectedItem = "")
+      SideBarNavigation(
+          onTabSelect = {}, tabList = LIST_TOP_LEVEL_DESTINATIONS, selectedItem = "") {}
     }
 
     composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
@@ -119,7 +124,7 @@ class SideBarNavigationTest {
     val onIconSelect: (TopLevelDestination) -> Unit = {}
 
     composeTestRule.setContent {
-      SideBarNavigation(onIconSelect, LIST_TOP_LEVEL_DESTINATIONS, selectedItem)
+      SideBarNavigation(onIconSelect, LIST_TOP_LEVEL_DESTINATIONS, selectedItem) {}
     }
 
     composeTestRule
@@ -131,7 +136,7 @@ class SideBarNavigationTest {
   @Test
   fun sideBarNavigation_withEmptyTabList() {
     composeTestRule.setContent {
-      SideBarNavigation(onTabSelect = {}, tabList = emptyList(), selectedItem = "")
+      SideBarNavigation(onTabSelect = {}, tabList = emptyList(), selectedItem = "") {}
     }
 
     composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
@@ -148,7 +153,7 @@ class SideBarNavigationTest {
       SideBarNavigation(
           onTabSelect = {},
           tabList = LIST_TOP_LEVEL_DESTINATIONS,
-          selectedItem = invalidSelectedItem)
+          selectedItem = invalidSelectedItem) {}
     }
 
     composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
@@ -171,7 +176,7 @@ class SideBarNavigationTest {
       SideBarNavigation(
           onTabSelect = onIconSelect,
           tabList = LIST_TOP_LEVEL_DESTINATIONS,
-          selectedItem = selectedItem)
+          selectedItem = selectedItem) {}
     }
 
     composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
@@ -186,7 +191,7 @@ class SideBarNavigationTest {
   @Test
   fun sideBarNavigation_drawerOpensWhenListEmpty() {
     composeTestRule.setContent {
-      SideBarNavigation(onTabSelect = {}, tabList = emptyList(), selectedItem = "")
+      SideBarNavigation(onTabSelect = {}, tabList = emptyList(), selectedItem = "") {}
     }
 
     composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
@@ -197,7 +202,8 @@ class SideBarNavigationTest {
   @Test
   fun sideBarNavigation_correctIconDisplayedForEachTab() {
     composeTestRule.setContent {
-      SideBarNavigation(onTabSelect = {}, tabList = LIST_TOP_LEVEL_DESTINATIONS, selectedItem = "")
+      SideBarNavigation(
+          onTabSelect = {}, tabList = LIST_TOP_LEVEL_DESTINATIONS, selectedItem = "") {}
     }
 
     composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
@@ -214,7 +220,7 @@ class SideBarNavigationTest {
     val selectedItem = LIST_TOP_LEVEL_DESTINATIONS.first().route
     composeTestRule.setContent {
       SideBarNavigation(
-          onTabSelect = {}, tabList = LIST_TOP_LEVEL_DESTINATIONS, selectedItem = selectedItem)
+          onTabSelect = {}, tabList = LIST_TOP_LEVEL_DESTINATIONS, selectedItem = selectedItem) {}
     }
 
     composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
@@ -229,7 +235,8 @@ class SideBarNavigationTest {
   @Test
   fun sideBarNavigation_accessibilityTest() {
     composeTestRule.setContent {
-      SideBarNavigation(onTabSelect = {}, tabList = LIST_TOP_LEVEL_DESTINATIONS, selectedItem = "")
+      SideBarNavigation(
+          onTabSelect = {}, tabList = LIST_TOP_LEVEL_DESTINATIONS, selectedItem = "") {}
     }
 
     composeTestRule
@@ -250,7 +257,8 @@ class SideBarNavigationTest {
   @Test
   fun sideBarNavigation_drawerGesturesDisabled() {
     composeTestRule.setContent {
-      SideBarNavigation(onTabSelect = {}, tabList = LIST_TOP_LEVEL_DESTINATIONS, selectedItem = "")
+      SideBarNavigation(
+          onTabSelect = {}, tabList = LIST_TOP_LEVEL_DESTINATIONS, selectedItem = "") {}
     }
 
     composeTestRule.onNodeWithTag(TEST_TAG_DRAWER_CONTENT).assertIsNotDisplayed()
@@ -263,7 +271,8 @@ class SideBarNavigationTest {
   @Test
   fun sideBarNavigation_drawerWidth() {
     composeTestRule.setContent {
-      SideBarNavigation(onTabSelect = {}, tabList = LIST_TOP_LEVEL_DESTINATIONS, selectedItem = "")
+      SideBarNavigation(
+          onTabSelect = {}, tabList = LIST_TOP_LEVEL_DESTINATIONS, selectedItem = "") {}
     }
 
     composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
@@ -279,7 +288,7 @@ class SideBarNavigationTest {
       SideBarNavigation(
           onTabSelect = { selectedTab = it.route },
           tabList = LIST_TOP_LEVEL_DESTINATIONS,
-          selectedItem = selectedTab)
+          selectedItem = selectedTab) {}
     }
 
     composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
@@ -294,7 +303,7 @@ class SideBarNavigationTest {
   @Test
   fun sideBarNavigation_emptyTabList() {
     composeTestRule.setContent {
-      SideBarNavigation(onTabSelect = {}, tabList = emptyList(), selectedItem = "")
+      SideBarNavigation(onTabSelect = {}, tabList = emptyList(), selectedItem = "") {}
     }
 
     composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
@@ -307,7 +316,7 @@ class SideBarNavigationTest {
     val singleItem = LIST_TOP_LEVEL_DESTINATIONS.first()
     composeTestRule.setContent {
       SideBarNavigation(
-          onTabSelect = {}, tabList = listOf(singleItem), selectedItem = singleItem.route)
+          onTabSelect = {}, tabList = listOf(singleItem), selectedItem = singleItem.route) {}
     }
 
     composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
@@ -322,7 +331,9 @@ class SideBarNavigationTest {
     val nonExistentRoute = "non_existent_route"
     composeTestRule.setContent {
       SideBarNavigation(
-          onTabSelect = {}, tabList = LIST_TOP_LEVEL_DESTINATIONS, selectedItem = nonExistentRoute)
+          onTabSelect = {},
+          tabList = LIST_TOP_LEVEL_DESTINATIONS,
+          selectedItem = nonExistentRoute) {}
     }
 
     composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
@@ -339,7 +350,7 @@ class SideBarNavigationTest {
       SideBarNavigation(
           onTabSelect = { selectedDestination = it },
           tabList = LIST_TOP_LEVEL_DESTINATIONS,
-          selectedItem = "")
+          selectedItem = "") {}
     }
 
     composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
@@ -353,7 +364,8 @@ class SideBarNavigationTest {
   @Test
   fun navigationItemDrawer_displaysLabel() {
     composeTestRule.setContent {
-      SideBarNavigation(onTabSelect = {}, tabList = LIST_TOP_LEVEL_DESTINATIONS, selectedItem = "")
+      SideBarNavigation(
+          onTabSelect = {}, tabList = LIST_TOP_LEVEL_DESTINATIONS, selectedItem = "") {}
     }
 
     composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()

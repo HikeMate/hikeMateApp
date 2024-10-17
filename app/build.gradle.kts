@@ -87,6 +87,10 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            // To fix this error: 6 files found with path 'META-INF/LICENSE.md'.
+            merges  += "META-INF/LICENSE.md"
+            merges += "META-INF/LICENSE-notice.md"
+
         }
     }
 
@@ -138,15 +142,18 @@ fun DependencyHandlerScope.globalTestImplementation(dep: Any) {
 }
 
 dependencies {
+
     val composeBom = platform(libs.compose.bom)
 
     // Dependencies
+    implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(platform(libs.compose.bom))
     implementation(libs.firebase.firestore.ktx)
+    implementation(libs.firebase.auth.ktx)
     implementation(libs.androidx.espresso.intents)
     implementation(libs.androidx.navigation.runtime.ktx)
     implementation(libs.androidx.navigation.common.ktx)
@@ -161,6 +168,8 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.osmdroid)
     implementation(libs.okhttp)
+    implementation(libs.googleid)
+
 
     // Global test dependencies
     globalTestImplementation(libs.androidx.junit)
@@ -186,6 +195,10 @@ dependencies {
     androidTestImplementation(libs.ui.test.junit4)
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.compose.test.junit)
+    androidTestImplementation(libs.mockito.android)
+    androidTestImplementation(libs.mockk.android)
+    androidTestImplementation(libs.mockk.agent)
+
 
     // Debug dependencies
     debugImplementation(libs.compose.tooling)
