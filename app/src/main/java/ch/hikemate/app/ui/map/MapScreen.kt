@@ -81,6 +81,15 @@ object MapScreen {
    */
   val BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT = 400.dp
 
+  /**
+   * (Config) Initial zoom level of the map. The zoom level is defined empirically to show a
+   * reasonable area of the map when the user opens the screen.
+   */
+  const val MAP_INITIAL_ZOOM = 12.0
+
+  /** (Config) Initial position of the center of the map. */
+  val MAP_INITIAL_CENTER = GeoPoint(46.5, 6.6)
+
   /** (Config) Width of the stroke of the lines that represent the hikes on the map. */
   const val STROKE_WIDTH = 10f
 
@@ -188,8 +197,8 @@ fun MapScreen(
     }
 
     mapView.apply {
-      controller.setZoom(12.0)
-      controller.setCenter(GeoPoint(46.5, 6.6))
+      controller.setZoom(MapScreen.MAP_INITIAL_ZOOM)
+      controller.setCenter(MapScreen.MAP_INITIAL_CENTER)
       // Enable touch-controls such as pinch to zoom
       setMultiTouchControls(true)
     }
