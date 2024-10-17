@@ -65,27 +65,6 @@ import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Polyline
 
 object MapScreen {
-  const val LOG_TAG = "MapScreen"
-
-  const val TEST_TAG_MAP = "map"
-  const val TEST_TAG_SEARCH_BUTTON = "searchButton"
-  const val TEST_TAG_HIKES_LIST = "hikesList"
-  const val TEST_TAG_HIKE_ITEM = "hikeItem"
-  const val TEST_TAG_EMPTY_HIKES_LIST_MESSAGE = "emptyHikesListMessage"
-  const val TEST_TAG_SEARCHING_MESSAGE = "searchingMessage"
-  const val TEST_TAG_SEARCH_LOADING_ANIMATION = "searchLoadingAnimation"
-
-  val BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT = 400.dp
-
-  const val MIN_HUE = 0
-  const val MAX_HUE = 360
-  const val MIN_SATURATION = 42
-  const val MAX_SATURATION = 98
-  const val MIN_LIGHTNESS = 40
-  const val MAX_LIGHTNESS = 90
-
-  const val STROKE_WIDTH = 10f
-
   /**
    * (Config) Arbitrary number defined empirically to avoid performance issues caused by drawing too
    * many hikes on the map when the user zoomed out too much and launched a search.
@@ -95,6 +74,32 @@ object MapScreen {
    * be surprised by the lag.
    */
   const val MAX_HIKES_DRAWN_ON_MAP = 100
+
+  /**
+   * (Config) Height of the bottom sheet when it is collapsed. The height is defined empirically to
+   * show a few items of the list of hikes and allow the user to expand it to see more.
+   */
+  val BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT = 400.dp
+
+  /** (Config) Width of the stroke of the lines that represent the hikes on the map. */
+  const val STROKE_WIDTH = 10f
+
+  const val MIN_HUE = 0
+  const val MAX_HUE = 360
+  const val MIN_SATURATION = 42
+  const val MAX_SATURATION = 98
+  const val MIN_LIGHTNESS = 40
+  const val MAX_LIGHTNESS = 90
+
+  const val LOG_TAG = "MapScreen"
+
+  const val TEST_TAG_MAP = "map"
+  const val TEST_TAG_SEARCH_BUTTON = "searchButton"
+  const val TEST_TAG_HIKES_LIST = "hikesList"
+  const val TEST_TAG_HIKE_ITEM = "hikeItem"
+  const val TEST_TAG_EMPTY_HIKES_LIST_MESSAGE = "emptyHikesListMessage"
+  const val TEST_TAG_SEARCHING_MESSAGE = "searchingMessage"
+  const val TEST_TAG_SEARCH_LOADING_ANIMATION = "searchLoadingAnimation"
 }
 
 /**
