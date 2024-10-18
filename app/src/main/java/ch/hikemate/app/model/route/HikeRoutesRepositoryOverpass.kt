@@ -145,7 +145,7 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
       while (elementReader.hasNext()) {
         val name = elementReader.nextName()
         when (name) {
-          "id" -> id = elementReader.nextInt().toString()
+          "id" -> id = elementReader.nextLong().toString()
           "bounds" -> {
             elementReader.beginObject() // We're in the bounds object of the element
             while (elementReader.hasNext()) {
