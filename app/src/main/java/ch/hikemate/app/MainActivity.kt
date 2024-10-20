@@ -3,11 +3,14 @@ package ch.hikemate.app
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -28,16 +31,26 @@ class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
 
-    val firebaseAuthRepository: FirebaseAuthRepository = FirebaseAuthRepository()
-    val authViewModel: AuthViewModel = AuthViewModel(firebaseAuthRepository)
-    var currUser = authViewModel.currentUser.value
+    val firebaseAuthRepository = FirebaseAuthRepository()
+    val authViewModel = AuthViewModel(firebaseAuthRepository)
+
     setContent {
-      Text("$currUser")
-      val coroutineScope = rememberCoroutineScope()
-      Button(
-          onClick = { authViewModel.signInWithGoogle(coroutineScope, this) },
-      ) {
-        Text("Sign in with Google")
+      Column {
+        val context = LocalContext.current
+        var currUser = authViewModel.currentUser.collectAsState().value
+
+        Text(currUser?.displayName ?: "No user signed in")
+        val coroutineScope = rememberCoroutineScope()
+        Button(
+            onClick = { authViewModel.signInWithGoogle(coroutineScope, context) },
+        ) {
+          Text("Sign in with Google")
+        }
+        Button(
+            onClick = { authViewModel.signOut() },
+        ) {
+          Text("Sign out")
+        }
       }
     }
     // setContent { HikeMateTheme { Surface(modifier = Modifier.fillMaxSize()) { HikeMateApp() } } }
