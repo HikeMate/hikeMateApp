@@ -1,18 +1,27 @@
 package ch.hikemate.app
 
+import android.app.Activity
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Surface
+import androidx.activity.result.ActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navigation
+import ch.hikemate.app.model.authentication.AuthViewModel
+import ch.hikemate.app.model.authentication.FirebaseAuthRepository
 import ch.hikemate.app.ui.auth.SignInScreen
 import ch.hikemate.app.ui.map.MapScreen
 import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
@@ -21,12 +30,47 @@ import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.navigation.SideBarNavigation
 import ch.hikemate.app.ui.navigation.TopLevelDestinations
-import ch.hikemate.app.ui.theme.HikeMateTheme
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-    setContent { HikeMateTheme { Surface(modifier = Modifier.fillMaxSize()) { HikeMateApp() } } }
+
+    val firebaseAuthRepository = FirebaseAuthRepository()
+    val authViewModel = AuthViewModel(firebaseAuthRepository)
+
+    setContent {
+      Column {
+        val context = LocalContext.current
+        var currUser = authViewModel.currentUser.collectAsState().value
+
+        Text(currUser?.displayName ?: "No user signed in")
+        val coroutineScope = rememberCoroutineScope()
+        // Create the launcher for adding a Google account
+        val addAccountLauncher =
+            rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.StartActivityForResult()) {
+                    result: ActivityResult ->
+                  // Handle the result if needed
+                  if (result.resultCode == Activity.RESULT_OK) {
+                    // Account was added successfully, you can do further processing if needed
+                  }
+                }
+
+        Button(
+            onClick = {
+              authViewModel.signInWithGoogle(coroutineScope, context, addAccountLauncher)
+            },
+        ) {
+          Text("Sign in with Google")
+        }
+        Button(
+            onClick = { authViewModel.signOut() },
+        ) {
+          Text("Sign out")
+        }
+      }
+    }
+    // setContent { HikeMateTheme { Surface(modifier = Modifier.fillMaxSize()) { HikeMateApp() } } }
   }
 }
 
