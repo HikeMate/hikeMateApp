@@ -7,28 +7,18 @@ import android.util.Log
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.result.ActivityResult
 import androidx.credentials.CredentialManager
-import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
-import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.NoCredentialException
 import ch.hikemate.app.R
-import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
-import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
-import java.security.MessageDigest
-import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 
 class FirebaseAuthRepository {
 
@@ -45,14 +35,13 @@ class FirebaseAuthRepository {
    *   explicitly when testing with mocks.
    */
   fun signInWithGoogle(
-    onSuccess: (FirebaseUser?) -> Unit,
-    onErrorAction: (Exception) -> Unit,
-    context: Context,
-    coroutineScope: CoroutineScope,
-    credentialManager: CredentialManager = CredentialManager.create(context),
-    startAddAccountIntentLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>?,
-
-    ) {
+      onSuccess: (FirebaseUser?) -> Unit,
+      onErrorAction: (Exception) -> Unit,
+      context: Context,
+      coroutineScope: CoroutineScope,
+      credentialManager: CredentialManager = CredentialManager.create(context),
+      startAddAccountIntentLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>?,
+  ) {
     // Initialize Firebase authentication and retrieve the web client ID from resources
     val auth = FirebaseAuth.getInstance()
     val token = context.getString(R.string.default_web_client_id)
@@ -71,17 +60,17 @@ class FirebaseAuthRepository {
         Log.d("SignInButton", "Trying to get credential")
         // Request credentials from the credential manager
         val result =
-          credentialManager.getCredential(
-            request = request, // Send the request we built
-            context = context // Provide the context for the request
-          )
+            credentialManager.getCredential(
+                request = request, // Send the request we built
+                context = context // Provide the context for the request
+                )
 
         Log.d("SignInButton", "${result}")
 
         // Extract the ID token from the result and create a Firebase credential
         val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(result.credential.data)
         val firebaseCredential =
-          GoogleAuthProvider.getCredential(googleIdTokenCredential.idToken, null)
+            GoogleAuthProvider.getCredential(googleIdTokenCredential.idToken, null)
 
         Log.d("SignInButton", "$firebaseCredential")
 
@@ -95,7 +84,7 @@ class FirebaseAuthRepository {
             onErrorAction(task.exception ?: Exception("Unknown error"))
           }
         }
-      } catch (e: NoCredentialException){
+      } catch (e: NoCredentialException) {
         startAddAccountIntentLauncher?.launch(getAddGoogleAccountIntent())
       } catch (e: Exception) {
         Log.d("SignInButton", "Login error: ${e.message}")

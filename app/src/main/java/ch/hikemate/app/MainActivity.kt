@@ -46,17 +46,20 @@ class MainActivity : ComponentActivity() {
         Text(currUser?.displayName ?: "No user signed in")
         val coroutineScope = rememberCoroutineScope()
         // Create the launcher for adding a Google account
-        val addAccountLauncher = rememberLauncherForActivityResult(
-          contract = ActivityResultContracts.StartActivityForResult()
-        ) { result: ActivityResult ->
-          // Handle the result if needed
-          if (result.resultCode == Activity.RESULT_OK) {
-            // Account was added successfully, you can do further processing if needed
-          }
-        }
+        val addAccountLauncher =
+            rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.StartActivityForResult()) {
+                    result: ActivityResult ->
+                  // Handle the result if needed
+                  if (result.resultCode == Activity.RESULT_OK) {
+                    // Account was added successfully, you can do further processing if needed
+                  }
+                }
 
         Button(
-            onClick = { authViewModel.signInWithGoogle(coroutineScope, context, addAccountLauncher) },
+            onClick = {
+              authViewModel.signInWithGoogle(coroutineScope, context, addAccountLauncher)
+            },
         ) {
           Text("Sign in with Google")
         }
