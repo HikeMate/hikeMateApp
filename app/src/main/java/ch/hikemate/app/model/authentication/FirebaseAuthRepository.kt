@@ -1,11 +1,16 @@
 package ch.hikemate.app.model.authentication
 
 import android.content.Context
+import android.content.Intent
+import android.provider.Settings
 import android.util.Log
+import androidx.activity.compose.ManagedActivityResultLauncher
+import androidx.activity.result.ActivityResult
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
+import androidx.credentials.exceptions.NoCredentialException
 import ch.hikemate.app.R
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
@@ -40,12 +45,14 @@ class FirebaseAuthRepository {
    *   explicitly when testing with mocks.
    */
   fun signInWithGoogle(
-      onSuccess: (FirebaseUser?) -> Unit,
-      onErrorAction: (Exception) -> Unit,
-      context: Context,
-      coroutineScope: CoroutineScope,
-      credentialManager: CredentialManager = CredentialManager.create(context),
-  ) {
+    onSuccess: (FirebaseUser?) -> Unit,
+    onErrorAction: (Exception) -> Unit,
+    context: Context,
+    coroutineScope: CoroutineScope,
+    credentialManager: CredentialManager = CredentialManager.create(context),
+    startAddAccountIntentLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>?,
+
+    ) {
     // Initialize Firebase authentication and retrieve the web client ID from resources
     val auth = FirebaseAuth.getInstance()
     val token = context.getString(R.string.default_web_client_id)
@@ -64,17 +71,17 @@ class FirebaseAuthRepository {
         Log.d("SignInButton", "Trying to get credential")
         // Request credentials from the credential manager
         val result =
-            credentialManager.getCredential(
-                request = request, // Send the request we built
-                context = context // Provide the context for the request
-                )
+          credentialManager.getCredential(
+            request = request, // Send the request we built
+            context = context // Provide the context for the request
+          )
 
         Log.d("SignInButton", "${result}")
 
         // Extract the ID token from the result and create a Firebase credential
         val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(result.credential.data)
         val firebaseCredential =
-            GoogleAuthProvider.getCredential(googleIdTokenCredential.idToken, null)
+          GoogleAuthProvider.getCredential(googleIdTokenCredential.idToken, null)
 
         Log.d("SignInButton", "$firebaseCredential")
 
@@ -88,6 +95,8 @@ class FirebaseAuthRepository {
             onErrorAction(task.exception ?: Exception("Unknown error"))
           }
         }
+      } catch (e: NoCredentialException){
+        startAddAccountIntentLauncher?.launch(getAddGoogleAccountIntent())
       } catch (e: Exception) {
         Log.d("SignInButton", "Login error: ${e.message}")
         onErrorAction(e)
@@ -95,54 +104,10 @@ class FirebaseAuthRepository {
     }
   }
 
-  fun googleSignIn(context: Context): Flow<Result<AuthResult>> {
-    val firebaseAuth = FirebaseAuth.getInstance()
-    return callbackFlow {
-      try {
-        // Initialize Credential Manager
-        val credentialManager: CredentialManager = CredentialManager.create(context)
-
-        // Generate a nonce (a random number used once)
-        val ranNonce: String = UUID.randomUUID().toString()
-        val bytes: ByteArray = ranNonce.toByteArray()
-        val md: MessageDigest = MessageDigest.getInstance("SHA-256")
-        val digest: ByteArray = md.digest(bytes)
-        val hashedNonce: String = digest.fold("") { str, it -> str + "%02x".format(it) }
-
-        // Set up Google ID option
-        val googleIdOption: GetGoogleIdOption =
-            GetGoogleIdOption.Builder()
-                .setFilterByAuthorizedAccounts(false)
-                .setServerClientId("YOUR_WEB_CLIENT_ID")
-                .setNonce(hashedNonce)
-                .build()
-
-        // Request credentials
-        val request: GetCredentialRequest =
-            GetCredentialRequest.Builder().addCredentialOption(googleIdOption).build()
-
-        // Get the credential result
-        val result = credentialManager.getCredential(context, request)
-        val credential = result.credential
-
-        // Check if the received credential is a valid Google ID Token
-        if (credential is CustomCredential &&
-            credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
-          val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
-          val authCredential =
-              GoogleAuthProvider.getCredential(googleIdTokenCredential.idToken, null)
-          val authResult = firebaseAuth.signInWithCredential(authCredential).await()
-          trySend(Result.success(authResult))
-        } else {
-          throw RuntimeException("Received an invalid credential type")
-        }
-      } catch (e: GetCredentialCancellationException) {
-        trySend(Result.failure(Exception("Sign-in was canceled. Please try again.")))
-      } catch (e: Exception) {
-        trySend(Result.failure(e))
-      }
-      awaitClose {}
-    }
+  private fun getAddGoogleAccountIntent(): Intent {
+    val intent = Intent(Settings.ACTION_ADD_ACCOUNT)
+    intent.putExtra(Settings.EXTRA_ACCOUNT_TYPES, arrayOf("com.google"))
+    return intent
   }
 
   /**

@@ -1,8 +1,12 @@
 package ch.hikemate.app
 
+import android.app.Activity
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.ActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
@@ -41,8 +45,18 @@ class MainActivity : ComponentActivity() {
 
         Text(currUser?.displayName ?: "No user signed in")
         val coroutineScope = rememberCoroutineScope()
+        // Create the launcher for adding a Google account
+        val addAccountLauncher = rememberLauncherForActivityResult(
+          contract = ActivityResultContracts.StartActivityForResult()
+        ) { result: ActivityResult ->
+          // Handle the result if needed
+          if (result.resultCode == Activity.RESULT_OK) {
+            // Account was added successfully, you can do further processing if needed
+          }
+        }
+
         Button(
-            onClick = { authViewModel.signInWithGoogle(coroutineScope, context) },
+            onClick = { authViewModel.signInWithGoogle(coroutineScope, context, addAccountLauncher) },
         ) {
           Text("Sign in with Google")
         }
