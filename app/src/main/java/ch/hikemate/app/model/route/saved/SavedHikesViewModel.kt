@@ -3,6 +3,7 @@ package ch.hikemate.app.model.route.saved
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import ch.hikemate.app.R
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,6 +29,13 @@ class SavedHikesViewModel(
    */
   val savedHike: StateFlow<List<SavedHike>> = _savedHikes.asStateFlow()
 
+  private val _errorMessage = MutableStateFlow<Int?>(null)
+  /**
+   * If an error occurs while performing an operation related to saved hikes, the resource ID of an
+   * appropriate error message will be set in this state flow.
+   */
+  val errorMessage: StateFlow<Int?> = _errorMessage.asStateFlow()
+
   /** Load saved hikes from the repository and update the [savedHike] state flow. */
   fun loadSavedHikes() {
     // Because loading saved hikes is also used by other methods, we extract it
@@ -45,10 +53,14 @@ class SavedHikesViewModel(
     viewModelScope.launch(dispatcher) {
       try {
         repository.addSavedHike(hike)
+        // Makes no sense to reset the error message here, an error might still occur when
+        // loading hikes again
       } catch (e: Exception) {
         Log.e(LOG_TAG, "Error adding saved hike", e)
+        _errorMessage.value = R.string.saved_hikes_screen_generic_error
         return@launch
       }
+      // As a side-effect, this call will reset the error message if no error occurs
       loadSavedHikesAsync()
     }
   }
@@ -64,10 +76,14 @@ class SavedHikesViewModel(
     viewModelScope.launch(dispatcher) {
       try {
         repository.removeSavedHike(hike)
+        // Makes no sense to reset the error message here, an error might still occur when
+        // loading hikes again
       } catch (e: Exception) {
         Log.e(LOG_TAG, "Error removing saved hike", e)
+        _errorMessage.value = R.string.saved_hikes_screen_generic_error
         return@launch
       }
+      // As a side-effect, this call will reset the error message if no error occurs
       loadSavedHikesAsync()
     }
   }
@@ -76,8 +92,10 @@ class SavedHikesViewModel(
     withContext(dispatcher) {
       try {
         _savedHikes.value = repository.loadSavedHikes()
+        _errorMessage.value = null
       } catch (e: Exception) {
         Log.e(LOG_TAG, "Error loading saved hikes", e)
+        _errorMessage.value = R.string.saved_hikes_screen_generic_error
       }
     }
   }
