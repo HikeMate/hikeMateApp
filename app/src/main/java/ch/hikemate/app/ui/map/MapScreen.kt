@@ -54,6 +54,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.hikemate.app.R
 import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
+import ch.hikemate.app.ui.map.MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT
 import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
@@ -230,14 +231,18 @@ fun MapScreen(
       tabList = LIST_TOP_LEVEL_DESTINATIONS,
       selectedItem = Route.MAP) {
         Box(modifier = Modifier.fillMaxSize().testTag(Screen.MAP)) {
-          // Jetpack Compose is a relatively recent framework for implementing Android UIs. OSMDroid
+          // Jetpack Compose is a relatively recent framework for implementing Android UIs.
+          // OSMDroid
           // is
           // an older library that uses Activities, the previous way of doing. The composable
           // AndroidView
           // allows us to use OSMDroid's legacy MapView in a Jetpack Compose layout.
           AndroidView(
               factory = { mapView },
-              modifier = Modifier.fillMaxSize().testTag(MapScreen.TEST_TAG_MAP))
+              modifier =
+                  Modifier.fillMaxSize()
+                      .testTag(MapScreen.TEST_TAG_MAP)
+                      .padding(bottom = BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT))
 
           // Search button to request OSM for hikes in the displayed area
           if (!isSearching) {
