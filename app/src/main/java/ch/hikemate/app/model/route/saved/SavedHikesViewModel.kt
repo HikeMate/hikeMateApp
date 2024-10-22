@@ -2,6 +2,7 @@ package ch.hikemate.app.model.route.saved
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import ch.hikemate.app.R
 import kotlinx.coroutines.CoroutineDispatcher
@@ -18,6 +19,14 @@ class SavedHikesViewModel(
 ) : ViewModel() {
 
   companion object {
+    val Factory: ViewModelProvider.Factory =
+        object : ViewModelProvider.Factory {
+          @Suppress("UNCHECKED_CAST")
+          override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            return SavedHikesViewModel(SavedHikesRepositoryFirebase()) as T
+          }
+        }
+
     /** Tag used for logging. */
     private const val LOG_TAG = "SavedHikesViewModel"
   }
