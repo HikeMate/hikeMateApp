@@ -22,7 +22,7 @@ const val ZOOM_OUT_BUTTON = "ZoomOutButton"
  * @param modifier Modifier to be applied to the buttons.
  */
 @Composable
-fun ZoomMapButton(onZoomIn: () -> Unit, onZoomOut: () -> Unit, modifier: Modifier) {
+fun ZoomMapButton(onZoomIn: () -> Unit, onZoomOut: () -> Unit, modifier: Modifier = Modifier) {
   Column(modifier = modifier.testTag(ZOOM_MAP_BUTTON)) {
     Button(onClick = onZoomIn, modifier = Modifier.testTag(ZOOM_IN_BUTTON)) {
       Icon(imageVector = Icons.Filled.Add, contentDescription = "Zoom In")

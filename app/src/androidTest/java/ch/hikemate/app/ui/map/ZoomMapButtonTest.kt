@@ -11,6 +11,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.verify
 
 class ZoomMapButtonTest {
 
@@ -25,22 +26,56 @@ class ZoomMapButtonTest {
     navigationActions = mock(NavigationActions::class.java)
     hikesRepository = mock(HikeRoutesRepository::class.java)
     listOfHikeRoutesViewModel = ListOfHikeRoutesViewModel(hikesRepository)
-    composeTestRule.setContent {
-      MapScreen(
-          hikingRoutesViewModel = listOfHikeRoutesViewModel, navigationActions = navigationActions)
-    }
   }
 
   @Test
   fun buttonIsDisplayed() {
+    composeTestRule.setContent {
+      MapScreen(
+          hikingRoutesViewModel = listOfHikeRoutesViewModel, navigationActions = navigationActions)
+    }
     composeTestRule.onNodeWithTag(ZOOM_MAP_BUTTON).assertIsDisplayed()
     composeTestRule.onNodeWithTag(ZOOM_IN_BUTTON).assertIsDisplayed()
     composeTestRule.onNodeWithTag(ZOOM_OUT_BUTTON).assertIsDisplayed()
   }
 
   @Test
-  fun zoomInButtonIncreasesZoomLevel() {
+  fun zoomButtonsAreClickable() {
+
+    composeTestRule.setContent {
+      MapScreen(
+          hikingRoutesViewModel = listOfHikeRoutesViewModel, navigationActions = navigationActions)
+    }
     composeTestRule.onNodeWithTag(ZOOM_IN_BUTTON).performClick()
     composeTestRule.onNodeWithTag(ZOOM_OUT_BUTTON).performClick()
+  }
+
+  @Test
+  fun zoomInButtonWorks() {
+    val onZoomIn: () -> Unit = mock()
+    val onZoomOut: () -> Unit = mock()
+    composeTestRule.setContent { ZoomMapButton(onZoomOut = onZoomOut, onZoomIn = onZoomIn) }
+    composeTestRule.onNodeWithTag(ZOOM_IN_BUTTON).performClick()
+    verify(onZoomIn).invoke()
+  }
+
+  @Test
+  fun zoomOutButtonWorks() {
+    val onZoomIn: () -> Unit = mock()
+    val onZoomOut: () -> Unit = mock()
+    composeTestRule.setContent { ZoomMapButton(onZoomOut = onZoomOut, onZoomIn = onZoomIn) }
+    composeTestRule.onNodeWithTag(ZOOM_OUT_BUTTON).performClick()
+    verify(onZoomOut).invoke()
+  }
+
+  @Test
+  fun bothButtonsWork() {
+    val onZoomIn: () -> Unit = mock()
+    val onZoomOut: () -> Unit = mock()
+    composeTestRule.setContent { ZoomMapButton(onZoomOut = onZoomOut, onZoomIn = onZoomIn) }
+    composeTestRule.onNodeWithTag(ZOOM_OUT_BUTTON).performClick()
+    verify(onZoomOut).invoke()
+    composeTestRule.onNodeWithTag(ZOOM_IN_BUTTON).performClick()
+    verify(onZoomIn).invoke()
   }
 }
