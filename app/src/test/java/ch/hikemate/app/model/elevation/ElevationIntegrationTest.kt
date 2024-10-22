@@ -64,6 +64,7 @@ class ElevationIntegrationTest {
 
     repository.getElevation(
         coordinates,
+        0,
         onSuccess = {
           result = it
           latch.countDown()
@@ -89,6 +90,7 @@ class ElevationIntegrationTest {
 
     repository.getElevation(
         longCoordinates,
+        0,
         onSuccess = {
           result = it
           latch.countDown()

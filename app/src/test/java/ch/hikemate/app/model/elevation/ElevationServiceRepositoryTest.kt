@@ -160,14 +160,9 @@ class ElevationServiceRepositoryTest {
       callbackCapture.firstValue.onResponse(call, simpleResponse)
     }
 
-    elevationServiceRepository.getElevation(
-        latLong,
-        { list ->
-          assertEquals(smallList, list)
-          println(list)
-        }) {
-          fail("Failed to fetch routes from Overpass API")
-        }
+    elevationServiceRepository.getElevation(latLong, 0, { list -> assertEquals(smallList, list) }) {
+      fail("Failed to fetch routes from Overpass API")
+    }
 
     verify(client).newCall(any())
   }
@@ -183,16 +178,88 @@ class ElevationServiceRepositoryTest {
       callbackCapture.firstValue.onResponse(call, longResponse)
     }
 
-    elevationServiceRepository.getElevation(
-        latLong,
-        { list ->
-          assertEquals(longList, list)
-          println(list)
-        }) {
-          fail("Failed to fetch routes from Overpass API")
-        }
+    elevationServiceRepository.getElevation(latLong, 0, { list -> assertEquals(longList, list) }) {
+      fail("Failed to fetch routes from Overpass API")
+    }
 
     verify(client).newCall(any())
+  }
+
+  @Test
+  fun cacheWorks_toStoreAlreadyQueriedIDs() {
+
+    val call = mock(Call::class.java)
+    `when`(client.newCall(any())).thenReturn(call)
+
+    val callbackCapture = argumentCaptor<okhttp3.Callback>()
+
+    `when`(call.enqueue(callbackCapture.capture())).then {
+      callbackCapture.firstValue.onResponse(call, longResponse)
+    }
+
+    assertEquals(0, elevationServiceRepository.getCacheSize())
+    elevationServiceRepository.getElevation(latLong, 0, { list -> assertEquals(longList, list) }) {
+      fail("Failed to fetch routes from Overpass API")
+    }
+    assertEquals(1, elevationServiceRepository.getCacheSize())
+
+    val call2 = mock(Call::class.java)
+    `when`(client.newCall(any())).thenReturn(call2)
+
+    elevationServiceRepository.getElevation(latLong, 0, { list -> assertEquals(longList, list) }) {
+      fail("Failed to fetch routes from Overpass API")
+    }
+    assertEquals(1, elevationServiceRepository.getCacheSize())
+    verify(client).newCall(any())
+  }
+
+  @Test
+  fun cacheWorks_toStoreDifferentIDs() {
+    // Prepare mock responses
+    val call = mock(Call::class.java)
+    `when`(client.newCall(any())).thenReturn(call)
+
+    val callbackCapture = argumentCaptor<okhttp3.Callback>()
+
+    // Simulate the first API response
+    `when`(call.enqueue(callbackCapture.capture())).thenAnswer {
+      // Return the mocked longResponse on the first call
+      callbackCapture.firstValue.onResponse(call, longResponse)
+    }
+
+    // Check initial cache size
+    assertEquals(0, elevationServiceRepository.getCacheSize())
+
+    // First API call
+    elevationServiceRepository.getElevation(latLong, 0, { list -> assertEquals(longList, list) }) {
+      fail("Failed to fetch routes from Overpass API")
+    }
+
+    // Check cache size after first call
+    assertEquals(1, elevationServiceRepository.getCacheSize())
+
+    // Prepare for second call with a new mock
+    val call2 = mock(Call::class.java)
+    `when`(client.newCall(any())).thenReturn(call2)
+
+    val callbackCapture2 = argumentCaptor<okhttp3.Callback>()
+
+    // Simulate the second API response
+    `when`(call2.enqueue(callbackCapture2.capture())).thenAnswer {
+      // Return the same mocked longResponse for the second call
+      callbackCapture2.firstValue.onResponse(call2, simpleResponse)
+    }
+
+    // Second API call
+    elevationServiceRepository.getElevation(latLong, 1, { list -> assertEquals(smallList, list) }) {
+      fail("Failed to fetch routes from Overpass API")
+    }
+
+    // Verify cache size after second call
+    assertEquals(2, elevationServiceRepository.getCacheSize())
+
+    // Verify that newCall was invoked twice
+    verify(client, times(2)).newCall(any())
   }
 
   @Test
@@ -214,7 +281,7 @@ class ElevationServiceRepositoryTest {
     `when`(client.newCall(any())).thenReturn(call)
 
     elevationServiceRepository.getElevation(
-        latLong, { fail("Expected failure but got success") }) { exception ->
+        latLong, 0, { fail("Expected failure but got success") }) { exception ->
           assertEquals("Failed to get elevation", exception.message)
         }
 
@@ -224,7 +291,7 @@ class ElevationServiceRepositoryTest {
   @Test
   fun failsWithNoCoordinates() {
     elevationServiceRepository.getElevation(
-        emptyList(), { fail("Expected failure but got success") }) { exception ->
+        emptyList(), 0, { fail("Expected failure but got success") }) { exception ->
           assertEquals("No coordinates provided", exception.message)
         }
 
@@ -242,7 +309,7 @@ class ElevationServiceRepositoryTest {
     `when`(client.newCall(any())).thenReturn(call)
 
     elevationServiceRepository.getElevation(
-        latLong, { fail("Expected failure but got success") }) { exception ->
+        latLong, 0, { fail("Expected failure but got success") }) { exception ->
           assertEquals("Network error", exception.message)
         }
 
