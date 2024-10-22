@@ -1,9 +1,9 @@
-package ch.hikemate.app.model.route
+package ch.hikemate.app.model.elevation
 
-import android.util.JsonReader
+import ch.hikemate.app.model.route.LatLong
 import java.io.IOException
-import java.io.Reader
-import kotlinx.serialization.*
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json.Default.decodeFromString
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -11,6 +11,14 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.RequestBody
 
+@Serializable data class ElevationResponse(val results: List<ElevationResult>)
+
+@Serializable
+data class ElevationResult(val latitude: Double, val longitude: Double, val elevation: Double)
+
+/**
+ * A repository for the ElevationService. This class is responsible for making the network request
+ */
 class ElevationServiceRepository(private val client: OkHttpClient) : ElevationService {
 
   private val BASE_URL = "https://api.open-elevation.com/api/v1/lookup"
@@ -24,15 +32,18 @@ class ElevationServiceRepository(private val client: OkHttpClient) : ElevationSe
       onFailure(Exception("No coordinates provided"))
       return
     }
+    // Create the JSON body for the request
     val jsonBody = buildJsonObject {
+      // The major object
       put(
           "locations",
           buildJsonArray {
             coordinates.forEach { coordinate ->
               add(
+                  // Object with the location
                   buildJsonObject {
-                    put("lat", coordinate.lat)
-                    put("lon", coordinate.lon)
+                    put("latitude", coordinate.lat)
+                    put("longitude", coordinate.lon)
                   })
             }
           })
@@ -52,6 +63,9 @@ class ElevationServiceRepository(private val client: OkHttpClient) : ElevationSe
     client.newCall(requestBuilder).enqueue(ElevationServiceCallback(onSuccess, onFailure))
   }
 
+  /**
+   * A callback for the network request to the Elevation API. This callback will parse the response
+   */
   private inner class ElevationServiceCallback(
       private val onSuccess: (List<Double>) -> Unit,
       private val onFailure: (Exception) -> Unit
@@ -63,51 +77,20 @@ class ElevationServiceRepository(private val client: OkHttpClient) : ElevationSe
 
     override fun onResponse(call: okhttp3.Call, response: okhttp3.Response) {
       if (response.isSuccessful) {
-        val body = response.body?.charStream()
+        val body = response.body?.string()
+
         if (body == null) {
           onFailure(Exception("Failed to get elevation"))
           return
         }
-        val listElevations = parseElevations(body)
-        onSuccess(listElevations)
+
+        val elevationResponse = decodeFromString<ElevationResponse>(body)
+
+        onSuccess(elevationResponse.results.map { it.elevation })
       } else {
+
         onFailure(Exception("Failed to get elevation"))
       }
-    }
-
-    private fun parseElevations(responseReader: Reader): List<Double> {
-      val elevations = mutableListOf<Double>()
-      val jsonReader = JsonReader(responseReader)
-      jsonReader.beginObject()
-      while (jsonReader.hasNext()) {
-        val name = jsonReader.nextName()
-        if (name == "results") {
-          // Parse the elements array
-          jsonReader.beginArray()
-          while (jsonReader.hasNext()) {
-            jsonReader.beginObject() // We're in an element object
-            elevations.add(parseElement(jsonReader))
-            jsonReader.endObject()
-          }
-          jsonReader.endArray()
-        } else {
-          jsonReader.skipValue()
-        }
-      }
-      jsonReader.endObject()
-      return elevations
-    }
-
-    private fun parseElement(elementReader: JsonReader): Double {
-      var elevation = 0.0
-      while (elementReader.hasNext()) {
-        val name = elementReader.nextName()
-        when (name) {
-          "elevation" -> elevation = elementReader.nextDouble()
-          else -> elementReader.skipValue()
-        }
-      }
-      return elevation
     }
   }
 }
