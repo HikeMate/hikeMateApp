@@ -261,6 +261,7 @@ fun MapScreen(
                     Modifier.align(Alignment.BottomCenter)
                         .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
           }
+          // The zoom buttons are displayed on the bottom left of the screen
           ZoomMapButton(
               onZoomIn = { mapView.controller.zoomIn() },
               onZoomOut = { mapView.controller.zoomOut() },

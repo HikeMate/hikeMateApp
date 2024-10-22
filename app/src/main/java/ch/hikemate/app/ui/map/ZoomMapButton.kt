@@ -14,6 +14,13 @@ const val ZOOM_MAP_BUTTON = "ZoomMapButton"
 const val ZOOM_IN_BUTTON = "ZoomInButton"
 const val ZOOM_OUT_BUTTON = "ZoomOutButton"
 
+/**
+ * Buttons that zoom in and out of the map.
+ *
+ * @param onZoomIn Called when the user clicks the zoom in button.
+ * @param onZoomOut Called when the user clicks the zoom out button.
+ * @param modifier Modifier to be applied to the buttons.
+ */
 @Composable
 fun ZoomMapButton(onZoomIn: () -> Unit, onZoomOut: () -> Unit, modifier: Modifier) {
   Column(modifier = modifier.testTag(ZOOM_MAP_BUTTON)) {
