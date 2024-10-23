@@ -54,7 +54,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.hikemate.app.R
 import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
-import ch.hikemate.app.ui.map.MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT
 import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
@@ -62,6 +61,7 @@ import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.navigation.SideBarNavigation
 import org.osmdroid.config.Configuration
 import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Polyline
 
@@ -80,8 +80,13 @@ object MapScreen {
    * (Config) Height of the bottom sheet when it is collapsed. The height is defined empirically to
    * show a few items of the list of hikes and allow the user to expand it to see more.
    */
-  val BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT = 300.dp
+  val BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT = 400.dp
 
+  /** (Config) Height of the button */
+  val SEARCH_BUTTON_HEIGHT_SIZE = 40.dp
+
+  /** (Config) Width of the button */
+  val SEARCH_BUTTON_WIDTH_SIZE = 165.dp
   /**
    * (Config) Initial zoom level of the map. The zoom level is defined empirically to show a
    * reasonable area of the map when the user opens the screen.
@@ -198,6 +203,8 @@ fun MapScreen(
     }
 
     mapView.apply {
+      // Disable built-in zoom controls since we have our own
+      zoomController.setVisibility(CustomZoomButtonsController.Visibility.NEVER)
       controller.setZoom(MapScreen.MAP_INITIAL_ZOOM)
       controller.setCenter(MapScreen.MAP_INITIAL_CENTER)
       // Enable touch-controls such as pinch to zoom
@@ -242,7 +249,7 @@ fun MapScreen(
               modifier =
                   Modifier.fillMaxSize()
                       .testTag(MapScreen.TEST_TAG_MAP)
-                      .padding(bottom = BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT))
+                      .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT))
 
           // Search button to request OSM for hikes in the displayed area
           if (!isSearching) {
@@ -271,7 +278,7 @@ fun MapScreen(
               onZoomIn = { mapView.controller.zoomIn() },
               onZoomOut = { mapView.controller.zoomOut() },
               modifier =
-                  Modifier.align(Alignment.BottomStart)
+                  Modifier.align(Alignment.BottomEnd)
                       .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
           CollapsibleHikesList(hikingRoutesViewModel, isSearching)
           // Put SideBarNavigation after to make it appear on top of the map and HikeList
@@ -283,7 +290,12 @@ fun MapScreen(
 fun MapSearchButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
   Button(
       onClick = onClick,
-      modifier = modifier.testTag(MapScreen.TEST_TAG_SEARCH_BUTTON),
+      modifier =
+          modifier
+              .testTag(MapScreen.TEST_TAG_SEARCH_BUTTON)
+              .size(
+                  width = MapScreen.SEARCH_BUTTON_WIDTH_SIZE,
+                  height = MapScreen.SEARCH_BUTTON_HEIGHT_SIZE),
       colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Text(
             text = LocalContext.current.getString(R.string.map_screen_search_button_text),
