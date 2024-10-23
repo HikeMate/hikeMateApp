@@ -82,11 +82,6 @@ object MapScreen {
    */
   val BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT = 400.dp
 
-  /** (Config) Height of the button */
-  val SEARCH_BUTTON_HEIGHT_SIZE = 40.dp
-
-  /** (Config) Width of the button */
-  val SEARCH_BUTTON_WIDTH_SIZE = 165.dp
   /**
    * (Config) Initial zoom level of the map. The zoom level is defined empirically to show a
    * reasonable area of the map when the user opens the screen.
@@ -292,10 +287,7 @@ fun MapSearchButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
       onClick = onClick,
       modifier =
           modifier
-              .testTag(MapScreen.TEST_TAG_SEARCH_BUTTON)
-              .size(
-                  width = MapScreen.SEARCH_BUTTON_WIDTH_SIZE,
-                  height = MapScreen.SEARCH_BUTTON_HEIGHT_SIZE),
+              .testTag(MapScreen.TEST_TAG_SEARCH_BUTTON),
       colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Text(
             text = LocalContext.current.getString(R.string.map_screen_search_button_text),

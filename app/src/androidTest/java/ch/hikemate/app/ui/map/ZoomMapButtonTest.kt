@@ -35,7 +35,7 @@ class ZoomMapButtonTest {
       MapScreen(
           hikingRoutesViewModel = listOfHikeRoutesViewModel, navigationActions = navigationActions)
     }
-    composeTestRule.onNodeWithTag(ZoomMapButton.ZOOM_OUT_BUTTON).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(ZoomMapButton.ZOOM_MAP_BUTTON).assertIsDisplayed()
     composeTestRule.onNodeWithTag(ZoomMapButton.ZOOM_IN_BUTTON).assertIsDisplayed()
     composeTestRule.onNodeWithTag(ZoomMapButton.ZOOM_OUT_BUTTON).assertIsDisplayed()
   }

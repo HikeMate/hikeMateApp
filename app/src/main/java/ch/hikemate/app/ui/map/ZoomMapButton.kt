@@ -2,7 +2,7 @@ package ch.hikemate.app.ui.map
 
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Remove
@@ -22,7 +22,6 @@ object ZoomMapButton {
   const val ZOOM_IN_BUTTON = "ZoomInButton"
   const val ZOOM_OUT_BUTTON = "ZoomOutButton"
   val ZOOM_BUTTON_WIDTH_SIZE = 52.dp
-  val ZOOM_BUTTON_HEIGHT_SIZE = MapScreen.SEARCH_BUTTON_HEIGHT_SIZE
 }
 
 /**
@@ -39,9 +38,7 @@ fun ZoomMapButton(onZoomIn: () -> Unit, onZoomOut: () -> Unit, modifier: Modifie
         onClick = onZoomOut,
         modifier =
             Modifier.testTag(ZoomMapButton.ZOOM_OUT_BUTTON)
-                .size(
-                    width = ZoomMapButton.ZOOM_BUTTON_WIDTH_SIZE,
-                    height = ZoomMapButton.ZOOM_BUTTON_HEIGHT_SIZE)
+                .width(ZoomMapButton.ZOOM_BUTTON_WIDTH_SIZE)
                 .padding(horizontal = 1.dp),
         colors =
             IconButtonDefaults.iconButtonColors(
@@ -56,9 +53,7 @@ fun ZoomMapButton(onZoomIn: () -> Unit, onZoomOut: () -> Unit, modifier: Modifie
         onClick = onZoomIn,
         modifier =
             Modifier.testTag(ZoomMapButton.ZOOM_IN_BUTTON)
-                .size(
-                    width = ZoomMapButton.ZOOM_BUTTON_WIDTH_SIZE,
-                    height = ZoomMapButton.ZOOM_BUTTON_HEIGHT_SIZE)
+                .width(ZoomMapButton.ZOOM_BUTTON_WIDTH_SIZE)
                 .padding(horizontal = 1.dp),
         colors =
             IconButtonDefaults.iconButtonColors(
