@@ -285,9 +285,7 @@ fun MapScreen(
 fun MapSearchButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
   Button(
       onClick = onClick,
-      modifier =
-          modifier
-              .testTag(MapScreen.TEST_TAG_SEARCH_BUTTON),
+      modifier = modifier.testTag(MapScreen.TEST_TAG_SEARCH_BUTTON),
       colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Text(
             text = LocalContext.current.getString(R.string.map_screen_search_button_text),
