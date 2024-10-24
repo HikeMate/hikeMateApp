@@ -22,7 +22,7 @@ class SavedHikesRepositoryDummyTest {
   }
 
   @Test
-  fun loadSavedHikesReturnsDummyData() =
+  fun loadSavedHikesReturnInitialDummyData() =
       runTest(timeout = 5.seconds) {
         // When
         val savedHikes = savedHikesRepositoryDummy.loadSavedHikes()
@@ -38,7 +38,7 @@ class SavedHikesRepositoryDummyTest {
       }
 
   @Test
-  fun addSavedHikeDoesNothing() =
+  fun addSavedHikeSavesTheHike() =
       runTest(timeout = 5.seconds) {
         // Given
         val hike = SavedHike("4", "Hike 4", null)
@@ -56,7 +56,7 @@ class SavedHikesRepositoryDummyTest {
       }
 
   @Test
-  fun removeSavedHikeDoesNothing() =
+  fun removeSavedHikeUnSavesTheHike() =
       runTest(timeout = 5.seconds) {
         // Given
         val hike = SavedHike("3", "Hike 3", null)
