@@ -40,24 +40,36 @@ class SavedHikesRepositoryDummyTest {
   @Test
   fun addSavedHikeDoesNothing() =
       runTest(timeout = 5.seconds) {
-        // Add saved hike is a placeholder for now, it does nothing under the hood
+        // Given
+        val hike = SavedHike("4", "Hike 4", null)
+
+        // Before
+        assertEquals(3, savedHikesRepositoryDummy.loadSavedHikes().size)
+        assert(!savedHikesRepositoryDummy.loadSavedHikes().contains(hike))
 
         // When
-        savedHikesRepositoryDummy.addSavedHike(SavedHike("4", "Hike 4", null))
+        savedHikesRepositoryDummy.addSavedHike(hike)
 
         // Then
-        assert(true)
+        assertEquals(4, savedHikesRepositoryDummy.loadSavedHikes().size)
+        assert(savedHikesRepositoryDummy.loadSavedHikes().contains(hike))
       }
 
   @Test
   fun removeSavedHikeDoesNothing() =
       runTest(timeout = 5.seconds) {
-        // Remove saved hike is a placeholder for now, it does nothing under the hood
+        // Given
+        val hike = SavedHike("3", "Hike 3", null)
+
+        // Before
+        assertEquals(3, savedHikesRepositoryDummy.loadSavedHikes().size)
+        assert(savedHikesRepositoryDummy.loadSavedHikes().contains(hike))
 
         // When
-        savedHikesRepositoryDummy.removeSavedHike(SavedHike("4", "Hike 4", null))
+        savedHikesRepositoryDummy.removeSavedHike(hike)
 
         // Then
-        assert(true)
+        assertEquals(2, savedHikesRepositoryDummy.loadSavedHikes().size)
+        assert(!savedHikesRepositoryDummy.loadSavedHikes().contains(hike))
       }
 }
