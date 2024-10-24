@@ -2,7 +2,7 @@ package ch.hikemate.app.model.route.saved
 
 import com.google.firebase.Timestamp
 
-class SavedHikesRepositoryFirebase : SavedHikesRepository {
+class SavedHikesRepositoryDummy : SavedHikesRepository {
   override suspend fun loadSavedHikes(): List<SavedHike> {
     return listOf(
         SavedHike("1", "Hike 1", Timestamp.now()),

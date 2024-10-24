@@ -10,22 +10,22 @@ import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 
-class SavedHikesRepositoryFirebaseTest {
-  private lateinit var savedHikesRepositoryFirebase: SavedHikesRepositoryFirebase
+class SavedHikesRepositoryDummyTest {
+  private lateinit var savedHikesRepositoryDummy: SavedHikesRepositoryDummy
 
   @OptIn(ExperimentalCoroutinesApi::class)
   @Before
   fun setUp() {
     Dispatchers.setMain(UnconfinedTestDispatcher())
 
-    savedHikesRepositoryFirebase = SavedHikesRepositoryFirebase()
+    savedHikesRepositoryDummy = SavedHikesRepositoryDummy()
   }
 
   @Test
   fun loadSavedHikesReturnsDummyData() =
       runTest(timeout = 5.seconds) {
         // When
-        val savedHikes = savedHikesRepositoryFirebase.loadSavedHikes()
+        val savedHikes = savedHikesRepositoryDummy.loadSavedHikes()
 
         // Then
         assertEquals(3, savedHikes.size)
@@ -43,7 +43,7 @@ class SavedHikesRepositoryFirebaseTest {
         // Add saved hike is a placeholder for now, it does nothing under the hood
 
         // When
-        savedHikesRepositoryFirebase.addSavedHike(SavedHike("4", "Hike 4", null))
+        savedHikesRepositoryDummy.addSavedHike(SavedHike("4", "Hike 4", null))
 
         // Then
         assert(true)
@@ -55,7 +55,7 @@ class SavedHikesRepositoryFirebaseTest {
         // Remove saved hike is a placeholder for now, it does nothing under the hood
 
         // When
-        savedHikesRepositoryFirebase.removeSavedHike(SavedHike("4", "Hike 4", null))
+        savedHikesRepositoryDummy.removeSavedHike(SavedHike("4", "Hike 4", null))
 
         // Then
         assert(true)

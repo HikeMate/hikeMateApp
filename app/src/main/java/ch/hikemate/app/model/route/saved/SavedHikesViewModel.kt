@@ -23,7 +23,7 @@ class SavedHikesViewModel(
         object : ViewModelProvider.Factory {
           @Suppress("UNCHECKED_CAST")
           override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return SavedHikesViewModel(SavedHikesRepositoryFirebase()) as T
+            return SavedHikesViewModel(SavedHikesRepositoryDummy()) as T
           }
         }
 
