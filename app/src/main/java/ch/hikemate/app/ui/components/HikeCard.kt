@@ -16,8 +16,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -25,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -36,15 +35,13 @@ import ch.hikemate.app.ui.map.MapScreen
 fun HikeCard(
     title: String,
     altitudeDifference: Int,
-    isSuitable: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    messageIcon: ImageVector? = null,
+    messageContent: String? = null,
+    messageColor: Color? = null
 ) {
-
-  val suitableLabelColor = if (isSuitable) Color(0xFF4CAF50) else Color(0xFFFFC107)
-  val suitableLabelText =
-      if (isSuitable) LocalContext.current.getString(R.string.map_screen_suitable_hike_label)
-      else LocalContext.current.getString(R.string.map_screen_challenging_hike_label)
+  val displayMessage = messageContent != null && messageIcon != null && messageColor != null
 
   Row(
       modifier =
@@ -84,20 +81,22 @@ fun HikeCard(
                 }
               }
 
-          Spacer(modifier = Modifier.height(4.dp))
+          if (displayMessage) {
+            Spacer(modifier = Modifier.height(4.dp))
 
-          Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                imageVector = if (isSuitable) Icons.Default.Check else Icons.Default.Warning,
-                // The icon is only decorative, the following message is enough for accessibility
-                contentDescription = null,
-                tint = suitableLabelColor,
-                modifier = Modifier.size(16.dp))
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(
-                text = suitableLabelText,
-                style = MaterialTheme.typography.bodySmall,
-                color = suitableLabelColor)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+              Icon(
+                  imageVector = messageIcon!!,
+                  // The icon is only decorative, the following message is enough for accessibility
+                  contentDescription = null,
+                  tint = messageColor!!,
+                  modifier = Modifier.size(16.dp))
+              Spacer(modifier = Modifier.width(4.dp))
+              Text(
+                  text = messageContent!!,
+                  style = MaterialTheme.typography.bodySmall,
+                  color = messageColor)
+            }
           }
         }
 
