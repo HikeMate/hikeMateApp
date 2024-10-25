@@ -83,5 +83,13 @@ data class LatLong(val lat: Double, val lon: Double)
  * @param id The id of the route, depending of the client
  * @param bounds The bounding box of the route
  * @param ways The points of the route
+ * @param name The name of the route
+ * @param description The description of the route
  */
-data class HikeRoute(val id: String, val bounds: Bounds, val ways: List<LatLong>)
+data class HikeRoute(
+    val id: String,
+    val bounds: Bounds,
+    val ways: List<LatLong>,
+    val name: String? = null,
+    val description: String? = null
+)
