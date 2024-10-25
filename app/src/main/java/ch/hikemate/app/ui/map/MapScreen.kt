@@ -314,30 +314,40 @@ fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel, isSea
               items(routes.value.size) { index: Int ->
                 val route = routes.value[index]
                 val isSuitable = index % 2 == 0
-                val suitableLabelColor = if (isSuitable) Color(0xFF4CAF50) else Color(0xFFFFC107)
-                val suitableLabelText =
-                    if (isSuitable)
-                        LocalContext.current.getString(R.string.map_screen_suitable_hike_label)
-                    else LocalContext.current.getString(R.string.map_screen_challenging_hike_label)
-                val suitableLabelIcon =
-                    if (isSuitable) Icons.Default.Check else Icons.Default.Warning
-                HikeCard(
-                    title = route.id,
-                    altitudeDifference = 1000,
-                    onClick = {
-                      // The user clicked on the route to select it
-                      hikingRoutesViewModel.selectRoute(route)
-                      Toast.makeText(
-                              context, "Hike details not implemented yet", Toast.LENGTH_SHORT)
-                          .show()
-                    },
-                    messageContent = suitableLabelText,
-                    messageIcon = suitableLabelIcon,
-                    messageColor = suitableLabelColor)
+                HikeCardFor(route, isSuitable, hikingRoutesViewModel)
               }
             }
           }
         }
       },
       sheetPeekHeight = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT) {}
+}
+
+@Composable
+fun HikeCardFor(route: HikeRoute, isSuitable: Boolean, viewModel: ListOfHikeRoutesViewModel) {
+  // The context is needed to display a toast when the user clicks on the route
+  val context = LocalContext.current
+
+  // The color of the card's message is chosen based on whether the hike is suitable or not
+  val suitableLabelColor = if (isSuitable) Color(0xFF4CAF50) else Color(0xFFFFC107)
+
+  // The text and icon of the card's message are chosen based on whether the hike is suitable or not
+  val suitableLabelText =
+      if (isSuitable) LocalContext.current.getString(R.string.map_screen_suitable_hike_label)
+      else LocalContext.current.getString(R.string.map_screen_challenging_hike_label)
+
+  // The icon of the card's message is chosen based on whether the hike is suitable or not
+  val suitableLabelIcon = if (isSuitable) Icons.Default.Check else Icons.Default.Warning
+
+  HikeCard(
+      title = route.id,
+      altitudeDifference = 1000,
+      onClick = {
+        // The user clicked on the route to select it
+        viewModel.selectRoute(route)
+        Toast.makeText(context, "Hike details not implemented yet", Toast.LENGTH_SHORT).show()
+      },
+      messageContent = suitableLabelText,
+      messageIcon = suitableLabelIcon,
+      messageColor = suitableLabelColor)
 }
