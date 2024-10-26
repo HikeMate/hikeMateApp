@@ -11,8 +11,8 @@ import ch.hikemate.app.MainActivity
 import ch.hikemate.app.ui.auth.TEST_TAG_LOGIN_BUTTON
 import ch.hikemate.app.ui.map.MapScreen.TEST_TAG_MAP
 import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
-import ch.hikemate.app.ui.navigation.Screen.PLANNED_HIKES
 import ch.hikemate.app.ui.navigation.Screen.PROFILE
+import ch.hikemate.app.ui.navigation.Screen.SAVED_HIKES
 import ch.hikemate.app.ui.navigation.TEST_TAG_DRAWER_CLOSE_BUTTON
 import ch.hikemate.app.ui.navigation.TEST_TAG_DRAWER_CONTENT
 import ch.hikemate.app.ui.navigation.TEST_TAG_DRAWER_ITEM_PREFIX
@@ -74,10 +74,10 @@ class EndToEndTest : TestCase() {
 
     // Check that we can go to the planned hikes screen
     composeTestRule
-        .onNodeWithTag(TEST_TAG_DRAWER_ITEM_PREFIX + TopLevelDestinations.PLANNED_HIKES.route)
+        .onNodeWithTag(TEST_TAG_DRAWER_ITEM_PREFIX + TopLevelDestinations.SAVED_HIKES.route)
         .performClick()
     composeTestRule.onNodeWithTag(TEST_TAG_MAP).assertIsNotDisplayed()
-    composeTestRule.onNodeWithTag(PLANNED_HIKES).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(SAVED_HIKES).assertIsDisplayed()
 
     // Check that we can go back to the map
     composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
@@ -85,7 +85,7 @@ class EndToEndTest : TestCase() {
         .onNodeWithTag(TEST_TAG_DRAWER_ITEM_PREFIX + TopLevelDestinations.MAP.route)
         .performClick()
     composeTestRule.onNodeWithTag(TEST_TAG_MAP).assertIsDisplayed()
-    composeTestRule.onNodeWithTag(PLANNED_HIKES).assertIsNotDisplayed()
+    composeTestRule.onNodeWithTag(SAVED_HIKES).assertIsNotDisplayed()
 
     // Check that we can go to the profile screen
     composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()

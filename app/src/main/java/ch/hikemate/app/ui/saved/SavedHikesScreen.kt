@@ -17,9 +17,8 @@ fun SavedHikesScreen(navigationActions: NavigationActions) {
   SideBarNavigation(
       onTabSelect = { route -> navigationActions.navigateTo(route) },
       tabList = LIST_TOP_LEVEL_DESTINATIONS,
-      selectedItem = Route.PLANNED_HIKES,
+      selectedItem = Route.SAVED_HIKES,
   ) {
-    Text(
-        text = "Planned Hikes to be implemented", modifier = Modifier.testTag(Screen.PLANNED_HIKES))
+    Text(text = "Planned Hikes to be implemented", modifier = Modifier.testTag(Screen.SAVED_HIKES))
   }
 }

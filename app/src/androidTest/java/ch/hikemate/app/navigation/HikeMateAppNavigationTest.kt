@@ -49,9 +49,9 @@ class HikeMateAppNavigationTest {
     // Open the sidebar
     composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
 
-    composeTestRule.onNodeWithTag(TEST_TAG_DRAWER_ITEM_PREFIX + Route.PLANNED_HIKES).performClick()
+    composeTestRule.onNodeWithTag(TEST_TAG_DRAWER_ITEM_PREFIX + Route.SAVED_HIKES).performClick()
 
-    composeTestRule.onNodeWithTag(Screen.PLANNED_HIKES).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(Screen.SAVED_HIKES).assertIsDisplayed()
   }
 
   @Test

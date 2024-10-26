@@ -47,8 +47,8 @@ class NavigationActionsTest {
 
   @Test
   fun navigateToCallsController() {
-    navigationActions.navigateTo(TopLevelDestinations.PLANNED_HIKES)
-    verify(navHostController).navigate(eq(Route.PLANNED_HIKES), any<NavOptionsBuilder.() -> Unit>())
+    navigationActions.navigateTo(TopLevelDestinations.SAVED_HIKES)
+    verify(navHostController).navigate(eq(Route.SAVED_HIKES), any<NavOptionsBuilder.() -> Unit>())
     navigationActions.navigateTo(Screen.MAP)
     verify(navHostController).navigate(Screen.MAP)
   }
@@ -62,9 +62,9 @@ class NavigationActionsTest {
   @Test
   fun currentRouteWorksWithDestination() {
     `when`(navHostController.currentDestination).thenReturn(navigationDestination)
-    `when`(navigationDestination.route).thenReturn(Route.PLANNED_HIKES)
+    `when`(navigationDestination.route).thenReturn(Route.SAVED_HIKES)
 
-    assertThat(navigationActions.currentRoute(), `is`(Route.PLANNED_HIKES))
+    assertThat(navigationActions.currentRoute(), `is`(Route.SAVED_HIKES))
   }
 
   @Test
@@ -82,10 +82,10 @@ class NavigationActionsTest {
 
   @Test
   fun navigateToNotAuth_respectsProperties() {
-    navigationActions.navigateTo(TopLevelDestinations.PLANNED_HIKES)
+    navigationActions.navigateTo(TopLevelDestinations.SAVED_HIKES)
 
     navHostController.navigate(currentRoute_isEmptyWhenNoRoute())
-    verify(navHostController).navigate(eq(Route.PLANNED_HIKES), navOptionsCaptor.capture())
+    verify(navHostController).navigate(eq(Route.SAVED_HIKES), navOptionsCaptor.capture())
     val navOptions = navOptions(navOptionsCaptor.firstValue)
 
     assertThat(navOptions.shouldRestoreState(), `is`(true))
