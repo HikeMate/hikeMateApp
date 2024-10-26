@@ -2,25 +2,39 @@ package ch.hikemate.app.ui.saved
 
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.hikemate.app.R
+import ch.hikemate.app.model.route.saved.SavedHike
+import ch.hikemate.app.model.route.saved.SavedHikesViewModel
+import ch.hikemate.app.ui.components.HikeCard
 import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.SideBarNavigation
 
 @Composable
-fun SavedHikesScreen(navigationActions: NavigationActions) {
+fun SavedHikesScreen(
+    savedHikesViewModel: SavedHikesViewModel = viewModel(factory = SavedHikesViewModel.Factory),
+    navigationActions: NavigationActions
+) {
   // TODO: Implement Planned Hikes Screen
   // The Screen will need to be incorporated into the SideBarNavigation composable
   SideBarNavigation(
@@ -29,13 +43,16 @@ fun SavedHikesScreen(navigationActions: NavigationActions) {
       selectedItem = Route.SAVED_HIKES,
   ) {
     var currentSection by remember { mutableStateOf(SavedHikesScreen.Planned) }
+    val savedHikes by savedHikesViewModel.savedHike.collectAsState()
 
-    Column {
+    LaunchedEffect(Unit) { savedHikesViewModel.loadSavedHikes() }
+
+    Column(modifier = Modifier.fillMaxSize().padding(8.dp)) {
       Column(modifier = Modifier.weight(1f)) {
         when (currentSection) {
           SavedHikesScreen.Nearby -> NearbyHikes()
           SavedHikesScreen.Planned -> PlannedHikes()
-          SavedHikesScreen.Saved -> SavedHikes()
+          SavedHikesScreen.Saved -> SavedHikes(savedHikes)
         }
       }
 
@@ -56,8 +73,21 @@ private fun PlannedHikes() {
 }
 
 @Composable
-private fun SavedHikes() {
-  Text("Screen of saved hikes")
+private fun SavedHikes(hikes: List<SavedHike>) {
+  Text("Saved hikes", style = MaterialTheme.typography.titleLarge)
+
+  val savedHikes = hikes.filter { it.date == null }
+
+  LazyColumn {
+    items(savedHikes.size) { index ->
+      val hike = savedHikes[index]
+      HikeCard(
+          title = hike.id,
+          altitudeDifference = 1000,
+          onClick = {},
+      )
+    }
+  }
 }
 
 @Composable

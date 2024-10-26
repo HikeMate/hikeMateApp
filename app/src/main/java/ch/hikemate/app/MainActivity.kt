@@ -52,7 +52,7 @@ fun HikeMateApp() {
         startDestination = Screen.SAVED_HIKES,
         route = Route.SAVED_HIKES,
     ) {
-      composable(Screen.SAVED_HIKES) { SavedHikesScreen(navigationActions) }
+      composable(Screen.SAVED_HIKES) { SavedHikesScreen(navigationActions = navigationActions) }
     }
 
     navigation(
