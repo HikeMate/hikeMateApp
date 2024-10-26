@@ -4,12 +4,14 @@ import android.content.Context
 import android.content.Intent
 import android.provider.Settings
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.result.ActivityResult
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.NoCredentialException
 import ch.hikemate.app.R
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.firebase.auth.FirebaseAuth
@@ -48,7 +50,13 @@ class FirebaseAuthRepository {
 
     // Configure Google ID options to request credentials from authorized accounts and the server
     // client ID
-    val googleIdOption: GetSignInWithGoogleOption = GetSignInWithGoogleOption.Builder(token).build()
+    val googleIdOption: GetGoogleIdOption =
+      GetGoogleIdOption.Builder()
+        .setFilterByAuthorizedAccounts(
+          false) // Only allow accounts already signed in on the device
+        .setServerClientId(token) // Server client ID for OAuth
+        .setAutoSelectEnabled(false) // Auto-select if only one account is available
+        .build()
 
     // Build the credential request with the Google ID option
     val request: GetCredentialRequest =
@@ -68,9 +76,12 @@ class FirebaseAuthRepository {
         Log.d("SignInButton", "${result}")
 
         // Extract the ID token from the result and create a Firebase credential
-        val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(result.credential.data)
         val firebaseCredential =
-            GoogleAuthProvider.getCredential(googleIdTokenCredential.idToken, null)
+          GoogleAuthProvider.getCredential(
+            result.credential.data.getString(
+              "com.google.android.libraries.identity.googleid.BUNDLE_KEY_ID_TOKEN")!!, // Non-null assertion because the token must exist if login is successful
+            null // No access token needed
+          )
 
         Log.d("SignInButton", "$firebaseCredential")
 

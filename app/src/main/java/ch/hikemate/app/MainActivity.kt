@@ -2,6 +2,8 @@ package ch.hikemate.app
 
 import android.app.Activity
 import android.os.Bundle
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -50,10 +52,9 @@ class MainActivity : ComponentActivity() {
             rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.StartActivityForResult()) {
                     result: ActivityResult ->
-                  // Handle the result if needed
-                  if (result.resultCode == Activity.RESULT_OK) {
-                    // Account was added successfully, you can do further processing if needed
-                  }
+                    authViewModel.signInWithGoogle(coroutineScope, context, null)
+                    Toast.makeText(context, "success", Toast.LENGTH_SHORT).show()
+              Log.d("MainActivity", "addAccountLauncher result: $result")
                 }
 
         Button(
