@@ -21,6 +21,7 @@ import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.navigation.SideBarNavigation
 import ch.hikemate.app.ui.navigation.TopLevelDestinations
+import ch.hikemate.app.ui.saved.SavedHikesScreen
 import ch.hikemate.app.ui.theme.HikeMateTheme
 
 class MainActivity : ComponentActivity() {
@@ -51,19 +52,7 @@ fun HikeMateApp() {
         startDestination = Screen.PLANNED_HIKES,
         route = Route.PLANNED_HIKES,
     ) {
-      composable(Screen.PLANNED_HIKES) {
-        // TODO: Implement Planned Hikes Screen
-        // The Screen will need to be incorporated into the SideBarNavigation composable
-        SideBarNavigation(
-            onTabSelect = { route -> navigationActions.navigateTo(route) },
-            tabList = LIST_TOP_LEVEL_DESTINATIONS,
-            selectedItem = Route.PLANNED_HIKES,
-        ) {
-          Text(
-              text = "Planned Hikes to be implemented",
-              modifier = Modifier.testTag(Screen.PLANNED_HIKES))
-        }
-      }
+      composable(Screen.PLANNED_HIKES) { SavedHikesScreen(navigationActions) }
     }
 
     navigation(
