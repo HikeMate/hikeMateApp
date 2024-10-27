@@ -3,7 +3,7 @@ import java.io.FileInputStream
 import java.util.Properties
 
 plugins {
-    kotlin("plugin.serialization") version "1.8.10"
+    alias(libs.plugins.kotlinxSerialization)
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsKotlinAndroid)
     alias(libs.plugins.ktfmt)
@@ -147,8 +147,7 @@ dependencies {
     val composeBom = platform(libs.compose.bom)
 
     // Dependencies
-    implementation(libs.kotlinx.serialization.json.v163)
-    implementation(libs.kotlinx.serialization.json.v160)
+    implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)

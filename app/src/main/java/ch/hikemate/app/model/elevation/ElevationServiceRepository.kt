@@ -21,7 +21,8 @@ private const val CONTENT_TYPE_HEADER = "Content-Type"
 private val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
 
 /** Serializable data class for the response from the Elevation API */
-@Serializable data class ElevationResponse(val results: List<ElevationResult>)
+@Serializable
+data class ElevationResponse(val results: List<ElevationResult>)
 
 /** Serializable data class for the response from the Elevation API */
 @Serializable
