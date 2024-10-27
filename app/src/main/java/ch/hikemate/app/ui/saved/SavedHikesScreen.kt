@@ -50,7 +50,6 @@ fun SavedHikesScreen(
     Column(modifier = Modifier.fillMaxSize().padding(8.dp)) {
       Column(modifier = Modifier.weight(1f)) {
         when (currentSection) {
-          SavedHikesScreen.Nearby -> NearbyHikes()
           SavedHikesScreen.Planned -> PlannedHikes()
           SavedHikesScreen.Saved -> SavedHikes(savedHikes)
         }
@@ -60,11 +59,6 @@ fun SavedHikesScreen(
       SavedHikesBottomMenu(currentSection) { currentSection = it }
     }
   }
-}
-
-@Composable
-private fun NearbyHikes() {
-  Text("Screen of nearby hikes")
 }
 
 @Composable
@@ -113,7 +107,6 @@ private fun SavedHikesBottomMenu(
  * element of the enum will be the left-most section in the bottom menu.
  */
 private enum class SavedHikesScreen(val label: String, @DrawableRes val icon: Int) {
-  Nearby("Nearby", R.drawable.location_on),
   Planned("Planned", R.drawable.calendar_today),
   Saved("Saved", R.drawable.bookmark)
 }
