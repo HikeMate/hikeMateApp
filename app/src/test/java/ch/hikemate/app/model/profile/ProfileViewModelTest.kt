@@ -1,10 +1,14 @@
 package ch.hikemate.app.model.profile
 
-import androidx.lifecycle.ViewModelProvider
+import android.content.Context
+import androidx.test.core.app.ApplicationProvider
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.firebase.FirebaseApp
 import com.google.firebase.Timestamp
 import junit.framework.TestCase.assertNotNull
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
 import org.mockito.Mock
 import org.mockito.Mockito.`when`
 import org.mockito.MockitoAnnotations
@@ -12,7 +16,10 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.verify
 
+@RunWith(AndroidJUnit4::class)
 class ProfileViewModelTest {
+
+  private lateinit var context: Context
 
   private val profile =
       Profile(
@@ -23,11 +30,12 @@ class ProfileViewModelTest {
           joinedDate = Timestamp(1609459200, 0))
 
   @Mock private lateinit var repository: ProfileRepository
-  @Mock private lateinit var mockFactory: ViewModelProvider.Factory
   private lateinit var profileViewModel: ProfileViewModel
 
   @Before
   fun setUp() {
+    context = ApplicationProvider.getApplicationContext()
+
     MockitoAnnotations.openMocks(this)
     profileViewModel = ProfileViewModel(repository)
 
@@ -35,12 +43,13 @@ class ProfileViewModelTest {
       val init = it.getArgument<() -> Unit>(0)
       init()
     }
-    `when`(mockFactory.create(ProfileViewModel::class.java)).thenReturn(profileViewModel)
+
+    FirebaseApp.initializeApp(context)
   }
 
   @Test
   fun canBeCreatedAsFactory() {
-    val factory = mockFactory
+    val factory = ProfileViewModel.Factory
     val viewModel = factory.create(ProfileViewModel::class.java)
     assertNotNull(viewModel)
   }
