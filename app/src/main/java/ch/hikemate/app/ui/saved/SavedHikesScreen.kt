@@ -5,8 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -81,7 +79,7 @@ private fun PlannedHikes(hikes: List<SavedHike>) {
           title = hike.id,
           altitudeDifference = (index + 1) * 329,
           onClick = {},
-          messageIcon = Icons.Default.DateRange,
+          messageIcon = painterResource(R.drawable.calendar_today),
           messageContent = hike.date!!.humanReadablePlannedLabel(LocalContext.current),
           messageColor = Color(0xFF3B82F6))
     }

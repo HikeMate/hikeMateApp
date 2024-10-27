@@ -23,7 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -37,7 +37,7 @@ fun HikeCard(
     altitudeDifference: Int,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    messageIcon: ImageVector? = null,
+    messageIcon: Painter? = null,
     messageContent: String? = null,
     messageColor: Color? = null
 ) {
@@ -86,7 +86,7 @@ fun HikeCard(
 
             Row(verticalAlignment = Alignment.CenterVertically) {
               Icon(
-                  imageVector = messageIcon!!,
+                  painter = messageIcon!!,
                   // The icon is only decorative, the following message is enough for accessibility
                   contentDescription = null,
                   tint = messageColor!!,
