@@ -12,12 +12,12 @@ import ch.hikemate.app.ui.auth.TEST_TAG_LOGIN_BUTTON
 import ch.hikemate.app.ui.map.MapScreen.TEST_TAG_MAP
 import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
 import ch.hikemate.app.ui.navigation.Screen.PROFILE
-import ch.hikemate.app.ui.navigation.Screen.SAVED_HIKES
 import ch.hikemate.app.ui.navigation.TEST_TAG_DRAWER_CLOSE_BUTTON
 import ch.hikemate.app.ui.navigation.TEST_TAG_DRAWER_CONTENT
 import ch.hikemate.app.ui.navigation.TEST_TAG_DRAWER_ITEM_PREFIX
 import ch.hikemate.app.ui.navigation.TEST_TAG_SIDEBAR_BUTTON
 import ch.hikemate.app.ui.navigation.TopLevelDestinations
+import ch.hikemate.app.ui.saved.TEST_TAG_SAVED_HIKES_SECTION_CONTAINER
 import junit.framework.TestCase
 import org.junit.Rule
 import org.junit.Test
@@ -72,12 +72,12 @@ class EndToEndTest : TestCase() {
       composeTestRule.onNodeWithTag(TEST_TAG_DRAWER_ITEM_PREFIX + tld.route).assertHasClickAction()
     }
 
-    // Check that we can go to the planned hikes screen
+    // Check that we can go to the saved hikes screen
     composeTestRule
         .onNodeWithTag(TEST_TAG_DRAWER_ITEM_PREFIX + TopLevelDestinations.SAVED_HIKES.route)
         .performClick()
     composeTestRule.onNodeWithTag(TEST_TAG_MAP).assertIsNotDisplayed()
-    composeTestRule.onNodeWithTag(SAVED_HIKES).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(TEST_TAG_SAVED_HIKES_SECTION_CONTAINER).assertIsDisplayed()
 
     // Check that we can go back to the map
     composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
@@ -85,7 +85,7 @@ class EndToEndTest : TestCase() {
         .onNodeWithTag(TEST_TAG_DRAWER_ITEM_PREFIX + TopLevelDestinations.MAP.route)
         .performClick()
     composeTestRule.onNodeWithTag(TEST_TAG_MAP).assertIsDisplayed()
-    composeTestRule.onNodeWithTag(SAVED_HIKES).assertIsNotDisplayed()
+    composeTestRule.onNodeWithTag(TEST_TAG_SAVED_HIKES_SECTION_CONTAINER).assertIsNotDisplayed()
 
     // Check that we can go to the profile screen
     composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
