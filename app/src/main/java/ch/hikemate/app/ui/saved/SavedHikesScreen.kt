@@ -18,6 +18,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -69,7 +70,7 @@ private fun PlannedHikes() {
 @Composable
 private fun SavedHikes(hikes: List<SavedHike>) {
   Text(
-      "Saved hikes",
+      LocalContext.current.getString(R.string.saved_hikes_screen_saved_section_title),
       style = MaterialTheme.typography.titleLarge,
       modifier = Modifier.padding(16.dp))
 

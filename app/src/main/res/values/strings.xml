@@ -29,4 +29,5 @@
         An error occurred while loading saved hikes.
         Please check your Internet connection and try again.
     </string>
+    <string name="saved_hikes_screen_saved_section_title">Saved hikes</string>
 </resources>
