@@ -49,7 +49,7 @@ fun SideBarNavigation(
     // The reason the content of the screen has to be passed as a lambda is because the drawer has
     // to be
     // integrated with the screen.
-    content: @Composable () -> Unit,
+    content: @Composable (PaddingValues) -> Unit
 ) {
   val drawerState = rememberDrawerState(DrawerValue.Closed)
   val scope = rememberCoroutineScope()
@@ -111,8 +111,8 @@ fun SideBarNavigation(
                     )
                   },
               )
-            }) {
-              content()
+            }) { padding: PaddingValues ->
+              content(padding)
             }
       },
   )
