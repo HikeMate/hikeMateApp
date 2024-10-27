@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -35,6 +36,15 @@ import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.SideBarNavigation
 import ch.hikemate.app.utils.humanReadablePlannedLabel
+
+const val TEST_TAG_SAVED_HIKES_BOTTOM_MENU = "SavedHikesBottomMenu"
+const val TEST_TAG_SAVED_HIKES_BOTTOM_MENU_ITEM_PREFIX = "SavedHikesBottomMenuItem_"
+const val TEST_TAG_SAVED_HIKES_SECTION_CONTAINER = "SavedHikesSectionContainer"
+const val TEST_TAG_SAVED_HIKES_PLANNED_TITLE = "SavedHikesPlannedTitle"
+const val TEST_TAG_SAVED_HIKES_SAVED_TITLE = "SavedHikesSavedTitle"
+const val TEST_TAG_SAVED_HIKES_PLANNED_EMPTY_MESSAGE = "SavedHikesPlannedEmptyMessage"
+const val TEST_TAG_SAVED_HIKES_SAVED_EMPTY_MESSAGE = "SavedHikesSavedEmptyMessage"
+const val TEST_TAG_SAVED_HIKES_HIKE_CARD = "SavedHikesHikeCard"
 
 @Composable
 fun SavedHikesScreen(
@@ -53,7 +63,7 @@ fun SavedHikesScreen(
     LaunchedEffect(Unit) { savedHikesViewModel.loadSavedHikes() }
 
     Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-      Column(modifier = Modifier.weight(1f)) {
+      Column(modifier = Modifier.weight(1f).testTag(TEST_TAG_SAVED_HIKES_SECTION_CONTAINER)) {
         when (currentSection) {
           SavedHikesScreen.Planned -> PlannedHikes(savedHikes)
           SavedHikesScreen.Saved -> SavedHikes(savedHikes)
@@ -67,21 +77,21 @@ fun SavedHikesScreen(
 }
 
 @Composable
-private fun PlannedHikes(hikes: List<SavedHike>) {
+private fun PlannedHikes(hikes: List<SavedHike>?) {
   val context = LocalContext.current
   Text(
       context.getString(R.string.saved_hikes_screen_planned_section_title),
       style = MaterialTheme.typography.titleLarge,
-      modifier = Modifier.padding(16.dp))
+      modifier = Modifier.padding(16.dp).testTag(TEST_TAG_SAVED_HIKES_PLANNED_TITLE))
 
-  val plannedHikes = hikes.filter { it.date != null }.sortedBy { it.date }
+  val plannedHikes = hikes?.filter { it.date != null }?.sortedBy { it.date }
 
-  if (plannedHikes.isEmpty()) {
+  if (plannedHikes.isNullOrEmpty()) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
       Text(
           text = context.getString(R.string.saved_hikes_screen_planned_section_empty_message),
           style = MaterialTheme.typography.bodyLarge,
-          modifier = Modifier.padding(16.dp))
+          modifier = Modifier.padding(16.dp).testTag(TEST_TAG_SAVED_HIKES_PLANNED_EMPTY_MESSAGE))
     }
   } else {
     LazyColumn {
@@ -95,28 +105,29 @@ private fun PlannedHikes(hikes: List<SavedHike>) {
             },
             messageIcon = painterResource(R.drawable.calendar_today),
             messageContent = hike.date!!.humanReadablePlannedLabel(LocalContext.current),
-            messageColor = Color(0xFF3B82F6))
+            messageColor = Color(0xFF3B82F6),
+            modifier = Modifier.testTag(TEST_TAG_SAVED_HIKES_HIKE_CARD))
       }
     }
   }
 }
 
 @Composable
-private fun SavedHikes(hikes: List<SavedHike>) {
+private fun SavedHikes(hikes: List<SavedHike>?) {
   val context = LocalContext.current
   Text(
       context.getString(R.string.saved_hikes_screen_saved_section_title),
       style = MaterialTheme.typography.titleLarge,
-      modifier = Modifier.padding(16.dp))
+      modifier = Modifier.padding(16.dp).testTag(TEST_TAG_SAVED_HIKES_SAVED_TITLE))
 
-  val savedHikes = hikes.filter { it.date == null }
+  val savedHikes = hikes?.filter { it.date == null }
 
-  if (savedHikes.isEmpty()) {
+  if (savedHikes.isNullOrEmpty()) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
       Text(
           text = context.getString(R.string.saved_hikes_screen_saved_section_empty_message),
           style = MaterialTheme.typography.bodyLarge,
-          modifier = Modifier.padding(16.dp))
+          modifier = Modifier.padding(16.dp).testTag(TEST_TAG_SAVED_HIKES_SAVED_EMPTY_MESSAGE))
     }
   } else {
     LazyColumn {
@@ -128,7 +139,7 @@ private fun SavedHikes(hikes: List<SavedHike>) {
             onClick = {
               Toast.makeText(context, "Hike details not implemented yet", Toast.LENGTH_SHORT).show()
             },
-        )
+            modifier = Modifier.testTag(TEST_TAG_SAVED_HIKES_HIKE_CARD))
       }
     }
   }
@@ -139,13 +150,14 @@ private fun SavedHikesBottomMenu(
     selected: SavedHikesScreen,
     onSelectedChange: (SavedHikesScreen) -> Unit
 ) {
-  NavigationBar {
+  NavigationBar(modifier = Modifier.testTag(TEST_TAG_SAVED_HIKES_BOTTOM_MENU)) {
     SavedHikesScreen.values().forEach { screen ->
       NavigationBarItem(
           icon = { Icon(painter = painterResource(screen.icon), contentDescription = null) },
           label = { Text(screen.label) },
           selected = selected == screen,
-          onClick = { onSelectedChange(screen) })
+          onClick = { onSelectedChange(screen) },
+          modifier = Modifier.testTag(TEST_TAG_SAVED_HIKES_BOTTOM_MENU_ITEM_PREFIX + screen.name))
     }
   }
 }
@@ -156,7 +168,7 @@ private fun SavedHikesBottomMenu(
  * The order of the enum values determines the order of the sections in the bottom menu. The first
  * element of the enum will be the left-most section in the bottom menu.
  */
-private enum class SavedHikesScreen(val label: String, @DrawableRes val icon: Int) {
+enum class SavedHikesScreen(val label: String, @DrawableRes val icon: Int) {
   Planned("Planned", R.drawable.calendar_today),
   Saved("Saved", R.drawable.bookmark)
 }
