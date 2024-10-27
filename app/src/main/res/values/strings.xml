@@ -1,7 +1,6 @@
 <resources>
-    <string name="app_name">SampleApp</string>
-    <string name="title_activity_main">MainActivity</string>
-    <string name="title_activity_second">SecondActivity</string>
+    <string name="app_name">HikeMate</string>
+    <string name="title_activity_main">HikeMate</string>
 
     <!--Google APi-->
     <string name="default_web_client_id">154591189513-eilbr2jtms0av2ses4tsvo62009q5t7n.apps.googleusercontent.com</string>
@@ -26,4 +25,11 @@
     </string>
     <string name="zoom_in">Zoom in</string>
     <string name="zoom_out">Zoom out</string>
+  
+  
+    <!-- Saved Hikes Screen -->
+    <string name="saved_hikes_screen_generic_error">
+        An error occurred while loading saved hikes.
+        Please check your Internet connection and try again.
+    </string>
 </resources>
