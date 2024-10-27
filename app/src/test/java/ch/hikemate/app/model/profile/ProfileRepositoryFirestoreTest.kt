@@ -9,6 +9,7 @@ import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.QuerySnapshot
+import com.google.firebase.firestore.getField
 import junit.framework.TestCase.fail
 import org.junit.Before
 import org.junit.Test
@@ -21,6 +22,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.timeout
 import org.mockito.kotlin.verify
 
+@Suppress("UNCHECKED_CAST")
 class ProfileRepositoryFirestoreTest {
   @Mock private lateinit var mockFirestore: FirebaseFirestore
   @Mock private lateinit var mockDocumentReference: DocumentReference
@@ -61,7 +63,7 @@ class ProfileRepositoryFirestoreTest {
     `when`(mockDocumentSnapshot.id).thenReturn("1")
     `when`(mockDocumentSnapshot.getString("name")).thenReturn("John Doe")
     `when`(mockDocumentSnapshot.getString("email")).thenReturn("john.doe@gmail.com")
-    `when`(mockDocumentSnapshot.get("fitnessLevel"))
+    `when`(mockDocumentSnapshot.getField<Map<*, *>>("fitnessLevel"))
         .thenReturn(mapOf("level" to 8, "description" to "Very fit"))
     `when`(mockDocumentSnapshot.getTimestamp("joinedDate")).thenReturn(testTimestamp)
 
@@ -129,7 +131,8 @@ class ProfileRepositoryFirestoreTest {
     `when`(mockDocumentSnapshot.id).thenReturn("1")
     `when`(mockDocumentSnapshot.getString("name")).thenReturn("John Doe")
     `when`(mockDocumentSnapshot.getString("email")).thenReturn("john.doe@gmail.com")
-    `when`(mockDocumentSnapshot.get("fitnessLevel"))
+
+    `when`(mockDocumentSnapshot.getField<Map<*, *>>("fitnessLevel"))
         .thenReturn(mapOf("level" to 8, "description" to "Very fit"))
     `when`(mockDocumentSnapshot.getTimestamp("joinedDate")).thenReturn(Timestamp(1609459200, 0))
 
@@ -146,6 +149,8 @@ class ProfileRepositoryFirestoreTest {
         "1",
         onSuccess = { p -> assert(p == profile) },
         onFailure = { fail("Failure callback should not be called") })
+
+    verify(mockDocumentReference).get()
   }
 
   @Test
@@ -177,6 +182,8 @@ class ProfileRepositoryFirestoreTest {
         onFailure = {
           // Do nothing; we just want to verify that this is called
         })
+
+    verify(mockDocumentReference).get()
   }
 
   @Test

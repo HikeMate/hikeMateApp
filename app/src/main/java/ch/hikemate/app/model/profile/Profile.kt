@@ -14,7 +14,7 @@ data class FitnessLevel(
 )
 
 /**
- * A class representing a profile.
+ * A class representing a user profile.
  *
  * @property id The ID of the profile.
  * @property name The name of the profile.

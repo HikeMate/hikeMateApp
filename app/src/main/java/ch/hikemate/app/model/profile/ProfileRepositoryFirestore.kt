@@ -6,13 +6,15 @@ import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.getField
 
 /**
  * A Firestore implementation of the profile repository.
  *
  * @property db The Firestore database.
  */
-class ProfileRepositoryFirestore(val db: FirebaseFirestore) : ProfileRepository {
+@Suppress("UNCHECKED_CAST")
+class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRepository {
 
   private val collectionPath = "profiles"
 
@@ -55,8 +57,8 @@ class ProfileRepositoryFirestore(val db: FirebaseFirestore) : ProfileRepository 
   }
 
   override fun addProfile(profile: Profile, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
-    performFirestoreOperation(
-        db.collection(collectionPath).document(profile.id).set(profile), onSuccess, onFailure)
+    // Call updateProfile as the implementation is the same
+    updateProfile(profile, onSuccess, onFailure)
   }
 
   override fun updateProfile(
@@ -64,8 +66,10 @@ class ProfileRepositoryFirestore(val db: FirebaseFirestore) : ProfileRepository 
       onSuccess: () -> Unit,
       onFailure: (Exception) -> Unit
   ) {
-    performFirestoreOperation(
-        db.collection(collectionPath).document(profile.id).set(profile), onSuccess, onFailure)
+
+    val task = db.collection(collectionPath).document(profile.id).set(profile)
+
+    performFirestoreOperation(task as Task<Unit>, onSuccess, onFailure)
   }
 
   override fun deleteProfileById(
@@ -73,8 +77,9 @@ class ProfileRepositoryFirestore(val db: FirebaseFirestore) : ProfileRepository 
       onSuccess: () -> Unit,
       onFailure: (Exception) -> Unit
   ) {
-    performFirestoreOperation(
-        db.collection(collectionPath).document(id).delete(), onSuccess, onFailure)
+    val task = db.collection(collectionPath).document(id).delete()
+
+    performFirestoreOperation(task as Task<Unit>, onSuccess, onFailure)
   }
 
   /**
@@ -86,7 +91,7 @@ class ProfileRepositoryFirestore(val db: FirebaseFirestore) : ProfileRepository 
    * @param onFailure The callback to call if the operation fails.
    */
   private fun performFirestoreOperation(
-      task: Task<Void>,
+      task: Task<Unit>,
       onSuccess: () -> Unit,
       onFailure: (Exception) -> Unit
   ) {
@@ -113,14 +118,14 @@ class ProfileRepositoryFirestore(val db: FirebaseFirestore) : ProfileRepository 
       val uid = document.id
       val name = document.getString("name") ?: return null
       val email = document.getString("email") ?: return null
-      val fitnessLevelData = document.get("fitnessLevel") as? Map<*, *>?
+      val fitnessLevelData = document.getField("fitnessLevel") as? Map<*, *> ?: return null
       val fitnessLevel =
-          fitnessLevelData?.let {
+          fitnessLevelData.let {
             FitnessLevel(
                 level = it["level"] as? Int ?: 0, description = it["description"] as? String ?: "")
           }
       val joinedDate = document.getTimestamp("joinedDate") ?: return null
-      Profile(uid, name, email, fitnessLevel ?: FitnessLevel(0, ""), joinedDate)
+      Profile(uid, name, email, fitnessLevel, joinedDate)
     } catch (e: Exception) {
       Log.e("ProfileRepositoryFirestore", "Error converting document to Profile", e)
       null
