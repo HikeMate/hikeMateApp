@@ -1,5 +1,6 @@
 package ch.hikemate.app.ui.saved
 
+import android.widget.Toast
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -89,7 +90,9 @@ private fun PlannedHikes(hikes: List<SavedHike>) {
         HikeCard(
             title = hike.id,
             altitudeDifference = (index + 1) * 329,
-            onClick = {},
+            onClick = {
+              Toast.makeText(context, "Hike details not implemented yet", Toast.LENGTH_SHORT).show()
+            },
             messageIcon = painterResource(R.drawable.calendar_today),
             messageContent = hike.date!!.humanReadablePlannedLabel(LocalContext.current),
             messageColor = Color(0xFF3B82F6))
@@ -122,7 +125,9 @@ private fun SavedHikes(hikes: List<SavedHike>) {
         HikeCard(
             title = hike.id,
             altitudeDifference = 1000,
-            onClick = {},
+            onClick = {
+              Toast.makeText(context, "Hike details not implemented yet", Toast.LENGTH_SHORT).show()
+            },
         )
       }
     }
