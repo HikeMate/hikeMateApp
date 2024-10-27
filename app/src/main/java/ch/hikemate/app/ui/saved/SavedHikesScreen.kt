@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -18,6 +20,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -30,13 +33,13 @@ import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.SideBarNavigation
+import ch.hikemate.app.utils.humanReadablePlannedLabel
 
 @Composable
 fun SavedHikesScreen(
     savedHikesViewModel: SavedHikesViewModel = viewModel(factory = SavedHikesViewModel.Factory),
     navigationActions: NavigationActions
 ) {
-  // TODO: Implement Planned Hikes Screen
   // The Screen will need to be incorporated into the SideBarNavigation composable
   SideBarNavigation(
       onTabSelect = { route -> navigationActions.navigateTo(route) },
@@ -51,7 +54,7 @@ fun SavedHikesScreen(
     Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
       Column(modifier = Modifier.weight(1f)) {
         when (currentSection) {
-          SavedHikesScreen.Planned -> PlannedHikes()
+          SavedHikesScreen.Planned -> PlannedHikes(savedHikes)
           SavedHikesScreen.Saved -> SavedHikes(savedHikes)
         }
       }
@@ -63,8 +66,26 @@ fun SavedHikesScreen(
 }
 
 @Composable
-private fun PlannedHikes() {
-  Text("Screen of planned hikes")
+private fun PlannedHikes(hikes: List<SavedHike>) {
+  Text(
+      LocalContext.current.getString(R.string.saved_hikes_screen_planned_section_title),
+      style = MaterialTheme.typography.titleLarge,
+      modifier = Modifier.padding(16.dp))
+
+  val plannedHikes = hikes.filter { it.date != null }.sortedBy { it.date }
+
+  LazyColumn {
+    items(plannedHikes.size) { index ->
+      val hike = plannedHikes[index]
+      HikeCard(
+          title = hike.id,
+          altitudeDifference = (index + 1) * 329,
+          onClick = {},
+          messageIcon = Icons.Default.DateRange,
+          messageContent = hike.date!!.humanReadablePlannedLabel(LocalContext.current),
+          messageColor = Color(0xFF3B82F6))
+    }
+  }
 }
 
 @Composable
