@@ -41,13 +41,13 @@ fun SavedHikesScreen(
       onTabSelect = { route -> navigationActions.navigateTo(route) },
       tabList = LIST_TOP_LEVEL_DESTINATIONS,
       selectedItem = Route.SAVED_HIKES,
-  ) {
+  ) { paddingValues ->
     var currentSection by remember { mutableStateOf(SavedHikesScreen.Planned) }
     val savedHikes by savedHikesViewModel.savedHike.collectAsState()
 
     LaunchedEffect(Unit) { savedHikesViewModel.loadSavedHikes() }
 
-    Column(modifier = Modifier.fillMaxSize().padding(8.dp)) {
+    Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
       Column(modifier = Modifier.weight(1f)) {
         when (currentSection) {
           SavedHikesScreen.Planned -> PlannedHikes()
@@ -68,7 +68,10 @@ private fun PlannedHikes() {
 
 @Composable
 private fun SavedHikes(hikes: List<SavedHike>) {
-  Text("Saved hikes", style = MaterialTheme.typography.titleLarge)
+  Text(
+      "Saved hikes",
+      style = MaterialTheme.typography.titleLarge,
+      modifier = Modifier.padding(16.dp))
 
   val savedHikes = hikes.filter { it.date == null }
 
