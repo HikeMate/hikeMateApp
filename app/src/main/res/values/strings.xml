@@ -30,7 +30,9 @@
         Please check your Internet connection and try again.
     </string>
     <string name="saved_hikes_screen_saved_section_title">Saved hikes</string>
+    <string name="saved_hikes_screen_saved_section_empty_message">No saved hikes to display</string>
     <string name="saved_hikes_screen_planned_section_title">Planned hikes</string>
+    <string name="saved_hikes_screen_planned_section_empty_message">No planned hikes to display</string>
 
     <!-- Datetime Utils -->
     <string name="datetime_utils_done_on">Done on %s</string>

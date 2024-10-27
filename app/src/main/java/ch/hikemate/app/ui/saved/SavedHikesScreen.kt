@@ -1,6 +1,7 @@
 package ch.hikemate.app.ui.saved
 
 import androidx.annotation.DrawableRes
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -17,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -65,44 +67,64 @@ fun SavedHikesScreen(
 
 @Composable
 private fun PlannedHikes(hikes: List<SavedHike>) {
+  val context = LocalContext.current
   Text(
-      LocalContext.current.getString(R.string.saved_hikes_screen_planned_section_title),
+      context.getString(R.string.saved_hikes_screen_planned_section_title),
       style = MaterialTheme.typography.titleLarge,
       modifier = Modifier.padding(16.dp))
 
   val plannedHikes = hikes.filter { it.date != null }.sortedBy { it.date }
 
-  LazyColumn {
-    items(plannedHikes.size) { index ->
-      val hike = plannedHikes[index]
-      HikeCard(
-          title = hike.id,
-          altitudeDifference = (index + 1) * 329,
-          onClick = {},
-          messageIcon = painterResource(R.drawable.calendar_today),
-          messageContent = hike.date!!.humanReadablePlannedLabel(LocalContext.current),
-          messageColor = Color(0xFF3B82F6))
+  if (plannedHikes.isEmpty()) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+      Text(
+          text = context.getString(R.string.saved_hikes_screen_planned_section_empty_message),
+          style = MaterialTheme.typography.bodyLarge,
+          modifier = Modifier.padding(16.dp))
+    }
+  } else {
+    LazyColumn {
+      items(plannedHikes.size) { index ->
+        val hike = plannedHikes[index]
+        HikeCard(
+            title = hike.id,
+            altitudeDifference = (index + 1) * 329,
+            onClick = {},
+            messageIcon = painterResource(R.drawable.calendar_today),
+            messageContent = hike.date!!.humanReadablePlannedLabel(LocalContext.current),
+            messageColor = Color(0xFF3B82F6))
+      }
     }
   }
 }
 
 @Composable
 private fun SavedHikes(hikes: List<SavedHike>) {
+  val context = LocalContext.current
   Text(
-      LocalContext.current.getString(R.string.saved_hikes_screen_saved_section_title),
+      context.getString(R.string.saved_hikes_screen_saved_section_title),
       style = MaterialTheme.typography.titleLarge,
       modifier = Modifier.padding(16.dp))
 
   val savedHikes = hikes.filter { it.date == null }
 
-  LazyColumn {
-    items(savedHikes.size) { index ->
-      val hike = savedHikes[index]
-      HikeCard(
-          title = hike.id,
-          altitudeDifference = 1000,
-          onClick = {},
-      )
+  if (savedHikes.isEmpty()) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+      Text(
+          text = context.getString(R.string.saved_hikes_screen_saved_section_empty_message),
+          style = MaterialTheme.typography.bodyLarge,
+          modifier = Modifier.padding(16.dp))
+    }
+  } else {
+    LazyColumn {
+      items(savedHikes.size) { index ->
+        val hike = savedHikes[index]
+        HikeCard(
+            title = hike.id,
+            altitudeDifference = 1000,
+            onClick = {},
+        )
+      }
     }
   }
 }
