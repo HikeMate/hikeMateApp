@@ -201,7 +201,7 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
       // most relevant one
       var name: String? = null
       var description: String? = null
-      var nameFr: String? = null
+      var nameEn: String? = null
       var otherName: String? = null
       var from: String? = null
       var to: String? = null
@@ -211,7 +211,7 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
           "int_name" -> name = tagsReader.nextString()
           // int_name has priority over name
           "name" -> if (name == null) name = tagsReader.nextString() else tagsReader.skipValue()
-          "name:fr" -> nameFr = tagsReader.nextString()
+          "name:en" -> nameEn = tagsReader.nextString()
           "osmc:name",
           "operator",
           "symbol" ->
@@ -226,7 +226,7 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
       val finalName =
           when {
             name != null -> name
-            nameFr != null -> nameFr
+            nameEn != null -> nameEn
             otherName != null -> otherName
             from != null && to != null -> "$from - $to"
             from != null -> from
