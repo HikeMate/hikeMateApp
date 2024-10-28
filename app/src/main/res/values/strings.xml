@@ -5,6 +5,9 @@
     <!--Google APi-->
     <string name="default_web_client_id">154591189513-eilbr2jtms0av2ses4tsvo62009q5t7n.apps.googleusercontent.com</string>
 
+    <!-- Sidebar -->
+    <string name="sidebar_button_content_description">Open sidebar menu</string>
+
     <!-- Map Screen -->
     <string name="map_screen_menu_button_content_description">Menu</string>
     <string name="map_screen_search_button_text">Search hikes here</string>
@@ -23,7 +26,10 @@
     <string name="map_screen_too_many_hikes_message">
         Too many hikes to display on the map. Only %d hikes are shown.
     </string>
-
+    <string name="zoom_in">Zoom in</string>
+    <string name="zoom_out">Zoom out</string>
+  
+  
     <!-- Saved Hikes Screen -->
     <string name="saved_hikes_screen_generic_error">
         An error occurred while loading saved hikes.
