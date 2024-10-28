@@ -297,15 +297,6 @@ class ElevationServiceRepositoryTest {
 
   @Test
   fun emptyWhenNoCoordinates() {
-    val call = mock(Call::class.java)
-    `when`(client.newCall(any())).thenReturn(call)
-
-    val callbackCapture = argumentCaptor<Callback>()
-
-    `when`(call.enqueue(callbackCapture.capture())).then {
-      callbackCapture.firstValue.onResponse(call, simpleResponse)
-    }
-
     elevationServiceRepository.getElevation(
         emptyList(), 0, { list -> assertEquals(emptyList<LatLong>(), list) }) {
           fail("Failed to fetch routes from Overpass API")
