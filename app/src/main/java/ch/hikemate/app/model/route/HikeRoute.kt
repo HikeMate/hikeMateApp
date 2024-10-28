@@ -31,7 +31,9 @@ data class Bounds(val minLat: Double, val minLon: Double, val maxLat: Double, va
   }
 
   init {
-    require(!(minLat > maxLat || minLon > maxLon)) { "Invalid bounds" }
+    require(!(minLat > maxLat || minLon > maxLon)) {
+      "Invalid bounds: minLat=$minLat, maxLat=$maxLat, minLon=$minLon, maxLong=$maxLon"
+    }
   }
 
   class Builder {
