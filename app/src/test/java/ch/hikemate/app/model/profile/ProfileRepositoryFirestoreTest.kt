@@ -9,7 +9,6 @@ import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.QuerySnapshot
-import com.google.firebase.firestore.getField
 import junit.framework.TestCase.fail
 import org.junit.Before
 import org.junit.Test
@@ -37,7 +36,7 @@ class ProfileRepositoryFirestoreTest {
           id = "1",
           name = "John Doe",
           email = "john.doe@gmail.com",
-          fitnessLevel = FitnessLevel(8, "Very fit"),
+          fitnessLevel = FitnessLevel.INTERMEDIATE,
           joinedDate = Timestamp(1609459200, 0))
 
   @Before
@@ -63,8 +62,7 @@ class ProfileRepositoryFirestoreTest {
     `when`(mockDocumentSnapshot.id).thenReturn("1")
     `when`(mockDocumentSnapshot.getString("name")).thenReturn("John Doe")
     `when`(mockDocumentSnapshot.getString("email")).thenReturn("john.doe@gmail.com")
-    `when`(mockDocumentSnapshot.getField<Map<*, *>>("fitnessLevel"))
-        .thenReturn(mapOf("level" to 8, "description" to "Very fit"))
+    `when`(mockDocumentSnapshot.getString("fitnessLevel")).thenReturn("INTERMEDIATE")
     `when`(mockDocumentSnapshot.getTimestamp("joinedDate")).thenReturn(testTimestamp)
 
     val profile = repository.documentToProfile(mockDocumentSnapshot)
@@ -72,8 +70,7 @@ class ProfileRepositoryFirestoreTest {
     assert(profile!!.id == "1")
     assert(profile.name == "John Doe")
     assert(profile.email == "john.doe@gmail.com")
-    assert(profile.fitnessLevel.level == 8)
-    assert(profile.fitnessLevel.description == "Very fit")
+    assert(profile.fitnessLevel == FitnessLevel.INTERMEDIATE)
     assert(profile.joinedDate == testTimestamp)
   }
 
@@ -82,8 +79,7 @@ class ProfileRepositoryFirestoreTest {
     `when`(mockDocumentSnapshot.id).thenReturn("1")
     `when`(mockDocumentSnapshot.getString("name")).thenReturn(null)
     `when`(mockDocumentSnapshot.getString("email")).thenReturn("john.doe@gmail.com")
-    `when`(mockDocumentSnapshot.get("fitnessLevel"))
-        .thenReturn(mapOf("level" to 8, "description" to "Very fit"))
+    `when`(mockDocumentSnapshot.getString("fitnessLevel")).thenReturn("INTERMEDIATE")
     `when`(mockDocumentSnapshot.getTimestamp("joinedDate")).thenReturn(Timestamp(1609459200, 0))
 
     val profile = repository.documentToProfile(mockDocumentSnapshot)
@@ -96,8 +92,7 @@ class ProfileRepositoryFirestoreTest {
     `when`(mockDocumentSnapshot.id).thenReturn("1")
     `when`(mockDocumentSnapshot.getString("name")).thenReturn("John Doe")
     `when`(mockDocumentSnapshot.getString("email")).thenThrow(RuntimeException("No email field"))
-    `when`(mockDocumentSnapshot.get("fitnessLevel"))
-        .thenReturn(mapOf("level" to 8, "description" to "Very fit"))
+    `when`(mockDocumentSnapshot.getString("fitnessLevel")).thenReturn("INTERMEDIATE")
     `when`(mockDocumentSnapshot.getTimestamp("joinedDate")).thenReturn(Timestamp(1609459200, 0))
 
     val profile = repository.documentToProfile(mockDocumentSnapshot)
@@ -131,9 +126,7 @@ class ProfileRepositoryFirestoreTest {
     `when`(mockDocumentSnapshot.id).thenReturn("1")
     `when`(mockDocumentSnapshot.getString("name")).thenReturn("John Doe")
     `when`(mockDocumentSnapshot.getString("email")).thenReturn("john.doe@gmail.com")
-
-    `when`(mockDocumentSnapshot.getField<Map<*, *>>("fitnessLevel"))
-        .thenReturn(mapOf("level" to 8, "description" to "Very fit"))
+    `when`(mockDocumentSnapshot.getString("fitnessLevel")).thenReturn("INTERMEDIATE")
     `when`(mockDocumentSnapshot.getTimestamp("joinedDate")).thenReturn(Timestamp(1609459200, 0))
 
     // Simulate the task being completed
@@ -163,8 +156,7 @@ class ProfileRepositoryFirestoreTest {
     `when`(mockDocumentSnapshot.id).thenReturn("1")
     `when`(mockDocumentSnapshot.getString("name")).thenReturn("John Doe")
     `when`(mockDocumentSnapshot.getString("email")).thenThrow(RuntimeException("No email field"))
-    `when`(mockDocumentSnapshot.get("fitnessLevel"))
-        .thenReturn(mapOf("level" to 8, "description" to "Very fit"))
+    `when`(mockDocumentSnapshot.getString("fitnessLevel")).thenReturn("INTERMEDIATE")
     `when`(mockDocumentSnapshot.getTimestamp("joinedDate")).thenReturn(Timestamp(1609459200, 0))
 
     // Simulate the task being completed

@@ -26,7 +26,7 @@ class ProfileViewModelTest {
           id = "1",
           name = "John Doe",
           email = "john.doe@gmail.com",
-          fitnessLevel = FitnessLevel(8, "Very fit"),
+          fitnessLevel = FitnessLevel.INTERMEDIATE,
           joinedDate = Timestamp(1609459200, 0))
 
   @Mock private lateinit var repository: ProfileRepository
