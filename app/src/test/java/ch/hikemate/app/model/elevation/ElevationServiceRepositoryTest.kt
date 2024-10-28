@@ -155,7 +155,7 @@ class ElevationServiceRepositoryTest {
     val call = mock(Call::class.java)
     `when`(client.newCall(any())).thenReturn(call)
 
-    val callbackCapture = argumentCaptor<okhttp3.Callback>()
+    val callbackCapture = argumentCaptor<Callback>()
 
     `when`(call.enqueue(callbackCapture.capture())).then {
       callbackCapture.firstValue.onResponse(call, simpleResponse)
@@ -173,7 +173,7 @@ class ElevationServiceRepositoryTest {
     val call = mock(Call::class.java)
     `when`(client.newCall(any())).thenReturn(call)
 
-    val callbackCapture = argumentCaptor<okhttp3.Callback>()
+    val callbackCapture = argumentCaptor<Callback>()
 
     `when`(call.enqueue(callbackCapture.capture())).then {
       callbackCapture.firstValue.onResponse(call, longResponse)
@@ -192,7 +192,7 @@ class ElevationServiceRepositoryTest {
     val call = mock(Call::class.java)
     `when`(client.newCall(any())).thenReturn(call)
 
-    val callbackCapture = argumentCaptor<okhttp3.Callback>()
+    val callbackCapture = argumentCaptor<Callback>()
 
     `when`(call.enqueue(callbackCapture.capture())).then {
       callbackCapture.firstValue.onResponse(call, longResponse)
@@ -220,7 +220,7 @@ class ElevationServiceRepositoryTest {
     val call = mock(Call::class.java)
     `when`(client.newCall(any())).thenReturn(call)
 
-    val callbackCapture = argumentCaptor<okhttp3.Callback>()
+    val callbackCapture = argumentCaptor<Callback>()
 
     // Simulate the first API response
     `when`(call.enqueue(callbackCapture.capture())).thenAnswer {
@@ -243,7 +243,7 @@ class ElevationServiceRepositoryTest {
     val call2 = mock(Call::class.java)
     `when`(client.newCall(any())).thenReturn(call2)
 
-    val callbackCapture2 = argumentCaptor<okhttp3.Callback>()
+    val callbackCapture2 = argumentCaptor<Callback>()
 
     // Simulate the second API response
     `when`(call2.enqueue(callbackCapture2.capture())).thenAnswer {
