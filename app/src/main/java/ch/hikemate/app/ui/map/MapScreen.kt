@@ -61,6 +61,7 @@ import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.navigation.SideBarNavigation
 import org.osmdroid.config.Configuration
 import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Polyline
 
@@ -86,6 +87,19 @@ object MapScreen {
    * reasonable area of the map when the user opens the screen.
    */
   const val MAP_INITIAL_ZOOM = 12.0
+
+  /**
+   * (Config) Maximum zoom level of the map. The zoom level is defined empirically to avoid the user
+   * zooming in too much and seeing the map tiles pixelated.
+   */
+  const val MAP_MAX_ZOOM = 18.0
+
+  /**
+   * (Config) Minimum zoom level of the map. The zoom level is defined empirically to avoid the user
+   * zooming out too much and seeing too much of the blank background behind the map tiles while
+   * still being able to see a reasonable area of the world map.
+   */
+  const val MAP_MIN_ZOOM = 2.5
 
   /** (Config) Initial position of the center of the map. */
   val MAP_INITIAL_CENTER = GeoPoint(46.5, 6.6)
@@ -170,9 +184,13 @@ fun clearHikesFromMap(mapView: MapView) {
 
 @Composable
 fun MapScreen(
+    navigationActions: NavigationActions,
     hikingRoutesViewModel: ListOfHikeRoutesViewModel =
         viewModel(factory = ListOfHikeRoutesViewModel.Factory),
-    navigationActions: NavigationActions
+    mapInitialZoomLevel: Double = MapScreen.MAP_INITIAL_ZOOM,
+    mapMaxZoomLevel: Double = MapScreen.MAP_MAX_ZOOM,
+    mapMinZoomLevel: Double = MapScreen.MAP_MIN_ZOOM,
+    mapInitialCenter: GeoPoint = MapScreen.MAP_INITIAL_CENTER,
 ) {
   val context = LocalContext.current
   // Avoid re-creating the MapView on every recomposition
@@ -197,8 +215,17 @@ fun MapScreen(
     }
 
     mapView.apply {
-      controller.setZoom(MapScreen.MAP_INITIAL_ZOOM)
-      controller.setCenter(MapScreen.MAP_INITIAL_CENTER)
+      // Set map's initial state
+      controller.setZoom(mapInitialZoomLevel)
+      controller.setCenter(mapInitialCenter)
+      // Limit the zoom to avoid the user zooming out or out too much
+      minZoomLevel = mapMinZoomLevel
+      maxZoomLevel = mapMaxZoomLevel
+      // Avoid repeating the map when the user reaches the edge or zooms out
+      isHorizontalMapRepetitionEnabled = false
+      isVerticalMapRepetitionEnabled = false
+      // Disable built-in zoom controls since we have our own
+      zoomController.setVisibility(CustomZoomButtonsController.Visibility.NEVER)
       // Enable touch-controls such as pinch to zoom
       setMultiTouchControls(true)
     }
@@ -230,14 +257,18 @@ fun MapScreen(
       tabList = LIST_TOP_LEVEL_DESTINATIONS,
       selectedItem = Route.MAP) {
         Box(modifier = Modifier.fillMaxSize().testTag(Screen.MAP)) {
-          // Jetpack Compose is a relatively recent framework for implementing Android UIs. OSMDroid
+          // Jetpack Compose is a relatively recent framework for implementing Android UIs.
+          // OSMDroid
           // is
           // an older library that uses Activities, the previous way of doing. The composable
           // AndroidView
           // allows us to use OSMDroid's legacy MapView in a Jetpack Compose layout.
           AndroidView(
               factory = { mapView },
-              modifier = Modifier.fillMaxSize().testTag(MapScreen.TEST_TAG_MAP))
+              modifier =
+                  Modifier.fillMaxSize()
+                      .testTag(MapScreen.TEST_TAG_MAP)
+                      .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT))
 
           // Search button to request OSM for hikes in the displayed area
           if (!isSearching) {
@@ -261,6 +292,13 @@ fun MapScreen(
                     Modifier.align(Alignment.BottomCenter)
                         .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
           }
+          // The zoom buttons are displayed on the bottom left of the screen
+          ZoomMapButton(
+              onZoomIn = { mapView.controller.zoomIn() },
+              onZoomOut = { mapView.controller.zoomOut() },
+              modifier =
+                  Modifier.align(Alignment.BottomEnd)
+                      .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
           CollapsibleHikesList(hikingRoutesViewModel, isSearching)
           // Put SideBarNavigation after to make it appear on top of the map and HikeList
         }

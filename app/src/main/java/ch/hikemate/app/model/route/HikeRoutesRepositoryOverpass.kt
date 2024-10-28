@@ -1,6 +1,8 @@
 package ch.hikemate.app.model.route
 
 import android.util.JsonReader
+import android.util.Log
+import ch.hikemate.app.R
 import java.io.Reader
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -142,6 +144,8 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
       var id = ""
       val boundsBuilder = Bounds.Builder()
       val points = mutableListOf<LatLong>()
+      var elementName: String? = null
+      var description: String? = null
       while (elementReader.hasNext()) {
         val name = elementReader.nextName()
         when (name) {
@@ -168,10 +172,79 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
             }
             elementReader.endArray()
           }
+          "tags" -> {
+            elementReader.beginObject() // We're in the tags object of the element
+            parseTags(elementReader).let { pair ->
+              elementName = pair.first
+              description = pair.second
+            }
+            elementReader.endObject()
+          }
           else -> elementReader.skipValue()
         }
       }
-      return HikeRoute(id, boundsBuilder.build(), points)
+      return HikeRoute(id, boundsBuilder.build(), points, elementName, description)
+    }
+
+    /**
+     * Parses the tags from the Overpass API response. The reader is supposed to already be in the
+     * tags object.
+     *
+     * @param tagsReader The reader for the tags object.
+     * @return The name and description of the route, in a Pair, the name first, the description
+     *   after.
+     */
+    private fun parseTags(tagsReader: JsonReader): Pair<String?, String?> {
+      // The name of the route can be in multiple tags, we'll try to get the most relevant one
+      // The usual tag is the name tag, but if it's not present, we'll try the name:fr tag, then
+      // alternative tags...
+      // Since OSM is a public database, we can't be sure of the tags used, so we'll try to get the
+      // most relevant one
+      var name: String? = null
+      var description: String? = null
+      var nameEn: String? = null
+      var otherName: String? = null
+      var from: String? = null
+      var to: String? = null
+      while (tagsReader.hasNext()) {
+        when (tagsReader.nextName()) {
+          // int_name is used for international names
+          "int_name" -> name = tagsReader.nextString()
+          // int_name has priority over name
+          "name" -> if (name == null) name = tagsReader.nextString() else tagsReader.skipValue()
+          "name:en" -> nameEn = tagsReader.nextString()
+          "osmc:name",
+          "operator",
+          "symbol" ->
+              if (otherName == null) otherName = tagsReader.nextString() else tagsReader.skipValue()
+          "from" -> from = tagsReader.nextString()
+          "to" -> to = tagsReader.nextString()
+          "description" -> description = tagsReader.nextString()
+          else -> tagsReader.skipValue()
+        }
+      }
+
+      val finalName =
+          when {
+            name != null -> name
+            nameEn != null -> nameEn
+            otherName != null -> otherName
+            from != null && to != null -> "$from - $to"
+            from != null -> "${R.string.hike_name_from_prefix} $from"
+            to != null -> "${R.string.hike_name_to_prefix} $to"
+            else -> null
+          }
+
+      // If the description is not set, we'll set it to the from - to, if available
+      // We also assert that the name is not the same as the description
+      if (description == null && from != null && to != null && finalName != "$from - $to") {
+        description = "$from - $to"
+      }
+
+      if (finalName == null) {
+        Log.w(this.javaClass::class.simpleName, "No name found for route")
+      }
+      return Pair(finalName, description)
     }
 
     /**

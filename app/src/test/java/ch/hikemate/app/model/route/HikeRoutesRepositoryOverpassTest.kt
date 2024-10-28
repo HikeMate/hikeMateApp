@@ -356,6 +356,86 @@ class HikeRoutesRepositoryOverpassTest {
           .request(mock())
           .build()
 
+  private val responseWithFromAndToButNoName =
+      Response.Builder()
+          .code(200)
+          .message("OK")
+          .body(
+              """
+{
+    "version": 0.6,
+    "generator": "Overpass API 0.7.62.1 084b4234",
+    "osm3s": {
+        "timestamp_osm_base": "2024-10-10T19:14:42Z",
+        "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+    },
+    "elements": [
+        {
+            "type": "relation",
+            "id": 124582,
+            "bounds": {
+                "minlat": 45.8689061,
+                "minlon": 6.4395807,
+                "maxlat": 46.8283926,
+                "maxlon": 7.2109599
+            },
+            "members": [
+            ],
+            "tags": {
+                "from": "Lausanne",
+                "to": "Roll"
+            }
+        }
+    ]
+}
+"""
+                  .trimIndent()
+                  .replace("\n", "")
+                  .toResponseBody())
+          .protocol(Protocol.HTTP_1_1)
+          .header("Content-Type", "application/json")
+          .request(mock())
+          .build()
+
+  private val responseWithNoName =
+      Response.Builder()
+          .code(200)
+          .message("OK")
+          .body(
+              """
+{
+    "version": 0.6,
+    "generator": "Overpass API 0.7.62.1 084b4234",
+    "osm3s": {
+        "timestamp_osm_base": "2024-10-10T19:14:42Z",
+        "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+    },
+    "elements": [
+        {
+            "type": "relation",
+            "id": 124582,
+            "bounds": {
+                "minlat": 45.8689061,
+                "minlon": 6.4395807,
+                "maxlat": 46.8283926,
+                "maxlon": 7.2109599
+            },
+            "members": [
+            ],
+            "tags": {
+            }
+        }
+    ]
+}
+"""
+                  .trimIndent()
+                  .replace("\n", "")
+                  .toResponseBody())
+          .protocol(Protocol.HTTP_1_1)
+          .header("Content-Type", "application/json")
+          .request(mock())
+          .build()
+
   private val simpleRoutes: List<HikeRoute> =
       listOf(
           HikeRoute(
@@ -367,7 +447,27 @@ class HikeRoutesRepositoryOverpassTest {
                   LatLong(46.8236197, 6.4400574),
                   LatLong(46.8235322, 6.4401168),
                   LatLong(46.8234367, 6.4401715),
-                  LatLong(46.8232651, 6.4402355))))
+                  LatLong(46.8232651, 6.4402355)),
+              "Camino de Santiago",
+              "Lausanne - Roll"))
+
+  private val combinedRoutes: List<HikeRoute> =
+      listOf(
+          HikeRoute(
+              "124582",
+              Bounds(45.8689061, 6.4395807, 46.8283926, 7.2109599),
+              emptyList(),
+              "Lausanne - Roll",
+              null))
+
+  private val noNameRoutes: List<HikeRoute> =
+      listOf(
+          HikeRoute(
+              "124582",
+              Bounds(45.8689061, 6.4395807, 46.8283926, 7.2109599),
+              emptyList(),
+              null,
+              null))
 
   @Before
   fun setUp() {
@@ -543,5 +643,39 @@ class HikeRoutesRepositoryOverpassTest {
         }
 
     assertEquals(2, hikingRouteProviderRepositoryOverpass.getCacheSize())
+  }
+
+  @Test
+  fun getRoutes_combinesFromAndToTags() {
+    val mockCall = mock(Call::class.java)
+    `when`(mockClient.newCall(any())).thenReturn(mockCall)
+
+    val callbackCapture = argumentCaptor<okhttp3.Callback>()
+
+    `when`(mockCall.enqueue(callbackCapture.capture())).then {
+      callbackCapture.firstValue.onResponse(mockCall, responseWithFromAndToButNoName)
+    }
+
+    hikingRouteProviderRepositoryOverpass.getRoutes(
+        bounds, { routes -> assertEquals(combinedRoutes, routes) }) {
+          fail("Failed to fetch routes from Overpass API")
+        }
+  }
+
+  @Test
+  fun getRoutes_worksOnNoName() {
+    val mockCall = mock(Call::class.java)
+    `when`(mockClient.newCall(any())).thenReturn(mockCall)
+
+    val callbackCapture = argumentCaptor<okhttp3.Callback>()
+
+    `when`(mockCall.enqueue(callbackCapture.capture())).then {
+      callbackCapture.firstValue.onResponse(mockCall, responseWithNoName)
+    }
+
+    hikingRouteProviderRepositoryOverpass.getRoutes(
+        bounds, { routes -> assertEquals(noNameRoutes, routes) }) {
+          fail("Failed to fetch routes from Overpass API")
+        }
   }
 }
