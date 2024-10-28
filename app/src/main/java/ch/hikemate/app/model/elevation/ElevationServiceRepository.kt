@@ -10,6 +10,7 @@ import kotlinx.serialization.json.put
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 
 private const val BASE_URL = "https://api.open-elevation.com/api/v1/lookup"
 private const val LOCATION_KEY = "locations"
@@ -51,16 +52,14 @@ class ElevationServiceRepository(private val client: OkHttpClient) : ElevationSe
       onFailure: (Exception) -> Unit
   ) {
     if (coordinates.isEmpty()) {
-      onFailure(Exception("No coordinates provided"))
+        onSuccess(emptyList())
       return
     }
     // If the cache already has the elevation data for this hike, call onSuccess
-    for (mutableEntry in cache) {
-      if (mutableEntry.key == hikeID) {
-        onSuccess(mutableEntry.value)
-        return
+      if (cache.containsKey(hikeID)) {
+          cache[hikeID]?.let { onSuccess(it) }
+          return
       }
-    }
     // Create the JSON body for the request
     val jsonBody = buildJsonObject {
       // The major object
@@ -78,8 +77,8 @@ class ElevationServiceRepository(private val client: OkHttpClient) : ElevationSe
           })
     }
 
-    val body = RequestBody.create(JSON_MEDIA_TYPE, jsonBody.toString())
-
+  val jsonBodyString = jsonBody.toString()
+  val body: RequestBody = jsonBodyString.toRequestBody(JSON_MEDIA_TYPE)
     val requestBuilder =
         okhttp3.Request.Builder()
             .url(BASE_URL)
@@ -111,7 +110,6 @@ class ElevationServiceRepository(private val client: OkHttpClient) : ElevationSe
     override fun onResponse(call: okhttp3.Call, response: okhttp3.Response) {
       if (response.isSuccessful) {
         val body = response.body?.string()
-        print(body)
 
         if (body == null) {
           onFailure(Exception("Failed to get elevation"))
