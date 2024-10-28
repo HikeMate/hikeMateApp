@@ -32,6 +32,30 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
     }
   }
 
+  /**
+   * Checks if the profile with the given ID exists.
+   *
+   * @param id The ID of the profile to check.
+   * @param onSuccess The callback to call if the profile exists.
+   * @param onFailure The callback to call if the profile does not exist.
+   */
+  private fun profileExists(
+      id: String,
+      onSuccess: (Boolean) -> Unit,
+      onFailure: (Exception) -> Unit
+  ) {
+    db.collection(collectionPath).document(id).get().addOnCompleteListener { task ->
+      if (task.isSuccessful) {
+        task.result?.let { onSuccess(it.exists()) }
+      } else {
+        task.exception?.let { e ->
+          Log.e("ProfileRepositoryFirestore", "Error getting document", e)
+          onFailure(e)
+        }
+      }
+    }
+  }
+
   override fun getProfileById(
       id: String,
       onSuccess: (Profile) -> Unit,
@@ -57,17 +81,16 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
   }
 
   override fun addProfile(profile: Profile, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
-    getProfileById(
+    profileExists(
         profile.id,
-        onSuccess = {
-          // If we found a profile, we can't create a new one with the same id
-          onFailure(Exception("Profile with id ${profile.id} already exists"))
+        onSuccess = { exists ->
+          if (exists) {
+            onFailure(Exception("Profile with id ${profile.id} already exists"))
+          } else {
+            updateProfile(profile, onSuccess, onFailure)
+          }
         },
-        onFailure = {
-          // If we didn't find a profile, we can create a new one
-          // Call updateProfile to create the profile as it is the same implementation
-          updateProfile(profile, onSuccess, onFailure)
-        })
+        onFailure = { onFailure(Exception("Error getting document with id ${profile.id}")) })
   }
 
   override fun updateProfile(
