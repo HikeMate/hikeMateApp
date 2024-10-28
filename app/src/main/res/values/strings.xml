@@ -30,4 +30,8 @@
         An error occurred while loading saved hikes.
         Please check your Internet connection and try again.
     </string>
+
+    <!-- Hike names prefixes -->
+    <string name="hike_name_from_prefix">Starting from</string>
+    <string name="hike_name_to_prefix">Going to</string>
 </resources>

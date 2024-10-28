@@ -2,6 +2,7 @@ package ch.hikemate.app.model.route
 
 import android.util.JsonReader
 import android.util.Log
+import ch.hikemate.app.R
 import java.io.Reader
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -229,8 +230,8 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
             nameEn != null -> nameEn
             otherName != null -> otherName
             from != null && to != null -> "$from - $to"
-            from != null -> from
-            to != null -> to
+            from != null -> "${R.string.hike_name_from_prefix} $from"
+            to != null -> "${R.string.hike_name_to_prefix} $to"
             else -> null
           }
 
