@@ -2,16 +2,12 @@ package ch.hikemate.app.model.profile
 
 import com.google.firebase.Timestamp
 
-/**
- * A class representing a fitness level.
- *
- * @property level The level of the fitness level.
- * @property description The description of the fitness level.
- */
-data class FitnessLevel(
-    val level: Int,
-    val description: String,
-)
+/** An enum class representing the fitness level of a user. */
+enum class FitnessLevel {
+  BEGINNER,
+  INTERMEDIATE,
+  EXPERT
+}
 
 /**
  * A class representing a user profile.
