@@ -183,9 +183,13 @@ fun clearHikesFromMap(mapView: MapView) {
 
 @Composable
 fun MapScreen(
+    navigationActions: NavigationActions,
     hikingRoutesViewModel: ListOfHikeRoutesViewModel =
         viewModel(factory = ListOfHikeRoutesViewModel.Factory),
-    navigationActions: NavigationActions
+    mapInitialZoomLevel: Double = MapScreen.MAP_INITIAL_ZOOM,
+    mapMaxZoomLevel: Double = MapScreen.MAP_MAX_ZOOM,
+    mapMinZoomLevel: Double = MapScreen.MAP_MIN_ZOOM,
+    mapInitialCenter: GeoPoint = MapScreen.MAP_INITIAL_CENTER,
 ) {
   val context = LocalContext.current
   // Avoid re-creating the MapView on every recomposition
@@ -210,11 +214,11 @@ fun MapScreen(
     }
 
     mapView.apply {
-      controller.setZoom(MapScreen.MAP_INITIAL_ZOOM)
-      controller.setCenter(MapScreen.MAP_INITIAL_CENTER)
+      controller.setZoom(mapInitialZoomLevel)
+      controller.setCenter(mapInitialCenter)
       // Limit the zoom to avoid the user zooming out or out too much
-      minZoomLevel = MapScreen.MAP_MIN_ZOOM
-      maxZoomLevel = MapScreen.MAP_MAX_ZOOM
+      minZoomLevel = mapMinZoomLevel
+      maxZoomLevel = mapMaxZoomLevel
       // Avoid repeating the map when the user reaches the edge or zooms out
       isHorizontalMapRepetitionEnabled = false
       isVerticalMapRepetitionEnabled = false
