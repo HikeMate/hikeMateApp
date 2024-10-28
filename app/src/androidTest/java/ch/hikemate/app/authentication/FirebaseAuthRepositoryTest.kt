@@ -1,11 +1,15 @@
 package ch.hikemate.app.authentication
 
 import android.content.Context
+import android.content.Intent
+import androidx.activity.compose.ManagedActivityResultLauncher
+import androidx.activity.result.ActivityResult
 import androidx.credentials.Credential
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.GetCredentialResponse
 import androidx.credentials.exceptions.GetCredentialUnknownException
+import androidx.credentials.exceptions.NoCredentialException
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.hikemate.app.model.authentication.FirebaseAuthRepository
@@ -47,6 +51,8 @@ class FirebaseAuthRepositoryTest {
   private lateinit var mockCredential: Credential
   private lateinit var mockCredentialResponse: GetCredentialResponse
   private lateinit var mockTask: Task<AuthResult>
+  private lateinit var mockOnSuccess: (FirebaseUser?) -> Unit
+  private lateinit var mockOnError: (Throwable) -> Unit
 
   @Before
   fun setUp() {
@@ -61,6 +67,9 @@ class FirebaseAuthRepositoryTest {
     mockCredential = mockk(relaxed = true)
     mockCredentialResponse = mockk(relaxed = true)
     mockTask = mockk(relaxed = true)
+
+    mockOnSuccess = mockk(relaxed = true)
+    mockOnError = mockk(relaxed = true)
 
     // Mock FirebaseApp initialization
     mockkStatic(FirebaseApp::class)
@@ -112,22 +121,20 @@ class FirebaseAuthRepositoryTest {
         Firebase and therefore outside of the scope of the tests.*/
         every { mockFirebaseAuth.currentUser } returns mockFirebaseUser
 
-        val onSuccess: (FirebaseUser?) -> Unit = mockk(relaxed = true)
-        val onError: (Throwable) -> Unit = mockk(relaxed = true)
-
         repository.signInWithGoogle(
-            onSuccess = onSuccess,
-            onErrorAction = onError,
+            onSuccess = mockOnSuccess,
+            onErrorAction = mockOnError,
             context = context,
             credentialManager = mockCredentialManager,
-            coroutineScope = this)
+            coroutineScope = this,
+            startAddAccountIntentLauncher = null)
 
         advanceUntilIdle()
 
         coVerify { mockCredentialManager.getCredential(any(), any<GetCredentialRequest>()) }
         verify { mockFirebaseAuth.signInWithCredential(mockAuthCredential) }
-        verify { onSuccess(mockFirebaseUser) }
-        verify(exactly = 0) { onError(any()) }
+        verify { mockOnSuccess(mockFirebaseUser) }
+        verify(exactly = 0) { mockOnError(any()) }
       }
 
   @Test
@@ -136,22 +143,20 @@ class FirebaseAuthRepositoryTest {
         every { mockTask.isSuccessful } returns false
         every { mockTask.exception } returns Exception("Test Error")
 
-        val onSuccess: (FirebaseUser?) -> Unit = mockk(relaxed = true)
-        val onError: (Throwable) -> Unit = mockk(relaxed = true)
-
         repository.signInWithGoogle(
-            onSuccess = onSuccess,
-            onErrorAction = onError,
+            onSuccess = mockOnSuccess,
+            onErrorAction = mockOnError,
             context = context,
             credentialManager = mockCredentialManager,
-            coroutineScope = this)
+            coroutineScope = this,
+            startAddAccountIntentLauncher = null)
 
         advanceUntilIdle()
 
         coVerify { mockCredentialManager.getCredential(any(), any<GetCredentialRequest>()) }
         verify { mockFirebaseAuth.signInWithCredential(mockAuthCredential) }
-        verify(exactly = 0) { onSuccess(any()) }
-        verify { onError(any<Throwable>()) }
+        verify(exactly = 0) { mockOnSuccess(any()) }
+        verify { mockOnError(any<Throwable>()) }
       }
 
   @Test
@@ -161,22 +166,51 @@ class FirebaseAuthRepositoryTest {
         coEvery { mockCredentialManager.getCredential(any(), any<GetCredentialRequest>()) } throws
             testException
 
-        val onSuccess: (FirebaseUser?) -> Unit = mockk(relaxed = true)
-        val onError: (Throwable) -> Unit = mockk(relaxed = true)
-
         repository.signInWithGoogle(
-            onSuccess = onSuccess,
-            onErrorAction = onError,
+            onSuccess = mockOnSuccess,
+            onErrorAction = mockOnError,
             context = context,
             credentialManager = mockCredentialManager,
-            coroutineScope = this)
+            coroutineScope = this,
+            startAddAccountIntentLauncher = null)
 
         advanceUntilIdle()
 
         coVerify { mockCredentialManager.getCredential(any(), any<GetCredentialRequest>()) }
         verify(exactly = 0) { mockFirebaseAuth.signInWithCredential(mockAuthCredential) }
-        verify(exactly = 0) { onSuccess(any()) }
-        verify { onError(any<GetCredentialUnknownException>()) }
+        verify(exactly = 0) { mockOnSuccess(any()) }
+        verify { mockOnError(any<GetCredentialUnknownException>()) }
+      }
+
+  @Test
+  fun testSignInWithGoogle_NoCredentialException() =
+      runTest(timeout = 5.seconds) {
+        coEvery { mockCredentialManager.getCredential(any(), any<GetCredentialRequest>()) } throws
+            NoCredentialException()
+
+        val mockLauncher: ManagedActivityResultLauncher<Intent, ActivityResult> =
+            mockk(relaxed = true)
+
+        // Call signInWithGoogle, expecting it to handle the NoCredentialException
+        repository.signInWithGoogle(
+            onSuccess = mockOnSuccess,
+            onErrorAction = mockOnError,
+            context = context,
+            credentialManager = mockCredentialManager,
+            coroutineScope = this,
+            startAddAccountIntentLauncher = mockLauncher)
+
+        advanceUntilIdle()
+
+        // Verify that getCredential() was called and threw the NoCredentialException
+        coVerify { mockCredentialManager.getCredential(any(), any<GetCredentialRequest>()) }
+
+        // Verify that startAddAccountIntentLauncher.launch() was called
+        verify { mockLauncher.launch(any()) }
+
+        // Verify no success or error callbacks were called
+        verify(exactly = 0) { mockOnSuccess(any()) }
+        verify(exactly = 0) { mockOnError(any()) }
       }
 
   @Test

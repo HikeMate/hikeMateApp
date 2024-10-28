@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.provider.Settings
 import android.util.Log
-import android.widget.Toast
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.result.ActivityResult
 import androidx.credentials.CredentialManager
@@ -12,8 +11,6 @@ import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.NoCredentialException
 import ch.hikemate.app.R
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
-import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
-import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
@@ -51,12 +48,12 @@ class FirebaseAuthRepository {
     // Configure Google ID options to request credentials from authorized accounts and the server
     // client ID
     val googleIdOption: GetGoogleIdOption =
-      GetGoogleIdOption.Builder()
-        .setFilterByAuthorizedAccounts(
-          false) // Only allow accounts already signed in on the device
-        .setServerClientId(token) // Server client ID for OAuth
-        .setAutoSelectEnabled(false) // Auto-select if only one account is available
-        .build()
+        GetGoogleIdOption.Builder()
+            .setFilterByAuthorizedAccounts(
+                false) // Only allow accounts already signed in on the device
+            .setServerClientId(token) // Server client ID for OAuth
+            .setAutoSelectEnabled(false) // Auto-select if only one account is available
+            .build()
 
     // Build the credential request with the Google ID option
     val request: GetCredentialRequest =
@@ -77,11 +74,11 @@ class FirebaseAuthRepository {
 
         // Extract the ID token from the result and create a Firebase credential
         val firebaseCredential =
-          GoogleAuthProvider.getCredential(
-            result.credential.data.getString(
-              "com.google.android.libraries.identity.googleid.BUNDLE_KEY_ID_TOKEN")!!, // Non-null assertion because the token must exist if login is successful
-            null // No access token needed
-          )
+            GoogleAuthProvider.getCredential(
+                result.credential.data.getString(
+                    "com.google.android.libraries.identity.googleid.BUNDLE_KEY_ID_TOKEN")!!, // Non-null assertion because the token must exist if login is successful
+                null // No access token needed
+                )
 
         Log.d("SignInButton", "$firebaseCredential")
 
@@ -95,11 +92,15 @@ class FirebaseAuthRepository {
             onErrorAction(task.exception ?: Exception("Unknown error"))
           }
         }
-      } catch (e: NoCredentialException) {
-        startAddAccountIntentLauncher?.launch(getAddGoogleAccountIntent())
       } catch (e: Exception) {
-        Log.d("SignInButton", "Login error: ${e.message}")
-        onErrorAction(e)
+        // This check is necessary bc the type of exception is always UndeclaredThrowableException
+        if (e.cause is NoCredentialException) {
+          // If there is no Google account connected to the device, prompt the user to add one
+          startAddAccountIntentLauncher?.launch(getAddGoogleAccountIntent())
+        } else {
+          Log.d("SignInButton", "Login error: ${e.message}")
+          onErrorAction(e)
+        }
       }
     }
   }
