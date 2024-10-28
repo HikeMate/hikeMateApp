@@ -365,8 +365,8 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
         val name = memberReader.nextName()
         if (name == "type") {
           val type = memberReader.nextString()
-          when (type) {
-            "way" -> ways.add(parseWay(memberReader))
+          if (type == "way") {
+            ways.add(parseWay(memberReader))
           }
         } else {
           memberReader.skipValue()
