@@ -121,6 +121,8 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
     private fun flattenHikeWays(hikeWays: List<HikeWay>): HikeWay {
       val points = mutableListOf<LatLong>()
       for (i in hikeWays.indices) {
+        // Since the first way doesn't have a previous way to connect to, we need to handle it
+        // differently
         if (points.isEmpty()) {
           handleFirstWay(hikeWays, points, i)
         } else {
@@ -131,7 +133,7 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
     }
 
     /**
-     * Procedure to handles the first way of the hike during the flattening process.
+     * Procedure to handle the first way of the hike during the flattening process.
      *
      * @param hikeWays The list of hike ways.
      * @param points The list of points to add the way to.
@@ -148,7 +150,7 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
     }
 
     /**
-     * Procedure to handles the subsequent ways of the hike during the flattening process.
+     * Procedure to handle the subsequent ways of the hike during the flattening process.
      *
      * @param hikeWays The list of hike ways.
      * @param points The list of points to add the way to.
@@ -169,7 +171,7 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
     }
 
     /**
-     * Procedure to handles the unconnected ways of the hike during the flattening process.
+     * Procedure to handle the unconnected ways of the hike during the flattening process.
      *
      * @param hikeWays The list of hike ways.
      * @param points The list of points to add the way to.
