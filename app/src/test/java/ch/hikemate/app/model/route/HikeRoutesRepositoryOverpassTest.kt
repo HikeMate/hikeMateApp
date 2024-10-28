@@ -451,21 +451,6 @@ class HikeRoutesRepositoryOverpassTest {
               "Camino de Santiago",
               "Lausanne - Roll"))
 
-  private val alternativeRoutes: List<HikeRoute> =
-      listOf(
-          HikeRoute(
-              "124582",
-              Bounds(45.8689061, 6.4395807, 46.8283926, 7.2109599),
-              listOf(
-                  LatLong(46.8240018, 6.4395807),
-                  LatLong(46.8239650, 6.4396698),
-                  LatLong(46.8236197, 6.4400574),
-                  LatLong(46.8235322, 6.4401168),
-                  LatLong(46.8234367, 6.4401715),
-                  LatLong(46.8232651, 6.4402355)),
-              "Camino de Santiago",
-              "Lausanne - Roll"))
-
   private val combinedRoutes: List<HikeRoute> =
       listOf(
           HikeRoute(
@@ -589,7 +574,7 @@ class HikeRoutesRepositoryOverpassTest {
     }
 
     hikingRouteProviderRepositoryOverpass.getRoutes(
-        bounds, { routes -> assertEquals(alternativeRoutes, routes) }) {
+        bounds, { routes -> assertEquals(simpleRoutes, routes) }) {
           fail("Failed to fetch routes from Overpass API")
         }
   }
