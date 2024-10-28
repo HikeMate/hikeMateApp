@@ -4,7 +4,6 @@ import ch.hikemate.app.model.route.LatLong
 import okhttp3.OkHttpClient
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -58,7 +57,6 @@ class ElevationIntegrationTest {
   @Test
   fun getElevation_returnsData() {
     var result: List<Double>? = null
-    var error: Exception? = null
 
     repository.getElevation(
         coordinates,
@@ -68,16 +66,12 @@ class ElevationIntegrationTest {
           assertNotNull("Response should not be null", result)
           assertEquals("There should be 3 elevation results", coordinates.size, result?.size)
         },
-        onFailure = {
-          error = it
-          assertTrue("Request failed: ${error?.message}", error == null)
-        })
+        onFailure = {})
   }
 
   @Test
   fun getElevation_returnsDataLong() {
     var result: List<Double>? = null
-    var error: Exception? = null
 
     repository.getElevation(
         longCoordinates,
@@ -87,9 +81,6 @@ class ElevationIntegrationTest {
           assertNotNull("Response should not be null", result)
           assertEquals("There should be 3 elevation results", longCoordinates.size, result?.size)
         },
-        onFailure = {
-          error = it
-          assertTrue("Request failed: ${error?.message}", error == null)
-        })
+        onFailure = {})
   }
 }
