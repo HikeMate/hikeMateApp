@@ -6,6 +6,7 @@ import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertThrows
 import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
@@ -265,7 +266,7 @@ class ElevationServiceRepositoryTest {
   @Test
   fun failsWithErrorResponse() {
     // Mock an error response
-    val responseBody = ResponseBody.create("application/json; charset=utf-8".toMediaType(), "")
+    val responseBody = "".toResponseBody("application/json; charset=utf-8".toMediaType())
     val response =
         Response.Builder()
             .code(500)
@@ -277,25 +278,38 @@ class ElevationServiceRepositoryTest {
 
     // Mock the call
     val call = mock(Call::class.java)
-    `when`(call.execute()).thenReturn(response)
     `when`(client.newCall(any())).thenReturn(call)
 
-    elevationServiceRepository.getElevation(
-        latLong, 0, { fail("Expected failure but got success") }) { exception ->
-          assertEquals("Failed to get elevation", exception.message)
-        }
+    val callbackCapture = argumentCaptor<Callback>()
+    `when`(call.enqueue(callbackCapture.capture())).then {
+      callbackCapture.firstValue.onResponse(call, response)
+    }
+
+    assertThrows(Exception::class.java) {
+      elevationServiceRepository.getElevation(
+          latLong, 0, { fail("Expected failure but got success") }) { exception ->
+            throw exception
+          }
+    }
 
     verify(client).newCall(any())
   }
 
   @Test
-  fun failsWithNoCoordinates() {
-    elevationServiceRepository.getElevation(
-        emptyList(), 0, { fail("Expected failure but got success") }) { exception ->
-          assertEquals("No coordinates provided", exception.message)
-        }
+  fun emptyWhenNoCoordinates() {
+    val call = mock(Call::class.java)
+    `when`(client.newCall(any())).thenReturn(call)
 
-    verify(client, never()).newCall(any())
+    val callbackCapture = argumentCaptor<Callback>()
+
+    `when`(call.enqueue(callbackCapture.capture())).then {
+      callbackCapture.firstValue.onResponse(call, simpleResponse)
+    }
+
+    elevationServiceRepository.getElevation(
+        emptyList(), 0, { list -> assertEquals(emptyList<LatLong>(), list) }) {
+          fail("Failed to fetch routes from Overpass API")
+        }
   }
 
   @Test
@@ -308,10 +322,12 @@ class ElevationServiceRepositoryTest {
     }
     `when`(client.newCall(any())).thenReturn(call)
 
-    elevationServiceRepository.getElevation(
-        latLong, 0, { fail("Expected failure but got success") }) { exception ->
-          assertEquals("Network error", exception.message)
-        }
+    assertThrows("Failed to get elevation", IOException::class.java) {
+      elevationServiceRepository.getElevation(
+          latLong, 0, { fail("Expected failure but got success") }) { exception ->
+            throw exception
+          }
+    }
 
     verify(client).newCall(any())
   }

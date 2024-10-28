@@ -52,14 +52,14 @@ class ElevationServiceRepository(private val client: OkHttpClient) : ElevationSe
       onFailure: (Exception) -> Unit
   ) {
     if (coordinates.isEmpty()) {
-        onSuccess(emptyList())
+      onSuccess(emptyList())
       return
     }
     // If the cache already has the elevation data for this hike, call onSuccess
-      if (cache.containsKey(hikeID)) {
-          cache[hikeID]?.let { onSuccess(it) }
-          return
-      }
+    if (cache.containsKey(hikeID)) {
+      cache[hikeID]?.let { onSuccess(it) }
+      return
+    }
     // Create the JSON body for the request
     val jsonBody = buildJsonObject {
       // The major object
@@ -77,8 +77,8 @@ class ElevationServiceRepository(private val client: OkHttpClient) : ElevationSe
           })
     }
 
-  val jsonBodyString = jsonBody.toString()
-  val body: RequestBody = jsonBodyString.toRequestBody(JSON_MEDIA_TYPE)
+    val jsonBodyString = jsonBody.toString()
+    val body: RequestBody = jsonBodyString.toRequestBody(JSON_MEDIA_TYPE)
     val requestBuilder =
         okhttp3.Request.Builder()
             .url(BASE_URL)

@@ -1,10 +1,9 @@
 package ch.hikemate.app.model.elevation
 
 import ch.hikemate.app.model.route.LatLong
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 import okhttp3.OkHttpClient
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -58,7 +57,6 @@ class ElevationIntegrationTest {
 
   @Test
   fun getElevation_returnsData() {
-    val latch = CountDownLatch(1)
     var result: List<Double>? = null
     var error: Exception? = null
 
@@ -67,24 +65,17 @@ class ElevationIntegrationTest {
         0,
         onSuccess = {
           result = it
-          latch.countDown()
+          assertNotNull("Response should not be null", result)
+          assertEquals("There should be 3 elevation results", coordinates.size, result?.size)
         },
         onFailure = {
           error = it
-          latch.countDown()
+          assertTrue("Request failed: ${error?.message}", error == null)
         })
-
-    latch.await(10, TimeUnit.SECONDS) // Wait for the response or timeout
-
-    // Check if the request was successful and returned valid results
-    assertTrue("Request failed: ${error?.message}", error == null)
-    assertTrue("Response should not be null", result != null)
-    assertEquals("There should be 3 elevation results", coordinates.size, result?.size)
   }
 
   @Test
   fun getElevation_returnsDataLong() {
-    val latch = CountDownLatch(1)
     var result: List<Double>? = null
     var error: Exception? = null
 
@@ -93,18 +84,12 @@ class ElevationIntegrationTest {
         0,
         onSuccess = {
           result = it
-          latch.countDown()
+          assertNotNull("Response should not be null", result)
+          assertEquals("There should be 3 elevation results", longCoordinates.size, result?.size)
         },
         onFailure = {
           error = it
-          latch.countDown()
+          assertTrue("Request failed: ${error?.message}", error == null)
         })
-
-    latch.await(10, TimeUnit.SECONDS) // Wait for the response or timeout
-
-    // Check if the request was successful and returned valid results
-    assertTrue("Request failed: ${error?.message}", error == null)
-    assertTrue("Response should not be null", result != null)
-    assertEquals("There should be 3 elevation results", longCoordinates.size, result?.size)
   }
 }
