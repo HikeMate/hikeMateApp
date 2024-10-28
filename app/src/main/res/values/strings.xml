@@ -26,7 +26,10 @@
     <string name="map_screen_too_many_hikes_message">
         Too many hikes to display on the map. Only %d hikes are shown.
     </string>
-
+    <string name="zoom_in">Zoom in</string>
+    <string name="zoom_out">Zoom out</string>
+  
+  
     <!-- Saved Hikes Screen -->
     <string name="saved_hikes_screen_generic_error">
         An error occurred while loading saved hikes.
