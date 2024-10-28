@@ -215,6 +215,18 @@ class ProfileRepositoryFirestoreTest {
   @Test
   fun addProfile_shouldCallFirestoreCollection() {
     `when`(mockDocumentReference.set(any())).thenReturn(Tasks.forResult(null)) // Simulate success
+    val task = mock(Task::class.java) as Task<DocumentSnapshot>
+    `when`(task.isSuccessful).thenReturn(true)
+    `when`(task.result).thenReturn(mockDocumentSnapshot)
+    `when`(mockDocumentReference.get()).thenReturn(task)
+
+    doAnswer { invocation ->
+          val listener = invocation.arguments[0] as OnCompleteListener<DocumentSnapshot>
+          listener.onComplete(task)
+          null
+        }
+        .`when`(task)
+        .addOnCompleteListener(any())
 
     repository.addProfile(profile, onSuccess = {}, onFailure = {})
 
@@ -227,6 +239,11 @@ class ProfileRepositoryFirestoreTest {
     `when`(task.isSuccessful).thenReturn(true)
     `when`(task.result).thenReturn(null)
     `when`(mockDocumentReference.set(any())).thenReturn(task)
+
+    val getTask = mock(Task::class.java) as Task<DocumentSnapshot>
+    `when`(getTask.isSuccessful).thenReturn(false) // Simulate that the profile does not exist yet
+    `when`(getTask.exception).thenReturn(RuntimeException("Profile not found"))
+    `when`(mockDocumentReference.get()).thenReturn(getTask)
 
     // Simulate the task being completed
     doAnswer { invocation ->
@@ -254,13 +271,25 @@ class ProfileRepositoryFirestoreTest {
     `when`(task.exception).thenReturn(RuntimeException("Failed to add profile"))
     `when`(mockDocumentReference.set(any())).thenReturn(task)
 
-    // Simulate the task being completed
+    val addTask = mock(Task::class.java) as Task<DocumentSnapshot>
+    `when`(addTask.isSuccessful).thenReturn(true)
+    `when`(addTask.result).thenReturn(mockDocumentSnapshot)
+    `when`(mockDocumentReference.get()).thenReturn(addTask)
+
     doAnswer { invocation ->
           val listener = invocation.arguments[0] as OnCompleteListener<Void>
           listener.onComplete(task)
           null
         }
         .`when`(task)
+        .addOnCompleteListener(any())
+
+    doAnswer { invocation ->
+          val listener = invocation.arguments[0] as OnCompleteListener<DocumentSnapshot>
+          listener.onComplete(addTask)
+          null
+        }
+        .`when`(addTask)
         .addOnCompleteListener(any())
 
     repository.addProfile(

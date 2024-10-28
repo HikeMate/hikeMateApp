@@ -57,8 +57,17 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
   }
 
   override fun addProfile(profile: Profile, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
-    // Call updateProfile as the implementation is the same
-    updateProfile(profile, onSuccess, onFailure)
+    getProfileById(
+        profile.id,
+        onSuccess = {
+          // If we found a profile, we can't create a new one with the same id
+          onFailure(Exception("Profile with id ${profile.id} already exists"))
+        },
+        onFailure = {
+          // If we didn't find a profile, we can create a new one
+          // Call updateProfile to create the profile as it is the same implementation
+          updateProfile(profile, onSuccess, onFailure)
+        })
   }
 
   override fun updateProfile(
@@ -119,11 +128,9 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
       val name = document.getString("name") ?: return null
       val email = document.getString("email") ?: return null
       val fitnessLevelData = document.getField("fitnessLevel") as? Map<*, *> ?: return null
-      val fitnessLevel =
-          fitnessLevelData.let {
-            FitnessLevel(
-                level = it["level"] as? Int ?: 0, description = it["description"] as? String ?: "")
-          }
+      val fitnessLevelLevel = fitnessLevelData["level"] as? Int ?: return null
+      val fitnessLevelDescription = fitnessLevelData["description"] as? String ?: return null
+      val fitnessLevel = FitnessLevel(fitnessLevelLevel, fitnessLevelDescription)
       val joinedDate = document.getTimestamp("joinedDate") ?: return null
       Profile(uid, name, email, fitnessLevel, joinedDate)
     } catch (e: Exception) {
