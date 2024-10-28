@@ -120,26 +120,33 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
      */
     private fun flattenHikeWays(hikeWays: List<HikeWay>): HikeWay {
       val points = mutableListOf<LatLong>()
+      var status: Boolean
       for (i in hikeWays.indices) {
         // Since the first way doesn't have a previous way to connect to, we need to handle it
         // differently
         if (points.isEmpty()) {
-          handleFirstWay(hikeWays, points)
+          status = handleFirstWay(hikeWays, points)
         } else {
-          handleSubsequentWays(hikeWays, points, i)
+          status = handleSubsequentWays(hikeWays, points, i)
+        }
+
+        // If the status is false, i.e. something wrong happened, we discard the hike
+        if (!status) {
+          return emptyList()
         }
       }
       return points
     }
 
     /**
-     * Procedure to handle the first way of the hike during the flattening process.
+     * Handles the first way of the hike during the flattening process.
      *
      * @param hikeWays The list of hike ways.
      * @param points The list of points to add the way to.
+     * @return True if the way has been added to the points, false otherwise.
      */
-    private fun handleFirstWay(hikeWays: List<HikeWay>, points: MutableList<LatLong>) {
-      if ((hikeWays.first().first() == hikeWays[1].first() ||
+    private fun handleFirstWay(hikeWays: List<HikeWay>, points: MutableList<LatLong>): Boolean {
+      return if ((hikeWays.first().first() == hikeWays[1].first() ||
           hikeWays.first().first() == hikeWays[1].last())) {
         points.addAll(hikeWays.first().reversed())
       } else {
@@ -148,18 +155,19 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
     }
 
     /**
-     * Procedure to handle the subsequent ways of the hike during the flattening process.
+     * Handles the subsequent ways of the hike during the flattening process.
      *
      * @param hikeWays The list of hike ways.
      * @param points The list of points to add the way to.
      * @param i The index of the way to handle.
+     * @return True if the way has been added to the points, false otherwise.
      */
     private fun handleSubsequentWays(
         hikeWays: List<HikeWay>,
         points: MutableList<LatLong>,
         i: Int
-    ) {
-      when {
+    ): Boolean {
+      return when {
         hikeWays[i].first() == points.last() ->
             points.addAll(hikeWays[i].subList(1, hikeWays[i].size))
         hikeWays[i].last() == points.last() ->
@@ -169,29 +177,30 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
     }
 
     /**
-     * Procedure to handle the unconnected ways of the hike during the flattening process.
+     * Handles the unconnected ways of the hike during the flattening process.
      *
      * @param hikeWays The list of hike ways.
      * @param points The list of points to add the way to.
      * @param i The index of the way to handle.
+     * @return True if the way has been added to the points, false otherwise.
      */
     private fun handleUnconnectedWays(
         hikeWays: List<HikeWay>,
         points: MutableList<LatLong>,
         i: Int
-    ) {
+    ): Boolean {
       val lastPoint = points.last()
       val firstWayPoint = hikeWays[i].first()
       val lastWayPoint = hikeWays[i].last()
       val distanceFirst = firstWayPoint.distanceTo(lastPoint)
       val distanceLast = lastWayPoint.distanceTo(lastPoint)
 
-      when {
+      return when {
         distanceFirst < distanceLast && distanceFirst < MAX_DISTANCE_BETWEEN_OPENED_PATH ->
             points.addAll(hikeWays[i])
         distanceFirst >= distanceLast && distanceLast < MAX_DISTANCE_BETWEEN_OPENED_PATH ->
             points.addAll(hikeWays[i].reversed())
-        else -> points.clear() // Discard the hikes if unconnected
+        else -> false // Discard the hikes if unconnected
       }
     }
 
