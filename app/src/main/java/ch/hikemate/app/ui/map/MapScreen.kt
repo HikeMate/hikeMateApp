@@ -88,6 +88,19 @@ object MapScreen {
    */
   const val MAP_INITIAL_ZOOM = 12.0
 
+  /**
+   * (Config) Maximum zoom level of the map. The zoom level is defined empirically to avoid the user
+   * zooming in too much and seeing the map tiles pixelated.
+   */
+  const val MAP_MAX_ZOOM = 18.0
+
+  /**
+   * (Config) Minimum zoom level of the map. The zoom level is defined empirically to avoid the user
+   * zooming out too much and seeing too much of the blank background behind the map tiles while
+   * still being able to see a reasonable area of the world map.
+   */
+  const val MAP_MIN_ZOOM = 2.5
+
   /** (Config) Initial position of the center of the map. */
   val MAP_INITIAL_CENTER = GeoPoint(46.5, 6.6)
 
@@ -171,9 +184,13 @@ fun clearHikesFromMap(mapView: MapView) {
 
 @Composable
 fun MapScreen(
+    navigationActions: NavigationActions,
     hikingRoutesViewModel: ListOfHikeRoutesViewModel =
         viewModel(factory = ListOfHikeRoutesViewModel.Factory),
-    navigationActions: NavigationActions
+    mapInitialZoomLevel: Double = MapScreen.MAP_INITIAL_ZOOM,
+    mapMaxZoomLevel: Double = MapScreen.MAP_MAX_ZOOM,
+    mapMinZoomLevel: Double = MapScreen.MAP_MIN_ZOOM,
+    mapInitialCenter: GeoPoint = MapScreen.MAP_INITIAL_CENTER,
 ) {
   val context = LocalContext.current
   // Avoid re-creating the MapView on every recomposition
@@ -198,10 +215,17 @@ fun MapScreen(
     }
 
     mapView.apply {
+      // Set map's initial state
+      controller.setZoom(mapInitialZoomLevel)
+      controller.setCenter(mapInitialCenter)
+      // Limit the zoom to avoid the user zooming out or out too much
+      minZoomLevel = mapMinZoomLevel
+      maxZoomLevel = mapMaxZoomLevel
+      // Avoid repeating the map when the user reaches the edge or zooms out
+      isHorizontalMapRepetitionEnabled = false
+      isVerticalMapRepetitionEnabled = false
       // Disable built-in zoom controls since we have our own
       zoomController.setVisibility(CustomZoomButtonsController.Visibility.NEVER)
-      controller.setZoom(MapScreen.MAP_INITIAL_ZOOM)
-      controller.setCenter(MapScreen.MAP_INITIAL_CENTER)
       // Enable touch-controls such as pinch to zoom
       setMultiTouchControls(true)
     }
