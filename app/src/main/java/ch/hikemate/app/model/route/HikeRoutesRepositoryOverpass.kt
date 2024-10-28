@@ -146,8 +146,9 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
      * @return True if the way has been added to the points, false otherwise.
      */
     private fun handleFirstWay(hikeWays: List<HikeWay>, points: MutableList<LatLong>): Boolean {
-      return if ((hikeWays.first().first() == hikeWays[1].first() ||
-          hikeWays.first().first() == hikeWays[1].last())) {
+      return if (hikeWays.size > 1 &&
+          (hikeWays.first().first() == hikeWays[1].first() ||
+              hikeWays.first().first() == hikeWays[1].last())) {
         points.addAll(hikeWays.first().reversed())
       } else {
         points.addAll(hikeWays.first())
