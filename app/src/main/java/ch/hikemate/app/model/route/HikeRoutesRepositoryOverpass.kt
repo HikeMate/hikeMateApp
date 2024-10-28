@@ -124,7 +124,7 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
         // Since the first way doesn't have a previous way to connect to, we need to handle it
         // differently
         if (points.isEmpty()) {
-          handleFirstWay(hikeWays, points, i)
+          handleFirstWay(hikeWays, points)
         } else {
           handleSubsequentWays(hikeWays, points, i)
         }
@@ -137,15 +137,13 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
      *
      * @param hikeWays The list of hike ways.
      * @param points The list of points to add the way to.
-     * @param i The index of the way to handle.
      */
-    private fun handleFirstWay(hikeWays: List<HikeWay>, points: MutableList<LatLong>, i: Int) {
-      if (i < hikeWays.size - 1 &&
-          (hikeWays[i].first() == hikeWays[i + 1].first() ||
-              hikeWays[i].first() == hikeWays[i + 1].last())) {
-        points.addAll(hikeWays[i].reversed())
+    private fun handleFirstWay(hikeWays: List<HikeWay>, points: MutableList<LatLong>) {
+      if ((hikeWays.first().first() == hikeWays[1].first() ||
+          hikeWays.first().first() == hikeWays[1].last())) {
+        points.addAll(hikeWays.first().reversed())
       } else {
-        points.addAll(hikeWays[i])
+        points.addAll(hikeWays.first())
       }
     }
 
