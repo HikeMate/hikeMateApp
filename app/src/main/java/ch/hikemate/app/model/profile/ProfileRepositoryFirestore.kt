@@ -6,7 +6,6 @@ import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.getField
 
 /**
  * A Firestore implementation of the profile repository.
@@ -150,10 +149,8 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
       val uid = document.id
       val name = document.getString("name") ?: return null
       val email = document.getString("email") ?: return null
-      val fitnessLevelData = document.getField("fitnessLevel") as? Map<*, *> ?: return null
-      val fitnessLevelLevel = fitnessLevelData["level"] as? Int ?: return null
-      val fitnessLevelDescription = fitnessLevelData["description"] as? String ?: return null
-      val fitnessLevel = FitnessLevel(fitnessLevelLevel, fitnessLevelDescription)
+      val fitnessLevelString = document.getString("fitnessLevel") ?: return null
+      val fitnessLevel = FitnessLevel.values().find { it.name == fitnessLevelString } ?: return null
       val joinedDate = document.getTimestamp("joinedDate") ?: return null
       Profile(uid, name, email, fitnessLevel, joinedDate)
     } catch (e: Exception) {
