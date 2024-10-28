@@ -1,6 +1,6 @@
 package ch.hikemate.app.model.route
 
-import kotlin.math.atan2
+import kotlin.math.asin
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
@@ -98,8 +98,7 @@ data class LatLong(val lat: Double, val lon: Double) {
                 cos(Math.toRadians(other.lat)) *
                 sin(dLon / 2) *
                 sin(dLon / 2)
-    val c = 2 * atan2(sqrt(a), sqrt(1 - a))
-    return earthRadius * c
+    return 2 * earthRadius * asin(sqrt(a))
   }
 
   override fun equals(other: Any?): Boolean {
