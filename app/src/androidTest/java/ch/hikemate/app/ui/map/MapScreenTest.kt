@@ -30,39 +30,53 @@ class MapScreenTest : TestCase() {
 
   @get:Rule val composeTestRule = createComposeRule()
 
+  private fun setUpMap(
+      mapMinZoomLevel: Double = MapScreen.MAP_MIN_ZOOM,
+      mapInitialZoomLevel: Double = MapScreen.MAP_INITIAL_ZOOM
+  ) {
+    composeTestRule.setContent {
+      MapScreen(
+          hikingRoutesViewModel = listOfHikeRoutesViewModel,
+          navigationActions = navigationActions,
+          mapMinZoomLevel = mapMinZoomLevel,
+          mapInitialZoomLevel = mapInitialZoomLevel)
+    }
+  }
+
   @Before
   fun setUp() {
     navigationActions = mock(NavigationActions::class.java)
     hikesRepository = mock(HikeRoutesRepository::class.java)
     listOfHikeRoutesViewModel = ListOfHikeRoutesViewModel(hikesRepository)
-    composeTestRule.setContent {
-      MapScreen(
-          hikingRoutesViewModel = listOfHikeRoutesViewModel, navigationActions = navigationActions)
-    }
   }
 
   @Test
   fun mapIsDisplayed() {
+    setUpMap()
     composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_MAP).assertIsDisplayed()
   }
 
   @Test
   fun hikesListIsDisplayed() {
+    setUpMap()
     composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_HIKES_LIST).assertIsDisplayed()
   }
 
   @Test
   fun menuButtonIsDisplayed() {
+    setUpMap()
     composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).assertIsDisplayed()
   }
 
   @Test
   fun searchButtonIsDisplayed() {
+    setUpMap()
     composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).assertIsDisplayed()
   }
 
   @Test
   fun searchButtonCallsRepositoryWhenClicked() {
+    setUpMap()
     composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).performClick()
     Thread.sleep(500)
     verify(hikesRepository, times(1)).getRoutes(any(), any(), any())
@@ -70,6 +84,7 @@ class MapScreenTest : TestCase() {
 
   @Test
   fun searchButtonDisappearsWhenClicked() {
+    setUpMap()
     composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).assertIsDisplayed()
     composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).performClick()
     composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).assertIsNotDisplayed()
@@ -77,6 +92,7 @@ class MapScreenTest : TestCase() {
 
   @Test
   fun searchButtonReappearsWhenSearchSucceeded() {
+    setUpMap()
     `when`(hikesRepository.getRoutes(any(), any(), any())).thenAnswer {
       val onSuccess = it.getArgument<(List<HikeRoute>) -> Unit>(1)
       onSuccess(listOf())
@@ -87,6 +103,7 @@ class MapScreenTest : TestCase() {
 
   @Test
   fun searchButtonReappearsWhenSearchFailed() {
+    setUpMap()
     `when`(hikesRepository.getRoutes(any(), any(), any())).thenAnswer {
       val onFailure = it.getArgument<(Exception) -> Unit>(2)
       onFailure(Exception("Test exception"))
@@ -97,6 +114,7 @@ class MapScreenTest : TestCase() {
 
   @Test
   fun clickingSearchDisplaysSearchingMessageAndClearsList() {
+    setUpMap()
     composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCHING_MESSAGE).assertIsNotDisplayed()
     composeTestRule
         .onNodeWithTag(MapScreen.TEST_TAG_SEARCH_LOADING_ANIMATION)
@@ -110,6 +128,7 @@ class MapScreenTest : TestCase() {
 
   @Test
   fun clickingOnHikeItemSelectsHikeRoute() {
+    setUpMap()
     val hikeRoute = HikeRoute("Route 1", Bounds(0.0, 0.0, 0.0, 0.0), emptyList())
     `when`(hikesRepository.getRoutes(any(), any(), any())).thenAnswer {
       val onSuccess = it.getArgument<(List<HikeRoute>) -> Unit>(1)
@@ -138,11 +157,29 @@ class MapScreenTest : TestCase() {
 
   @Test
   fun emptyHikesListDisplaysEmptyMessage() {
+    setUpMap()
     `when`(hikesRepository.getRoutes(any(), any(), any())).thenAnswer {
       val onSuccess = it.getArgument<(List<HikeRoute>) -> Unit>(1)
       onSuccess(listOf())
     }
     composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).performClick()
     composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_EMPTY_HIKES_LIST_MESSAGE).assertIsDisplayed()
+  }
+
+  /**
+   * Regression test for the app crashing when searching for hikes while zoomed out too far.
+   *
+   * See https://github.com/HikeMate/hikeMateApp/issues/78 for more details.
+   */
+  @Test
+  fun zoomedOutMapDoesNotCrashWhenSearchingForHikes() {
+    // Initialize the map as zoomed out very far
+    setUpMap(mapMinZoomLevel = 1.0, mapInitialZoomLevel = 1.0)
+
+    // Click on the search button
+    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).performClick()
+
+    // Check that the repository is called with valid bounds
+    verify(hikesRepository, times(1)).getRoutes(any(), any(), any())
   }
 }

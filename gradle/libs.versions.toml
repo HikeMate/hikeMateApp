@@ -15,6 +15,7 @@ composeActivity = "1.9.2"
 composeViewModel = "2.8.6"
 lifecycleRuntimeKtx = "2.8.6"
 kaspresso = "1.5.5"
+materialIconsExtended = "1.7.4"
 mockitoAndroid = "5.13.0"
 mockitoCore = "5.13.0"
 mockitoInline = "4.0.0"
@@ -44,6 +45,7 @@ googleid = "1.1.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "materialIconsExtended" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
