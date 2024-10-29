@@ -23,6 +23,7 @@ import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.navigation.SideBarNavigation
 import ch.hikemate.app.ui.navigation.TopLevelDestinations
+import ch.hikemate.app.ui.profile.EditProfileScreen
 import ch.hikemate.app.ui.profile.ProfileScreen
 import ch.hikemate.app.ui.theme.HikeMateTheme
 
@@ -44,7 +45,7 @@ fun HikeMateApp() {
 
   val profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory)
 
-  NavHost(navController = navController, startDestination = TopLevelDestinations.PROFILE.route) {
+  NavHost(navController = navController, startDestination = TopLevelDestinations.AUTH.route) {
     navigation(
         startDestination = Screen.AUTH,
         route = Route.AUTH,
@@ -83,6 +84,10 @@ fun HikeMateApp() {
     ) {
       composable(Screen.PROFILE) {
         ProfileScreen(navigationActions = navigationActions, profileViewModel = profileViewModel)
+      }
+      composable(Screen.EDIT_PROFILE) {
+        EditProfileScreen(
+            navigationActions = navigationActions, profileViewModel = profileViewModel)
       }
     }
   }

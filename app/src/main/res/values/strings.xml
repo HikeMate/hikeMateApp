@@ -55,7 +55,7 @@
     <string name="profile_screen_sign_out_button_text">Sign out</string>
 
     <!-- Edit Profile Screen -->
-    <string name="edit_profile_screen_title">Edit profile</string>
+    <string name="edit_profile_screen_title">Edit your profile</string>
     <string name="profile_screen_hiking_level_choice_beginner">Beginner</string>
     <string name="profile_screen_hiking_level_choice_intermediate">Intermediate</string>
     <string name="profile_screen_hiking_level_choice_expert">Expert</string>
