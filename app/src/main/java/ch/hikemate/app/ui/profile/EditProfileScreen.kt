@@ -28,7 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.hikemate.app.R
-import ch.hikemate.app.model.profile.FitnessLevel
+import ch.hikemate.app.model.profile.HikingLevel
 import ch.hikemate.app.model.profile.Profile
 import ch.hikemate.app.model.profile.ProfileViewModel
 import ch.hikemate.app.ui.components.BackButton
@@ -72,12 +72,12 @@ fun EditProfileScreen(
               "custom-id",
               "John Doe",
               "john.doe@gmail.com",
-              FitnessLevel.INTERMEDIATE,
+              HikingLevel.INTERMEDIATE,
               Timestamp.now())
 
   var name by remember { mutableStateOf(profile.name) }
-  var fitnessLevel by remember {
-    mutableIntStateOf(FitnessLevel.values().indexOf(profile.fitnessLevel))
+  var hikingLevel by remember {
+    mutableIntStateOf(HikingLevel.values().indexOf(profile.hikingLevel))
   }
 
   Column(
@@ -121,38 +121,38 @@ fun EditProfileScreen(
               style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 20.sp),
               modifier = Modifier.testTag(EditProfileScreen.TEST_TAG_HIKING_LEVEL_LABEL))
           SingleChoiceSegmentedButtonRow {
-            FitnessLevel.values().forEachIndexed { index, fitLevel ->
+            HikingLevel.values().forEachIndexed { index, fitLevel ->
               SegmentedButton(
                   modifier =
                       Modifier.testTag(
                           when (fitLevel) {
-                            FitnessLevel.BEGINNER ->
+                            HikingLevel.BEGINNER ->
                                 EditProfileScreen.TEST_TAG_HIKING_LEVEL_CHOICE_BEGINNER
-                            FitnessLevel.INTERMEDIATE ->
+                            HikingLevel.INTERMEDIATE ->
                                 EditProfileScreen.TEST_TAG_HIKING_LEVEL_CHOICE_INTERMEDIATE
-                            FitnessLevel.EXPERT ->
+                            HikingLevel.EXPERT ->
                                 EditProfileScreen.TEST_TAG_HIKING_LEVEL_CHOICE_EXPERT
                           }),
                   shape =
                       SegmentedButtonDefaults.itemShape(
-                          index = index, count = FitnessLevel.values().size),
+                          index = index, count = HikingLevel.values().size),
                   colors =
                       SegmentedButtonDefaults.colors()
                           .copy(
                               activeContainerColor = primaryColor,
                               activeContentColor = Color.White,
                           ),
-                  onClick = { fitnessLevel = index },
-                  selected = fitnessLevel == index,
+                  onClick = { hikingLevel = index },
+                  selected = hikingLevel == index,
               ) {
                 Text(
                     when (fitLevel) {
-                      FitnessLevel.BEGINNER ->
+                      HikingLevel.BEGINNER ->
                           context.getString(R.string.profile_screen_hiking_level_choice_beginner)
-                      FitnessLevel.INTERMEDIATE ->
+                      HikingLevel.INTERMEDIATE ->
                           context.getString(
                               R.string.profile_screen_hiking_level_choice_intermediate)
-                      FitnessLevel.EXPERT ->
+                      HikingLevel.EXPERT ->
                           context.getString(R.string.profile_screen_hiking_level_choice_expert)
                     })
               }
@@ -167,7 +167,7 @@ fun EditProfileScreen(
             onClick = {
               // TODO: Save the profile to the database
               // profileViewModel.updateProfile(profile = Profile(profile.id, name, profile.email,
-              // FitnessLevel.values()[fitnessLevel], profile.joinedDate))
+              // HikingLevel.values()[hikingLevel], profile.joinedDate))
               navigationActions.goBack()
             })
       }

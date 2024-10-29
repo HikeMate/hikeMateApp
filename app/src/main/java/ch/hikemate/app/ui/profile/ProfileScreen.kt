@@ -16,7 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.hikemate.app.R
-import ch.hikemate.app.model.profile.FitnessLevel
+import ch.hikemate.app.model.profile.HikingLevel
 import ch.hikemate.app.model.profile.Profile
 import ch.hikemate.app.model.profile.ProfileViewModel
 import ch.hikemate.app.ui.components.BigButton
@@ -76,7 +76,7 @@ fun ProfileScreen(
               "custom-id",
               "John Doe",
               "john.doe@gmail.com",
-              FitnessLevel.INTERMEDIATE,
+              HikingLevel.INTERMEDIATE,
               Timestamp.now())
 
   SideBarNavigation(
@@ -113,13 +113,13 @@ fun ProfileScreen(
                     append(context.getString(R.string.profile_screen_hiking_level_info_prefix))
                     append(" ")
                     append(
-                        when (profile.fitnessLevel) {
-                          FitnessLevel.BEGINNER ->
+                        when (profile.hikingLevel) {
+                          HikingLevel.BEGINNER ->
                               context.getString(R.string.profile_screen_hiking_level_info_beginner)
-                          FitnessLevel.INTERMEDIATE ->
+                          HikingLevel.INTERMEDIATE ->
                               context.getString(
                                   R.string.profile_screen_hiking_level_info_intermediate)
-                          FitnessLevel.EXPERT ->
+                          HikingLevel.EXPERT ->
                               context.getString(R.string.profile_screen_hiking_level_info_expert)
                         })
                     append(" ")

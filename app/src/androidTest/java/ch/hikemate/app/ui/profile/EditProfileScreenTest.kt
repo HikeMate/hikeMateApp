@@ -5,7 +5,7 @@ import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
-import ch.hikemate.app.model.profile.FitnessLevel
+import ch.hikemate.app.model.profile.HikingLevel
 import ch.hikemate.app.model.profile.Profile
 import ch.hikemate.app.model.profile.ProfileRepository
 import ch.hikemate.app.model.profile.ProfileViewModel
@@ -64,7 +64,7 @@ class EditProfileScreenTest : TestCase() {
             id = "1",
             name = "John Doe",
             email = "john.doe@gmail.com",
-            fitnessLevel = FitnessLevel.INTERMEDIATE,
+            hikingLevel = HikingLevel.INTERMEDIATE,
             joinedDate = Timestamp.now())
     `when`(profileRepository.getProfileById(any(), any(), any())).thenAnswer {
       @Suppress("UNCHECKED_CAST") val callback = it.arguments[1] as (Profile) -> Unit

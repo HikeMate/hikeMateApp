@@ -6,7 +6,7 @@ import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
-import ch.hikemate.app.model.profile.FitnessLevel
+import ch.hikemate.app.model.profile.HikingLevel
 import ch.hikemate.app.model.profile.Profile
 import ch.hikemate.app.model.profile.ProfileRepository
 import ch.hikemate.app.model.profile.ProfileViewModel
@@ -62,7 +62,7 @@ class ProfileScreenTest : TestCase() {
             id = "1",
             name = "John Doe",
             email = "john.doe@gmail.com",
-            fitnessLevel = FitnessLevel.INTERMEDIATE,
+            hikingLevel = HikingLevel.INTERMEDIATE,
             joinedDate = Timestamp.now())
     `when`(profileRepository.getProfileById(any(), any(), any())).thenAnswer {
       val onSuccess = it.getArgument<(Profile) -> Unit>(1)
@@ -75,7 +75,7 @@ class ProfileScreenTest : TestCase() {
     composeTestRule
         .onNodeWithTag(ProfileScreen.TEST_TAG_HIKING_LEVEL)
         .assertTextContains(
-            profile.fitnessLevel.toString().lowercase(), substring = true, ignoreCase = true)
+            profile.hikingLevel.toString().lowercase(), substring = true, ignoreCase = true)
     val current = LocalDate.now()
     val currentDateDayOfMonth = current.dayOfMonth
     val currentDateMonthText = current.month.toString().lowercase()
@@ -94,7 +94,7 @@ class ProfileScreenTest : TestCase() {
             id = "1",
             name = "John Doe",
             email = "john.doe@gmail.com",
-            fitnessLevel = FitnessLevel.EXPERT,
+            hikingLevel = HikingLevel.EXPERT,
             joinedDate = Timestamp.now())
     `when`(profileRepository.getProfileById(any(), any(), any())).thenAnswer {
       val onSuccess = it.getArgument<(Profile) -> Unit>(1)
@@ -103,11 +103,10 @@ class ProfileScreenTest : TestCase() {
 
     profileViewModel.getProfileById("1")
 
-    val p = profileViewModel.profile.value
     composeTestRule
         .onNodeWithTag(ProfileScreen.TEST_TAG_HIKING_LEVEL)
         .assertTextContains(
-            profile.fitnessLevel.toString().lowercase(), substring = true, ignoreCase = true)
+            profile.hikingLevel.toString().lowercase(), substring = true, ignoreCase = true)
   }
 
   @Test
@@ -117,7 +116,7 @@ class ProfileScreenTest : TestCase() {
             id = "1",
             name = "John Doe",
             email = "john.doe@gmail.com",
-            fitnessLevel = FitnessLevel.BEGINNER,
+            hikingLevel = HikingLevel.BEGINNER,
             joinedDate = Timestamp.now())
     `when`(profileRepository.getProfileById(any(), any(), any())).thenAnswer {
       @Suppress("UNCHECKED_CAST") val callback = it.arguments[1] as (Profile) -> Unit
@@ -128,7 +127,7 @@ class ProfileScreenTest : TestCase() {
     composeTestRule
         .onNodeWithTag(ProfileScreen.TEST_TAG_HIKING_LEVEL)
         .assertTextContains(
-            profile.fitnessLevel.toString().lowercase(), substring = true, ignoreCase = true)
+            profile.hikingLevel.toString().lowercase(), substring = true, ignoreCase = true)
   }
 
   @Test
