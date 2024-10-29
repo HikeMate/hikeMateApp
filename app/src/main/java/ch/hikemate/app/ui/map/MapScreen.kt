@@ -193,10 +193,6 @@ fun MapScreen(
     mapInitialCenter: GeoPoint = MapScreen.MAP_INITIAL_CENTER,
 ) {
   val context = LocalContext.current
-  // Avoid re-creating the MapView on every recomposition
-  val mapView = remember { MapView(context) }
-  // Keep track of whether a search for hikes is ongoing
-  var isSearching by remember { mutableStateOf(false) }
 
   // Only do the configuration on the first composition, not on every recomposition
   LaunchedEffect(Unit) {
@@ -213,23 +209,26 @@ fun MapScreen(
       // Maximum number of bytes that can be used by the tile file system cache. Default is 600MB.
       tileFileSystemCacheMaxBytes = 600L * 1024L * 1024L
     }
-
-    mapView.apply {
-      // Set map's initial state
-      controller.setZoom(mapInitialZoomLevel)
-      controller.setCenter(mapInitialCenter)
-      // Limit the zoom to avoid the user zooming out or out too much
-      minZoomLevel = mapMinZoomLevel
-      maxZoomLevel = mapMaxZoomLevel
-      // Avoid repeating the map when the user reaches the edge or zooms out
-      isHorizontalMapRepetitionEnabled = false
-      isVerticalMapRepetitionEnabled = false
-      // Disable built-in zoom controls since we have our own
-      zoomController.setVisibility(CustomZoomButtonsController.Visibility.NEVER)
-      // Enable touch-controls such as pinch to zoom
-      setMultiTouchControls(true)
-    }
   }
+
+  // Avoid re-creating the MapView on every recomposition
+  val mapView = remember { MapView(context).apply {
+    // Set map's initial state
+    controller.setZoom(mapInitialZoomLevel)
+    controller.setCenter(mapInitialCenter)
+    // Limit the zoom to avoid the user zooming out or out too much
+    minZoomLevel = mapMinZoomLevel
+    maxZoomLevel = mapMaxZoomLevel
+    // Avoid repeating the map when the user reaches the edge or zooms out
+    isHorizontalMapRepetitionEnabled = false
+    isVerticalMapRepetitionEnabled = false
+    // Disable built-in zoom controls since we have our own
+    zoomController.setVisibility(CustomZoomButtonsController.Visibility.NEVER)
+    // Enable touch-controls such as pinch to zoom
+    setMultiTouchControls(true)
+  } }
+  // Keep track of whether a search for hikes is ongoing
+  var isSearching by remember { mutableStateOf(false) }
 
   // Show hikes on the map
   val routes by hikingRoutesViewModel.hikeRoutes.collectAsState()
