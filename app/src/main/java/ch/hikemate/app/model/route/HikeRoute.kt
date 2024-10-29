@@ -83,7 +83,8 @@ fun Bounds.toBoundingBox(): BoundingBox {
 /** A simple data class to represent a latitude and longitude */
 data class LatLong(val lat: Double, val lon: Double) {
   /**
-   * Calculate the distance between this point and another point using the Haversine formula.
+   * Calculate the distance between this point and another point, using the Haversine formula to
+   * account for earth's curvature.
    *
    * @param other The other point
    * @return The distance in meters
