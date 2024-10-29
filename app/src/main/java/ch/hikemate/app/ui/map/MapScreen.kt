@@ -212,21 +212,23 @@ fun MapScreen(
   }
 
   // Avoid re-creating the MapView on every recomposition
-  val mapView = remember { MapView(context).apply {
-    // Set map's initial state
-    controller.setZoom(mapInitialZoomLevel)
-    controller.setCenter(mapInitialCenter)
-    // Limit the zoom to avoid the user zooming out or out too much
-    minZoomLevel = mapMinZoomLevel
-    maxZoomLevel = mapMaxZoomLevel
-    // Avoid repeating the map when the user reaches the edge or zooms out
-    isHorizontalMapRepetitionEnabled = false
-    isVerticalMapRepetitionEnabled = false
-    // Disable built-in zoom controls since we have our own
-    zoomController.setVisibility(CustomZoomButtonsController.Visibility.NEVER)
-    // Enable touch-controls such as pinch to zoom
-    setMultiTouchControls(true)
-  } }
+  val mapView = remember {
+    MapView(context).apply {
+      // Set map's initial state
+      controller.setZoom(mapInitialZoomLevel)
+      controller.setCenter(mapInitialCenter)
+      // Limit the zoom to avoid the user zooming out or out too much
+      minZoomLevel = mapMinZoomLevel
+      maxZoomLevel = mapMaxZoomLevel
+      // Avoid repeating the map when the user reaches the edge or zooms out
+      isHorizontalMapRepetitionEnabled = false
+      isVerticalMapRepetitionEnabled = false
+      // Disable built-in zoom controls since we have our own
+      zoomController.setVisibility(CustomZoomButtonsController.Visibility.NEVER)
+      // Enable touch-controls such as pinch to zoom
+      setMultiTouchControls(true)
+    }
+  }
   // Keep track of whether a search for hikes is ongoing
   var isSearching by remember { mutableStateOf(false) }
 
