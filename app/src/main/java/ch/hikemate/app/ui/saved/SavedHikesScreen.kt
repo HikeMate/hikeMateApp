@@ -98,7 +98,7 @@ private fun PlannedHikes(hikes: List<SavedHike>?) {
       items(plannedHikes.size) { index ->
         val hike = plannedHikes[index]
         HikeCard(
-            title = hike.id,
+            title = hike.name,
             altitudeDifference = (index + 1) * 329,
             onClick = {
               Toast.makeText(context, "Hike details not implemented yet", Toast.LENGTH_SHORT).show()
@@ -134,7 +134,7 @@ private fun SavedHikes(hikes: List<SavedHike>?) {
       items(savedHikes.size) { index ->
         val hike = savedHikes[index]
         HikeCard(
-            title = hike.id,
+            title = hike.name,
             altitudeDifference = 1000,
             onClick = {
               Toast.makeText(context, "Hike details not implemented yet", Toast.LENGTH_SHORT).show()
