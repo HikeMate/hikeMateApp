@@ -1,5 +1,7 @@
 package ch.hikemate.app
 
+import android.annotation.SuppressLint
+import android.content.pm.ActivityInfo
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -28,8 +30,10 @@ import ch.hikemate.app.ui.profile.ProfileScreen
 import ch.hikemate.app.ui.theme.HikeMateTheme
 
 class MainActivity : ComponentActivity() {
+  @SuppressLint("SourceLockedOrientationActivity")
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
+    requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
     setContent { HikeMateTheme { Surface(modifier = Modifier.fillMaxSize()) { HikeMateApp() } } }
   }
 }
