@@ -180,6 +180,7 @@ fun showHikeOnMap(mapView: MapView, hike: HikeRoute, color: Int) {
  */
 fun clearHikesFromMap(mapView: MapView) {
   mapView.overlays.clear()
+  mapView.invalidate()
 }
 
 @Composable
