@@ -149,10 +149,10 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
       val uid = document.id
       val name = document.getString("name") ?: return null
       val email = document.getString("email") ?: return null
-      val fitnessLevelString = document.getString("fitnessLevel") ?: return null
-      val fitnessLevel = FitnessLevel.values().find { it.name == fitnessLevelString } ?: return null
+      val hikingLevelString = document.getString("hikingLevel") ?: return null
+      val hikingLevel = HikingLevel.values().find { it.name == hikingLevelString } ?: return null
       val joinedDate = document.getTimestamp("joinedDate") ?: return null
-      Profile(uid, name, email, fitnessLevel, joinedDate)
+      Profile(uid, name, email, hikingLevel, joinedDate)
     } catch (e: Exception) {
       Log.e("ProfileRepositoryFirestore", "Error converting document to Profile", e)
       null
