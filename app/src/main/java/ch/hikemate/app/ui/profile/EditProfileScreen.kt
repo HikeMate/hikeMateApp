@@ -37,7 +37,6 @@ import ch.hikemate.app.ui.components.ButtonType
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.theme.primaryColor
-import com.google.firebase.Timestamp
 
 object EditProfileScreen {
   const val TEST_TAG_TITLE = "editProfileScreenTitle"
@@ -66,14 +65,7 @@ fun EditProfileScreen(
   // TODO: show an error if the profile is null. For now display it for test purposes
   val profileState = profileViewModel.profile.collectAsState()
 
-  val profile: Profile =
-      profileState.value
-          ?: Profile(
-              "custom-id",
-              "John Doe",
-              "john.doe@gmail.com",
-              HikingLevel.INTERMEDIATE,
-              Timestamp.now())
+  val profile: Profile = profileState.value ?: ProfileScreen.DEFAULT_PROFILE
 
   var name by remember { mutableStateOf(profile.name) }
   var hikingLevel by remember {
@@ -165,9 +157,14 @@ fun EditProfileScreen(
             buttonType = ButtonType.PRIMARY,
             label = context.getString(R.string.edit_profile_screen_save_button_text),
             onClick = {
-              // TODO: Save the profile to the database
-              // profileViewModel.updateProfile(profile = Profile(profile.id, name, profile.email,
-              // HikingLevel.values()[hikingLevel], profile.joinedDate))
+              val savedProfile =
+                  Profile(
+                      profile.id,
+                      name,
+                      profile.email,
+                      HikingLevel.values()[hikingLevel],
+                      profile.joinedDate)
+              profileViewModel.updateProfile(profile = savedProfile)
               navigationActions.goBack()
             })
       }

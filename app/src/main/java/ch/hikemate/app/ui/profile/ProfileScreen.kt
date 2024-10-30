@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.hikemate.app.R
+import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.model.profile.HikingLevel
 import ch.hikemate.app.model.profile.Profile
 import ch.hikemate.app.model.profile.ProfileViewModel
@@ -36,6 +37,10 @@ object ProfileScreen {
   const val TEST_TAG_JOIN_DATE = "profileScreenJoinDateInfo"
   const val TEST_TAG_EDIT_PROFILE_BUTTON = "profileScreenEditProfileButton"
   const val TEST_TAG_SIGN_OUT_BUTTON = "profileScreenSignOutButton"
+
+  val DEFAULT_PROFILE =
+      Profile(
+          "custom-id", "John Doe", "john.doe@gmail.com", HikingLevel.INTERMEDIATE, Timestamp.now())
 }
 
 /**
@@ -63,21 +68,15 @@ fun DisplayInfo(label: String, value: String, modifier: Modifier = Modifier) {
 @Composable
 fun ProfileScreen(
     navigationActions: NavigationActions,
-    profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory)
+    profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory),
+    authViewModel: AuthViewModel
 ) {
   val context = LocalContext.current
 
   // TODO: show an error if the profile is null. For now display it for test purposes
   val profileState = profileViewModel.profile.collectAsState()
 
-  val profile: Profile =
-      profileState.value
-          ?: Profile(
-              "custom-id",
-              "John Doe",
-              "john.doe@gmail.com",
-              HikingLevel.INTERMEDIATE,
-              Timestamp.now())
+  val profile: Profile = profileState.value ?: ProfileScreen.DEFAULT_PROFILE
 
   SideBarNavigation(
       onTabSelect = { navigationActions.navigateTo(it) },
@@ -88,7 +87,9 @@ fun ProfileScreen(
                 Modifier.testTag(Screen.PROFILE)
                     .padding(p)
                     .padding(
-                        // Add padding to the sidebar padding
+                        // Here we have 2 calls to padding. The first one is for the sidebar padding
+                        // and the second one is for the content padding. 2 padding will add up.
+                        // There is another way to do but we decided that this version was cleaner.
                         start = 16.dp,
                         end = 16.dp,
                         top = 16.dp,
@@ -109,22 +110,14 @@ fun ProfileScreen(
                   Modifier.testTag(ProfileScreen.TEST_TAG_EMAIL))
               DisplayInfo(
                   context.getString(R.string.profile_screen_hiking_level_label),
-                  buildString {
-                    append(context.getString(R.string.profile_screen_hiking_level_info_prefix))
-                    append(" ")
-                    append(
-                        when (profile.hikingLevel) {
-                          HikingLevel.BEGINNER ->
-                              context.getString(R.string.profile_screen_hiking_level_info_beginner)
-                          HikingLevel.INTERMEDIATE ->
-                              context.getString(
-                                  R.string.profile_screen_hiking_level_info_intermediate)
-                          HikingLevel.EXPERT ->
-                              context.getString(R.string.profile_screen_hiking_level_info_expert)
-                        })
-                    append(" ")
-                    append(context.getString(R.string.profile_screen_hiking_level_info_suffix))
-                  },
+                  (when (profile.hikingLevel) {
+                    HikingLevel.BEGINNER ->
+                        context.getString(R.string.profile_screen_hiking_level_info_beginner)
+                    HikingLevel.INTERMEDIATE ->
+                        context.getString(R.string.profile_screen_hiking_level_info_intermediate)
+                    HikingLevel.EXPERT ->
+                        context.getString(R.string.profile_screen_hiking_level_info_expert)
+                  }),
                   Modifier.testTag(ProfileScreen.TEST_TAG_HIKING_LEVEL))
               DisplayInfo(
                   context.getString(R.string.profile_screen_join_date_label),
@@ -141,7 +134,8 @@ fun ProfileScreen(
                   buttonType = ButtonType.SECONDARY,
                   label = context.getString(R.string.profile_screen_sign_out_button_text),
                   onClick = {
-                    // TODO: Sign out
+                    authViewModel.signOut()
+                    navigationActions.navigateTo(Screen.AUTH)
                   },
                   Modifier.testTag(ProfileScreen.TEST_TAG_SIGN_OUT_BUTTON))
             }

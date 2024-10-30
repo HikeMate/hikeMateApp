@@ -1,13 +1,14 @@
 package ch.hikemate.app.model.authentication
 
 import android.content.Context
+import androidx.lifecycle.ViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
-class AuthViewModel(private val repository: FirebaseAuthRepository) {
+class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
 
   // MutableStateFlow is used for observing and updating the current user's state.
   private val _currentUser = MutableStateFlow(FirebaseAuth.getInstance().currentUser)

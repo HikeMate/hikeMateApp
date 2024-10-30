@@ -16,7 +16,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import ch.hikemate.app.ui.navigation.NavigationActions
 
-const val BACK_BUTTON_TEST_TAG = "backButton"
+object BackButton {
+  const val BACK_BUTTON_TEST_TAG = "backButton"
+}
 
 /**
  * A composable that displays a back button.
@@ -28,7 +30,7 @@ fun BackButton(navigationActions: NavigationActions) {
   IconButton(
       onClick = { navigationActions.goBack() },
       modifier =
-          Modifier.testTag(BACK_BUTTON_TEST_TAG)
+          Modifier.testTag(BackButton.BACK_BUTTON_TEST_TAG)
               .size(50.dp)
               .padding(8.dp)
               .border(width = 1.dp, color = Color.Black, shape = RoundedCornerShape(20))) {

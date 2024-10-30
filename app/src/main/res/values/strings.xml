@@ -45,11 +45,9 @@
     <string name="profile_screen_name_label">Name</string>
     <string name="profile_screen_email_label">Email address</string>
     <string name="profile_screen_hiking_level_label">Hiking level</string>
-    <string name="profile_screen_hiking_level_info_prefix">You are</string>
-    <string name="profile_screen_hiking_level_info_suffix">hiker!</string>
-    <string name="profile_screen_hiking_level_info_beginner">a beginner</string>
-    <string name="profile_screen_hiking_level_info_intermediate">an intermediate</string>
-    <string name="profile_screen_hiking_level_info_expert">an expert</string>
+    <string name="profile_screen_hiking_level_info_beginner">You are a beginner hiker!</string>
+    <string name="profile_screen_hiking_level_info_intermediate">You are an intermediate hiker!</string>
+    <string name="profile_screen_hiking_level_info_expert">You are an expert hiker!</string>
     <string name="profile_screen_join_date_label">Joined HikeMate on</string>
     <string name="profile_screen_edit_profile_button_text">Edit profile</string>
     <string name="profile_screen_sign_out_button_text">Sign out</string>
