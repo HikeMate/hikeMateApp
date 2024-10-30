@@ -121,7 +121,7 @@ class SideBarNavigationTest {
 
   @Test
   fun sidebarNavigation_withSelectedItem() {
-    val selectedItem = Route.PLANNED_HIKES
+    val selectedItem = Route.SAVED_HIKES
     val onIconSelect: (TopLevelDestination) -> Unit = {}
 
     composeTestRule.setContent {
@@ -129,7 +129,7 @@ class SideBarNavigationTest {
     }
 
     composeTestRule
-        .onNodeWithTag(TEST_TAG_DRAWER_ITEM_PREFIX + Route.PLANNED_HIKES)
+        .onNodeWithTag(TEST_TAG_DRAWER_ITEM_PREFIX + Route.SAVED_HIKES)
         .assertIsSelected()
     composeTestRule.onNodeWithTag(TEST_TAG_DRAWER_ITEM_PREFIX + Route.MAP).assertIsNotSelected()
   }

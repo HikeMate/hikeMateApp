@@ -28,30 +28,42 @@ class SavedHikesRepositoryDummyTest {
         val savedHikes = savedHikesRepositoryDummy.loadSavedHikes()
 
         // Then
-        assertEquals(3, savedHikes.size)
+        assertEquals(6, savedHikes.size)
         assertEquals("1", savedHikes[0].id)
         assertEquals("Hike 1", savedHikes[0].name)
+        assertNull(savedHikes[0].date)
         assertEquals("2", savedHikes[1].id)
         assertEquals("Hike 2", savedHikes[1].name)
+        assertNull(savedHikes[1].date)
         assertEquals("3", savedHikes[2].id)
         assertEquals("Hike 3", savedHikes[2].name)
+        assertNull(savedHikes[2].date)
+        assertEquals("4", savedHikes[3].id)
+        assertEquals("Hike 4", savedHikes[3].name)
+        assertNotNull(savedHikes[3].date)
+        assertEquals("5", savedHikes[4].id)
+        assertEquals("Hike 5", savedHikes[4].name)
+        assertNotNull(savedHikes[4].date)
+        assertEquals("6", savedHikes[5].id)
+        assertEquals("Hike 6", savedHikes[5].name)
+        assertNotNull(savedHikes[5].date)
       }
 
   @Test
   fun addSavedHikeSavesTheHike() =
       runTest(timeout = 5.seconds) {
         // Given
-        val hike = SavedHike("4", "Hike 4", null)
+        val hike = SavedHike("7", "Hike 7", null)
 
         // Before
-        assertEquals(3, savedHikesRepositoryDummy.loadSavedHikes().size)
+        assertEquals(6, savedHikesRepositoryDummy.loadSavedHikes().size)
         assert(!savedHikesRepositoryDummy.loadSavedHikes().contains(hike))
 
         // When
         savedHikesRepositoryDummy.addSavedHike(hike)
 
         // Then
-        assertEquals(4, savedHikesRepositoryDummy.loadSavedHikes().size)
+        assertEquals(7, savedHikesRepositoryDummy.loadSavedHikes().size)
         assert(savedHikesRepositoryDummy.loadSavedHikes().contains(hike))
       }
 
@@ -62,14 +74,14 @@ class SavedHikesRepositoryDummyTest {
         val hike = SavedHike("3", "Hike 3", null)
 
         // Before
-        assertEquals(3, savedHikesRepositoryDummy.loadSavedHikes().size)
+        assertEquals(6, savedHikesRepositoryDummy.loadSavedHikes().size)
         assert(savedHikesRepositoryDummy.loadSavedHikes().contains(hike))
 
         // When
         savedHikesRepositoryDummy.removeSavedHike(hike)
 
         // Then
-        assertEquals(2, savedHikesRepositoryDummy.loadSavedHikes().size)
+        assertEquals(5, savedHikesRepositoryDummy.loadSavedHikes().size)
         assert(!savedHikesRepositoryDummy.loadSavedHikes().contains(hike))
       }
 }

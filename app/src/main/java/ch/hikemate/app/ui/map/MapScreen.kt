@@ -4,32 +4,17 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.widget.Toast
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
@@ -46,7 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -54,6 +39,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.hikemate.app.R
 import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
+import ch.hikemate.app.ui.components.HikeCard
 import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
@@ -365,17 +351,8 @@ fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel, isSea
             } else {
               items(routes.value.size) { index: Int ->
                 val route = routes.value[index]
-                HikingRouteItem(
-                    title = route.id,
-                    altitudeDifference = 1000,
-                    isSuitable = index % 2 == 0,
-                    onClick = {
-                      // The user clicked on the route to select it
-                      hikingRoutesViewModel.selectRoute(route)
-                      Toast.makeText(
-                              context, "Hike details not implemented yet", Toast.LENGTH_SHORT)
-                          .show()
-                    })
+                val isSuitable = index % 2 == 0
+                HikeCardFor(route, isSuitable, hikingRoutesViewModel)
               }
             }
           }
@@ -385,83 +362,30 @@ fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel, isSea
 }
 
 @Composable
-fun HikingRouteItem(
-    title: String,
-    altitudeDifference: Int,
-    isSuitable: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
+fun HikeCardFor(route: HikeRoute, isSuitable: Boolean, viewModel: ListOfHikeRoutesViewModel) {
+  // The context is needed to display a toast when the user clicks on the route
+  val context = LocalContext.current
 
+  // The color of the card's message is chosen based on whether the hike is suitable or not
   val suitableLabelColor = if (isSuitable) Color(0xFF4CAF50) else Color(0xFFFFC107)
+
+  // The text and icon of the card's message are chosen based on whether the hike is suitable or not
   val suitableLabelText =
       if (isSuitable) LocalContext.current.getString(R.string.map_screen_suitable_hike_label)
       else LocalContext.current.getString(R.string.map_screen_challenging_hike_label)
 
-  Row(
-      modifier =
-          modifier
-              .fillMaxWidth()
-              .clickable(onClick = onClick)
-              .padding(16.dp, 8.dp)
-              .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp))
-              .testTag(MapScreen.TEST_TAG_HIKE_ITEM),
-      verticalAlignment = Alignment.CenterVertically) {
-        Column(modifier = Modifier.weight(1f)) {
-          Text(
-              text = title,
-              style = MaterialTheme.typography.titleLarge,
-              fontWeight = FontWeight.Bold)
-          Spacer(modifier = Modifier.height(8.dp))
+  // The icon of the card's message is chosen based on whether the hike is suitable or not
+  val suitableLabelIcon = if (isSuitable) R.drawable.check_circle else R.drawable.warning
 
-          Row(
-              verticalAlignment = Alignment.CenterVertically,
-              modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-                Box(
-                    modifier =
-                        Modifier.weight(1f)
-                            .fillMaxHeight()
-                            .background(
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                                RoundedCornerShape(4.dp)))
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                Column {
-                  Text(text = "Altitude difference", style = MaterialTheme.typography.bodySmall)
-                  Text(
-                      text = "${altitudeDifference}m",
-                      style = MaterialTheme.typography.bodyLarge,
-                      fontWeight = FontWeight.Bold)
-                }
-              }
-
-          Spacer(modifier = Modifier.height(4.dp))
-
-          Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                imageVector = if (isSuitable) Icons.Default.Check else Icons.Default.Warning,
-                // The icon is only decorative, the following message is enough for accessibility
-                contentDescription = null,
-                tint = suitableLabelColor,
-                modifier = Modifier.size(16.dp))
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(
-                text = suitableLabelText,
-                style = MaterialTheme.typography.bodySmall,
-                color = suitableLabelColor)
-          }
-        }
-
-        Spacer(modifier = Modifier.width(4.dp))
-
-        // Arrow icon to indicate that the item is clickable
-        Icon(
-            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-            contentDescription =
-                LocalContext.current.getString(
-                    R.string.map_screen_hike_details_content_description),
-            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-            modifier = Modifier.size(24.dp))
-      }
+  HikeCard(
+      title = route.id,
+      altitudeDifference = 1000,
+      onClick = {
+        // The user clicked on the route to select it
+        viewModel.selectRoute(route)
+        Toast.makeText(context, "Hike details not implemented yet", Toast.LENGTH_SHORT).show()
+      },
+      messageContent = suitableLabelText,
+      messageIcon = painterResource(suitableLabelIcon),
+      messageColor = suitableLabelColor)
 }
