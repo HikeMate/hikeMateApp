@@ -1,5 +1,9 @@
 package ch.hikemate.app.model.route
 
+import kotlin.math.asin
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.sqrt
 import org.osmdroid.util.BoundingBox
 
 /** A class representing a bounding box */
@@ -77,7 +81,39 @@ fun Bounds.toBoundingBox(): BoundingBox {
 }
 
 /** A simple data class to represent a latitude and longitude */
-data class LatLong(val lat: Double, val lon: Double)
+data class LatLong(val lat: Double, val lon: Double) {
+  /**
+   * Calculate the distance between this point and another point, using the Haversine formula to
+   * account for earth's curvature.
+   *
+   * @param other The other point
+   * @return The distance in meters
+   */
+  fun distanceTo(other: LatLong): Double {
+    val earthRadius = 6371000.0 // meters
+    val dLat = Math.toRadians(other.lat - lat)
+    val dLon = Math.toRadians(other.lon - lon)
+    val a =
+        sin(dLat / 2) * sin(dLat / 2) +
+            cos(Math.toRadians(lat)) *
+                cos(Math.toRadians(other.lat)) *
+                sin(dLon / 2) *
+                sin(dLon / 2)
+    return 2 * earthRadius * asin(sqrt(a))
+  }
+
+  override fun equals(other: Any?): Boolean {
+    return if (other is LatLong) {
+      lat == other.lat && lon == other.lon
+    } else {
+      false
+    }
+  }
+
+  override fun hashCode(): Int {
+    return super.hashCode()
+  }
+}
 
 /**
  * Represents a hike route
@@ -95,3 +131,5 @@ data class HikeRoute(
     val name: String? = null,
     val description: String? = null
 )
+
+typealias HikeWay = List<LatLong>

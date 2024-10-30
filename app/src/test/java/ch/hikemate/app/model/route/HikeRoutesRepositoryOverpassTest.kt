@@ -99,8 +99,8 @@ class HikeRoutesRepositoryOverpassTest {
                     "role": "",
                     "geometry": [
                         {
-                            "lat": 46.8236197,
-                            "lon": 6.4400574
+                            "lat": 46.823965,
+                            "lon": 6.4396698
                         },
                         {
                             "lat": 46.8235322,
@@ -195,8 +195,8 @@ class HikeRoutesRepositoryOverpassTest {
                     "role": "",
                     "geometry": [
                         {
-                            "lat": 46.8236197,
-                            "lon": 6.4400574
+                            "lat": 46.823965,
+                            "lon": 6.4396698
                         },
                         {
                             "lat": 46.8235322,
@@ -300,8 +300,8 @@ class HikeRoutesRepositoryOverpassTest {
                     "role": "",
                     "geometry": [
                         {
-                            "lat": 46.8236197,
-                            "lon": 6.4400574
+                            "lat": 46.823965,
+                            "lon": 6.4396698
                         },
                         {
                             "lat": 46.8235322,
@@ -380,6 +380,17 @@ class HikeRoutesRepositoryOverpassTest {
                 "maxlon": 7.2109599
             },
             "members": [
+                {
+                    "type": "way",
+                    "ref": 936770892,
+                    "role": "",
+                    "geometry": [
+                        {
+                            "lat": 46.8240018,
+                            "lon": 6.4395807
+                        }
+                    ]
+                }
             ],
             "tags": {
                 "from": "Lausanne",
@@ -421,6 +432,78 @@ class HikeRoutesRepositoryOverpassTest {
                 "maxlon": 7.2109599
             },
             "members": [
+                {
+                    "type": "way",
+                    "ref": 936770892,
+                    "role": "",
+                    "geometry": [
+                        {
+                            "lat": 46.8240018,
+                            "lon": 6.4395807
+                        }
+                    ]
+                }
+            ],
+            "tags": {
+            }
+        }
+    ]
+}
+"""
+                  .trimIndent()
+                  .replace("\n", "")
+                  .toResponseBody())
+          .protocol(Protocol.HTTP_1_1)
+          .header("Content-Type", "application/json")
+          .request(mock())
+          .build()
+
+  private val responseWithCorruptedHikes =
+      Response.Builder()
+          .code(200)
+          .message("OK")
+          .body(
+              """
+{
+    "version": 0.6,
+    "generator": "Overpass API 0.7.62.1 084b4234",
+    "osm3s": {
+        "timestamp_osm_base": "2024-10-10T19:14:42Z",
+        "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+    },
+    "elements": [
+        {
+            "type": "relation",
+            "id": 124582,
+            "bounds": {
+                "minlat": 45.8689061,
+                "minlon": 6.4395807,
+                "maxlat": 46.8283926,
+                "maxlon": 7.2109599
+            },
+            "members": [
+                {
+                    "type": "way",
+                    "ref": 936770892,
+                    "role": "",
+                    "geometry": [
+                        {
+                            "lat": 46.8240018,
+                            "lon": 6.4395807
+                        }
+                    ]
+                },
+                {
+                    "type": "way",
+                    "ref": 936770892,
+                    "role": "",
+                    "geometry": [
+                        {
+                            "lat": 47.8240018,
+                            "lon": 6.4395807
+                        }
+                    ]
+                }
             ],
             "tags": {
             }
@@ -444,10 +527,8 @@ class HikeRoutesRepositoryOverpassTest {
               listOf(
                   LatLong(46.8240018, 6.4395807),
                   LatLong(46.8239650, 6.4396698),
-                  LatLong(46.8236197, 6.4400574),
                   LatLong(46.8235322, 6.4401168),
-                  LatLong(46.8234367, 6.4401715),
-                  LatLong(46.8232651, 6.4402355)),
+                  LatLong(46.8234367, 6.4401715)),
               "Camino de Santiago",
               "Lausanne - Roll"))
 
@@ -456,7 +537,7 @@ class HikeRoutesRepositoryOverpassTest {
           HikeRoute(
               "124582",
               Bounds(45.8689061, 6.4395807, 46.8283926, 7.2109599),
-              emptyList(),
+              listOf(LatLong(46.8240018, 6.4395807)),
               "Lausanne - Roll",
               null))
 
@@ -465,7 +546,7 @@ class HikeRoutesRepositoryOverpassTest {
           HikeRoute(
               "124582",
               Bounds(45.8689061, 6.4395807, 46.8283926, 7.2109599),
-              emptyList(),
+              listOf(LatLong(46.8240018, 6.4395807)),
               null,
               null))
 
@@ -677,5 +758,21 @@ class HikeRoutesRepositoryOverpassTest {
         bounds, { routes -> assertEquals(noNameRoutes, routes) }) {
           fail("Failed to fetch routes from Overpass API")
         }
+  }
+
+  @Test
+  fun getRoutes_returnsEmptyListOnCorruptedHikes() {
+    val mockCall = mock(Call::class.java)
+    `when`(mockClient.newCall(any())).thenReturn(mockCall)
+
+    val callbackCapture = argumentCaptor<okhttp3.Callback>()
+
+    `when`(mockCall.enqueue(callbackCapture.capture())).then {
+      callbackCapture.firstValue.onResponse(mockCall, responseWithCorruptedHikes)
+    }
+
+    hikingRouteProviderRepositoryOverpass.getRoutes(bounds, { assertEquals(0, it.size) }) {
+      fail("Should not have failed routes")
+    }
   }
 }

@@ -3,6 +3,7 @@ import java.io.FileInputStream
 import java.util.Properties
 
 plugins {
+    alias(libs.plugins.kotlinxSerialization)
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsKotlinAndroid)
     alias(libs.plugins.ktfmt)
@@ -146,6 +147,7 @@ dependencies {
     val composeBom = platform(libs.compose.bom)
 
     // Dependencies
+    implementation(libs.kotlinx.serialization.json)
     implementation (libs.androidx.material.icons.extended)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.core.ktx)

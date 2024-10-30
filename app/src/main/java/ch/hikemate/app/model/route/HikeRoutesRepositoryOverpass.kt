@@ -13,6 +13,9 @@ private const val OVERPASS_API_URL: String = "https://overpass-api.de/api/interp
 /** The type of format to request from the Overpass API, written in OverpassQL. */
 private const val JSON_OVERPASS_FORMAT_TAG = "[out:json]"
 
+/** The maximum distance between two points to consider them as the same point. */
+private const val MAX_DISTANCE_BETWEEN_OPENED_PATH = 10 // meters
+
 /**
  * Overpass implementation of the hiking route provider repository.
  *
@@ -105,13 +108,111 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
     }
 
     /**
+     * Flattens a hike route into a list of points.
+     *
+     * This function is used to convert a hike route into a list of points that can be used to draw
+     * a polyline on the map. It also finds the starting and ending points of each sub way to create
+     * a smooth path.
+     *
+     * @param hikeWays The hike ways to be flattened.
+     * @return The list of points that represent the hike route. An empty list is returned either if
+     *   the hike is considered invalid or if there are no points in the hike.
+     */
+    private fun flattenHikeWays(hikeWays: List<HikeWay>): HikeWay {
+      val points = mutableListOf<LatLong>()
+      var status: Boolean
+      for (i in hikeWays.indices) {
+        // Since the first way doesn't have a previous way to connect to, we need to handle it
+        // differently
+        if (points.isEmpty()) {
+          status = handleFirstWay(hikeWays, points)
+        } else {
+          status = handleSubsequentWays(hikeWays, points, i)
+        }
+
+        // If the status is false, i.e. something wrong happened, we discard the hike
+        if (!status) {
+          return emptyList()
+        }
+      }
+      return points
+    }
+
+    /**
+     * Handles the first way of the hike during the flattening process.
+     *
+     * @param hikeWays The list of hike ways.
+     * @param points The list of points to add the way to.
+     * @return True if the way has been added to the points, false otherwise.
+     */
+    private fun handleFirstWay(hikeWays: List<HikeWay>, points: MutableList<LatLong>): Boolean {
+      return if (hikeWays.size > 1 &&
+          (hikeWays.first().first() == hikeWays[1].first() ||
+              hikeWays.first().first() == hikeWays[1].last())) {
+        points.addAll(hikeWays.first().reversed())
+      } else {
+        points.addAll(hikeWays.first())
+      }
+    }
+
+    /**
+     * Handles the subsequent ways of the hike during the flattening process.
+     *
+     * @param hikeWays The list of hike ways.
+     * @param points The list of points to add the way to.
+     * @param i The index of the way to handle.
+     * @return True if the way has been added to the points, false otherwise.
+     */
+    private fun handleSubsequentWays(
+        hikeWays: List<HikeWay>,
+        points: MutableList<LatLong>,
+        i: Int
+    ): Boolean {
+      return when {
+        hikeWays[i].first() == points.last() ->
+            points.addAll(hikeWays[i].subList(1, hikeWays[i].size))
+        hikeWays[i].last() == points.last() ->
+            points.addAll(hikeWays[i].reversed().subList(1, hikeWays[i].size))
+        else -> handleUnconnectedWays(hikeWays, points, i)
+      }
+    }
+
+    /**
+     * Handles the unconnected ways of the hike during the flattening process.
+     *
+     * @param hikeWays The list of hike ways.
+     * @param points The list of points to add the way to.
+     * @param i The index of the way to handle.
+     * @return True if the way has been added to the points, false otherwise.
+     */
+    private fun handleUnconnectedWays(
+        hikeWays: List<HikeWay>,
+        points: MutableList<LatLong>,
+        i: Int
+    ): Boolean {
+      val lastPoint = points.last()
+      val firstWayPoint = hikeWays[i].first()
+      val lastWayPoint = hikeWays[i].last()
+      val distanceFirst = firstWayPoint.distanceTo(lastPoint)
+      val distanceLast = lastWayPoint.distanceTo(lastPoint)
+
+      return when {
+        distanceFirst < distanceLast && distanceFirst < MAX_DISTANCE_BETWEEN_OPENED_PATH ->
+            points.addAll(hikeWays[i])
+        distanceFirst >= distanceLast && distanceLast < MAX_DISTANCE_BETWEEN_OPENED_PATH ->
+            points.addAll(hikeWays[i].reversed())
+        else -> false // Discard the hikes if unconnected
+      }
+    }
+
+    /**
      * Parses the routes from the Overpass API response.
      *
      * @param responseReader The reader for the response body.
      * @return The list of parsed routes.
      */
     private fun parseRoutes(responseReader: Reader): List<HikeRoute> {
-      val routes = mutableListOf<HikeRoute>()
+      val routes = mutableListOf<HikeRoute?>()
       val jsonReader = JsonReader(responseReader)
       jsonReader.beginObject() // We're in the root object
       while (jsonReader.hasNext()) {
@@ -130,7 +231,7 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
         }
       }
       jsonReader.endObject()
-      return routes
+      return routes.filterNotNull()
     }
 
     /**
@@ -138,12 +239,12 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
      * in the element object.
      *
      * @param elementReader The reader for the element object.
-     * @return The parsed route.
+     * @return The parsed route or null if the route has been discarded.
      */
-    private fun parseElement(elementReader: JsonReader): HikeRoute {
+    private fun parseElement(elementReader: JsonReader): HikeRoute? {
       var id = ""
       val boundsBuilder = Bounds.Builder()
-      val points = mutableListOf<LatLong>()
+      val ways = mutableListOf<HikeWay>()
       var elementName: String? = null
       var description: String? = null
       while (elementReader.hasNext()) {
@@ -167,7 +268,7 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
             elementReader.beginArray() // We're in the members array of the element
             while (elementReader.hasNext()) {
               elementReader.beginObject() // We're in a member object
-              points.addAll(parseMember(elementReader))
+              ways.addAll(parseMember(elementReader))
               elementReader.endObject()
             }
             elementReader.endArray()
@@ -183,7 +284,12 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
           else -> elementReader.skipValue()
         }
       }
-      return HikeRoute(id, boundsBuilder.build(), points, elementName, description)
+      val flattenWays = flattenHikeWays(ways)
+      // If there is no way in the route regardless of the reason, we discard the route
+      if (flattenWays.isEmpty()) {
+        return null
+      }
+      return HikeRoute(id, boundsBuilder.build(), flattenWays, elementName, description)
     }
 
     /**
@@ -254,23 +360,21 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
      * @param memberReader The reader for the member object.
      * @return The list of parsed points for this member.
      */
-    private fun parseMember(memberReader: JsonReader): List<LatLong> {
-      val points = mutableListOf<LatLong>()
+    private fun parseMember(memberReader: JsonReader): List<HikeWay> {
+      val ways = mutableListOf<HikeWay>()
       while (memberReader.hasNext()) {
         val name = memberReader.nextName()
         if (name == "type") {
           val type = memberReader.nextString()
-          when (type) {
-            // Lat and Long are in the object, no need to change the reader
-            "node" -> points.add(parseLatLong(memberReader))
-            "way" -> points.addAll(parseWay(memberReader))
+          if (type == "way") {
+            ways.add(parseWay(memberReader))
           }
         } else {
           memberReader.skipValue()
         }
       }
 
-      return points
+      return ways
     }
 
     /**
@@ -280,7 +384,7 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
      * @param wayReader The reader for the way object.
      * @return The list of parsed points for this way.
      */
-    private fun parseWay(wayReader: JsonReader): List<LatLong> {
+    private fun parseWay(wayReader: JsonReader): HikeWay {
       val points = mutableListOf<LatLong>()
       while (wayReader.hasNext()) {
         if (wayReader.nextName() != "geometry") {
