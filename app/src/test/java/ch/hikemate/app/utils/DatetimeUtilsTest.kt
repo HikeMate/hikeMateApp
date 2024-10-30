@@ -3,6 +3,7 @@ package ch.hikemate.app.utils
 import android.content.Context
 import ch.hikemate.app.R
 import com.google.firebase.Timestamp
+import java.time.DateTimeException
 import java.util.Locale
 import org.junit.Assert.*
 import org.junit.Test
@@ -120,6 +121,96 @@ class DatetimeUtilsTest {
         message += "Expected: ${test.expectedSeconds}s ${test.expectedNanoSeconds}ns\n"
         message += "Actual: ${timestamp.seconds}s ${timestamp.nanoseconds}ns"
         fail(message)
+      }
+    }
+  }
+
+  @Test
+  fun timestampFromInvalidYearThrows() {
+    // Given
+    val invalidYears = listOf(-1, 0, 10000)
+    val month = 10
+    val day = 20
+
+    for (year in invalidYears) {
+      assertThrows(IllegalArgumentException::class.java) { Timestamp.from(year, month, day) }
+    }
+  }
+
+  @Test
+  fun timestampFromBorderlineValidYearDoesNotThrow() {
+    // Given
+    val borderlineYears = listOf(1, 9999)
+    val month = 10
+    val day = 20
+
+    for (year in borderlineYears) {
+      // When
+      try {
+        Timestamp.from(year, month, day)
+      } catch (t: Throwable) {
+        // Then
+        fail("Expected Timestamp.from($year, $month, $day) to not throw, but got $t")
+      }
+    }
+  }
+
+  @Test
+  fun timestampFromInvalidMonthThrows() {
+    // Given
+    val year = 2020
+    val invalidMonths = listOf(-1, 0, 13)
+    val day = 20
+
+    for (month in invalidMonths) {
+      assertThrows(DateTimeException::class.java) { Timestamp.from(year, month, day) }
+    }
+  }
+
+  @Test
+  fun timestampFromBorderlineMonthDoesNotThrow() {
+    // Given
+    val year = 2020
+    val borderlineMonths = listOf(1, 12)
+    val day = 20
+
+    for (month in borderlineMonths) {
+      // When
+      try {
+        Timestamp.from(year, month, day)
+      } catch (t: Throwable) {
+        // Then
+        fail("Expected Timestamp.from($year, $month, $day) to not throw, but got $t")
+      }
+    }
+  }
+
+  @Test
+  fun timestampFromInvalidDayThrows() {
+    // Given
+    val year = 2020
+    val month = 10
+    val invalidDays = listOf(-1, 0, 32)
+
+    for (day in invalidDays) {
+      assertThrows(DateTimeException::class.java) { Timestamp.from(year, month, day) }
+    }
+  }
+
+  @Test
+  fun timestampFromBorderlineDayDoesNotThrow() {
+    // Given
+    val year = 2020
+    val month = 10
+    val borderlineDays = listOf(1, 31)
+
+    for (day in borderlineDays) {
+      // When
+      try {
+        Timestamp.from(year, month, day)
+      } catch (t: Throwable) {
+        // Then
+        fail("Expected Timestamp.from($year, $month, $day) to not throw, but got $t")
       }
     }
   }
