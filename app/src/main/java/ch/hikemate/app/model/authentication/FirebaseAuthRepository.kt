@@ -87,15 +87,13 @@ class FirebaseAuthRepository {
             onErrorAction(task.exception ?: Exception("Unknown error"))
           }
         }
+      } catch (e: NoCredentialException) {
+        Log.e("SignInButton", "No credentials found: ${e.message}")
+        // If there is no Google account connected to the device, prompt the user to add one
+        startAddAccountIntentLauncher?.launch(getAddGoogleAccountIntent())
       } catch (e: Exception) {
-        // This check is necessary bc the type of exception is always UndeclaredThrowableException
-        if (e.cause is NoCredentialException) {
-          // If there is no Google account connected to the device, prompt the user to add one
-          startAddAccountIntentLauncher?.launch(getAddGoogleAccountIntent())
-        } else {
-          Log.d("SignInButton", "Login error: ${e.message}")
-          onErrorAction(e)
-        }
+        Log.d("SignInButton", "Login error: ${e.stackTraceToString()}")
+        onErrorAction(e)
       }
     }
   }
