@@ -1,6 +1,9 @@
 package ch.hikemate.app.model.authentication
 
 import android.content.Context
+import android.content.Intent
+import androidx.activity.compose.ManagedActivityResultLauncher
+import androidx.activity.result.ActivityResult
 import androidx.credentials.CredentialManager
 import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.CoroutineScope
@@ -25,6 +28,7 @@ interface AuthRepository {
       context: Context,
       coroutineScope: CoroutineScope,
       credentialManager: CredentialManager = CredentialManager.create(context),
+      startAddAccountIntentLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>?,
   )
 
   /**

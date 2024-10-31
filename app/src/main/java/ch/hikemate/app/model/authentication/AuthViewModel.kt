@@ -1,6 +1,9 @@
 package ch.hikemate.app.model.authentication
 
 import android.content.Context
+import android.content.Intent
+import androidx.activity.compose.ManagedActivityResultLauncher
+import androidx.activity.result.ActivityResult
 import androidx.lifecycle.ViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -26,12 +29,19 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
    * @param coroutineScope The CoroutineScope in which this operation will be executed.
    * @param context The context is used to start the Google Sign-In process.
    */
-  fun signInWithGoogle(coroutineScope: CoroutineScope, context: Context) {
+  fun signInWithGoogle(
+      coroutineScope: CoroutineScope,
+      context: Context,
+      startAddAccountIntentLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>?,
+  ) {
+
     repository.signInWithGoogle(
         onSuccess = { user: FirebaseUser? -> _currentUser.value = user },
         onErrorAction = {},
         context = context,
-        coroutineScope = coroutineScope)
+        coroutineScope = coroutineScope,
+        startAddAccountIntentLauncher = startAddAccountIntentLauncher,
+    )
   }
 
   /** Signs out the current user. On successful sign-out, the _currentUser is set to null. */

@@ -21,6 +21,7 @@ import org.mockito.Mockito.mockStatic
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 
 class AuthViewModelTest {
   @Mock private lateinit var mockRepository: FirebaseAuthRepository
@@ -83,15 +84,15 @@ class AuthViewModelTest {
           null
         }
         .`when`(mockRepository)
-        .signInWithGoogle(any(), any(), any(), any(), any())
+        .signInWithGoogle(any(), any(), any(), any(), any(), anyOrNull())
 
     // Verify that currentUser is initially null
     assertNull(viewModel.currentUser.first())
 
-    viewModel.signInWithGoogle(this, mockContext)
+    viewModel.signInWithGoogle(this, mockContext, null)
 
     // Verify call to the repository
-    verify(mockRepository).signInWithGoogle(any(), any(), any(), any(), any())
+    verify(mockRepository).signInWithGoogle(any(), any(), any(), any(), any(), anyOrNull())
 
     val currentUser = viewModel.currentUser.first() // Get the first (current) value of the flow
 
@@ -110,17 +111,17 @@ class AuthViewModelTest {
           null
         }
         .`when`(mockRepository)
-        .signInWithGoogle(any(), any(), any(), any(), any())
+        .signInWithGoogle(any(), any(), any(), any(), any(), anyOrNull())
 
     // Verify that currentUser is initially null
     assertNull(viewModel.currentUser.first())
 
-    viewModel.signInWithGoogle(this, mockContext)
+    viewModel.signInWithGoogle(this, mockContext, null)
 
     val currentUser = viewModel.currentUser.first()
 
     // Verify call to the repository
-    verify(mockRepository).signInWithGoogle(any(), any(), any(), any(), any())
+    verify(mockRepository).signInWithGoogle(any(), any(), any(), any(), any(), anyOrNull())
 
     // Confirm that currentUser is still null
     assertEquals(null, currentUser)

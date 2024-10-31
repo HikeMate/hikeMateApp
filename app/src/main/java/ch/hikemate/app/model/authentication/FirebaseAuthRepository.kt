@@ -1,11 +1,17 @@
 package ch.hikemate.app.model.authentication
 
 import android.content.Context
+import android.content.Intent
+import android.provider.Settings
 import android.util.Log
+import androidx.activity.compose.ManagedActivityResultLauncher
+import androidx.activity.result.ActivityResult
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.NoCredentialException
 import ch.hikemate.app.R
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.ktx.auth
@@ -26,6 +32,9 @@ class FirebaseAuthRepository : AuthRepository {
    * @param coroutineScope The CoroutineScope to launch the login task in a non-blocking way.
    * @param credentialManager (Optional) CredentialManager for handling credential requests. Pass
    *   explicitly when testing with mocks.
+   * @param startAddAccountIntentLauncher (Optional) to handle the scenario where no Google
+   *   credentials are found on the device. When `NoCredentialException` is thrown, this launcher
+   *   prompts the user to add a Google account.
    */
   override fun signInWithGoogle(
       onSuccess: (FirebaseUser?) -> Unit,
@@ -33,9 +42,10 @@ class FirebaseAuthRepository : AuthRepository {
       context: Context,
       coroutineScope: CoroutineScope,
       credentialManager: CredentialManager,
+      startAddAccountIntentLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>?,
   ) {
     // Initialize Firebase authentication and retrieve the web client ID from resources
-    val auth = Firebase.auth
+    val auth = FirebaseAuth.getInstance()
     val token = context.getString(R.string.default_web_client_id)
 
     // Configure Google ID options to request credentials from authorized accounts and the server
@@ -80,11 +90,21 @@ class FirebaseAuthRepository : AuthRepository {
             onErrorAction(task.exception ?: Exception("Unknown error"))
           }
         }
+      } catch (e: NoCredentialException) {
+        Log.e("SignInButton", "No credentials found: ${e.message}")
+        // If there is no Google account connected to the device, prompt the user to add one
+        startAddAccountIntentLauncher?.launch(getAddGoogleAccountIntent())
       } catch (e: Exception) {
         Log.d("SignInButton", "Login error: ${e.message}")
         onErrorAction(e)
       }
     }
+  }
+
+  private fun getAddGoogleAccountIntent(): Intent {
+    val intent = Intent(Settings.ACTION_ADD_ACCOUNT)
+    intent.putExtra(Settings.EXTRA_ACCOUNT_TYPES, arrayOf("com.google"))
+    return intent
   }
 
   /**
