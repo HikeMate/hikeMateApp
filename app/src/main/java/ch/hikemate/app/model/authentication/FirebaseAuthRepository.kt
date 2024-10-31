@@ -32,6 +32,9 @@ class FirebaseAuthRepository : AuthRepository {
    * @param coroutineScope The CoroutineScope to launch the login task in a non-blocking way.
    * @param credentialManager (Optional) CredentialManager for handling credential requests. Pass
    *   explicitly when testing with mocks.
+   * @param startAddAccountIntentLauncher (Optional) to handle the scenario where no Google
+   *   credentials are found on the device. When `NoCredentialException` is thrown, this launcher
+   *   prompts the user to add a Google account.
    */
   override fun signInWithGoogle(
       onSuccess: (FirebaseUser?) -> Unit,

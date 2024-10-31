@@ -9,8 +9,8 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
 import ch.hikemate.app.R
+import ch.hikemate.app.model.authentication.AuthRepository
 import ch.hikemate.app.model.authentication.AuthViewModel
-import ch.hikemate.app.model.authentication.FirebaseAuthRepository
 import ch.hikemate.app.model.profile.HikingLevel
 import ch.hikemate.app.model.profile.Profile
 import ch.hikemate.app.model.profile.ProfileRepository
@@ -32,7 +32,7 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 
 class ProfileScreenTest : TestCase() {
-  private lateinit var authRepository: FirebaseAuthRepository
+  private lateinit var authRepository: AuthRepository
   private lateinit var profileRepository: ProfileRepository
   private lateinit var profileViewModel: ProfileViewModel
   private lateinit var authViewModel: AuthViewModel
@@ -47,7 +47,7 @@ class ProfileScreenTest : TestCase() {
     context = ApplicationProvider.getApplicationContext()
 
     navigationActions = mock(NavigationActions::class.java)
-    authRepository = mock(FirebaseAuthRepository::class.java)
+    authRepository = mock(AuthRepository::class.java)
     profileRepository = mock(ProfileRepository::class.java)
     authViewModel = AuthViewModel(authRepository)
     profileViewModel = ProfileViewModel(profileRepository)

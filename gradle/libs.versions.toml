@@ -18,7 +18,7 @@ kaspresso = "1.5.5"
 materialIconsExtended = "1.7.4"
 mockitoAndroid = "5.13.0"
 mockitoCore = "5.13.0"
-mockitoInline = "4.0.0"
+mockitoInline = "5.0.0"
 mockitoKotlin = "5.4.0"
 mockkAgent = "1.13.12"
 mockkAgentVersion = "1.13.12"
@@ -75,9 +75,7 @@ mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockitoCore
 mockito-inline = { module = "org.mockito:mockito-inline", version.ref = "mockitoInline" }
 mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockitoKotlin" }
 mockk-agent = { module = "io.mockk:mockk-agent", version.ref = "mockkAgent" }
-mockk-agent-v10 = { module = "io.mockk:mockk-agent", version.ref = "mockkAgentVersion" }
 mockk-android = { module = "io.mockk:mockk-android", version.ref = "mockkAndroid" }
-mockk-android-v10 = { module = "io.mockk:mockk-android", version.ref = "mockkAndroidVersion" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 osmdroid = { module = "org.osmdroid:osmdroid-android", version.ref = "osmdroid" }
 

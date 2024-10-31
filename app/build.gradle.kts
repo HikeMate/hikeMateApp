@@ -182,16 +182,17 @@ dependencies {
     globalTestImplementation(libs.kaspresso)
     globalTestImplementation(libs.kaspresso.compose)
     globalTestImplementation(libs.mockito.kotlin)
+    globalTestImplementation(libs.mockk.agent)
+    globalTestImplementation(libs.mockk.android)
+
 
     // Test dependencies
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)
-    testImplementation(libs.compose.test.junit)
     testImplementation(libs.compose.test.manifest)
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.inline)
-    testImplementation(libs.mockk.android.v10)
-    testImplementation(libs.mockk.agent.v10)
+
 
     // Android test dependencies
     androidTestImplementation(libs.androidx.espresso.core)
@@ -200,13 +201,9 @@ dependencies {
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.compose.test.junit)
     androidTestImplementation(libs.mockito.android)
-    androidTestImplementation(libs.mockk.android)
-    androidTestImplementation(libs.mockk.agent)
-
 
     // Debug dependencies
     debugImplementation(libs.compose.tooling)
-    debugImplementation(libs.compose.test.manifest)
     debugImplementation(libs.compose.test.manifest)
 
     // Robolectric (for unit tests that require Android framework)
