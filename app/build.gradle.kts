@@ -178,32 +178,26 @@ dependencies {
     globalTestImplementation(libs.compose.test.junit)
     globalTestImplementation(libs.kaspresso)
     globalTestImplementation(libs.kaspresso.compose)
+    globalTestImplementation(libs.junit)
+    globalTestImplementation(libs.compose.test.junit)
 
     // Test dependencies
-    testImplementation(libs.junit)
     testImplementation(libs.robolectric)
     testImplementation(libs.mockito.inline)
-    testImplementation(libs.mockito.android)
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.kotlin)
-    testImplementation(libs.compose.test.junit)
     testImplementation(libs.compose.test.manifest)
+    testImplementation(libs.mockk.android)
+    testImplementation(libs.mockk.agent)
 
     // Android test dependencies
     androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.ui.test.junit4)
-    androidTestImplementation(libs.junit)
-    androidTestImplementation(libs.compose.test.junit)
     androidTestImplementation(libs.mockito.android)
-    androidTestImplementation(libs.mockk.android)
-    androidTestImplementation(libs.mockk.agent)
-
+    androidTestImplementation(libs.androidx.junit)
 
     // Debug dependencies
     debugImplementation(libs.compose.tooling)
     debugImplementation(libs.compose.test.manifest)
-    debugImplementation(libs.ui.test.manifest)
 
     // Robolectric (for unit tests that require Android framework)
     // To fix an issue with Firebase and the Protobuf library

@@ -182,9 +182,7 @@ class FirebaseAuthRepositoryTest {
         verify { mockOnError(any<GetCredentialUnknownException>()) }
       }
 
-  // Test does not work, as the exception thrown by the mock CredentialManager is an
-  // UndeclaredThrowableException for some reason, not a NoCredentialException
-  // @Test
+  @Test
   fun testSignInWithGoogle_NoCredentialException() =
       runTest(timeout = 5.seconds) {
         val noCredentialException = NoCredentialException()
