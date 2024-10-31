@@ -19,10 +19,12 @@ import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsPropertyKey
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import ch.hikemate.app.R
 import ch.hikemate.app.ui.components.AppIcon
 import kotlinx.coroutines.launch
 
@@ -49,7 +51,7 @@ fun SideBarNavigation(
     // The reason the content of the screen has to be passed as a lambda is because the drawer has
     // to be
     // integrated with the screen.
-    content: @Composable () -> Unit,
+    content: @Composable (PaddingValues) -> Unit
 ) {
   val drawerState = rememberDrawerState(DrawerValue.Closed)
   val scope = rememberCoroutineScope()
@@ -107,12 +109,14 @@ fun SideBarNavigation(
                   content = {
                     Icon(
                         Icons.Filled.Menu,
-                        contentDescription = "SideBar",
+                        contentDescription =
+                            LocalContext.current.getString(
+                                R.string.sidebar_button_content_description),
                     )
                   },
               )
-            }) {
-              content()
+            }) { padding: PaddingValues ->
+              content(padding)
             }
       },
   )

@@ -1,5 +1,11 @@
 package ch.hikemate.app.model.route
 
+import kotlin.math.asin
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.sqrt
+import org.osmdroid.util.BoundingBox
+
 /** A class representing a bounding box */
 data class Bounds(val minLat: Double, val minLon: Double, val maxLat: Double, val maxLon: Double) {
 
@@ -29,7 +35,9 @@ data class Bounds(val minLat: Double, val minLon: Double, val maxLat: Double, va
   }
 
   init {
-    require(!(minLat > maxLat || minLon > maxLon)) { "Invalid bounds" }
+    require(!(minLat > maxLat || minLon > maxLon)) {
+      "Invalid bounds: minLat=$minLat, maxLat=$maxLat, minLon=$minLon, maxLong=$maxLon"
+    }
   }
 
   class Builder {
@@ -64,8 +72,48 @@ data class Bounds(val minLat: Double, val minLon: Double, val maxLat: Double, va
   }
 }
 
+fun BoundingBox.toBounds(): Bounds {
+  return Bounds(latSouth, lonWest, latNorth, lonEast)
+}
+
+fun Bounds.toBoundingBox(): BoundingBox {
+  return BoundingBox(maxLat, maxLon, minLat, minLon)
+}
+
 /** A simple data class to represent a latitude and longitude */
-data class LatLong(val lat: Double, val lon: Double)
+data class LatLong(val lat: Double, val lon: Double) {
+  /**
+   * Calculate the distance between this point and another point, using the Haversine formula to
+   * account for earth's curvature.
+   *
+   * @param other The other point
+   * @return The distance in meters
+   */
+  fun distanceTo(other: LatLong): Double {
+    val earthRadius = 6371000.0 // meters
+    val dLat = Math.toRadians(other.lat - lat)
+    val dLon = Math.toRadians(other.lon - lon)
+    val a =
+        sin(dLat / 2) * sin(dLat / 2) +
+            cos(Math.toRadians(lat)) *
+                cos(Math.toRadians(other.lat)) *
+                sin(dLon / 2) *
+                sin(dLon / 2)
+    return 2 * earthRadius * asin(sqrt(a))
+  }
+
+  override fun equals(other: Any?): Boolean {
+    return if (other is LatLong) {
+      lat == other.lat && lon == other.lon
+    } else {
+      false
+    }
+  }
+
+  override fun hashCode(): Int {
+    return super.hashCode()
+  }
+}
 
 /**
  * Represents a hike route
@@ -73,5 +121,15 @@ data class LatLong(val lat: Double, val lon: Double)
  * @param id The id of the route, depending of the client
  * @param bounds The bounding box of the route
  * @param ways The points of the route
+ * @param name The name of the route
+ * @param description The description of the route
  */
-data class HikeRoute(val id: String, val bounds: Bounds, val ways: List<LatLong>)
+data class HikeRoute(
+    val id: String,
+    val bounds: Bounds,
+    val ways: List<LatLong>,
+    val name: String? = null,
+    val description: String? = null
+)
+
+typealias HikeWay = List<LatLong>

@@ -3,6 +3,7 @@ import java.io.FileInputStream
 import java.util.Properties
 
 plugins {
+    alias(libs.plugins.kotlinxSerialization)
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsKotlinAndroid)
     alias(libs.plugins.ktfmt)
@@ -146,6 +147,8 @@ dependencies {
     val composeBom = platform(libs.compose.bom)
 
     // Dependencies
+    implementation(libs.kotlinx.serialization.json)
+    implementation (libs.androidx.material.icons.extended)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
@@ -178,25 +181,30 @@ dependencies {
     globalTestImplementation(libs.compose.test.junit)
     globalTestImplementation(libs.kaspresso)
     globalTestImplementation(libs.kaspresso.compose)
-    globalTestImplementation(libs.junit)
-    globalTestImplementation(libs.compose.test.junit)
+    globalTestImplementation(libs.mockito.kotlin)
 
     // Test dependencies
+    testImplementation(libs.junit)
     testImplementation(libs.robolectric)
-    testImplementation(libs.mockito.inline)
-    testImplementation(libs.mockito.core)
-    testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.compose.test.junit)
     testImplementation(libs.compose.test.manifest)
-    testImplementation(libs.mockk.android)
-    testImplementation(libs.mockk.agent)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.mockito.inline)
 
     // Android test dependencies
     androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(libs.mockito.android)
     androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.compose.test.junit)
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.compose.test.junit)
+    androidTestImplementation(libs.mockito.android)
+    androidTestImplementation(libs.mockk.android)
+    androidTestImplementation(libs.mockk.agent)
+
 
     // Debug dependencies
     debugImplementation(libs.compose.tooling)
+    debugImplementation(libs.compose.test.manifest)
     debugImplementation(libs.compose.test.manifest)
 
     // Robolectric (for unit tests that require Android framework)

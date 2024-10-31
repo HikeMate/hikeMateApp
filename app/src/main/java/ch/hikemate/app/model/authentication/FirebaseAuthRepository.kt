@@ -19,7 +19,7 @@ import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-class FirebaseAuthRepository {
+class FirebaseAuthRepository : AuthRepository {
 
   /**
    * Sign in with Google using Firebase Authentication.
@@ -33,12 +33,12 @@ class FirebaseAuthRepository {
    * @param credentialManager (Optional) CredentialManager for handling credential requests. Pass
    *   explicitly when testing with mocks.
    */
-  fun signInWithGoogle(
+  override fun signInWithGoogle(
       onSuccess: (FirebaseUser?) -> Unit,
       onErrorAction: (Exception) -> Unit,
       context: Context,
       coroutineScope: CoroutineScope,
-      credentialManager: CredentialManager = CredentialManager.create(context),
+      credentialManager: CredentialManager,
       startAddAccountIntentLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>?,
   ) {
     // Initialize Firebase authentication and retrieve the web client ID from resources
@@ -92,7 +92,7 @@ class FirebaseAuthRepository {
         // If there is no Google account connected to the device, prompt the user to add one
         startAddAccountIntentLauncher?.launch(getAddGoogleAccountIntent())
       } catch (e: Exception) {
-        Log.d("SignInButton", "Login error: ${e.stackTraceToString()}")
+        Log.d("SignInButton", "Login error: ${e.message}")
         onErrorAction(e)
       }
     }
@@ -109,7 +109,7 @@ class FirebaseAuthRepository {
    *
    * @param onSuccess Callback to invoke after the user has successfully signed out.
    */
-  fun signOut(onSuccess: () -> Unit) {
+  override fun signOut(onSuccess: () -> Unit) {
     Firebase.auth.signOut()
     onSuccess()
   }

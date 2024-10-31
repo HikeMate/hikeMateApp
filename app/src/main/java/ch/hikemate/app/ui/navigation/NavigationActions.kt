@@ -10,7 +10,7 @@ import androidx.navigation.NavHostController
 
 /** Object containing route constants. */
 object Route {
-  const val PLANNED_HIKES = "PlannedHikes"
+  const val SAVED_HIKES = "SavedHikes"
   const val MAP = "Map"
   const val AUTH = "Auth"
   const val PROFILE = "Profile"
@@ -19,7 +19,7 @@ object Route {
 /** Object containing screen constants. */
 object Screen {
   const val AUTH = "Auth Screen"
-  const val PLANNED_HIKES = "PlannedHikes Screen"
+  const val SAVED_HIKES = "SavedHikes Screen"
   const val MAP = "Map Screen"
   const val PROFILE = "Profile Screen"
   const val EDIT_PROFILE = "Edit-profile Screen"
@@ -36,7 +36,7 @@ data class TopLevelDestination(val route: String, val icon: ImageVector, val tex
 
 /** Object containing top-level destinations. */
 object TopLevelDestinations {
-  val PLANNED_HIKES = TopLevelDestination(Route.PLANNED_HIKES, Icons.Outlined.Home, "Planned Hikes")
+  val SAVED_HIKES = TopLevelDestination(Route.SAVED_HIKES, Icons.Outlined.Home, "Saved Hikes")
   val MAP = TopLevelDestination(Route.MAP, Icons.Outlined.Place, "Map")
   val PROFILE = TopLevelDestination(Route.PROFILE, Icons.Outlined.Person, "Profile")
   val AUTH = TopLevelDestination(Route.AUTH, Icons.Outlined.Person, "Auth")
@@ -44,8 +44,7 @@ object TopLevelDestinations {
 
 /** List of top-level destinations. */
 val LIST_TOP_LEVEL_DESTINATIONS =
-    listOf(
-        TopLevelDestinations.PLANNED_HIKES, TopLevelDestinations.MAP, TopLevelDestinations.PROFILE)
+    listOf(TopLevelDestinations.SAVED_HIKES, TopLevelDestinations.MAP, TopLevelDestinations.PROFILE)
 
 /**
  * Class containing navigation actions.
