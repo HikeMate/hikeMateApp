@@ -1,15 +1,20 @@
 package ch.hikemate.app.ui.map
 
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.test.platform.app.InstrumentationRegistry
+import ch.hikemate.app.R
 import ch.hikemate.app.model.route.Bounds
 import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.HikeRoutesRepository
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
+import ch.hikemate.app.ui.components.TEST_TAG_HIKE_CARD_TITLE
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.TEST_TAG_SIDEBAR_BUTTON
 import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
@@ -164,6 +169,64 @@ class MapScreenTest : TestCase() {
     }
     composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).performClick()
     composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_EMPTY_HIKES_LIST_MESSAGE).assertIsDisplayed()
+  }
+
+  @Test
+  fun hikesListDisplaysHikeNameIfAvailable() {
+    // Given
+    val hikeName = "My test hike whatever"
+    val hike = HikeRoute("1", Bounds(-1.0, -1.0, 1.0, 1.0), listOf(), hikeName, null)
+    `when`(hikesRepository.getRoutes(any(), any(), any())).thenAnswer {
+      val onSuccess = it.getArgument<(List<HikeRoute>) -> Unit>(1)
+      onSuccess(listOf(hike))
+    }
+
+    // When
+    setUpMap()
+    listOfHikeRoutesViewModel.setArea(BoundingBox(0.0, 0.0, 0.0, 0.0))
+    composeTestRule.waitUntil(timeoutMillis = 5000) {
+      composeTestRule
+          .onAllNodesWithTag(MapScreen.TEST_TAG_HIKE_ITEM)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Then
+    composeTestRule
+        .onAllNodesWithTag(TEST_TAG_HIKE_CARD_TITLE, useUnmergedTree = true)
+        .assertCountEquals(1)
+    composeTestRule
+        .onNodeWithTag(TEST_TAG_HIKE_CARD_TITLE, useUnmergedTree = true)
+        .assertTextEquals(hikeName)
+  }
+
+  @Test
+  fun hikesListDisplaysDefaultValueIfNameNotAvailable() {
+    // Given
+    val hike = HikeRoute("1", Bounds(-1.0, -1.0, 1.0, 1.0), listOf(), null, null)
+    `when`(hikesRepository.getRoutes(any(), any(), any())).thenAnswer {
+      val onSuccess = it.getArgument<(List<HikeRoute>) -> Unit>(1)
+      onSuccess(listOf(hike))
+    }
+    val context = InstrumentationRegistry.getInstrumentation().targetContext
+
+    // When
+    setUpMap()
+    listOfHikeRoutesViewModel.setArea(BoundingBox(0.0, 0.0, 0.0, 0.0))
+    composeTestRule.waitUntil(timeoutMillis = 5000) {
+      composeTestRule
+          .onAllNodesWithTag(MapScreen.TEST_TAG_HIKE_ITEM)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Then
+    composeTestRule
+        .onAllNodesWithTag(TEST_TAG_HIKE_CARD_TITLE, useUnmergedTree = true)
+        .assertCountEquals(1)
+    composeTestRule
+        .onNodeWithTag(TEST_TAG_HIKE_CARD_TITLE, useUnmergedTree = true)
+        .assertTextEquals(context.getString(R.string.map_screen_hike_title_default))
   }
 
   /**
