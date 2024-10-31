@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -378,7 +379,7 @@ fun HikeCardFor(route: HikeRoute, isSuitable: Boolean, viewModel: ListOfHikeRout
   val suitableLabelIcon = if (isSuitable) R.drawable.check_circle else R.drawable.warning
 
   HikeCard(
-      title = route.id,
+      title = route.name ?: stringResource(R.string.map_screen_hike_title_default),
       altitudeDifference = 1000,
       onClick = {
         // The user clicked on the route to select it
