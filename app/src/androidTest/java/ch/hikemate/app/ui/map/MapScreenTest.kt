@@ -18,6 +18,8 @@ import ch.hikemate.app.ui.components.HikeCard
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.TEST_TAG_SIDEBAR_BUTTON
 import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -48,11 +50,20 @@ class MapScreenTest : TestCase() {
     }
   }
 
+  @OptIn(ExperimentalCoroutinesApi::class)
   @Before
   fun setUp() {
+    // In those tests we tell the view model to use the UnconfinedTestDispatcher but we do
+    // not set it as the default dispatcher, otherwise it blocks.
+    // My hypothesis is that OSMDroid, the library used to display the map view, uses coroutines
+    // as well and has some infinite loop somewhere. Using a coroutine, there's no problem, but if
+    // it runs on the single existing thread, everything will be blocked.
+    // Hence, do not set the main dispatcher, only the view model's one.
+
     navigationActions = mock(NavigationActions::class.java)
     hikesRepository = mock(HikeRoutesRepository::class.java)
-    listOfHikeRoutesViewModel = ListOfHikeRoutesViewModel(hikesRepository)
+    listOfHikeRoutesViewModel =
+        ListOfHikeRoutesViewModel(hikesRepository, UnconfinedTestDispatcher())
   }
 
   @Test
@@ -83,7 +94,6 @@ class MapScreenTest : TestCase() {
   fun searchButtonCallsRepositoryWhenClicked() {
     setUpMap()
     composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).performClick()
-    Thread.sleep(500)
     verify(hikesRepository, times(1)).getRoutes(any(), any(), any())
   }
 
@@ -142,15 +152,6 @@ class MapScreenTest : TestCase() {
     // Have an initial list of routes with a single route to display on the map
     listOfHikeRoutesViewModel.setArea(BoundingBox(0.0, 0.0, 0.0, 0.0))
 
-    // Wait for the recomposition to terminate before clicking on the route item
-    // The test does not seem to work without this line
-    composeTestRule.waitUntil(timeoutMillis = 5000) {
-      composeTestRule
-          .onAllNodesWithTag(MapScreen.TEST_TAG_HIKE_ITEM)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
-
     // Click on the route item in the list
     composeTestRule
         .onNodeWithTag(MapScreen.TEST_TAG_HIKE_ITEM, useUnmergedTree = true)
@@ -184,12 +185,6 @@ class MapScreenTest : TestCase() {
     // When
     setUpMap()
     listOfHikeRoutesViewModel.setArea(BoundingBox(0.0, 0.0, 0.0, 0.0))
-    composeTestRule.waitUntil(timeoutMillis = 5000) {
-      composeTestRule
-          .onAllNodesWithTag(MapScreen.TEST_TAG_HIKE_ITEM)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
 
     // Then
     composeTestRule
@@ -213,12 +208,6 @@ class MapScreenTest : TestCase() {
     // When
     setUpMap()
     listOfHikeRoutesViewModel.setArea(BoundingBox(0.0, 0.0, 0.0, 0.0))
-    composeTestRule.waitUntil(timeoutMillis = 5000) {
-      composeTestRule
-          .onAllNodesWithTag(MapScreen.TEST_TAG_HIKE_ITEM)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
 
     // Then
     composeTestRule
