@@ -23,12 +23,12 @@ interface AuthRepository {
    *   explicitly when testing with mocks.
    */
   fun signInWithGoogle(
-    onSuccess: (FirebaseUser?) -> Unit,
-    onErrorAction: (Exception) -> Unit,
-    context: Context,
-    coroutineScope: CoroutineScope,
-    credentialManager: CredentialManager = CredentialManager.create(context),
-    startAddAccountIntentLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>?,
+      onSuccess: (FirebaseUser?) -> Unit,
+      onErrorAction: (Exception) -> Unit,
+      context: Context,
+      coroutineScope: CoroutineScope,
+      credentialManager: CredentialManager = CredentialManager.create(context),
+      startAddAccountIntentLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>?,
   )
 
   /**

@@ -1,7 +1,6 @@
 package ch.hikemate.app.model.authentication
 
 import android.content.Context
-import androidx.lifecycle.ViewModel
 import android.content.Intent
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.result.ActivityResult
