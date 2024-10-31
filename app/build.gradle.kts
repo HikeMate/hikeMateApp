@@ -190,6 +190,8 @@ dependencies {
     testImplementation(libs.compose.test.manifest)
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.inline)
+    testImplementation(libs.mockk.android.v10)
+    testImplementation(libs.mockk.agent.v10)
 
     // Android test dependencies
     androidTestImplementation(libs.androidx.espresso.core)
