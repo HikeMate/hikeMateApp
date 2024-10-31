@@ -32,6 +32,10 @@ import androidx.compose.ui.unit.dp
 import ch.hikemate.app.R
 import ch.hikemate.app.ui.map.MapScreen
 
+object HikeCard {
+  const val TEST_TAG_HIKE_CARD_TITLE = "HikeCardTitle"
+}
+
 @Composable
 fun HikeCard(
     title: String,
@@ -57,7 +61,8 @@ fun HikeCard(
           Text(
               text = title,
               style = MaterialTheme.typography.titleLarge,
-              fontWeight = FontWeight.Bold)
+              fontWeight = FontWeight.Bold,
+              modifier = Modifier.testTag(HikeCard.TEST_TAG_HIKE_CARD_TITLE))
           Spacer(modifier = Modifier.height(8.dp))
 
           Row(
