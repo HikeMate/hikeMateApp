@@ -13,6 +13,8 @@ import ch.hikemate.app.ui.navigation.TEST_TAG_DRAWER_ITEM_PREFIX
 import ch.hikemate.app.ui.navigation.TEST_TAG_SIDEBAR_BUTTON
 import ch.hikemate.app.ui.saved.TEST_TAG_SAVED_HIKES_SECTION_CONTAINER
 import ch.hikemate.app.ui.theme.HikeMateTheme
+import com.google.firebase.auth.FirebaseUser
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -21,6 +23,10 @@ import org.junit.runner.RunWith
 class HikeMateAppNavigationTest {
   // Set up the Compose test rule
   @get:Rule val composeTestRule = createComposeRule()
+
+  private var mockUser: FirebaseUser? = null
+
+  @Before fun setUp() {}
 
   @Test
   fun testInitialScreenIsAuthScreen() {
