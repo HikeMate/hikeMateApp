@@ -62,14 +62,18 @@ fun SignInScreen(navigationActions: NavigationActions, authViewModel: AuthViewMo
   // to the device. Necessary since the Google sign-in process requires a Google account to be
   // connected to the device, otherwise the sign-in process will fail with a No Credential Exception
   val addAccountLauncher =
-    rememberLauncherForActivityResult(
-      contract = ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
-      Toast.makeText(context, "Connected Google Account to your decide successfully. Please wait while we retry the signup.", Toast.LENGTH_LONG).show()
-      // startAddAccountIntentLauncher is null, since it is only called when the user has no
-      // Google account connected to the device, however they just added one.
-      authViewModel.signInWithGoogle(coroutineScope, context, null)
-      Log.d("MainActivity", "addAccountLauncher result: $result")
-    }
+      rememberLauncherForActivityResult(
+          contract = ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
+            Toast.makeText(
+                    context,
+                    "Connected Google Account to your decide successfully. Please wait while we retry the signup.",
+                    Toast.LENGTH_LONG)
+                .show()
+            // startAddAccountIntentLauncher is null, since it is only called when the user has no
+            // Google account connected to the device, however they just added one.
+            authViewModel.signInWithGoogle(coroutineScope, context, null)
+            Log.d("MainActivity", "addAccountLauncher result: $result")
+          }
 
   Scaffold(
       modifier = Modifier.fillMaxSize().testTag(Screen.AUTH),
@@ -117,9 +121,9 @@ fun SignInScreen(navigationActions: NavigationActions, authViewModel: AuthViewMo
             if (currUser == null) {
               SignInWithGoogleButton {
                 authViewModel.signInWithGoogle(
-                  coroutineScope = coroutineScope,
-                  context = context,
-                  startAddAccountIntentLauncher = addAccountLauncher)
+                    coroutineScope = coroutineScope,
+                    context = context,
+                    startAddAccountIntentLauncher = addAccountLauncher)
               }
             } else {
               navigationActions.navigateTo(TopLevelDestinations.MAP)
