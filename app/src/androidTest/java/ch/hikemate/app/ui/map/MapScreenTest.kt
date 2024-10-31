@@ -14,7 +14,7 @@ import ch.hikemate.app.model.route.Bounds
 import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.HikeRoutesRepository
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
-import ch.hikemate.app.ui.components.TEST_TAG_HIKE_CARD_TITLE
+import ch.hikemate.app.ui.components.HikeCard
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.TEST_TAG_SIDEBAR_BUTTON
 import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
@@ -193,10 +193,10 @@ class MapScreenTest : TestCase() {
 
     // Then
     composeTestRule
-        .onAllNodesWithTag(TEST_TAG_HIKE_CARD_TITLE, useUnmergedTree = true)
+        .onAllNodesWithTag(HikeCard.TEST_TAG_HIKE_CARD_TITLE, useUnmergedTree = true)
         .assertCountEquals(1)
     composeTestRule
-        .onNodeWithTag(TEST_TAG_HIKE_CARD_TITLE, useUnmergedTree = true)
+        .onNodeWithTag(HikeCard.TEST_TAG_HIKE_CARD_TITLE, useUnmergedTree = true)
         .assertTextEquals(hikeName)
   }
 
@@ -222,10 +222,10 @@ class MapScreenTest : TestCase() {
 
     // Then
     composeTestRule
-        .onAllNodesWithTag(TEST_TAG_HIKE_CARD_TITLE, useUnmergedTree = true)
+        .onAllNodesWithTag(HikeCard.TEST_TAG_HIKE_CARD_TITLE, useUnmergedTree = true)
         .assertCountEquals(1)
     composeTestRule
-        .onNodeWithTag(TEST_TAG_HIKE_CARD_TITLE, useUnmergedTree = true)
+        .onNodeWithTag(HikeCard.TEST_TAG_HIKE_CARD_TITLE, useUnmergedTree = true)
         .assertTextEquals(context.getString(R.string.map_screen_hike_title_default))
   }
 
