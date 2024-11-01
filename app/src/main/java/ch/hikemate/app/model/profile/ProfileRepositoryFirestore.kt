@@ -3,6 +3,8 @@ package ch.hikemate.app.model.profile
 import android.util.Log
 import com.google.android.gms.tasks.Task
 import com.google.firebase.Firebase
+import com.google.firebase.Timestamp
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
@@ -29,6 +31,22 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
         onSuccess()
       }
     }
+  }
+
+  override fun createProfile(
+      firebaseAuth: FirebaseAuth,
+      onSuccess: (Profile) -> Unit,
+      onFailure: (Exception) -> Unit
+  ) {
+    val profile =
+        Profile(
+            firebaseAuth.currentUser!!.uid,
+            firebaseAuth.currentUser!!.displayName ?: "No name",
+            firebaseAuth.currentUser!!.email ?: "No email",
+            HikingLevel.BEGINNER,
+            Timestamp.now())
+
+    addProfile(profile, onSuccess = { onSuccess(profile) }, onFailure = onFailure)
   }
 
   /**

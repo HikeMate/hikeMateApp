@@ -10,6 +10,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mock
+import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.mockito.MockitoAnnotations
 import org.mockito.kotlin.any
@@ -30,6 +31,7 @@ class ProfileViewModelTest {
           joinedDate = Timestamp(1609459200, 0))
 
   @Mock private lateinit var repository: ProfileRepository
+  @Mock private lateinit var firebaseAuth: com.google.firebase.auth.FirebaseAuth
   private lateinit var profileViewModel: ProfileViewModel
 
   @Before
@@ -43,8 +45,26 @@ class ProfileViewModelTest {
       val init = it.getArgument<() -> Unit>(0)
       init()
     }
+    firebaseAuth = mock(com.google.firebase.auth.FirebaseAuth::class.java)
 
     FirebaseApp.initializeApp(context)
+  }
+
+  @Test
+  fun profileGetsCreated_whenNonExists() {
+    `when`(firebaseAuth.currentUser!!.uid).thenReturn("1")
+    `when`(repository.createProfile(any(), any(), any())).thenAnswer {
+      val onSuccess = it.getArgument<(Profile) -> Unit>(1)
+      onSuccess(profile)
+    }
+    `when`(repository.getProfileById(any(), any(), any())).thenAnswer {
+      val onSuccess = it.getArgument<(Profile) -> Unit>(1)
+      onSuccess(profile)
+    }
+    verify(repository).createProfile(eq(firebaseAuth), any(), any())
+    verify(repository).getProfileById(eq(profile.id), any(), any())
+
+    assert(profileViewModel.profile.value == profile)
   }
 
   @Test

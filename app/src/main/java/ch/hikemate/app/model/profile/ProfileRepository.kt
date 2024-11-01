@@ -1,7 +1,14 @@
 package ch.hikemate.app.model.profile
 
+import com.google.firebase.auth.FirebaseAuth
+
 /** Interface for the profile repository. */
 interface ProfileRepository {
+  fun createProfile(
+      firebaseAuth: FirebaseAuth,
+      onSuccess: (Profile) -> Unit,
+      onFailure: (Exception) -> Unit
+  )
 
   /** Generates a new unique ID. */
   fun getNewUid(): String

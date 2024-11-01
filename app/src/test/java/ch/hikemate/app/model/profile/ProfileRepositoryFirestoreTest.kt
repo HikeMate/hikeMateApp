@@ -10,6 +10,7 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.QuerySnapshot
 import junit.framework.TestCase.fail
+import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mock
@@ -28,6 +29,7 @@ class ProfileRepositoryFirestoreTest {
   @Mock private lateinit var mockCollectionReference: CollectionReference
   @Mock private lateinit var mockDocumentSnapshot: DocumentSnapshot
   @Mock private lateinit var mockProfileQuery: QuerySnapshot
+  @Mock private lateinit var firebaseAuth: com.google.firebase.auth.FirebaseAuth
 
   private lateinit var repository: ProfileRepositoryFirestore
 
@@ -43,6 +45,7 @@ class ProfileRepositoryFirestoreTest {
   fun setUp() {
     MockitoAnnotations.openMocks(this)
     repository = ProfileRepositoryFirestore(mockFirestore)
+    firebaseAuth = mock()
 
     `when`(mockFirestore.collection(any())).thenReturn(mockCollectionReference)
     `when`(mockCollectionReference.document(any())).thenReturn(mockDocumentReference)
@@ -54,6 +57,20 @@ class ProfileRepositoryFirestoreTest {
     `when`(mockDocumentReference.id).thenReturn("1")
     val uid = repository.getNewUid()
     assert(uid == "1")
+  }
+
+  @Test
+  fun createProfile() {
+    val profile_ = MutableStateFlow<Profile?>(null)
+    `when`(firebaseAuth.currentUser!!.uid).thenReturn("1")
+    `when`(firebaseAuth.currentUser!!.displayName).thenReturn("John Doe")
+    `when`(firebaseAuth.currentUser!!.email).thenReturn("john.doe@gmail.com")
+    repository.createProfile(firebaseAuth, onSuccess = { profile_.value = it }, onFailure = {})
+    assert(profile_.value != null)
+    assert(profile_.value?.id == profile.id)
+    assert(profile_.value?.name == profile.name)
+    assert(profile_.value?.email == profile.email)
+    assert(profile_.value?.hikingLevel == HikingLevel.BEGINNER)
   }
 
   @Test

@@ -23,11 +23,31 @@ open class ProfileViewModel(private val repository: ProfileRepository) : ViewMod
   init {
     repository.init {
       // Get the profile of the current user
-      FirebaseAuth.getInstance().currentUser?.uid?.let { getProfileById(it) }
+      val firebaseInstance = FirebaseAuth.getInstance()
+      firebaseInstance.currentUser?.uid?.let {
+        try {
+          getProfileById(it)
+        } catch (e: Exception) {
+          createProfile(firebaseInstance)
+        }
+      }
     }
   }
 
+  private fun createProfile(firebaseInstance: FirebaseAuth) {
+    repository.createProfile(firebaseInstance, onSuccess = { profile_.value = it }, onFailure = {})
+  }
   // create factory
+  /**
+   * Get a profile by its ID.
+   *
+   * @param id The ID of the profile to fetch.
+   */
+  fun getProfileById(id: String) {
+    repository.getProfileById(
+        id, onSuccess = { profile_.value = it }, onFailure = { throw Exception(it) })
+  }
+
   companion object {
     val Factory: ViewModelProvider.Factory =
         object : ViewModelProvider.Factory {
@@ -36,15 +56,6 @@ open class ProfileViewModel(private val repository: ProfileRepository) : ViewMod
             return ProfileViewModel(ProfileRepositoryFirestore(Firebase.firestore)) as T
           }
         }
-  }
-
-  /**
-   * Get a profile by its ID.
-   *
-   * @param id The ID of the profile to fetch.
-   */
-  fun getProfileById(id: String) {
-    repository.getProfileById(id, onSuccess = { profile_.value = it }, onFailure = {})
   }
 
   /**
