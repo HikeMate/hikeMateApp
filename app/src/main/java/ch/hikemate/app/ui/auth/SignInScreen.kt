@@ -48,6 +48,7 @@ import ch.hikemate.app.ui.navigation.TopLevelDestinations
 import ch.hikemate.app.ui.theme.kaushanTitleFontFamily
 import ch.hikemate.app.ui.theme.primaryColor
 import com.google.firebase.auth.FirebaseUser
+import kotlinx.coroutines.flow.StateFlow
 
 const val TEST_TAG_LOGIN_BUTTON = "loginButton"
 
@@ -56,12 +57,12 @@ const val TEST_TAG_LOGIN_BUTTON = "loginButton"
 fun SignInScreen(
     navigationActions: NavigationActions,
     authViewModel: AuthViewModel,
-    currUser: FirebaseUser? = authViewModel.currentUser.collectAsState().value
+    currUserStateFlow: StateFlow<FirebaseUser?> = authViewModel.currentUser
 ) {
 
   val context = LocalContext.current
   val coroutineScope = rememberCoroutineScope()
-  // var currUser = authViewModel.currentUser.collectAsState().value
+  val currUser = currUserStateFlow.collectAsState().value
 
   // Create the launcher for adding a Google account in case there is no Google account connected
   // to the device. Necessary since the Google sign-in process requires a Google account to be
