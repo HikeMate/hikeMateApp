@@ -47,7 +47,6 @@ import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.navigation.SideBarNavigation
 import org.osmdroid.config.Configuration
-import org.osmdroid.util.BoundingBox
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
@@ -95,15 +94,12 @@ object MapScreen {
   /** (Config) Width of the stroke of the lines that represent the hikes on the map. */
   const val STROKE_WIDTH = 10f
 
-  // These are the limits of the map. They are defined by the latitude and longitude values that
-  // the map can display.
-  // The latitude goes from -85 to 85, because going beyond that would (weirdly) let the user see
-  // the blank
-  // The longitude goes from -180 to 180 as it is the standard for the world map.
+  // These are the limits of the map. They are defined by the
+  // latitude values that the map can display.
+  // The latitude goes from -85 to 85, because going beyond
+  // that would (weirdly) let the user see the blank
   const val MAP_MAX_LATITUDE = 85.0
-  const val MAP_MAX_LONGITUDE = 180.0
   const val MAP_MIN_LATITUDE = -85.0
-  const val MAP_MIN_LONGITUDE = -180.0
 
   const val MIN_HUE = 0
   const val MAX_HUE = 360
@@ -220,19 +216,16 @@ fun MapScreen(
       minZoomLevel = mapMinZoomLevel
       maxZoomLevel = mapMaxZoomLevel
       // Avoid repeating the map when the user reaches the edge or zooms out
-      isHorizontalMapRepetitionEnabled = false
+      // We keep the horizontal repetition enabled to allow the user to scroll the map
+      // horizontally without limits (from Asia to America, for example)
+      isHorizontalMapRepetitionEnabled = true
       isVerticalMapRepetitionEnabled = false
       // Disable built-in zoom controls since we have our own
       zoomController.setVisibility(CustomZoomButtonsController.Visibility.NEVER)
       // Enable touch-controls such as pinch to zoom
       setMultiTouchControls(true)
-      // Limit the scrollable area to avoid the user scrolling too far
-      setScrollableAreaLimitDouble(
-          BoundingBox(
-              MapScreen.MAP_MIN_LATITUDE,
-              MapScreen.MAP_MAX_LONGITUDE,
-              MapScreen.MAP_MAX_LATITUDE,
-              MapScreen.MAP_MIN_LONGITUDE))
+      // Limit the vertical scrollable area to avoid the user scrolling too far
+      setScrollableAreaLimitLatitude(MapScreen.MAP_MAX_LATITUDE, MapScreen.MAP_MIN_LATITUDE, 0)
     }
   }
   // Keep track of whether a search for hikes is ongoing
