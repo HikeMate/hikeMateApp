@@ -5,6 +5,8 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.firebase.FirebaseApp
 import com.google.firebase.Timestamp
+import com.google.firebase.auth.FirebaseUser
+import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertNotNull
 import org.junit.Before
 import org.junit.Test
@@ -52,19 +54,19 @@ class ProfileViewModelTest {
 
   @Test
   fun profileGetsCreated_whenNonExists() {
+    // Arrange
+    val profileMock = mock(FirebaseUser::class.java)
+    `when`(firebaseAuth.currentUser).thenReturn(profileMock)
     `when`(firebaseAuth.currentUser!!.uid).thenReturn("1")
     `when`(repository.createProfile(any(), any(), any())).thenAnswer {
       val onSuccess = it.getArgument<(Profile) -> Unit>(1)
       onSuccess(profile)
     }
-    `when`(repository.getProfileById(any(), any(), any())).thenAnswer {
-      val onSuccess = it.getArgument<(Profile) -> Unit>(1)
-      onSuccess(profile)
-    }
-    verify(repository).createProfile(eq(firebaseAuth), any(), any())
-    verify(repository).getProfileById(eq(profile.id), any(), any())
 
-    assert(profileViewModel.profile.value == profile)
+    profileViewModel.createProfile(firebaseAuth)
+
+    verify(repository).createProfile(eq(firebaseAuth), any(), any())
+    assertEquals(profile, profileViewModel.profile.value)
   }
 
   @Test

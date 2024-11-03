@@ -46,7 +46,7 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
             HikingLevel.BEGINNER,
             Timestamp.now())
 
-    addProfile(profile, onSuccess = { onSuccess(profile) }, onFailure = onFailure)
+    updateProfile(profile, onSuccess = { onSuccess(profile) }, onFailure = onFailure)
   }
 
   /**

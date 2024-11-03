@@ -4,13 +4,13 @@ import com.google.android.gms.tasks.OnCompleteListener
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.Timestamp
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.QuerySnapshot
 import junit.framework.TestCase.fail
-import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mock
@@ -60,17 +60,37 @@ class ProfileRepositoryFirestoreTest {
   }
 
   @Test
-  fun createProfile() {
-    val profile_ = MutableStateFlow<Profile?>(null)
+  fun createProfileWorks() {
+    val profileMock = mock(FirebaseUser::class.java)
+    `when`(firebaseAuth.currentUser).thenReturn(profileMock)
     `when`(firebaseAuth.currentUser!!.uid).thenReturn("1")
     `when`(firebaseAuth.currentUser!!.displayName).thenReturn("John Doe")
     `when`(firebaseAuth.currentUser!!.email).thenReturn("john.doe@gmail.com")
-    repository.createProfile(firebaseAuth, onSuccess = { profile_.value = it }, onFailure = {})
-    assert(profile_.value != null)
-    assert(profile_.value?.id == profile.id)
-    assert(profile_.value?.name == profile.name)
-    assert(profile_.value?.email == profile.email)
-    assert(profile_.value?.hikingLevel == HikingLevel.BEGINNER)
+
+    `when`(mockDocumentReference.set(any())).thenReturn(Tasks.forResult(null)) // Simulate success
+    val task = mock(Task::class.java) as Task<DocumentSnapshot>
+    `when`(task.isSuccessful).thenReturn(true)
+    `when`(task.result).thenReturn(mockDocumentSnapshot)
+    `when`(mockDocumentReference.get()).thenReturn(task)
+
+    doAnswer { invocation ->
+          val listener = invocation.arguments[0] as OnCompleteListener<DocumentSnapshot>
+          listener.onComplete(task)
+          null
+        }
+        .`when`(task)
+        .addOnCompleteListener(any())
+    repository.createProfile(
+        firebaseAuth,
+        onSuccess = { profile_ ->
+          assert(profile_.id == "1")
+          assert(profile_.name == "John Doe")
+          assert(profile_.email == "john.doe@gmail.com")
+          assert(profile_.hikingLevel == HikingLevel.BEGINNER)
+        },
+        onFailure = { fail("Failure callback should not be called") })
+
+    verify(mockDocumentReference).set(any())
   }
 
   @Test

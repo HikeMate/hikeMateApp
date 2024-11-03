@@ -28,13 +28,13 @@ open class ProfileViewModel(private val repository: ProfileRepository) : ViewMod
         try {
           getProfileById(it)
         } catch (e: Exception) {
-          createProfile(firebaseInstance)
+          if (e.message == "Profile does not exist") createProfile(firebaseInstance) else throw e
         }
       }
     }
   }
 
-  private fun createProfile(firebaseInstance: FirebaseAuth) {
+  fun createProfile(firebaseInstance: FirebaseAuth) {
     repository.createProfile(firebaseInstance, onSuccess = { profile_.value = it }, onFailure = {})
   }
   // create factory
