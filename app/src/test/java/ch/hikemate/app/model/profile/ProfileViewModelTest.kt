@@ -53,7 +53,7 @@ class ProfileViewModelTest {
   }
 
   @Test
-  fun profileGetsCreated_whenNonExists() {
+  fun createProfile_works() {
     // Arrange
     val profileMock = mock(FirebaseUser::class.java)
     `when`(firebaseAuth.currentUser).thenReturn(profileMock)
@@ -61,6 +61,27 @@ class ProfileViewModelTest {
     `when`(repository.createProfile(any(), any(), any())).thenAnswer {
       val onSuccess = it.getArgument<(Profile) -> Unit>(1)
       onSuccess(profile)
+    }
+
+    profileViewModel.createProfile(firebaseAuth)
+
+    verify(repository).createProfile(eq(firebaseAuth), any(), any())
+    assertEquals(profile, profileViewModel.profile.value)
+  }
+
+  @Test
+  fun createsProfile_whenNonExists() {
+    `when`(repository.getProfileById(any(), any(), any())).thenAnswer {
+      val onFailure = it.getArgument<(String) -> Unit>(2)
+      onFailure("Profile does not exist")
+    }
+    `when`(repository.createProfile(any(), any(), any())).thenAnswer {
+      val onSuccess = it.getArgument<(Profile) -> Unit>(1)
+      onSuccess(profile)
+    }
+    `when`(repository.init(any())).thenAnswer {
+      val init = it.getArgument<() -> Unit>(0)
+      init()
     }
 
     profileViewModel.createProfile(firebaseAuth)

@@ -9,9 +9,7 @@ class ProfileRepositoryDummy : ProfileRepository {
       firebaseAuth: FirebaseAuth,
       onSuccess: (Profile) -> Unit,
       onFailure: (Exception) -> Unit
-  ) {
-    TODO("Not yet implemented")
-  }
+  ) {}
 
   override fun getNewUid(): String {
     return "1"
@@ -23,7 +21,7 @@ class ProfileRepositoryDummy : ProfileRepository {
 
   override fun getProfileById(
       id: String,
-      onSuccess: (Profile) -> Unit,
+      onSuccess: (Profile?) -> Unit,
       onFailure: (Exception) -> Unit
   ) {
     onSuccess(ProfileScreen.DEFAULT_PROFILE)

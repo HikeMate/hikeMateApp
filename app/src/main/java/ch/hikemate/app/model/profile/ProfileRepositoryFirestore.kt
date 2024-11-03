@@ -75,10 +75,9 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
 
   override fun getProfileById(
       id: String,
-      onSuccess: (Profile) -> Unit,
+      onSuccess: (Profile?) -> Unit,
       onFailure: (Exception) -> Unit
   ) {
-    // Check that the profile exists
 
     db.collection(collectionPath).document(id).get().addOnCompleteListener { task ->
       if (task.isSuccessful) {
@@ -86,7 +85,7 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
         if (profile != null) {
           onSuccess(profile)
         } else {
-          onFailure(Exception("Profile not found"))
+          onSuccess(null)
         }
       } else {
         task.exception?.let { e ->

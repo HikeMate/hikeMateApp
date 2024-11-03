@@ -27,7 +27,7 @@ interface ProfileRepository {
    * @param onSuccess The callback to be called when the profile is successfully fetched.
    * @param onFailure The callback to be called when the profile could not be fetched.
    */
-  fun getProfileById(id: String, onSuccess: (Profile) -> Unit, onFailure: (Exception) -> Unit)
+  fun getProfileById(id: String, onSuccess: (Profile?) -> Unit, onFailure: (Exception) -> Unit)
 
   /**
    * Adds a profile.

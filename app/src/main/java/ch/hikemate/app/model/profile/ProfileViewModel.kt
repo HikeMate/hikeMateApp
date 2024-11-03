@@ -22,22 +22,22 @@ open class ProfileViewModel(private val repository: ProfileRepository) : ViewMod
 
   init {
     repository.init {
-      // Get the profile of the current user
       val firebaseInstance = FirebaseAuth.getInstance()
-      firebaseInstance.currentUser?.uid?.let {
-        try {
-          getProfileById(it)
-        } catch (e: Exception) {
-          if (e.message == "Profile does not exist") createProfile(firebaseInstance) else throw e
-        }
-      }
+      firebaseInstance.currentUser?.uid?.let { checkAndCreateProfile(it, firebaseInstance) }
     }
   }
 
-  fun createProfile(firebaseInstance: FirebaseAuth) {
-    repository.createProfile(firebaseInstance, onSuccess = { profile_.value = it }, onFailure = {})
+  private fun checkAndCreateProfile(userId: String, firebaseInstance: FirebaseAuth) {
+    repository.getProfileById(
+        userId,
+        onSuccess = { if (it == null) createProfile(firebaseInstance) else profile_.value = it },
+        onFailure = { throw it })
   }
-  // create factory
+
+  fun createProfile(firebaseInstance: FirebaseAuth) {
+    repository.createProfile(
+        firebaseInstance, onSuccess = { profile_.value = it }, onFailure = { throw it })
+  }
   /**
    * Get a profile by its ID.
    *
