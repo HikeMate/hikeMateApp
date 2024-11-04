@@ -182,6 +182,63 @@ class AuthViewModelTest {
       }
 
   @Test
+  fun createAccountWithEmailAndPassword_calls_repository_and_updates_currentUser_on_success() =
+      runTest {
+        setupSignedOutUser()
+
+        // Simulate a successful email and password account creation by invoking the onSuccess
+        // callback
+        doAnswer { invocation ->
+              val onSuccess = invocation.getArgument<(FirebaseUser?) -> Unit>(0)
+              onSuccess(mockFirebaseUser) // Call the success callback with a mock user
+              null
+            }
+            .`when`(mockRepository)
+            .createAccountWithEmailAndPassword(any(), any(), any(), any())
+
+        // Verify that currentUser is initially null
+        assertNull(viewModel.currentUser.first())
+
+        viewModel.createAccountWithEmailAndPassword("mock@example.com", "password")
+
+        val currentUser = viewModel.currentUser.first() // Get the first (current) value of the flow
+
+        // Verify call to the repository
+        verify(mockRepository).createAccountWithEmailAndPassword(any(), any(), any(), any())
+
+        assertEquals(mockFirebaseUser, currentUser)
+      }
+
+  @Test
+  fun createAccountWithEmailAndPassword_calls_repository_and_does_not_update_currentUser_on_error() =
+      runTest {
+        setupSignedOutUser()
+
+        // Simulate an unsuccessful email and password account creation by invoking the onError
+        // callback
+        doAnswer { invocation ->
+              val onErrorAction = invocation.getArgument<(Exception) -> Unit>(1)
+              onErrorAction(Exception("Error"))
+              null
+            }
+            .`when`(mockRepository)
+            .createAccountWithEmailAndPassword(any(), any(), any(), any())
+
+        // Verify that currentUser is initially null
+        assertNull(viewModel.currentUser.first())
+
+        viewModel.createAccountWithEmailAndPassword("mock@example.com", "password")
+
+        val currentUser = viewModel.currentUser.first()
+
+        // Verify call to the repository
+        verify(mockRepository).createAccountWithEmailAndPassword(any(), any(), any(), any())
+
+        // Confirm that currentUser is still null
+        assertNull(currentUser)
+      }
+
+  @Test
   fun signOut_calls_repository_signOut_and_updates_currentUser_to_null() = runTest {
     setupSignedInUser()
 

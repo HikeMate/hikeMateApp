@@ -92,6 +92,7 @@ class FirebaseAuthRepositoryTest {
     // Mock behavior authentication with Firebase
     every { mockFirebaseAuth.signInWithCredential(any()) } returns mockTask
     every { mockFirebaseAuth.signInWithEmailAndPassword(any(), any()) } returns mockTask
+    every { mockFirebaseAuth.createUserWithEmailAndPassword(any(), any()) } returns mockTask
     every { mockTask.addOnCompleteListener(any()) } answers
         {
           val listener = firstArg<OnCompleteListener<AuthResult>>()
@@ -108,6 +109,44 @@ class FirebaseAuthRepositoryTest {
   fun tearDown() {
     clearAllMocks()
   }
+
+  @Test
+  fun testCreateAccountWithEmailAndPassword_successful() =
+      runTest(timeout = 5.seconds) {
+        every { mockTask.isSuccessful } returns true
+        every { mockFirebaseAuth.currentUser } returns mockFirebaseUser
+
+        repository.createAccountWithEmailAndPassword(
+            onSuccess = mockOnSuccess,
+            onErrorAction = mockOnError,
+            email = "mock@example.com",
+            password = "password")
+
+        advanceUntilIdle()
+
+        verify { mockFirebaseAuth.createUserWithEmailAndPassword(any(), any()) }
+        verify { mockOnSuccess(mockFirebaseUser) }
+        verify(exactly = 0) { mockOnError(any()) }
+      }
+
+  @Test
+  fun testCreateAccountWithEmailAndPassword_unsuccessful() =
+      runTest(timeout = 5.seconds) {
+        every { mockTask.isSuccessful } returns false
+        every { mockTask.exception } returns Exception("Test Error")
+
+        repository.createAccountWithEmailAndPassword(
+            onSuccess = mockOnSuccess,
+            onErrorAction = mockOnError,
+            email = "mock@example.com",
+            password = "password")
+
+        advanceUntilIdle()
+
+        verify { mockFirebaseAuth.createUserWithEmailAndPassword(any(), any()) }
+        verify(exactly = 0) { mockOnSuccess(any()) }
+        verify { mockOnError(any<Throwable>()) }
+      }
 
   @Test
   fun testSignInWithEmailAndPassword_successful() =

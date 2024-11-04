@@ -72,7 +72,7 @@ class FirebaseAuthRepository : AuthRepository {
             onSuccess(auth.currentUser)
           } else {
             Log.d("SignInButton", "signInWithCredential:failure")
-            onErrorAction(task.exception ?: Exception("Unknown error"))
+            onErrorAction(task.exception ?: Exception())
           }
         }
       } catch (e: NoCredentialException) {
@@ -92,6 +92,22 @@ class FirebaseAuthRepository : AuthRepository {
     return intent
   }
 
+  override fun createAccountWithEmailAndPassword(
+      onSuccess: (FirebaseUser?) -> Unit,
+      onErrorAction: (Exception) -> Unit,
+      email: String,
+      password: String
+  ) {
+    val auth = FirebaseAuth.getInstance()
+    auth.createUserWithEmailAndPassword(email, password).addOnCompleteListener { task ->
+      if (task.isSuccessful) {
+        onSuccess(auth.currentUser)
+      } else {
+        onErrorAction(task.exception ?: Exception())
+      }
+    }
+  }
+
   override fun signInWithEmailAndPassword(
       onSuccess: (FirebaseUser?) -> Unit,
       onErrorAction: (Exception) -> Unit,
@@ -103,7 +119,7 @@ class FirebaseAuthRepository : AuthRepository {
       if (task.isSuccessful) {
         onSuccess(auth.currentUser)
       } else {
-        onErrorAction(task.exception ?: Exception("Unknown error"))
+        onErrorAction(task.exception ?: Exception())
       }
     }
   }

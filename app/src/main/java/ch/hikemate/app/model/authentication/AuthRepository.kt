@@ -32,6 +32,23 @@ interface AuthRepository {
   )
 
   /**
+   * This function should be called to initiate the create account process using email and password.
+   *
+   * @param onSuccess Callback to invoke when creating the account is successful. Passes the
+   *   FirebaseUser if successful.
+   * @param onErrorAction Callback to invoke when an error occurs during the account creation.
+   *   Passes the Throwable error.
+   * @param email The email address of the user.
+   * @param password The password of the user.
+   */
+  fun createAccountWithEmailAndPassword(
+      onSuccess: (FirebaseUser?) -> Unit,
+      onErrorAction: (Exception) -> Unit,
+      email: String,
+      password: String,
+  )
+
+  /**
    * This function should be called to initiate the sign-in process using email and password.
    *
    * @param onSuccess Callback to invoke when login is successful. Passes the FirebaseUser if
