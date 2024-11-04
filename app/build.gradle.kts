@@ -172,6 +172,7 @@ dependencies {
     implementation(libs.osmdroid)
     implementation(libs.okhttp)
     implementation(libs.googleid)
+    implementation(libs.accompanist.permissions)
 
 
     // Global test dependencies
