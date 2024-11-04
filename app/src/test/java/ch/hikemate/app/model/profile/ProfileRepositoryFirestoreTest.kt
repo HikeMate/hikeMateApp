@@ -12,6 +12,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.QuerySnapshot
 import junit.framework.TestCase.assertNull
 import junit.framework.TestCase.fail
+import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mock
@@ -452,5 +453,30 @@ class ProfileRepositoryFirestoreTest {
         })
 
     verify(timeout(100)) { mockDocumentReference.delete() }
+  }
+
+  @Test
+  fun addProfile_onProfileExistsCheckFailure() {
+    // Arrange
+    val task = mock(Task::class.java) as Task<DocumentSnapshot>
+    val exception = Exception("")
+    `when`(task.isSuccessful).thenReturn(false)
+    `when`(task.exception).thenReturn(exception)
+    `when`(mockDocumentReference.get()).thenReturn(task)
+
+    // Simulate the task being completed
+    doAnswer { invocation ->
+          val listener = invocation.arguments[0] as OnCompleteListener<DocumentSnapshot>
+          listener.onComplete(task)
+          null
+        }
+        .`when`(task)
+        .addOnCompleteListener(any())
+
+    assertThrows(Exception::class.java) {
+      repository.addProfile(profile, onSuccess = {}, onFailure = { throw it })
+    }
+
+    verify(mockDocumentReference).get()
   }
 }
