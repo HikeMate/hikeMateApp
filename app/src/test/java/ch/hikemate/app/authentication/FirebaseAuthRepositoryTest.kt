@@ -114,6 +114,12 @@ class FirebaseAuthRepositoryTest {
   fun testCreateAccountWithEmailAndPassword_successful() =
       runTest(timeout = 5.seconds) {
         every { mockTask.isSuccessful } returns true
+
+        /* We hardcode that FirebaseAuth.currentUser is a valid user even before the login process is successful, since we are mocking Firebase's
+        functionality almost completely, so we don't have access Firebase's backend, and can therefore not
+        organically sign in a "real" (or fake ;) ) user. This however does not compromise the tests,
+        since we assume for this test that FirebaseAuth.signInWithCredential works and will successfully sign in our user once it is called with the correct parameters. This method is provided by
+        Firebase and therefore outside of the scope of the tests.*/
         every { mockFirebaseAuth.currentUser } returns mockFirebaseUser
 
         repository.createAccountWithEmailAndPassword(
@@ -191,12 +197,6 @@ class FirebaseAuthRepositoryTest {
       runTest(timeout = 5.seconds) {
         // Mocks a successful call to FirebaseAuth.signInWithCredential
         every { mockTask.isSuccessful } returns true
-
-        /* We hardcode that FirebaseAuth.currentUser is a valid user even before the login process is successful, since we are mocking Firebase's
-        functionality almost completely, so we don't have access Firebase's backend, and can therefore not
-        organically sign in a "real" (or fake ;) ) user. This however does not compromise the tests,
-        since we assume for this test that FirebaseAuth.signInWithCredential works and will successfully sign in our user once it is called with the correct parameters. This method is provided by
-        Firebase and therefore outside of the scope of the tests.*/
         every { mockFirebaseAuth.currentUser } returns mockFirebaseUser
 
         repository.signInWithGoogle(
