@@ -49,7 +49,7 @@ interface AuthRepository {
   )
 
   /**
-   * Signs out the current user  and invokes the success callback.
+   * Signs out the current user and invokes the success callback.
    *
    * @param onSuccess Callback to invoke after the user has successfully signed out.
    */
