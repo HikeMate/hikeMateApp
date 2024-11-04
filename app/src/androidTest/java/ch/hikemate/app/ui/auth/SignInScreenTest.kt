@@ -45,13 +45,15 @@ class SignInScreenTest : TestCase() {
     Intents.release()
   }
 
-  @Test
-  fun everythingIsOnScreen() {
-
+  fun setupSignInScreen() {
     composeTestRule.setContent {
       SignInScreen(navigationActions = mockNavigationActions, authViewModel = mockAuthViewModel)
     }
+  }
 
+  @Test
+  fun everythingIsOnScreen() {
+    setupSignInScreen()
     composeTestRule.onNodeWithTag("appIcon").assertIsDisplayed()
 
     composeTestRule.onNodeWithTag("appNameText").assertIsDisplayed()
@@ -63,11 +65,7 @@ class SignInScreenTest : TestCase() {
 
   @Test
   fun loginButtonCallsAuthViewModel() {
-
-    composeTestRule.setContent {
-      SignInScreen(navigationActions = mockNavigationActions, authViewModel = mockAuthViewModel)
-    }
-
+    setupSignInScreen()
     composeTestRule.onNodeWithTag(TEST_TAG_LOGIN_BUTTON).performClick()
 
     verify { mockAuthViewModel.signInWithGoogle(any(), any(), any()) }
@@ -78,12 +76,8 @@ class SignInScreenTest : TestCase() {
     val mockUser = mockk<FirebaseUser>(relaxed = true)
     mockUserStateFlow.value = mockUser
 
-    composeTestRule.setContent {
-      SignInScreen(navigationActions = mockNavigationActions, authViewModel = mockAuthViewModel)
-    }
+    setupSignInScreen()
 
     verify { mockNavigationActions.navigateTo(TopLevelDestinations.MAP) }
-
-    composeTestRule.onNodeWithTag(TEST_TAG_LOGIN_BUTTON).assertDoesNotExist()
   }
 }

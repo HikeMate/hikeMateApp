@@ -23,6 +23,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -72,7 +73,7 @@ fun SignInScreen(
           contract = ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
             Toast.makeText(
                     context,
-                    "Connected Google Account to your decide successfully. Please wait while we retry the signup.",
+                    "Connected Google Account to your device successfully. Please wait while we retry the signup.",
                     Toast.LENGTH_LONG)
                 .show()
             // startAddAccountIntentLauncher is null, since it is only called when the user has no
@@ -80,6 +81,13 @@ fun SignInScreen(
             authViewModel.signInWithGoogle(coroutineScope, context, null)
             Log.d("MainActivity", "addAccountLauncher result: $result")
           }
+
+  // If the user is already signed in, navigate to the map screen
+  LaunchedEffect(currUser) {
+    if (currUser != null) {
+      navigationActions.navigateTo(TopLevelDestinations.MAP)
+    }
+  }
 
   Scaffold(
       modifier = Modifier.fillMaxSize().testTag(Screen.AUTH),
@@ -124,15 +132,11 @@ fun SignInScreen(
                       ),
               )
             }
-            if (currUser == null) {
-              SignInWithGoogleButton {
-                authViewModel.signInWithGoogle(
-                    coroutineScope = coroutineScope,
-                    context = context,
-                    startAddAccountIntentLauncher = addAccountLauncher)
-              }
-            } else {
-              navigationActions.navigateTo(TopLevelDestinations.MAP)
+            SignInWithGoogleButton {
+              authViewModel.signInWithGoogle(
+                  coroutineScope = coroutineScope,
+                  context = context,
+                  startAddAccountIntentLauncher = addAccountLauncher)
             }
           }
         }

@@ -201,8 +201,6 @@ dependencies {
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.compose.test.junit)
     androidTestImplementation(libs.mockito.android)
-    androidTestImplementation(libs.mockito.kotlin)
-
 
     // Debug dependencies
     debugImplementation(libs.compose.tooling)
