@@ -10,6 +10,7 @@ import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.QuerySnapshot
+import junit.framework.TestCase.assertNull
 import junit.framework.TestCase.fail
 import org.junit.Before
 import org.junit.Test
@@ -207,7 +208,7 @@ class ProfileRepositoryFirestoreTest {
 
     repository.getProfileById(
         "1",
-        onSuccess = { p -> fail("Success callback should not be called") },
+        onSuccess = { assertNull(it) },
         onFailure = {
           // Do nothing; we just want to verify that this is called
         })

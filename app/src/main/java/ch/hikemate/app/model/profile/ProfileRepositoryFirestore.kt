@@ -33,6 +33,14 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
     }
   }
 
+  /**
+   * Creates a profile for the current user. Calls updateProfile with the information of the
+   * currentUser of the firebaseAuth instance.
+   *
+   * @param firebaseAuth The Firebase authentication instance.
+   * @param onSuccess The callback to call if the profile is created successfully.
+   * @param onFailure The callback to call if the profile creation fails.
+   */
   override fun createProfile(
       firebaseAuth: FirebaseAuth,
       onSuccess: (Profile) -> Unit,
@@ -82,11 +90,7 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
     db.collection(collectionPath).document(id).get().addOnCompleteListener { task ->
       if (task.isSuccessful) {
         val profile = task.result?.let { documentToProfile(it) }
-        if (profile != null) {
-          onSuccess(profile)
-        } else {
-          onSuccess(null)
-        }
+        onSuccess(profile)
       } else {
         task.exception?.let { e ->
           Log.e("ProfileRepositoryFirestore", "Error getting document", e)

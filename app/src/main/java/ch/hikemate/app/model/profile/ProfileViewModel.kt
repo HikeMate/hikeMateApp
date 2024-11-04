@@ -23,10 +23,17 @@ open class ProfileViewModel(private val repository: ProfileRepository) : ViewMod
   init {
     repository.init {
       val firebaseInstance = FirebaseAuth.getInstance()
+      // If the user is logged in, check if the profile exists
       firebaseInstance.currentUser?.uid?.let { checkAndCreateProfile(it, firebaseInstance) }
     }
   }
 
+  /**
+   * Checks if the profile exists and creates it if it does not.
+   *
+   * @param userId The ID of the user.
+   * @param firebaseInstance The Firebase authentication instance.
+   */
   private fun checkAndCreateProfile(userId: String, firebaseInstance: FirebaseAuth) {
     repository.getProfileById(
         userId,
@@ -34,6 +41,12 @@ open class ProfileViewModel(private val repository: ProfileRepository) : ViewMod
         onFailure = { throw it })
   }
 
+  /**
+   * Calls repository to create a profile.
+   *
+   * @param firebaseInstance The Firebase authentication instance, needed to get the currentUser
+   *   info.
+   */
   fun createProfile(firebaseInstance: FirebaseAuth) {
     repository.createProfile(
         firebaseInstance, onSuccess = { profile_.value = it }, onFailure = { throw it })
