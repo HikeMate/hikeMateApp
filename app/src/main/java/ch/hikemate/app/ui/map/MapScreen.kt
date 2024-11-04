@@ -86,13 +86,20 @@ object MapScreen {
    * zooming out too much and seeing too much of the blank background behind the map tiles while
    * still being able to see a reasonable area of the world map.
    */
-  const val MAP_MIN_ZOOM = 2.5
+  const val MAP_MIN_ZOOM = 3.0
 
   /** (Config) Initial position of the center of the map. */
   val MAP_INITIAL_CENTER = GeoPoint(46.5, 6.6)
 
   /** (Config) Width of the stroke of the lines that represent the hikes on the map. */
   const val STROKE_WIDTH = 10f
+
+  // These are the limits of the map. They are defined by the
+  // latitude values that the map can display.
+  // The latitude goes from -85 to 85, because going beyond
+  // that would (weirdly) let the user see the blank
+  const val MAP_MAX_LATITUDE = 85.0
+  const val MAP_MIN_LATITUDE = -85.0
 
   const val MIN_HUE = 0
   const val MAX_HUE = 360
@@ -209,12 +216,16 @@ fun MapScreen(
       minZoomLevel = mapMinZoomLevel
       maxZoomLevel = mapMaxZoomLevel
       // Avoid repeating the map when the user reaches the edge or zooms out
-      isHorizontalMapRepetitionEnabled = false
+      // We keep the horizontal repetition enabled to allow the user to scroll the map
+      // horizontally without limits (from Asia to America, for example)
+      isHorizontalMapRepetitionEnabled = true
       isVerticalMapRepetitionEnabled = false
       // Disable built-in zoom controls since we have our own
       zoomController.setVisibility(CustomZoomButtonsController.Visibility.NEVER)
       // Enable touch-controls such as pinch to zoom
       setMultiTouchControls(true)
+      // Limit the vertical scrollable area to avoid the user scrolling too far
+      setScrollableAreaLimitLatitude(MapScreen.MAP_MAX_LATITUDE, MapScreen.MAP_MIN_LATITUDE, 0)
     }
   }
   // Keep track of whether a search for hikes is ongoing
