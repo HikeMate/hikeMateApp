@@ -11,7 +11,7 @@ import kotlinx.coroutines.CoroutineScope
 interface AuthRepository {
 
   /**
-   * Sign in with Google using Firebase Authentication.
+   * This function should be called to initiate the sign-in process using Google Sign-In.
    *
    * @param onSuccess Callback to invoke when login is successful. Passes the FirebaseUser if
    *   successful.
@@ -32,7 +32,24 @@ interface AuthRepository {
   )
 
   /**
-   * Signs out the current user from Firebase and invokes the success callback.
+   * This function should be called to initiate the sign-in process using email and password.
+   *
+   * @param onSuccess Callback to invoke when login is successful. Passes the FirebaseUser if
+   *   successful.
+   * @param onErrorAction Callback to invoke when an error occurs during login. Passes the Throwable
+   *   error.
+   * @param email The email address of the user.
+   * @param password The password of the user.
+   */
+  fun signInWithEmailAndPassword(
+      onSuccess: (FirebaseUser?) -> Unit,
+      onErrorAction: (Exception) -> Unit,
+      email: String,
+      password: String,
+  )
+
+  /**
+   * Signs out the current user  and invokes the success callback.
    *
    * @param onSuccess Callback to invoke after the user has successfully signed out.
    */

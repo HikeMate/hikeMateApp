@@ -44,6 +44,21 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
     )
   }
 
+  /**
+   * Initiates the sign-in process using email and password.
+   *
+   * @param email The email address of the user.
+   * @param password The password of the user.
+   */
+  fun signInWithEmailAndPassword(email: String, password: String) {
+    repository.signInWithEmailAndPassword(
+        onSuccess = { user: FirebaseUser? -> _currentUser.value = user },
+        onErrorAction = {},
+        email = email,
+        password = password,
+    )
+  }
+
   /** Signs out the current user. On successful sign-out, the _currentUser is set to null. */
   fun signOut() {
     repository.signOut(
