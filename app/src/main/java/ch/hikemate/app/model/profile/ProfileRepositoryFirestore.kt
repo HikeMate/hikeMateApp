@@ -49,8 +49,10 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
     val profile =
         Profile(
             firebaseAuth.currentUser!!.uid,
-            firebaseAuth.currentUser!!.displayName ?: "No name",
-            firebaseAuth.currentUser!!.email ?: "No email",
+            // This shouldn't null.
+            firebaseAuth.currentUser!!.displayName ?: "Unnamed hiker",
+            // This shouldn't null.
+            firebaseAuth.currentUser!!.email ?: "unnamedhiker@example.com",
             HikingLevel.BEGINNER,
             Timestamp.now())
 

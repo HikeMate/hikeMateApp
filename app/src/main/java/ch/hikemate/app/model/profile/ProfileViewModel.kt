@@ -34,11 +34,11 @@ open class ProfileViewModel(private val repository: ProfileRepository) : ViewMod
    * @param userId The ID of the user.
    * @param firebaseInstance The Firebase authentication instance.
    */
-  private fun checkAndCreateProfile(userId: String, firebaseInstance: FirebaseAuth) {
+  fun checkAndCreateProfile(userId: String, firebaseInstance: FirebaseAuth) {
     repository.getProfileById(
         userId,
         onSuccess = { if (it == null) createProfile(firebaseInstance) else profile_.value = it },
-        onFailure = { throw it })
+        onFailure = {})
   }
 
   /**
@@ -48,8 +48,7 @@ open class ProfileViewModel(private val repository: ProfileRepository) : ViewMod
    *   info.
    */
   fun createProfile(firebaseInstance: FirebaseAuth) {
-    repository.createProfile(
-        firebaseInstance, onSuccess = { profile_.value = it }, onFailure = { throw it })
+    repository.createProfile(firebaseInstance, onSuccess = { profile_.value = it }, onFailure = {})
   }
   /**
    * Get a profile by its ID.
@@ -57,8 +56,7 @@ open class ProfileViewModel(private val repository: ProfileRepository) : ViewMod
    * @param id The ID of the profile to fetch.
    */
   fun getProfileById(id: String) {
-    repository.getProfileById(
-        id, onSuccess = { profile_.value = it }, onFailure = { throw Exception(it) })
+    repository.getProfileById(id, onSuccess = { profile_.value = it }, onFailure = {})
   }
 
   companion object {

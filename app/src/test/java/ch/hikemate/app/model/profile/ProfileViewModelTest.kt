@@ -34,6 +34,7 @@ class ProfileViewModelTest {
 
   @Mock private lateinit var repository: ProfileRepository
   @Mock private lateinit var firebaseAuth: com.google.firebase.auth.FirebaseAuth
+  @Mock private lateinit var firebaseUser: FirebaseUser
   private lateinit var profileViewModel: ProfileViewModel
 
   @Before
@@ -155,5 +156,19 @@ class ProfileViewModelTest {
     verify(repository).deleteProfileById(eq("1"), any(), any())
 
     assert(profileViewModel.profile.value == null)
+  }
+
+  @Test
+  fun checkAndCreateProfile_calls_getProfileById() {
+    `when`(repository.getProfileById(any(), any(), any())).thenAnswer {
+      val onSuccess = it.getArgument<(Profile) -> Unit>(1)
+      onSuccess(profile)
+    }
+
+    profileViewModel.checkAndCreateProfile("1", firebaseAuth)
+
+    verify(repository).getProfileById(eq("1"), any(), any())
+
+    assert(profileViewModel.profile.value == profile)
   }
 }
