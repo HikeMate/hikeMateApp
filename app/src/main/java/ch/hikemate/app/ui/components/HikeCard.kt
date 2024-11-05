@@ -2,7 +2,6 @@ package ch.hikemate.app.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -36,17 +35,45 @@ object HikeCard {
   const val TEST_TAG_HIKE_CARD_TITLE = "HikeCardTitle"
 }
 
+// This fix the Sonar rule kotlin:S107, about too many parameters in a function
+/**
+ * Properties to customize the appearance of the [HikeCard].
+ *
+ * @param messageIcon The icon to display next to the message.
+ * @param messageColor The color of the message.
+ * @param graphColor The color of the elevation graph.
+ * @see HikeCard
+ */
+data class HikeCardStyleProperties(
+    val messageIcon: Painter? = null,
+    val messageColor: Color? = null,
+    val graphColor: Color? = null,
+)
+
+/**
+ * A card that displays information about a hike.
+ *
+ * @param title The title of the hike.
+ * @param elevationData The elevation data to display in the graph.
+ * @param onClick The callback to be called when the card is clicked.
+ * @param modifier The modifier to be applied to the card.
+ * @param messageContent The message to display below the elevation graph.
+ * @param styleProperties The properties to customize the appearance of the card.
+ */
 @Composable
 fun HikeCard(
     title: String,
-    altitudeDifference: Int,
+    elevationData: List<Double> = emptyList(),
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    messageIcon: Painter? = null,
     messageContent: String? = null,
-    messageColor: Color? = null
+    styleProperties: HikeCardStyleProperties = HikeCardStyleProperties(),
 ) {
-  val displayMessage = messageContent != null && messageIcon != null && messageColor != null
+  val displayMessage =
+      messageContent != null &&
+          styleProperties.messageIcon != null &&
+          styleProperties.messageColor != null
+  val altitudeDifference = elevationData.max() - elevationData.min()
 
   Row(
       modifier =
@@ -68,13 +95,15 @@ fun HikeCard(
           Row(
               verticalAlignment = Alignment.CenterVertically,
               modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-                Box(
+                ElevationGraph(
+                    elevationData = elevationData,
                     modifier =
                         Modifier.weight(1f)
                             .fillMaxHeight()
                             .background(
                                 MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                                RoundedCornerShape(4.dp)))
+                                RoundedCornerShape(4.dp)),
+                    color = styleProperties.graphColor ?: MaterialTheme.colorScheme.primary)
 
                 Spacer(modifier = Modifier.width(8.dp))
 
@@ -96,16 +125,16 @@ fun HikeCard(
 
             Row(verticalAlignment = Alignment.CenterVertically) {
               Icon(
-                  painter = messageIcon!!,
+                  painter = styleProperties.messageIcon!!,
                   // The icon is only decorative, the following message is enough for accessibility
                   contentDescription = null,
-                  tint = messageColor!!,
+                  tint = styleProperties.messageColor!!,
                   modifier = Modifier.size(16.dp))
               Spacer(modifier = Modifier.width(4.dp))
               Text(
                   text = messageContent!!,
                   style = MaterialTheme.typography.bodySmall,
-                  color = messageColor)
+                  color = styleProperties.messageColor)
             }
           }
         }
