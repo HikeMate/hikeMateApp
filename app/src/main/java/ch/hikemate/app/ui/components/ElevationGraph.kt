@@ -1,7 +1,6 @@
 package ch.hikemate.app.ui.components
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -22,10 +21,10 @@ import kotlin.math.ceil
 @Composable
 fun ElevationGraph(
     elevationData: List<Double>,
+    modifier: Modifier = Modifier,
     maxNumberOfPoints: Int = 40,
     color: Color = Color.Black,
     strokeWidth: Float = 3f,
-    modifier: Modifier = Modifier.fillMaxSize()
 ) {
   Canvas(modifier) {
     // Averaging the elevation data to reduce the number of points

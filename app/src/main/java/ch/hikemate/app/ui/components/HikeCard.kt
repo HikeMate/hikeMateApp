@@ -63,9 +63,9 @@ data class HikeCardStyleProperties(
 @Composable
 fun HikeCard(
     title: String,
+    modifier: Modifier = Modifier,
     elevationData: List<Double> = emptyList(),
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
     messageContent: String? = null,
     styleProperties: HikeCardStyleProperties = HikeCardStyleProperties(),
 ) {
