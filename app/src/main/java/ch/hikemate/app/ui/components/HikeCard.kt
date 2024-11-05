@@ -94,19 +94,10 @@ fun HikeCard(
           if (displayMessage) {
             Spacer(modifier = Modifier.height(4.dp))
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
-              Icon(
-                  painter = messageIcon!!,
-                  // The icon is only decorative, the following message is enough for accessibility
-                  contentDescription = null,
-                  tint = messageColor!!,
-                  modifier = Modifier.size(16.dp))
-              Spacer(modifier = Modifier.width(4.dp))
-              Text(
-                  text = messageContent!!,
-                  style = MaterialTheme.typography.bodySmall,
-                  color = messageColor)
-            }
+            AppriopriatenessMessage(
+                messageIcon = messageIcon!!,
+                messageColor = messageColor!!,
+                messageContent = messageContent!!)
           }
         }
 
@@ -121,4 +112,18 @@ fun HikeCard(
             tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
             modifier = Modifier.size(24.dp))
       }
+}
+
+@Composable
+fun AppriopriatenessMessage(messageIcon: Painter, messageColor: Color, messageContent: String) {
+  Row(verticalAlignment = Alignment.CenterVertically) {
+    Icon(
+        painter = messageIcon,
+        // The icon is only decorative, the following message is enough for accessibility
+        contentDescription = null,
+        tint = messageColor,
+        modifier = Modifier.size(16.dp))
+    Spacer(modifier = Modifier.width(4.dp))
+    Text(text = messageContent, style = MaterialTheme.typography.bodySmall, color = messageColor)
+  }
 }
