@@ -41,6 +41,7 @@ import ch.hikemate.app.R
 import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
 import ch.hikemate.app.ui.components.HikeCard
+import ch.hikemate.app.ui.components.HikeCardStyleProperties
 import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
@@ -391,13 +392,16 @@ fun HikeCardFor(route: HikeRoute, isSuitable: Boolean, viewModel: ListOfHikeRout
 
   HikeCard(
       title = route.name ?: stringResource(R.string.map_screen_hike_title_default),
-      altitudeDifference = 1000,
+      // This generates a random list of elevation data for the hike
+      // with a random number of points and altitude between 0 and 1000
+      elevationData = (0..(0..1000).random()).map { it.toDouble() }.shuffled(),
       onClick = {
         // The user clicked on the route to select it
         viewModel.selectRoute(route)
         Toast.makeText(context, "Hike details not implemented yet", Toast.LENGTH_SHORT).show()
       },
       messageContent = suitableLabelText,
-      messageIcon = painterResource(suitableLabelIcon),
-      messageColor = suitableLabelColor)
+      styleProperties =
+          HikeCardStyleProperties(
+              messageIcon = painterResource(suitableLabelIcon), messageColor = suitableLabelColor))
 }
