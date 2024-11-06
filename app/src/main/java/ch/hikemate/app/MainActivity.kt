@@ -17,7 +17,11 @@ import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.model.authentication.FirebaseAuthRepository
 import ch.hikemate.app.model.profile.ProfileRepositoryDummy
 import ch.hikemate.app.model.profile.ProfileViewModel
+import ch.hikemate.app.model.route.Bounds
+import ch.hikemate.app.model.route.HikeRoute
+import ch.hikemate.app.model.route.LatLong
 import ch.hikemate.app.ui.auth.SignInScreen
+import ch.hikemate.app.ui.map.HikeDetailScreen
 import ch.hikemate.app.ui.map.MapScreen
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
@@ -33,7 +37,23 @@ class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-    setContent { HikeMateTheme { Surface(modifier = Modifier.fillMaxSize()) { HikeMateApp() } } }
+    // setContent { HikeMateTheme { Surface(modifier = Modifier.fillMaxSize()) { HikeMateApp() } } }
+    setContent {
+      HikeMateTheme {
+        Surface(modifier = Modifier.fillMaxSize()) {
+          HikeDetailScreen(
+              route =
+                  HikeRoute(
+                      id = "matterhorn_glacier_trail_1",
+                      bounds = Bounds(minLat = 45.9, minLon = 7.6, maxLat = 46.0, maxLon = 7.7),
+                      ways = listOf(LatLong(45.9, 7.6), LatLong(45.95, 7.65), LatLong(46.0, 7.7)),
+                      name = "Matterhorn Glacier Trail",
+                      description =
+                          "A scenic trail with breathtaking views of the Matterhorn and surrounding glaciers."),
+              onBack = {})
+        }
+      }
+    }
   }
 }
 
