@@ -97,6 +97,10 @@ class SavedHikesViewModel(
     }
   }
 
+  fun isSavedHike(hikeId: String): Boolean {
+    return _savedHikes.value.any { it.id == hikeId }
+  }
+
   private suspend fun loadSavedHikesAsync() {
     withContext(dispatcher) {
       try {

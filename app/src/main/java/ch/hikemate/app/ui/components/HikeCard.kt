@@ -94,7 +94,7 @@ fun HikeCard(
           if (displayMessage) {
             Spacer(modifier = Modifier.height(4.dp))
 
-            AppriopriatenessMessage(
+            AppropriatenessMessage(
                 messageIcon = messageIcon!!,
                 messageColor = messageColor!!,
                 messageContent = messageContent!!)
@@ -115,7 +115,7 @@ fun HikeCard(
 }
 
 @Composable
-fun AppriopriatenessMessage(messageIcon: Painter, messageColor: Color, messageContent: String) {
+fun AppropriatenessMessage(messageIcon: Painter, messageColor: Color, messageContent: String) {
   Row(verticalAlignment = Alignment.CenterVertically) {
     Icon(
         painter = messageIcon,
