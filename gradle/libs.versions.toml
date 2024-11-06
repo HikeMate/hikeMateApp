@@ -25,6 +25,7 @@ mockkAgent = "1.13.12"
 mockkAgentVersion = "1.13.12"
 mockkAndroid = "1.13.12"
 mockkAndroidVersion = "1.13.12"
+playServicesLocation = "21.3.0"
 robolectric = "4.11.1"
 sonar = "4.4.1.3373"
 
@@ -78,6 +79,7 @@ mockito-inline = { module = "org.mockito:mockito-inline", version.ref = "mockito
 mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockitoKotlin" }
 mockk-agent = { module = "io.mockk:mockk-agent", version.ref = "mockkAgent" }
 mockk-android = { module = "io.mockk:mockk-android", version.ref = "mockkAndroid" }
+play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "playServicesLocation" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 osmdroid = { module = "org.osmdroid:osmdroid-android", version.ref = "osmdroid" }
 

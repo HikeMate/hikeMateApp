@@ -173,6 +173,7 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.googleid)
     implementation(libs.accompanist.permissions)
+    implementation(libs.play.services.location)
 
 
     // Global test dependencies
