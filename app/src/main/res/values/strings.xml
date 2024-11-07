@@ -87,4 +87,12 @@
     <string name="sign_in_with_email_password_label">Password</string>
     <string name="sign_in_with_email_sign_in_button">Sign in</string>
     <string name="sign_in_with_email_go_to_sign_up">I want to sign up</string>
+
+    <string name="create_account_title">Create an account</string>
+    <string name="create_account_name_label">Name</string>
+    <string name="create_account_email_label">Email</string>
+    <string name="create_account_password_label">Password</string>
+    <string name="create_account_repeat_password_label">Repeat password</string>
+    <string name="create_account_create_account_button">Create account</string>
+    <string name="create_account_password_mismatch_error">Passwords do not match</string>
 </resources>

@@ -17,6 +17,7 @@ import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.model.authentication.FirebaseAuthRepository
 import ch.hikemate.app.model.profile.ProfileRepositoryDummy
 import ch.hikemate.app.model.profile.ProfileViewModel
+import ch.hikemate.app.ui.auth.CreateAccountScreen
 import ch.hikemate.app.ui.auth.SignInScreen
 import ch.hikemate.app.ui.auth.SignInWithEmailScreen
 import ch.hikemate.app.ui.map.MapScreen
@@ -62,6 +63,7 @@ fun HikeMateApp() {
       composable(Screen.SIGN_IN_WITH_EMAIL) {
         SignInWithEmailScreen(navigationActions, authViewModel)
       }
+      composable(Screen.CREATE_ACCOUNT) { CreateAccountScreen(navigationActions, authViewModel) }
     }
 
     navigation(
