@@ -56,7 +56,6 @@ class SignInScreenTest : TestCase() {
   fun everythingIsOnScreen() {
     setupSignInScreen()
     composeTestRule.onNodeWithTag(AppIcon.TEST_TAG).assertIsDisplayed()
-    composeTestRule.onNodeWithTag("appIcon").assertIsDisplayed()
 
     composeTestRule.onNodeWithTag(SignInScreen.TEST_TAG_TITLE).assertIsDisplayed()
     composeTestRule.onNodeWithTag(SignInScreen.TEST_TAG_TITLE).assertTextEquals("HikeMate")
