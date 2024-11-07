@@ -37,6 +37,7 @@ class FirebaseAuthRepository : AuthRepository {
     // client ID
     val googleIdOption: GetGoogleIdOption =
         GetGoogleIdOption.Builder()
+            .setFilterByAuthorizedAccounts(false) // Allow all kinds of Google accounts
             .setServerClientId(token) // Server client ID for OAuth
             .setAutoSelectEnabled(true) // Auto-select if only one account is available
             .build()
