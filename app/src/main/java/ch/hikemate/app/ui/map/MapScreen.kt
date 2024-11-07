@@ -477,8 +477,11 @@ fun MapScreen(
           MapScreen.startUserLocationUpdates(context, locationUpdatedCallback)
       if (!featuresEnabledSuccessfully) {
         Log.e(MapScreen.LOG_TAG, "Failed to enable location features")
-        // TODO : Localize the toast's text
-        Toast.makeText(context, "Failed to enable location features", Toast.LENGTH_LONG).show()
+        Toast.makeText(
+                context,
+                context.getString(R.string.map_screen_location_features_failed),
+                Toast.LENGTH_LONG)
+            .show()
       }
     }
 
@@ -605,7 +608,7 @@ fun MapMyLocationButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
   IconButton(onClick = onClick, modifier = modifier) {
     Icon(
         painter = painterResource(id = R.drawable.my_location),
-        contentDescription = "Center map on my position") // TODO : Localize this text
+        contentDescription = stringResource(R.string.map_screen_center_on_pos_content_description))
   }
 }
 

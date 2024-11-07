@@ -31,6 +31,8 @@
         Too many hikes to display on the map. Only %d hikes are shown.
     </string>
     <string name="map_screen_hike_title_default">Unnamed Hike</string>
+    <string name="map_screen_location_features_failed">Failed to enable location features</string>
+    <string name="map_screen_center_on_pos_content_description">Center map on my position</string>
     <string name="zoom_in">Zoom in</string>
     <string name="zoom_out">Zoom out</string>
 
