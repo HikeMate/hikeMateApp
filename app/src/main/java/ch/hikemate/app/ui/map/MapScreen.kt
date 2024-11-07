@@ -1,9 +1,12 @@
 package ch.hikemate.app.ui.map
 
 import android.content.Context
+import android.content.Intent
 import android.location.Location
+import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.layout.Box
@@ -12,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -51,6 +55,7 @@ import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.navigation.SideBarNavigation
+import ch.hikemate.app.utils.PermissionUtils
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.MultiplePermissionsState
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
@@ -416,6 +421,7 @@ fun MapScreen(
               listOf(
                   android.Manifest.permission.ACCESS_FINE_LOCATION,
                   android.Manifest.permission.ACCESS_COARSE_LOCATION))
+  var showLocationPermissionDialog by remember { mutableStateOf(false) }
 
   // Only do the configuration on the first composition, not on every recomposition
   LaunchedEffect(Unit) {
@@ -474,6 +480,10 @@ fun MapScreen(
     // The user just enabled location permission for the app, start location features
     if (hasLocationPermission) {
       Log.d(MapScreen.LOG_TAG, "Location permission granted, requesting location updates")
+      PermissionUtils.setFirstTimeAskingPermission(
+          context, android.Manifest.permission.ACCESS_FINE_LOCATION, true)
+      PermissionUtils.setFirstTimeAskingPermission(
+          context, android.Manifest.permission.ACCESS_COARSE_LOCATION, true)
       val featuresEnabledSuccessfully =
           MapScreen.startUserLocationUpdates(context, locationUpdatedCallback)
       if (!featuresEnabledSuccessfully) {
@@ -517,6 +527,37 @@ fun MapScreen(
     }
   }
 
+  if (showLocationPermissionDialog) {
+    LocationPermissionAlertDialog(
+        onConfirm = {
+          showLocationPermissionDialog = false
+
+          // If should show rationale is true, it is safe to launch permission requests
+          if (locationPermissionState.shouldShowRationale) {
+            locationPermissionState.launchMultiplePermissionRequest()
+          }
+
+          // If the user is asked for the first time, it is safe to launch permission requests
+          else if (PermissionUtils.firstTimeAskingPermission(
+              context, android.Manifest.permission.ACCESS_FINE_LOCATION)) {
+            PermissionUtils.setFirstTimeAskingPermission(
+                context, android.Manifest.permission.ACCESS_FINE_LOCATION, false)
+            PermissionUtils.setFirstTimeAskingPermission(
+                context, android.Manifest.permission.ACCESS_COARSE_LOCATION, false)
+            locationPermissionState.launchMultiplePermissionRequest()
+          }
+
+          // Otherwise, the user should be brought to the settings page
+          else {
+            context.startActivity(
+                Intent(
+                    Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    Uri.fromParts("package", context.packageName, null)))
+          }
+        },
+        onDismiss = { showLocationPermissionDialog = false })
+  }
+
   SideBarNavigation(
       onTabSelect = { navigationActions.navigateTo(it) },
       tabList = LIST_TOP_LEVEL_DESTINATIONS,
@@ -546,11 +587,8 @@ fun MapScreen(
                 }
                 // If the user yet needs to grant the permission, show a custom educational alert
                 else {
-                  // TODO : Show a custom alert that then requests the permission instead of
-                  // TODO : Maintain state so that if the user grants the permission, the map
-                  // centers on the user's location
-                  // directly requesting it
-                  locationPermissionState.launchMultiplePermissionRequest()
+                  // TODO : Maintain state so that if the user grants the permission, the map centers on the user's location
+                  showLocationPermissionDialog = true
                 }
               },
               modifier =
@@ -589,6 +627,19 @@ fun MapScreen(
           // Put SideBarNavigation after to make it appear on top of the map and HikeList
         }
       }
+}
+
+@Composable
+fun LocationPermissionAlertDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
+  AlertDialog(
+      icon = {
+        Icon(painter = painterResource(id = R.drawable.my_location), contentDescription = null)
+      },
+      title = { Text(text = "Location Permission Required") },
+      text = { Text(text = "Test") },
+      onDismissRequest = onDismiss,
+      confirmButton = { Button(onClick = onConfirm) { Text(text = "Go go go") } },
+      dismissButton = { Button(onClick = onDismiss) { Text(text = "Nope") } })
 }
 
 @Composable
