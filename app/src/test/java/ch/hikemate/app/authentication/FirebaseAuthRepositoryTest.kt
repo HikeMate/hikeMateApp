@@ -91,6 +91,8 @@ class FirebaseAuthRepositoryTest {
 
     // Mock behavior authentication with Firebase
     every { mockFirebaseAuth.signInWithCredential(any()) } returns mockTask
+    every { mockFirebaseAuth.signInWithEmailAndPassword(any(), any()) } returns mockTask
+    every { mockFirebaseAuth.createUserWithEmailAndPassword(any(), any()) } returns mockTask
     every { mockTask.addOnCompleteListener(any()) } answers
         {
           val listener = firstArg<OnCompleteListener<AuthResult>>()
@@ -109,9 +111,8 @@ class FirebaseAuthRepositoryTest {
   }
 
   @Test
-  fun testSignInWithGoogle_successful() =
+  fun testCreateAccountWithEmailAndPassword_successful() =
       runTest(timeout = 5.seconds) {
-        // Mocks a successful call to FirebaseAuth.signInWithCredential
         every { mockTask.isSuccessful } returns true
 
         /* We hardcode that FirebaseAuth.currentUser is a valid user even before the login process is successful, since we are mocking Firebase's
@@ -119,6 +120,83 @@ class FirebaseAuthRepositoryTest {
         organically sign in a "real" (or fake ;) ) user. This however does not compromise the tests,
         since we assume for this test that FirebaseAuth.signInWithCredential works and will successfully sign in our user once it is called with the correct parameters. This method is provided by
         Firebase and therefore outside of the scope of the tests.*/
+        every { mockFirebaseAuth.currentUser } returns mockFirebaseUser
+
+        repository.createAccountWithEmailAndPassword(
+            onSuccess = mockOnSuccess,
+            onErrorAction = mockOnError,
+            email = "mock@example.com",
+            password = "password")
+
+        advanceUntilIdle()
+
+        verify { mockFirebaseAuth.createUserWithEmailAndPassword(any(), any()) }
+        verify { mockOnSuccess(mockFirebaseUser) }
+        verify(exactly = 0) { mockOnError(any()) }
+      }
+
+  @Test
+  fun testCreateAccountWithEmailAndPassword_unsuccessful() =
+      runTest(timeout = 5.seconds) {
+        every { mockTask.isSuccessful } returns false
+        every { mockTask.exception } returns Exception("Test Error")
+
+        repository.createAccountWithEmailAndPassword(
+            onSuccess = mockOnSuccess,
+            onErrorAction = mockOnError,
+            email = "mock@example.com",
+            password = "password")
+
+        advanceUntilIdle()
+
+        verify { mockFirebaseAuth.createUserWithEmailAndPassword(any(), any()) }
+        verify(exactly = 0) { mockOnSuccess(any()) }
+        verify { mockOnError(any<Throwable>()) }
+      }
+
+  @Test
+  fun testSignInWithEmailAndPassword_successful() =
+      runTest(timeout = 5.seconds) {
+        every { mockTask.isSuccessful } returns true
+        every { mockFirebaseAuth.currentUser } returns mockFirebaseUser
+
+        repository.signInWithEmailAndPassword(
+            onSuccess = mockOnSuccess,
+            onErrorAction = mockOnError,
+            email = "mock@example.com",
+            password = "password")
+
+        advanceUntilIdle()
+
+        verify { mockFirebaseAuth.signInWithEmailAndPassword(any(), any()) }
+        verify { mockOnSuccess(mockFirebaseUser) }
+        verify(exactly = 0) { mockOnError(any()) }
+      }
+
+  @Test
+  fun testSignInWithEmailAndPassword_unsuccessful() =
+      runTest(timeout = 5.seconds) {
+        every { mockTask.isSuccessful } returns false
+        every { mockTask.exception } returns Exception("Test Error")
+
+        repository.signInWithEmailAndPassword(
+            onSuccess = mockOnSuccess,
+            onErrorAction = mockOnError,
+            email = "mock@example.com",
+            password = "password")
+
+        advanceUntilIdle()
+
+        verify { mockFirebaseAuth.signInWithEmailAndPassword(any(), any()) }
+        verify(exactly = 0) { mockOnSuccess(any()) }
+        verify { mockOnError(any<Throwable>()) }
+      }
+
+  @Test
+  fun testSignInWithGoogle_successful() =
+      runTest(timeout = 5.seconds) {
+        // Mocks a successful call to FirebaseAuth.signInWithCredential
+        every { mockTask.isSuccessful } returns true
         every { mockFirebaseAuth.currentUser } returns mockFirebaseUser
 
         repository.signInWithGoogle(
