@@ -555,7 +555,8 @@ fun MapScreen(
                     Uri.fromParts("package", context.packageName, null)))
           }
         },
-        onDismiss = { showLocationPermissionDialog = false })
+        onDismiss = { showLocationPermissionDialog = false },
+        simpleMessage = !locationPermissionState.shouldShowRationale)
   }
 
   SideBarNavigation(
@@ -630,16 +631,34 @@ fun MapScreen(
 }
 
 @Composable
-fun LocationPermissionAlertDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
+fun LocationPermissionAlertDialog(
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+    simpleMessage: Boolean
+) {
   AlertDialog(
       icon = {
         Icon(painter = painterResource(id = R.drawable.my_location), contentDescription = null)
       },
-      title = { Text(text = "Location Permission Required") },
-      text = { Text(text = "Test") },
+      title = { Text(text = stringResource(R.string.map_screen_location_rationale_title)) },
+      text = {
+        Text(
+            text =
+                stringResource(
+                    if (simpleMessage) R.string.map_screen_location_rationale_simple
+                    else R.string.map_screen_location_rationale))
+      },
       onDismissRequest = onDismiss,
-      confirmButton = { Button(onClick = onConfirm) { Text(text = "Go go go") } },
-      dismissButton = { Button(onClick = onDismiss) { Text(text = "Nope") } })
+      confirmButton = {
+        Button(onClick = onConfirm) {
+          Text(text = stringResource(R.string.map_screen_location_rationale_grant_button))
+        }
+      },
+      dismissButton = {
+        Button(onClick = onDismiss) {
+          Text(text = stringResource(R.string.map_screen_location_rationale_cancel_button))
+        }
+      })
 }
 
 @Composable
