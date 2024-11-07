@@ -28,6 +28,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import ch.hikemate.app.R
 import ch.hikemate.app.ui.map.MapScreen
 
@@ -99,11 +100,15 @@ fun HikeCard(
                     elevationData = elevationData,
                     modifier =
                         Modifier.weight(1f)
+                            .zIndex(1.0f)
                             .fillMaxHeight()
                             .background(
                                 MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                                 RoundedCornerShape(4.dp)),
-                    color = styleProperties.graphColor ?: MaterialTheme.colorScheme.primary)
+                    strokeColor = styleProperties.graphColor ?: MaterialTheme.colorScheme.primary,
+                    fillColor =
+                        (styleProperties.graphColor ?: MaterialTheme.colorScheme.primary).copy(
+                            0.1f))
 
                 Spacer(modifier = Modifier.width(8.dp))
 
