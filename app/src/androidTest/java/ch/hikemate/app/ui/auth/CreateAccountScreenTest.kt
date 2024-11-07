@@ -1,6 +1,7 @@
 package ch.hikemate.app.ui.auth
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -28,6 +29,7 @@ class CreateAccountScreenTest : TestCase() {
 
   private val TEST_NAME = "Test Name"
   private val TEST_EMAIL = "test@example.com"
+  private val TEST_WRONG_EMAIL = "test"
   private val TEST_PASSWORD = "password"
   private val TEST_DIFFERENT_PASSWORD = "different_password"
 
@@ -68,7 +70,14 @@ class CreateAccountScreenTest : TestCase() {
         .performTextInput(TEST_PASSWORD)
     composeTestRule
         .onNodeWithTag(CreateAccountScreen.TEST_TAG_CONFIRM_PASSWORD_INPUT)
-        .performTextInput(TEST_PASSWORD)
+        .performTextInput(TEST_DIFFERENT_PASSWORD)
+
+    composeTestRule
+        .onNodeWithTag(CreateAccountScreen.TEST_TAG_NAME_INPUT)
+        .assertTextContains(TEST_NAME)
+    composeTestRule
+        .onNodeWithTag(CreateAccountScreen.TEST_TAG_EMAIL_INPUT)
+        .assertTextContains(TEST_EMAIL)
   }
 
   @Test
@@ -89,6 +98,32 @@ class CreateAccountScreenTest : TestCase() {
 
     verify(authRepository, times(1))
         .createAccountWithEmailAndPassword(any(), any(), eq(TEST_EMAIL), eq(TEST_PASSWORD))
+  }
+
+  @Test
+  fun clickOnCreateAccountButtonWithEmptyFields() {
+    composeTestRule.onNodeWithTag(CreateAccountScreen.TEST_TAG_SIGN_UP_BUTTON).performClick()
+
+    verify(authRepository, times(0)).createAccountWithEmailAndPassword(any(), any(), any(), any())
+  }
+
+  @Test
+  fun clickOnCreateAccountWithDummyEmail() {
+    composeTestRule
+        .onNodeWithTag(CreateAccountScreen.TEST_TAG_NAME_INPUT)
+        .performTextInput(TEST_NAME)
+    composeTestRule
+        .onNodeWithTag(CreateAccountScreen.TEST_TAG_EMAIL_INPUT)
+        .performTextInput(TEST_WRONG_EMAIL)
+    composeTestRule
+        .onNodeWithTag(CreateAccountScreen.TEST_TAG_PASSWORD_INPUT)
+        .performTextInput(TEST_PASSWORD)
+    composeTestRule
+        .onNodeWithTag(CreateAccountScreen.TEST_TAG_CONFIRM_PASSWORD_INPUT)
+        .performTextInput(TEST_PASSWORD)
+    composeTestRule.onNodeWithTag(CreateAccountScreen.TEST_TAG_SIGN_UP_BUTTON).performClick()
+
+    verify(authRepository, times(0)).createAccountWithEmailAndPassword(any(), any(), any(), any())
   }
 
   @Test

@@ -134,7 +134,7 @@ class AuthViewModelTest {
 
     // Simulate a successful email and password sign-in by invoking the onSuccess callback
     doAnswer { invocation ->
-          val onSuccess = invocation.getArgument<(FirebaseUser?) -> Unit>(0)
+          val onSuccess = invocation.getArgument<(FirebaseUser?) -> Unit>(2)
           onSuccess(mockFirebaseUser) // Call the success callback with a mock user
           null
         }
@@ -162,7 +162,7 @@ class AuthViewModelTest {
 
         // Simulate an unsuccessful email and password sign-in by invoking the onError callback
         doAnswer { invocation ->
-              val onErrorAction = invocation.getArgument<(Exception) -> Unit>(1)
+              val onErrorAction = invocation.getArgument<(Exception) -> Unit>(3)
               onErrorAction(Exception("Error"))
               null
             }

@@ -56,6 +56,9 @@ fun CreateAccountScreen(navigationActions: NavigationActions, authViewModel: Aut
 
   // Define it here because it's used in the onClick lambda which is not a composable
   val mismatchErrorMessage = stringResource(R.string.create_account_password_mismatch_error)
+  val emailWrongFormatErrorMessage = stringResource(R.string.create_account_email_format_error)
+  val fieldMustBeFilledErrorMessage =
+      stringResource(R.string.create_account_fields_must_be_filled_error)
 
   // Define the colors for the input fields
   val inputColors =
@@ -74,6 +77,33 @@ fun CreateAccountScreen(navigationActions: NavigationActions, authViewModel: Aut
   var email by remember { mutableStateOf("") }
   var password by remember { mutableStateOf("") }
   var confirmPassword by remember { mutableStateOf("") }
+
+  val onSignUpButtonClick = {
+    when {
+      password != confirmPassword -> {
+        Toast.makeText(context, mismatchErrorMessage, Toast.LENGTH_SHORT).show()
+      }
+      email.isEmpty() || password.isEmpty() || name.isEmpty() -> {
+        Toast.makeText(context, fieldMustBeFilledErrorMessage, Toast.LENGTH_SHORT).show()
+      }
+      !email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}\$".toRegex()) -> {
+        Toast.makeText(context, emailWrongFormatErrorMessage, Toast.LENGTH_SHORT).show()
+      }
+      else -> {
+        authViewModel.createAccountWithEmailAndPassword(
+            email,
+            password,
+            onSuccess = {
+              // Navigate to the map screen
+              navigationActions.navigateTo(Route.MAP)
+            },
+            onErrorAction = {
+              // Show an error message in a toast
+              Toast.makeText(context, it.message, Toast.LENGTH_SHORT).show()
+            })
+      }
+    }
+  }
 
   Column(
       modifier =
@@ -128,23 +158,7 @@ fun CreateAccountScreen(navigationActions: NavigationActions, authViewModel: Aut
             modifier = Modifier.fillMaxWidth().testTag(CreateAccountScreen.TEST_TAG_SIGN_UP_BUTTON),
             buttonType = ButtonType.PRIMARY,
             label = stringResource(R.string.create_account_create_account_button),
-            onClick = {
-              if (password != confirmPassword) {
-                // Show an error message in a toast
-                Toast.makeText(context, mismatchErrorMessage, Toast.LENGTH_SHORT).show()
-              } else {
-                authViewModel.createAccountWithEmailAndPassword(
-                    email,
-                    password,
-                    onSuccess = {
-                      // Navigate to the map screen
-                      navigationActions.navigateTo(Route.MAP)
-                    },
-                    onErrorAction = {
-                      // Show an error message in a toast
-                      Toast.makeText(context, it.message, Toast.LENGTH_SHORT).show()
-                    })
-              }
-            })
+            onClick = onSignUpButtonClick,
+        )
       }
 }

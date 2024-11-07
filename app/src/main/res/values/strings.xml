@@ -95,4 +95,6 @@
     <string name="create_account_repeat_password_label">Repeat password</string>
     <string name="create_account_create_account_button">Create account</string>
     <string name="create_account_password_mismatch_error">Passwords do not match</string>
+    <string name="create_account_email_format_error">Invalid email format</string>
+    <string name="create_account_fields_must_be_filled_error">All fields must be filled</string>
 </resources>

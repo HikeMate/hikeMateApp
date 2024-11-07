@@ -73,6 +73,6 @@ class SignInWithEmailScreenTest : TestCase() {
     composeTestRule.onNodeWithTag(SignInWithEmailScreen.TEST_TAG_SIGN_IN_BUTTON).performClick()
 
     verify(authRepository, times(1))
-        .signInWithEmailAndPassword(any(), any(), eq(TEST_EMAIL), eq(TEST_PASSWORD))
+        .signInWithEmailAndPassword(eq(TEST_EMAIL), eq(TEST_PASSWORD), any(), any())
   }
 }
