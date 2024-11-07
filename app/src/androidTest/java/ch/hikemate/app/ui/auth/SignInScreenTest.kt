@@ -7,6 +7,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.test.espresso.intent.Intents
 import ch.hikemate.app.MainActivity
+import ch.hikemate.app.ui.components.AppIcon
 import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
 import org.junit.After
 import org.junit.Before
@@ -29,12 +30,15 @@ class SignInScreenTest : TestCase() {
 
   @Test
   fun everythingIsOnScreen() {
-    composeTestRule.onNodeWithTag("appIcon").assertIsDisplayed()
+    composeTestRule.onNodeWithTag(AppIcon.TEST_TAG).assertIsDisplayed()
 
-    composeTestRule.onNodeWithTag("appNameText").assertIsDisplayed()
-    composeTestRule.onNodeWithTag("appNameText").assertTextEquals("HikeMate")
+    composeTestRule.onNodeWithTag(SignInScreen.TEST_TAG_TITLE).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(SignInScreen.TEST_TAG_TITLE).assertTextEquals("HikeMate")
 
-    composeTestRule.onNodeWithTag("loginButton").assertIsDisplayed()
-    composeTestRule.onNodeWithTag("loginButton").assertHasClickAction()
+    composeTestRule.onNodeWithTag(SignInScreen.TEST_TAG_SIGN_IN_WITH_EMAIL).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(SignInScreen.TEST_TAG_SIGN_IN_WITH_EMAIL).assertHasClickAction()
+
+    composeTestRule.onNodeWithTag(SignInScreen.TEST_TAG_SIGN_IN_WITH_GOOGLE).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(SignInScreen.TEST_TAG_SIGN_IN_WITH_GOOGLE).assertHasClickAction()
   }
 }
