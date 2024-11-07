@@ -3,8 +3,9 @@ package ch.hikemate.app.ui.components
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
 import kotlin.math.ceil
 
 /**
@@ -26,6 +27,9 @@ fun ElevationGraph(
     color: Color = Color.Black,
     strokeWidth: Float = 3f,
 ) {
+  if (elevationData.isEmpty()) {
+    return
+  }
   Canvas(modifier) {
     // Averaging the elevation data to reduce the number of points
     val averageSize = ceil(elevationData.size.toDouble() / maxNumberOfPoints).toInt()
@@ -42,15 +46,21 @@ fun ElevationGraph(
 
     val widthStep = width / elevationDataAveraged.size
 
-    for (i in elevationDataAveraged.indices.take(elevationDataAveraged.size - 1)) {
-      // Scale the points to fit the whole width
-      val x = i * widthStep
-      // Scale the points to fit the whole height, but keeping the scale.
-      // The height is inverted because the origin of the canvas is at the top left corner
-      val y = (height - (elevationDataAveraged[i] - minElevation) / elevationStep).toFloat()
-      val nextX = (i + 1) * widthStep
-      val nextY = (height - (elevationDataAveraged[i + 1] - minElevation) / elevationStep).toFloat()
-      drawLine(color, Offset(x, y), Offset(nextX, nextY), strokeWidth = strokeWidth)
+    // Build (x, y) tuples to draw the path
+    // Scale the points width to fit the whole width
+    // Scale the points height to fit the whole height, but keeping the scale.
+    // The height is inverted because the origin of the canvas is at the top left corner
+    val scaledData =
+        elevationDataAveraged.mapIndexed { index, elevation ->
+          Pair(index * widthStep, (height - (elevation - minElevation) / elevationStep).toFloat())
+        }
+
+    val path = Path()
+    path.moveTo(scaledData.first().first, scaledData.first().second)
+
+    for ((x, y) in scaledData.drop(1)) {
+      path.lineTo(x, y)
     }
+    drawPath(path, color, style = Stroke(width = strokeWidth))
   }
 }
