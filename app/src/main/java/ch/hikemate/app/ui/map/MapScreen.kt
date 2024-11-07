@@ -1,5 +1,6 @@
 package ch.hikemate.app.ui.map
 
+import android.location.Location
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -15,6 +16,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
@@ -46,10 +49,20 @@ import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.navigation.SideBarNavigation
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.google.android.gms.tasks.CancellationTokenSource
 import org.osmdroid.config.Configuration
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polyline
 
 object MapScreen {
@@ -94,6 +107,20 @@ object MapScreen {
   /** (Config) Width of the stroke of the lines that represent the hikes on the map. */
   const val STROKE_WIDTH = 10f
 
+  /**
+   * (Config) Interval in milliseconds between updates of the user's location. The interval is
+   * defined empirically to avoid draining the battery too much while still providing a good
+   * experience to the user.
+   */
+  const val USER_LOCATION_UPDATE_INTERVAL = 5000L
+
+  /**
+   * (Config) Duration in milliseconds of the animation when centering the map on the user's
+   * location. The duration is defined empirically to make the transition smooth and not too fast.
+   * The value is arbitrary and can be adjusted based on the user's experience.
+   */
+  private const val CENTER_MAP_ANIMATION_TIME = 500L
+
   const val MIN_HUE = 0
   const val MAX_HUE = 360
   const val MIN_SATURATION = 42
@@ -110,6 +137,48 @@ object MapScreen {
   const val TEST_TAG_EMPTY_HIKES_LIST_MESSAGE = "emptyHikesListMessage"
   const val TEST_TAG_SEARCHING_MESSAGE = "searchingMessage"
   const val TEST_TAG_SEARCH_LOADING_ANIMATION = "searchLoadingAnimation"
+
+  /**
+   * Draws a new marker on the map representing the user's position. The previous marker is cleared
+   * to avoid duplicates. The map is invalidated to redraw the map with the new marker.
+   *
+   * @param previous The previous marker representing the user's position
+   * @param mapView The map view where the marker will be displayed
+   * @param location The new location of the user
+   * @return The new marker representing the user's position
+   */
+  fun updateUserPosition(previous: Marker?, mapView: MapView, location: Location): Marker {
+    // Clear the previous marker to avoid duplicates
+    previous?.let { mapView.overlays.remove(it) }
+
+    // Create a new marker with the new position
+    val newMarker =
+        Marker(mapView).apply {
+          position = GeoPoint(location.latitude, location.longitude)
+          setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
+        }
+
+    // Add the new marker to the map
+    mapView.overlays.add(newMarker)
+    mapView.invalidate()
+
+    return newMarker
+  }
+
+  /**
+   * Centers the map on the user's location.
+   *
+   * Animates the map so that the transition is smooth and not instant.
+   *
+   * @param mapView The map view to center
+   * @param location The user's location to center the map on
+   */
+  fun centerMapOnUserLocation(mapView: MapView, location: Location) {
+    mapView.controller.animateTo(
+        GeoPoint(location.latitude, location.longitude),
+        mapView.zoomLevelDouble,
+        CENTER_MAP_ANIMATION_TIME)
+  }
 }
 
 /**
@@ -170,6 +239,7 @@ fun clearHikesFromMap(mapView: MapView) {
   mapView.invalidate()
 }
 
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun MapScreen(
     navigationActions: NavigationActions,
@@ -181,6 +251,12 @@ fun MapScreen(
     mapInitialCenter: GeoPoint = MapScreen.MAP_INITIAL_CENTER,
 ) {
   val context = LocalContext.current
+  val locationPermissionState =
+      rememberMultiplePermissionsState(
+          permissions =
+              listOf(
+                  android.Manifest.permission.ACCESS_FINE_LOCATION,
+                  android.Manifest.permission.ACCESS_COARSE_LOCATION))
 
   // Only do the configuration on the first composition, not on every recomposition
   LaunchedEffect(Unit) {
@@ -217,6 +293,52 @@ fun MapScreen(
       setMultiTouchControls(true)
     }
   }
+  var userLocationMarker: Marker? by remember { mutableStateOf(null) }
+
+  val locationUpdatedCallback =
+      object : LocationCallback() {
+        override fun onLocationResult(locationResult: LocationResult) {
+          Log.d(MapScreen.LOG_TAG, "Location updated: $locationResult")
+          val location = locationResult.lastLocation
+          if (location != null) {
+            userLocationMarker = MapScreen.updateUserPosition(userLocationMarker, mapView, location)
+          } else {
+            Log.e(MapScreen.LOG_TAG, "Location is null in callback")
+            // TODO : Localize the toast's text
+            Toast.makeText(context, "No location available", Toast.LENGTH_LONG).show()
+          }
+        }
+      }
+  LaunchedEffect(locationPermissionState.revokedPermissions) {
+    Log.d(
+        MapScreen.LOG_TAG,
+        "Location permission state changed. Revoked permissions: ${locationPermissionState.revokedPermissions}")
+    // If the user has granted at least coarse location, periodically update the user's location
+    if (locationPermissionState.revokedPermissions.size !=
+        locationPermissionState.permissions.size) {
+      Log.d(MapScreen.LOG_TAG, "Location permission granted, requesting location updates")
+      val fusedLocationClient: FusedLocationProviderClient =
+          LocationServices.getFusedLocationProviderClient(context)
+
+      try {
+        fusedLocationClient.requestLocationUpdates(
+            LocationRequest.Builder(
+                    Priority.PRIORITY_BALANCED_POWER_ACCURACY,
+                    MapScreen.USER_LOCATION_UPDATE_INTERVAL)
+                .build(),
+            locationUpdatedCallback,
+            Looper.getMainLooper())
+        Log.d(MapScreen.LOG_TAG, "Location updates requested")
+      } catch (e: SecurityException) {
+        Log.e(MapScreen.LOG_TAG, "Security exception while accessing location", e)
+        // TODO : Localize the toast's text
+        Toast.makeText(
+                context, "Permission error while accessing your location.", Toast.LENGTH_LONG)
+            .show()
+      }
+    }
+  }
+
   // Keep track of whether a search for hikes is ongoing
   var isSearching by remember { mutableStateOf(false) }
 
@@ -259,6 +381,78 @@ fun MapScreen(
                       .testTag(MapScreen.TEST_TAG_MAP)
                       .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT))
 
+          // Button to center the map on the user's location
+          MapMyLocationButton(
+              onClick = {
+                // If the user has granted at least one of the two permissions, center the map on
+                // the user's location
+                if (locationPermissionState.revokedPermissions.size !=
+                    locationPermissionState.permissions.size) {
+                  val fusedLocationClient: FusedLocationProviderClient =
+                      LocationServices.getFusedLocationProviderClient(context)
+
+                  try {
+                    fusedLocationClient
+                        .getCurrentLocation(
+                            Priority.PRIORITY_BALANCED_POWER_ACCURACY,
+                            CancellationTokenSource().token)
+                        .addOnSuccessListener {
+                          if (it != null) {
+                            MapScreen.centerMapOnUserLocation(mapView, it)
+                          } else {
+                            Log.e(MapScreen.LOG_TAG, "Location is null")
+                            // TODO : Localize the toast's text
+                            Toast.makeText(context, "No location available", Toast.LENGTH_SHORT)
+                                .show()
+                          }
+                        }
+                        .addOnFailureListener {
+                          Log.e(MapScreen.LOG_TAG, "Error while accessing location", it)
+                          // TODO : Localize the toast's text
+                          Toast.makeText(
+                                  context,
+                                  "Error while accessing your location.",
+                                  Toast.LENGTH_LONG)
+                              .show()
+                        }
+                    //                  fusedLocationClient.lastLocation.addOnSuccessListener {
+                    // location ->
+                    //                    if (location != null) {
+                    //                      mapView.controller.setCenter(GeoPoint(location.latitude,
+                    // location.longitude))
+                    //                    }
+                    //                    else {
+                    //                      Log.e(MapScreen.LOG_TAG, "Location is null")
+                    //                      // TODO : Localize the toast's text
+                    //                      Toast.makeText(context, "No location available",
+                    // Toast.LENGTH_LONG).show()
+                    //                    }
+                    //                  }.addOnFailureListener { e ->
+                    //                    Log.e(MapScreen.LOG_TAG, "Error while accessing location",
+                    // e)
+                    //                    // TODO : Localize the toast's text
+                    //                    Toast.makeText(context, "Error while accessing your
+                    // location.", Toast.LENGTH_LONG).show()
+                    //                  }
+                  } catch (e: SecurityException) {
+                    Log.e(MapScreen.LOG_TAG, "Security exception while accessing location", e)
+                    // TODO : Localize the toast's text
+                    Toast.makeText(
+                            context,
+                            "Permission error while accessing your location.",
+                            Toast.LENGTH_LONG)
+                        .show()
+                  }
+                }
+                // If the user yet needs to grant the permission, show a custom educational alert
+                else {
+                  // TODO : Show a custom alert that then requests the permission instead of directly requesting it
+                  locationPermissionState.launchMultiplePermissionRequest()
+                }
+              },
+              modifier =
+                  Modifier.align(Alignment.BottomStart)
+                      .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
           // Search button to request OSM for hikes in the displayed area
           if (!isSearching) {
             MapSearchButton(
@@ -304,6 +498,16 @@ fun MapSearchButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
             text = LocalContext.current.getString(R.string.map_screen_search_button_text),
             color = MaterialTheme.colorScheme.onSurface)
       }
+}
+
+@Composable
+fun MapMyLocationButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+  // TODO : Improve the button's appearance
+  IconButton(onClick = onClick, modifier = modifier) {
+    Icon(
+        painter = painterResource(id = R.drawable.my_location),
+        contentDescription = "Center map on my position") // TODO : Localize this text
+  }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
