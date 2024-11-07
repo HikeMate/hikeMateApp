@@ -19,6 +19,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
@@ -604,12 +605,17 @@ fun MapSearchButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
 
 @Composable
 fun MapMyLocationButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
-  // TODO : Improve the button's appearance
-  IconButton(onClick = onClick, modifier = modifier) {
-    Icon(
-        painter = painterResource(id = R.drawable.my_location),
-        contentDescription = stringResource(R.string.map_screen_center_on_pos_content_description))
-  }
+  IconButton(
+      onClick = onClick,
+      modifier = modifier,
+      colors =
+          IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surface)) {
+        Icon(
+            painter = painterResource(id = R.drawable.my_location),
+            tint = MaterialTheme.colorScheme.onSurface,
+            contentDescription =
+                stringResource(R.string.map_screen_center_on_pos_content_description))
+      }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
