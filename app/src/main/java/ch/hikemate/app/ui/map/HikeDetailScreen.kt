@@ -182,7 +182,7 @@ fun HikeDetails(route: HikeRoute, isSaved: Boolean, date: Timestamp?) {
                 modifier = Modifier.padding(16.dp).weight(1f),
             ) {
               Text(
-                  text = route.id,
+                  text = route.name ?: "Unnammed Hike",
                   style = MaterialTheme.typography.titleLarge,
                   textAlign = TextAlign.Center,
                   modifier = Modifier.testTag(TEST_TAG_HIKE_NAME))
@@ -252,7 +252,7 @@ fun HikeDetails(route: HikeRoute, isSaved: Boolean, date: Timestamp?) {
                   )
                 }
               }
-            } else {
+            } else { // A Date is set
               DetailRow(label = "Status", value = "Planned", valueColor = Color(0xFF3B9DE8))
               Row(
                   modifier = Modifier.fillMaxWidth(),
@@ -261,7 +261,9 @@ fun HikeDetails(route: HikeRoute, isSaved: Boolean, date: Timestamp?) {
                 Text(
                     text = "Planned for",
                     style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.clickable { showDatePickerDialog { TODO() } })
+                    modifier =
+                        Modifier.clickable { showDatePickerDialog { TODO() } }
+                            .testTag(TEST_TAG_DETAIL_ROW_TAG))
                 Box(
                     modifier =
                         Modifier.border(
