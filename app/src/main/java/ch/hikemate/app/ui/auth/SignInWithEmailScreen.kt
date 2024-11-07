@@ -135,7 +135,7 @@ fun SignInWithEmailScreen(navigationActions: NavigationActions, authViewModel: A
               TextButton(
                   onClick = {
                     // Navigate to the sign up screen
-                    // navigationActions.navigateTo(Screen.SIGN_UP_WITH_EMAIl)
+                    navigationActions.navigateTo(Screen.CREATE_ACCOUNT)
                   },
                   modifier = Modifier.testTag(SignInWithEmailScreen.TEST_TAG_GO_TO_SIGN_UP_BUTTON),
               ) {

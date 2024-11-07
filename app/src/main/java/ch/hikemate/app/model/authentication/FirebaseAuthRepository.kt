@@ -107,10 +107,10 @@ class FirebaseAuthRepository : AuthRepository {
   }
 
   override fun signInWithEmailAndPassword(
+      email: String,
+      password: String,
       onSuccess: (FirebaseUser?) -> Unit,
       onErrorAction: (Exception) -> Unit,
-      email: String,
-      password: String
   ) {
     val auth = FirebaseAuth.getInstance()
     auth.signInWithEmailAndPassword(email, password).addOnCompleteListener { task ->
