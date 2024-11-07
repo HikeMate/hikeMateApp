@@ -118,6 +118,8 @@ object MapScreen {
   const val TEST_TAG_EMPTY_HIKES_LIST_MESSAGE = "emptyHikesListMessage"
   const val TEST_TAG_SEARCHING_MESSAGE = "searchingMessage"
   const val TEST_TAG_SEARCH_LOADING_ANIMATION = "searchLoadingAnimation"
+
+  const val MINIMAL_SEARCH_TIME_IN_MS = 500 // ms
 }
 
 /**
@@ -234,7 +236,8 @@ fun MapScreen(
 
   // Show hikes on the map
   val routes by hikingRoutesViewModel.hikeRoutes.collectAsState()
-  LaunchedEffect(routes) {
+  LaunchedEffect(routes, isSearching) {
+    if (isSearching) return@LaunchedEffect
     clearHikesFromMap(mapView)
     if (routes.size <= MapScreen.MAX_HIKES_DRAWN_ON_MAP) {
       routes.forEach { showHikeOnMap(mapView, it, getRandomColor()) }
@@ -251,6 +254,31 @@ fun MapScreen(
           .show()
       Log.d(MapScreen.LOG_TAG, "Too many hikes (${routes.size}) to display on the map")
     }
+  }
+
+  /**
+   * Launches a search for hikes in the area displayed on the map. The search is launched only if it
+   * is not already ongoing.
+   */
+  fun launchSearch() {
+    if (isSearching) return
+    isSearching = true
+    val startTime = System.currentTimeMillis()
+    hikingRoutesViewModel.setArea(
+        mapView.boundingBox,
+        onSuccess = {
+          if (System.currentTimeMillis() - startTime < MapScreen.MINIMAL_SEARCH_TIME_IN_MS) {
+            Thread.sleep(
+                MapScreen.MINIMAL_SEARCH_TIME_IN_MS - (System.currentTimeMillis() - startTime))
+          }
+          isSearching = false
+        },
+        onFailure = {
+          isSearching = false
+          Handler(Looper.getMainLooper()).post {
+            Toast.makeText(context, "Error while searching for hikes", Toast.LENGTH_SHORT).show()
+          }
+        })
   }
 
   SideBarNavigation(
@@ -274,21 +302,7 @@ fun MapScreen(
           // Search button to request OSM for hikes in the displayed area
           if (!isSearching) {
             MapSearchButton(
-                onClick = {
-                  if (isSearching) return@MapSearchButton
-                  isSearching = true
-                  hikingRoutesViewModel.setArea(
-                      mapView.boundingBox,
-                      onSuccess = { isSearching = false },
-                      onFailure = {
-                        isSearching = false
-                        Handler(Looper.getMainLooper()).post {
-                          Toast.makeText(
-                                  context, "Error while searching for hikes", Toast.LENGTH_SHORT)
-                              .show()
-                        }
-                      })
-                },
+                onClick = { launchSearch() },
                 modifier =
                     Modifier.align(Alignment.BottomCenter)
                         .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
