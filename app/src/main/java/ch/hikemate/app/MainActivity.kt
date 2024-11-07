@@ -38,21 +38,6 @@ class MainActivity : ComponentActivity() {
     super.onCreate(savedInstanceState)
     requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
     setContent { HikeMateTheme { Surface(modifier = Modifier.fillMaxSize()) { HikeMateApp() } } }
-    /*setContent { HikeMateTheme { Surface(modifier = Modifier.fillMaxSize()) {
-      HikeDetails(
-        route =
-        HikeRoute(
-          id = "matterhorn_glacier_trail_1",
-          bounds = Bounds(minLat = 45.9, minLon = 7.6, maxLat = 46.0, maxLon = 7.7),
-          ways = listOf(LatLong(45.9, 7.6), LatLong(45.95, 7.65), LatLong(46.0, 7.7)),
-          name = "Matterhorn Glacier Trail",
-          description =
-          "A scenic trail with breathtaking views of the Matterhorn and surrounding glaciers."),
-        isSaved = true,
-        date = null
-      )
-    } } }*/
-
   }
 }
 
