@@ -53,6 +53,9 @@ import kotlinx.coroutines.flow.StateFlow
 
 const val TEST_TAG_LOGIN_BUTTON = "loginButton"
 
+private const val CONNECTED_ACCOUNT_MESSAGE =
+    "Connected Google Account to your device successfully. Please wait while we retry the signup."
+
 /** A composable function to display the sign in screen */
 @Composable
 fun SignInScreen(
@@ -73,7 +76,7 @@ fun SignInScreen(
           contract = ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
             Toast.makeText(
                     context,
-                    "Connected Google Account to your device successfully. Please wait while we retry the signup.",
+                CONNECTED_ACCOUNT_MESSAGE,
                     Toast.LENGTH_LONG)
                 .show()
             // startAddAccountIntentLauncher is null, since it is only called when the user has no
