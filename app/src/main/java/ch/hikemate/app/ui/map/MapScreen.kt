@@ -388,9 +388,12 @@ fun showHikeOnMap(mapView: MapView, hike: HikeRoute, color: Int) {
  * Clears all hikes that are displayed on the map. Intended to be used when the list of hikes
  * changes and new hikes need to be drawn.
  */
-fun clearHikesFromMap(mapView: MapView) {
-  // TODO : Clear only the hikes, not the user's position
+fun clearHikesFromMap(mapView: MapView, userLocationMarker: Marker?) {
   mapView.overlays.clear()
+
+  // If there was a user location marker, do not clear this
+  userLocationMarker?.let { mapView.overlays.add(it) }
+
   mapView.invalidate()
 }
 
@@ -492,7 +495,7 @@ fun MapScreen(
   // Show hikes on the map
   val routes by hikingRoutesViewModel.hikeRoutes.collectAsState()
   LaunchedEffect(routes) {
-    clearHikesFromMap(mapView)
+    clearHikesFromMap(mapView, userLocationMarker)
     if (routes.size <= MapScreen.MAX_HIKES_DRAWN_ON_MAP) {
       routes.forEach { showHikeOnMap(mapView, it, getRandomColor()) }
       Log.d(MapScreen.LOG_TAG, "Displayed ${routes.size} hikes on the map")
