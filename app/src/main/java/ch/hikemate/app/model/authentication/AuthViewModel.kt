@@ -65,10 +65,23 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
    * @param email The email address of the user.
    * @param password The password of the user.
    */
-  fun signInWithEmailAndPassword(email: String, password: String) {
+  fun signInWithEmailAndPassword(
+      email: String,
+      password: String,
+      onSuccess: () -> Unit,
+      onErrorAction: (Exception) -> Unit
+  ) {
+    if (email.isEmpty() || password.isEmpty()) {
+      onErrorAction(Exception("Email and password must not be empty"))
+      return
+    }
+
     repository.signInWithEmailAndPassword(
-        onSuccess = { user: FirebaseUser? -> _currentUser.value = user },
-        onErrorAction = {},
+        onSuccess = { user: FirebaseUser? ->
+          _currentUser.value = user
+          onSuccess()
+        },
+        onErrorAction = onErrorAction,
         email = email,
         password = password,
     )

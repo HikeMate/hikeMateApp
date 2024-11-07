@@ -77,4 +77,14 @@
     <string name="profile_screen_hiking_level_choice_intermediate">Intermediate</string>
     <string name="profile_screen_hiking_level_choice_expert">Expert</string>
     <string name="edit_profile_screen_save_button_text">Save profile</string>
+
+    <!-- Authentication -->
+    <string name="sign_in_with_email">Sign in with Email</string>
+    <string name="sign_in_with_google">Sign in with Google</string>
+
+    <string name="sign_in_with_email_title">Sign in</string>
+    <string name="sign_in_with_email_email_label">Email</string>
+    <string name="sign_in_with_email_password_label">Password</string>
+    <string name="sign_in_with_email_sign_in_button">Sign in</string>
+    <string name="sign_in_with_email_go_to_sign_up">I want to sign up</string>
 </resources>

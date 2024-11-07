@@ -7,6 +7,8 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.espresso.intent.Intents
+import ch.hikemate.app.MainActivity
+import ch.hikemate.app.ui.components.AppIcon
 import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.TopLevelDestinations
@@ -53,20 +55,24 @@ class SignInScreenTest : TestCase() {
 
   @Test
   fun everythingIsOnScreen() {
-    setupSignInScreen()
+      setupSignInScreen()
+    composeTestRule.onNodeWithTag(AppIcon.TEST_TAG).assertIsDisplayed()
     composeTestRule.onNodeWithTag("appIcon").assertIsDisplayed()
 
-    composeTestRule.onNodeWithTag("appNameText").assertIsDisplayed()
-    composeTestRule.onNodeWithTag("appNameText").assertTextEquals("HikeMate")
+    composeTestRule.onNodeWithTag(SignInScreen.TEST_TAG_TITLE).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(SignInScreen.TEST_TAG_TITLE).assertTextEquals("HikeMate")
 
-    composeTestRule.onNodeWithTag("loginButton").assertIsDisplayed()
-    composeTestRule.onNodeWithTag("loginButton").assertHasClickAction()
+    composeTestRule.onNodeWithTag(SignInScreen.TEST_TAG_SIGN_IN_WITH_EMAIL).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(SignInScreen.TEST_TAG_SIGN_IN_WITH_EMAIL).assertHasClickAction()
+
+    composeTestRule.onNodeWithTag(SignInScreen.TEST_TAG_SIGN_IN_WITH_GOOGLE).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(SignInScreen.TEST_TAG_SIGN_IN_WITH_GOOGLE).assertHasClickAction()
   }
 
   @Test
   fun loginButtonCallsAuthViewModel() {
     setupSignInScreen()
-    composeTestRule.onNodeWithTag(TEST_TAG_LOGIN_BUTTON).performClick()
+    composeTestRule.onNodeWithTag(SignInScreen.TEST_TAG_SIGN_IN_WITH_GOOGLE).performClick()
 
     verify { mockAuthViewModel.signInWithGoogle(any(), any(), any()) }
   }

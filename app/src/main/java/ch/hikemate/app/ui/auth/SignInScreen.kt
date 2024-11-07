@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,6 +37,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -51,7 +53,11 @@ import ch.hikemate.app.ui.theme.primaryColor
 import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.flow.StateFlow
 
-const val TEST_TAG_LOGIN_BUTTON = "loginButton"
+object SignInScreen {
+  const val TEST_TAG_TITLE = "sign_in_title"
+  const val TEST_TAG_SIGN_IN_WITH_EMAIL = "sign_in_with_email_button"
+  const val TEST_TAG_SIGN_IN_WITH_GOOGLE = "sign_in_with_google_button"
+}
 
 private const val CONNECTED_ACCOUNT_MESSAGE =
     "Connected Google Account to your device successfully. Please wait while we retry the signup."
@@ -120,7 +126,7 @@ fun SignInScreen(
 
               // App name Text
               Text(
-                  modifier = Modifier.testTag("appNameText"),
+                  modifier = Modifier.testTag(SignInScreen.TEST_TAG_TITLE),
                   text = "HikeMate",
                   style =
                       TextStyle(
@@ -131,11 +137,29 @@ fun SignInScreen(
                       ),
               )
             }
-            SignInWithGoogleButton {
-              authViewModel.signInWithGoogle(
-                  coroutineScope = coroutineScope,
-                  context = context,
-                  startAddAccountIntentLauncher = addAccountLauncher)
+
+            // Sign in with email button
+            Column {
+              SignInButton(
+                  text = stringResource(R.string.sign_in_with_email),
+                  icon = R.drawable.app_icon,
+                  modifier = Modifier.testTag(SignInScreen.TEST_TAG_SIGN_IN_WITH_EMAIL),
+              ) {
+                navigationActions.navigateTo(Screen.SIGN_IN_WITH_EMAIL)
+              }
+
+              // Sign in with Google button
+              SignInButton(
+                  text = stringResource(R.string.sign_in_with_google),
+                  icon = R.drawable.google_logo,
+                  modifier = Modifier.testTag(SignInScreen.TEST_TAG_SIGN_IN_WITH_GOOGLE),
+              ) {
+                  authViewModel.signInWithGoogle(
+                      coroutineScope = coroutineScope,
+                      context = context,
+                      startAddAccountIntentLauncher = addAccountLauncher)
+
+              }
             }
           }
         }
@@ -144,35 +168,42 @@ fun SignInScreen(
 }
 
 /**
- * A composable function to display the sign in with Google button
+ * A composable function to display the sign in with an icon
  *
  * @param onSignInClick A lambda function to handle the sign in click event
+ * @param icon The resource ID of the icon to display on the button
  */
 @Composable
-fun SignInWithGoogleButton(onSignInClick: () -> Unit) {
+fun SignInButton(
+    icon: Int,
+    text: String,
+    modifier: Modifier = Modifier,
+    onSignInClick: () -> Unit
+) {
   Button(
       onClick = onSignInClick,
-      colors = ButtonDefaults.buttonColors(containerColor = Color.White),
+      colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surface),
       shape = RoundedCornerShape(50),
       modifier =
-          Modifier.padding(8.dp)
+          modifier
+              .padding(8.dp)
               .height(48.dp)
-              .border(width = 3.dp, color = primaryColor, shape = RoundedCornerShape(size = 32.dp))
-              .testTag(TEST_TAG_LOGIN_BUTTON)) {
+              .border(
+                  width = 3.dp, color = primaryColor, shape = RoundedCornerShape(size = 32.dp))) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,
             modifier = Modifier.fillMaxWidth()) {
               // Load the Google logo from resources
               Image(
-                  painter = painterResource(id = R.drawable.google_logo),
-                  contentDescription = "Google Logo",
+                  painter = painterResource(id = icon),
+                  contentDescription = null,
                   modifier = Modifier.size(30.dp).padding(end = 8.dp))
 
               // Text for the button
               Text(
-                  text = "Sign In with Google",
-                  color = Color.Black, // Text color
+                  text = text,
+                  color = MaterialTheme.colorScheme.onSurface, // Text color
                   fontSize = 18.sp, // Font size
                   fontWeight = FontWeight.Bold,
               )

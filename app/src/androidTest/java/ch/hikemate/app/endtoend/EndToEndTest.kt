@@ -7,7 +7,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import ch.hikemate.app.MainActivity
-import ch.hikemate.app.ui.auth.TEST_TAG_LOGIN_BUTTON
+import ch.hikemate.app.ui.auth.SignInScreen
 import ch.hikemate.app.ui.map.MapScreen.TEST_TAG_MAP
 import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
 import ch.hikemate.app.ui.navigation.Screen.PROFILE
@@ -27,13 +27,14 @@ class EndToEndTest {
   // @Test
   fun test() {
     // Check that we are on the login screen
-    composeTestRule.onNodeWithTag(TEST_TAG_LOGIN_BUTTON).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(SignInScreen.TEST_TAG_SIGN_IN_WITH_EMAIL).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(SignInScreen.TEST_TAG_SIGN_IN_WITH_GOOGLE).assertIsDisplayed()
 
     // Click on the login button
-    composeTestRule.onNodeWithTag(TEST_TAG_LOGIN_BUTTON).performClick()
+    composeTestRule.onNodeWithTag(SignInScreen.TEST_TAG_SIGN_IN_WITH_GOOGLE).performClick()
 
     // Check that we are not on the login screen anymore
-    composeTestRule.onNodeWithTag(TEST_TAG_LOGIN_BUTTON).assertIsNotDisplayed()
+    composeTestRule.onNodeWithTag(SignInScreen.TEST_TAG_SIGN_IN_WITH_GOOGLE).assertIsNotDisplayed()
 
     // Check that we are on the map
     composeTestRule.onNodeWithTag(TEST_TAG_MAP).assertIsDisplayed()
