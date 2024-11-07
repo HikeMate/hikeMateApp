@@ -1,5 +1,6 @@
 package ch.hikemate.app.ui.map
 
+import android.content.Context
 import android.location.Location
 import android.os.Handler
 import android.os.Looper
@@ -50,6 +51,7 @@ import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.navigation.SideBarNavigation
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.MultiplePermissionsState
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
@@ -112,7 +114,7 @@ object MapScreen {
    * defined empirically to avoid draining the battery too much while still providing a good
    * experience to the user.
    */
-  const val USER_LOCATION_UPDATE_INTERVAL = 5000L
+  private const val USER_LOCATION_UPDATE_INTERVAL = 5000L
 
   /**
    * (Config) Duration in milliseconds of the animation when centering the map on the user's
@@ -148,8 +150,11 @@ object MapScreen {
    * @param previous The previous marker representing the user's position
    * @param mapView The map view where the marker is displayed
    */
-  fun clearUserPosition(previous: Marker?, mapView: MapView) {
+  fun clearUserPosition(previous: Marker?, mapView: MapView, invalidate: Boolean = false) {
     previous?.let { mapView.overlays.remove(it) }
+    if (invalidate) {
+      mapView.invalidate()
+    }
   }
 
   /**
@@ -161,7 +166,7 @@ object MapScreen {
    * @param location The new location of the user
    * @return The new marker representing the user's position
    */
-  fun updateUserPosition(previous: Marker?, mapView: MapView, location: Location): Marker {
+  private fun updateUserPosition(previous: Marker?, mapView: MapView, location: Location): Marker {
     // Clear the previous marker to avoid duplicates
     clearUserPosition(previous, mapView)
 
@@ -187,11 +192,146 @@ object MapScreen {
    * @param mapView The map view to center
    * @param location The user's location to center the map on
    */
-  fun centerMapOnUserLocation(mapView: MapView, location: Location) {
+  private fun centerMapOnUserLocation(mapView: MapView, location: Location) {
     mapView.controller.animateTo(
         GeoPoint(location.latitude, location.longitude),
         mapView.zoomLevelDouble,
         CENTER_MAP_ANIMATION_TIME)
+  }
+
+  /**
+   * Starts listening for user location updates. Make sure to stop the updates when they are no
+   * longer needed to avoid draining the battery, or when the permission is revoked.
+   *
+   * This function handles exceptions when the location permission is not granted, but won't disable
+   * updates even if a [SecurityException] is caught. It is up to the caller to handle the exception
+   * and stop the updates if needed.
+   *
+   * @param context The context where the location updates will be requested
+   * @param locationCallback The callback that will be called when the user's location is updated
+   * @see [stopUserLocationUpdates]
+   */
+  fun startUserLocationUpdates(context: Context, locationCallback: LocationCallback): Boolean {
+    // Create a client to work with user location
+    val fusedLocationProviderClient: FusedLocationProviderClient =
+        LocationServices.getFusedLocationProviderClient(context)
+
+    // Calls can produce SecurityExceptions if the permission is not granted
+    try {
+      // Request periodic updates of the user's location when it changes
+      fusedLocationProviderClient.requestLocationUpdates(
+          LocationRequest.Builder(
+                  // Whether to prioritize battery or position accuracy
+                  Priority.PRIORITY_BALANCED_POWER_ACCURACY,
+                  // Update interval in milliseconds
+                  USER_LOCATION_UPDATE_INTERVAL)
+              .build(),
+          locationCallback,
+          Looper.getMainLooper())
+
+      Log.d(LOG_TAG, "User location updates requested through FusedLocationProviderClient")
+
+      // Periodic updates were started successfully
+      return true
+    } catch (e: SecurityException) {
+      // Periodic updates could not be started
+      return false
+    }
+  }
+
+  /**
+   * Stops listening for user location updates. Make sure to stop the updates when they are no
+   * longer needed to avoid draining the battery, or when the permission is revoked.
+   *
+   * @param context The context where the location updates were requested
+   * @param locationCallback The callback that was called when the user's location was updated
+   * @see [startUserLocationUpdates]
+   */
+  fun stopUserLocationUpdates(context: Context, locationCallback: LocationCallback) {
+    // Create a client to work with user location
+    val fusedLocationProviderClient: FusedLocationProviderClient =
+        LocationServices.getFusedLocationProviderClient(context)
+
+    // Notify the client we don't want location updates anymore
+    fusedLocationProviderClient.removeLocationUpdates(locationCallback)
+
+    Log.d(LOG_TAG, "User location updates stopped through FusedLocationProviderClient")
+  }
+
+  /**
+   * Handles a user location update received by the location callback.
+   *
+   * Does not display any feedback to the user (toast, ...).
+   *
+   * If no location is available, the user's position is cleared from the map.
+   *
+   * @param locationResult The location update result received by the callback
+   * @param mapView The map view where the user's location will be displayed
+   * @param userLocationMarker The marker representing the user's location on the map
+   * @return The updated user location marker, if any, or null if no position was available.
+   */
+  fun onUserLocationUpdate(
+      locationResult: LocationResult,
+      mapView: MapView,
+      userLocationMarker: Marker?
+  ): Marker? {
+    // Extract the actual location from the update result
+    val location = locationResult.lastLocation
+
+    Log.d(LOG_TAG, "User location update received: $locationResult")
+
+    // The result might be null if the location is not available
+    var result: Marker? = null
+    if (location != null) {
+      // If a new position is available, show it on the map
+      result = updateUserPosition(userLocationMarker, mapView, location)
+    } else {
+      Log.e(LOG_TAG, "User location update contains null location")
+
+      // If no location is available, clear the user's position from the map
+      clearUserPosition(userLocationMarker, mapView, invalidate = true)
+    }
+
+    // Return the updated user location marker, if any
+    return result
+  }
+
+  /**
+   * Util function to check if the user has granted the location permission.
+   *
+   * Does not check whether fine location permission has been granted, checks that at least coarse
+   * location was granted.
+   *
+   * @param locationPermissionState The state of the location permission
+   * @return True if the user has granted the location permission, false otherwise
+   */
+  @OptIn(ExperimentalPermissionsApi::class)
+  fun hasLocationPermission(locationPermissionState: MultiplePermissionsState): Boolean {
+    return locationPermissionState.revokedPermissions.size !=
+        locationPermissionState.permissions.size
+  }
+
+  fun centerMapOnUserLocation(context: Context, mapView: MapView) {
+    val fusedLocationClient: FusedLocationProviderClient =
+        LocationServices.getFusedLocationProviderClient(context)
+
+    try {
+      fusedLocationClient
+          .getCurrentLocation(
+              Priority.PRIORITY_BALANCED_POWER_ACCURACY, CancellationTokenSource().token)
+          .addOnSuccessListener {
+            if (it != null) {
+              centerMapOnUserLocation(mapView, it)
+            } else {
+              Log.e(LOG_TAG, "Location obtained in centerMapOnUserLocation is null")
+            }
+          }
+          .addOnFailureListener {
+            Log.e(LOG_TAG, "Error while accessing location in centerMapOnUserLocation", it)
+          }
+    } catch (e: SecurityException) {
+      Log.e(LOG_TAG, "Security exception while accessing location in centerMapOnUserLocation", e)
+    }
   }
 }
 
@@ -249,6 +389,7 @@ fun showHikeOnMap(mapView: MapView, hike: HikeRoute, color: Int) {
  * changes and new hikes need to be drawn.
  */
 fun clearHikesFromMap(mapView: MapView) {
+  // TODO : Clear only the hikes, not the user's position
   mapView.overlays.clear()
   mapView.invalidate()
 }
@@ -309,51 +450,39 @@ fun MapScreen(
   }
   var userLocationMarker: Marker? by remember { mutableStateOf(null) }
 
-  val locationUpdatedCallback =
-      object : LocationCallback() {
-        override fun onLocationResult(locationResult: LocationResult) {
-          Log.d(MapScreen.LOG_TAG, "Location updated: $locationResult")
-          val location = locationResult.lastLocation
-          if (location != null) {
-            userLocationMarker = MapScreen.updateUserPosition(userLocationMarker, mapView, location)
-          } else {
-            Log.e(MapScreen.LOG_TAG, "Location is null in callback")
-            // TODO : Localize the toast's text
-            Toast.makeText(context, "No location available", Toast.LENGTH_LONG).show()
-          }
-        }
+  // We need to keep a reference to the instance of location callback, this way we can unregister
+  // it using the same reference, for example when the permission is revoked.
+  val locationUpdatedCallback = remember {
+    object : LocationCallback() {
+      override fun onLocationResult(locationResult: LocationResult) {
+        userLocationMarker =
+            MapScreen.onUserLocationUpdate(locationResult, mapView, userLocationMarker)
       }
+    }
+  }
+
   LaunchedEffect(locationPermissionState.revokedPermissions) {
     Log.d(
         MapScreen.LOG_TAG,
-        "Location permission state changed. Revoked permissions: ${locationPermissionState.revokedPermissions}")
-    // If the user has granted at least coarse location, periodically update the user's location
-    if (locationPermissionState.revokedPermissions.size !=
-        locationPermissionState.permissions.size) {
-      Log.d(MapScreen.LOG_TAG, "Location permission granted, requesting location updates")
-      val fusedLocationClient: FusedLocationProviderClient =
-          LocationServices.getFusedLocationProviderClient(context)
+        "Location permission changed (revoked: ${locationPermissionState.revokedPermissions})")
+    val hasLocationPermission = MapScreen.hasLocationPermission(locationPermissionState)
 
-      try {
-        fusedLocationClient.requestLocationUpdates(
-            LocationRequest.Builder(
-                    Priority.PRIORITY_BALANCED_POWER_ACCURACY,
-                    MapScreen.USER_LOCATION_UPDATE_INTERVAL)
-                .build(),
-            locationUpdatedCallback,
-            Looper.getMainLooper())
-        Log.d(MapScreen.LOG_TAG, "Location updates requested")
-      } catch (e: SecurityException) {
-        Log.e(MapScreen.LOG_TAG, "Security exception while accessing location", e)
+    // The user just enabled location permission for the app, start location features
+    if (hasLocationPermission) {
+      Log.d(MapScreen.LOG_TAG, "Location permission granted, requesting location updates")
+      val featuresEnabledSuccessfully =
+          MapScreen.startUserLocationUpdates(context, locationUpdatedCallback)
+      if (!featuresEnabledSuccessfully) {
+        Log.e(MapScreen.LOG_TAG, "Failed to enable location features")
         // TODO : Localize the toast's text
-        Toast.makeText(
-                context, "Permission error while accessing your location.", Toast.LENGTH_LONG)
-            .show()
+        Toast.makeText(context, "Failed to enable location features", Toast.LENGTH_LONG).show()
       }
     }
-    // If the user has revoked the permission, clear the user location from the map
+
+    // The user just revoked location permission for the app, stop location features
     else {
-      MapScreen.clearUserPosition(userLocationMarker, mapView)
+      MapScreen.stopUserLocationUpdates(context, locationUpdatedCallback)
+      MapScreen.clearUserPosition(userLocationMarker, mapView, invalidate = true)
     }
   }
 
@@ -402,69 +531,17 @@ fun MapScreen(
           // Button to center the map on the user's location
           MapMyLocationButton(
               onClick = {
+                val hasLocationPermission = MapScreen.hasLocationPermission(locationPermissionState)
                 // If the user has granted at least one of the two permissions, center the map on
                 // the user's location
-                if (locationPermissionState.revokedPermissions.size !=
-                    locationPermissionState.permissions.size) {
-                  val fusedLocationClient: FusedLocationProviderClient =
-                      LocationServices.getFusedLocationProviderClient(context)
-
-                  try {
-                    fusedLocationClient
-                        .getCurrentLocation(
-                            Priority.PRIORITY_BALANCED_POWER_ACCURACY,
-                            CancellationTokenSource().token)
-                        .addOnSuccessListener {
-                          if (it != null) {
-                            MapScreen.centerMapOnUserLocation(mapView, it)
-                          } else {
-                            Log.e(MapScreen.LOG_TAG, "Location is null")
-                            // TODO : Localize the toast's text
-                            Toast.makeText(context, "No location available", Toast.LENGTH_SHORT)
-                                .show()
-                          }
-                        }
-                        .addOnFailureListener {
-                          Log.e(MapScreen.LOG_TAG, "Error while accessing location", it)
-                          // TODO : Localize the toast's text
-                          Toast.makeText(
-                                  context,
-                                  "Error while accessing your location.",
-                                  Toast.LENGTH_LONG)
-                              .show()
-                        }
-                    //                  fusedLocationClient.lastLocation.addOnSuccessListener {
-                    // location ->
-                    //                    if (location != null) {
-                    //                      mapView.controller.setCenter(GeoPoint(location.latitude,
-                    // location.longitude))
-                    //                    }
-                    //                    else {
-                    //                      Log.e(MapScreen.LOG_TAG, "Location is null")
-                    //                      // TODO : Localize the toast's text
-                    //                      Toast.makeText(context, "No location available",
-                    // Toast.LENGTH_LONG).show()
-                    //                    }
-                    //                  }.addOnFailureListener { e ->
-                    //                    Log.e(MapScreen.LOG_TAG, "Error while accessing location",
-                    // e)
-                    //                    // TODO : Localize the toast's text
-                    //                    Toast.makeText(context, "Error while accessing your
-                    // location.", Toast.LENGTH_LONG).show()
-                    //                  }
-                  } catch (e: SecurityException) {
-                    Log.e(MapScreen.LOG_TAG, "Security exception while accessing location", e)
-                    // TODO : Localize the toast's text
-                    Toast.makeText(
-                            context,
-                            "Permission error while accessing your location.",
-                            Toast.LENGTH_LONG)
-                        .show()
-                  }
+                if (hasLocationPermission) {
+                  MapScreen.centerMapOnUserLocation(context, mapView)
                 }
                 // If the user yet needs to grant the permission, show a custom educational alert
                 else {
                   // TODO : Show a custom alert that then requests the permission instead of
+                  // TODO : Maintain state so that if the user grants the permission, the map
+                  // centers on the user's location
                   // directly requesting it
                   locationPermissionState.launchMultiplePermissionRequest()
                 }
