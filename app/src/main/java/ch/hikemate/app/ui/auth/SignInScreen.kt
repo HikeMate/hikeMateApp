@@ -1,5 +1,10 @@
 package ch.hikemate.app.ui.auth
 
+import android.util.Log
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.ActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -19,6 +24,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
@@ -26,6 +34,7 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -34,12 +43,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ch.hikemate.app.R
+import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.ui.components.AppIcon
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.navigation.TopLevelDestinations
 import ch.hikemate.app.ui.theme.kaushanTitleFontFamily
 import ch.hikemate.app.ui.theme.primaryColor
+import com.google.firebase.auth.FirebaseUser
+import kotlinx.coroutines.flow.StateFlow
 
 object SignInScreen {
   const val TEST_TAG_TITLE = "sign_in_title"
@@ -47,9 +59,41 @@ object SignInScreen {
   const val TEST_TAG_SIGN_IN_WITH_GOOGLE = "sign_in_with_google_button"
 }
 
+private const val CONNECTED_ACCOUNT_MESSAGE =
+    "Connected Google Account to your device successfully. Please wait while we retry the signup."
+
 /** A composable function to display the sign in screen */
 @Composable
-fun SignInScreen(navigationActions: NavigationActions) {
+fun SignInScreen(
+    navigationActions: NavigationActions,
+    authViewModel: AuthViewModel,
+    currUserStateFlow: StateFlow<FirebaseUser?> = authViewModel.currentUser
+) {
+
+  val context = LocalContext.current
+  val coroutineScope = rememberCoroutineScope()
+  val currUser = currUserStateFlow.collectAsState().value
+
+  // Create the launcher for adding a Google account in case there is no Google account connected
+  // to the device. Necessary since the Google sign-in process requires a Google account to be
+  // connected to the device, otherwise the sign-in process will fail with a No Credential Exception
+  val addAccountLauncher =
+      rememberLauncherForActivityResult(
+          contract = ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
+            Toast.makeText(context, CONNECTED_ACCOUNT_MESSAGE, Toast.LENGTH_LONG).show()
+            // startAddAccountIntentLauncher is null, since it is only called when the user has no
+            // Google account connected to the device, however they just added one.
+            authViewModel.signInWithGoogle(coroutineScope, context, null)
+            Log.d("MainActivity", "addAccountLauncher result: $result")
+          }
+
+  // If the user is already signed in, navigate to the map screen
+  LaunchedEffect(currUser) {
+    if (currUser != null) {
+      navigationActions.navigateTo(TopLevelDestinations.MAP)
+    }
+  }
+
   Scaffold(
       modifier = Modifier.fillMaxSize().testTag(Screen.AUTH),
       content = { padding ->
@@ -110,9 +154,10 @@ fun SignInScreen(navigationActions: NavigationActions) {
                   icon = R.drawable.google_logo,
                   modifier = Modifier.testTag(SignInScreen.TEST_TAG_SIGN_IN_WITH_GOOGLE),
               ) {
-                // TODO: Implement the sign in with Google functionality
-                // This bypasses all security and should not be used in production
-                navigationActions.navigateTo(TopLevelDestinations.MAP)
+                authViewModel.signInWithGoogle(
+                    coroutineScope = coroutineScope,
+                    context = context,
+                    startAddAccountIntentLauncher = addAccountLauncher)
               }
             }
           }
