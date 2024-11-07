@@ -9,6 +9,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import ch.hikemate.app.R
 
+object AppIcon {
+  const val TEST_TAG = "appIcon"
+}
+
 /**
  * A composable that displays the app icon.
  *
@@ -19,5 +23,6 @@ fun AppIcon(size: Dp) {
   Image(
       painter = painterResource(id = R.drawable.app_icon),
       contentDescription = "App Logo",
-      modifier = Modifier.size(size).testTag("appIcon"))
+      modifier = Modifier.size(size).testTag(AppIcon.TEST_TAG),
+  )
 }

@@ -6,7 +6,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.hikemate.app.HikeMateApp
-import ch.hikemate.app.ui.auth.TEST_TAG_LOGIN_BUTTON
+import ch.hikemate.app.ui.auth.SignInScreen
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.navigation.TEST_TAG_DRAWER_ITEM_PREFIX
@@ -35,7 +35,7 @@ class HikeMateAppNavigationTest {
 
     composeTestRule.onNodeWithTag(Screen.AUTH).assertIsDisplayed()
 
-    composeTestRule.onNodeWithTag(TEST_TAG_LOGIN_BUTTON).performClick()
+    composeTestRule.onNodeWithTag(SignInScreen.TEST_TAG_SIGN_IN_WITH_GOOGLE).performClick()
     composeTestRule.onNodeWithTag(Screen.MAP).assertIsDisplayed()
   }
 
@@ -44,7 +44,7 @@ class HikeMateAppNavigationTest {
     composeTestRule.setContent { HikeMateApp() }
     composeTestRule.onNodeWithTag(Screen.AUTH).assertIsDisplayed()
 
-    composeTestRule.onNodeWithTag(TEST_TAG_LOGIN_BUTTON).performClick()
+    composeTestRule.onNodeWithTag(SignInScreen.TEST_TAG_SIGN_IN_WITH_GOOGLE).performClick()
     composeTestRule.onNodeWithTag(Screen.MAP).assertIsDisplayed()
 
     // Open the sidebar
@@ -60,7 +60,7 @@ class HikeMateAppNavigationTest {
     composeTestRule.setContent { HikeMateApp() }
     composeTestRule.onNodeWithTag(Screen.AUTH).assertIsDisplayed()
 
-    composeTestRule.onNodeWithTag(TEST_TAG_LOGIN_BUTTON).performClick()
+    composeTestRule.onNodeWithTag(SignInScreen.TEST_TAG_SIGN_IN_WITH_GOOGLE).performClick()
     composeTestRule.onNodeWithTag(Screen.MAP).assertIsDisplayed()
 
     // Open the sidebar

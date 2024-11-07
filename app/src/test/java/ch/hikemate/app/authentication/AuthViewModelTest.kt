@@ -143,7 +143,7 @@ class AuthViewModelTest {
     // Verify that currentUser is initially null
     assertNull(viewModel.currentUser.first())
 
-    viewModel.signInWithEmailAndPassword("mock@example.com", "password")
+    viewModel.signInWithEmailAndPassword("mock@example.com", "password", {}, {})
 
     val currentUser = viewModel.currentUser.first() // Get the first (current) value of the flow
 
@@ -170,7 +170,7 @@ class AuthViewModelTest {
         // Verify that currentUser is initially null
         assertNull(viewModel.currentUser.first())
 
-        viewModel.signInWithEmailAndPassword("mock@example.com", "password")
+        viewModel.signInWithEmailAndPassword("mock@example.com", "password", {}, {})
 
         val currentUser = viewModel.currentUser.first()
 

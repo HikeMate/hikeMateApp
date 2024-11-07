@@ -23,6 +23,7 @@ object Screen {
   const val MAP = "Map Screen"
   const val PROFILE = "Profile Screen"
   const val EDIT_PROFILE = "Edit-profile Screen"
+  const val SIGN_IN_WITH_EMAIL = "Sign-in-with-email Screen"
 }
 
 /**
