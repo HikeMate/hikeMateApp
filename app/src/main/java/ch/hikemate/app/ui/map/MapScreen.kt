@@ -139,6 +139,20 @@ object MapScreen {
   const val TEST_TAG_SEARCH_LOADING_ANIMATION = "searchLoadingAnimation"
 
   /**
+   * Clears the marker representing the user's position from the map.
+   *
+   * The map is NOT invalidated. If needed, use [org.osmdroid.views.MapView.invalidate].
+   *
+   * To update the user's position to a new location, use [updateUserPosition].
+   *
+   * @param previous The previous marker representing the user's position
+   * @param mapView The map view where the marker is displayed
+   */
+  fun clearUserPosition(previous: Marker?, mapView: MapView) {
+    previous?.let { mapView.overlays.remove(it) }
+  }
+
+  /**
    * Draws a new marker on the map representing the user's position. The previous marker is cleared
    * to avoid duplicates. The map is invalidated to redraw the map with the new marker.
    *
@@ -149,7 +163,7 @@ object MapScreen {
    */
   fun updateUserPosition(previous: Marker?, mapView: MapView, location: Location): Marker {
     // Clear the previous marker to avoid duplicates
-    previous?.let { mapView.overlays.remove(it) }
+    clearUserPosition(previous, mapView)
 
     // Create a new marker with the new position
     val newMarker =
@@ -337,6 +351,10 @@ fun MapScreen(
             .show()
       }
     }
+    // If the user has revoked the permission, clear the user location from the map
+    else {
+      MapScreen.clearUserPosition(userLocationMarker, mapView)
+    }
   }
 
   // Keep track of whether a search for hikes is ongoing
@@ -446,7 +464,8 @@ fun MapScreen(
                 }
                 // If the user yet needs to grant the permission, show a custom educational alert
                 else {
-                  // TODO : Show a custom alert that then requests the permission instead of directly requesting it
+                  // TODO : Show a custom alert that then requests the permission instead of
+                  // directly requesting it
                   locationPermissionState.launchMultiplePermissionRequest()
                 }
               },
