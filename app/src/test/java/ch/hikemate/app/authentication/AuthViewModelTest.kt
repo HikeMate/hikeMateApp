@@ -202,7 +202,8 @@ class AuthViewModelTest {
         // Verify that currentUser is initially null
         assertNull(viewModel.currentUser.first())
 
-        viewModel.createAccountWithEmailAndPassword("mock@example.com", "password")
+        viewModel.createAccountWithEmailAndPassword(
+            "mock@example.com", "password", {}, { fail("Error callback should not be called") })
 
         val currentUser = viewModel.currentUser.first() // Get the first (current) value of the flow
 
@@ -230,7 +231,8 @@ class AuthViewModelTest {
         // Verify that currentUser is initially null
         assertNull(viewModel.currentUser.first())
 
-        viewModel.createAccountWithEmailAndPassword("mock@example.com", "password")
+        viewModel.createAccountWithEmailAndPassword(
+            "mock@example.com", "password", { fail("Success callback should not be called") }, {})
 
         val currentUser = viewModel.currentUser.first()
 
