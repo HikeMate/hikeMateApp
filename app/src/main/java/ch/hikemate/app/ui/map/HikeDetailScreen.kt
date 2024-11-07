@@ -1,7 +1,6 @@
 package ch.hikemate.app.ui.map
 
 import android.app.DatePickerDialog
-import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -42,18 +41,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import ch.hikemate.app.R
-import ch.hikemate.app.model.route.Bounds
 import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
 import ch.hikemate.app.ui.components.AppropriatenessMessage
 import ch.hikemate.app.ui.components.BackButton
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Screen
+import ch.hikemate.app.utils.calculateBestZoomLevel
+import ch.hikemate.app.utils.getGeographicalCenter
 import com.google.firebase.Timestamp
 import java.util.Calendar
-import kotlin.math.cos
 import org.osmdroid.config.Configuration
-import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 
@@ -69,7 +67,6 @@ const val TEST_TAG_DETAIL_ROW_VALUE = "detailRowValue"
 const val TEST_TAG_ADD_DATE_BUTTON = "addDateButton"
 const val TEST_TAG_PLANNED_DATE_TEXT_BOX = "plannedDateTextBox"
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HikeDetailScreen(
     listOfHikeRoutesViewModel: ListOfHikeRoutesViewModel,
@@ -83,6 +80,7 @@ fun HikeDetailScreen(
 
   val context = LocalContext.current
 
+  // Only do the configuration on the first composition, not on every recomposition
   LaunchedEffect(Unit) {
     Configuration.getInstance().apply {
       // Set user-agent to avoid rejected requests
@@ -99,11 +97,10 @@ fun HikeDetailScreen(
     }
   }
 
+  // Avoid re-creating the MapView on every recomposition
   val mapView = remember {
     MapView(context).apply {
       // Set map's initial state
-      Log.d(
-          "HikeDetailScreen", "Setting map's initial state ${calculateBestZoomLevel(route.bounds)}")
       controller.setZoom(calculateBestZoomLevel(route.bounds))
       controller.setCenter(getGeographicalCenter(route.bounds))
       // Limit the zoom to avoid the user zooming out or out too much
@@ -123,23 +120,29 @@ fun HikeDetailScreen(
     }
   }
 
+  // Show the selected hike on the map
   showHikeOnMap(mapView, route, getRandomColor(), navigationActions)
 
   Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {
+    // Map
     AndroidView(
         factory = { mapView },
         modifier =
             Modifier.fillMaxWidth()
                 .padding(bottom = 300.dp) // Reserve space for the scaffold at the bottom
                 .testTag(TEST_TAG_MAP))
+    // Back Button at the top of the screen
     BackButton(
         navigationActions = navigationActions, backgroundColor = MaterialTheme.colorScheme.surface)
+    // Zoom buttons at the bottom right of the screen
     ZoomMapButton(
         onZoomIn = { mapView.controller.zoomIn() },
         onZoomOut = { mapView.controller.zoomOut() },
         modifier =
             Modifier.align(Alignment.BottomEnd)
                 .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
+
+    // Hike Details bottom sheet
     HikeDetails(route, true, null)
   }
 }
@@ -150,6 +153,7 @@ fun HikeDetails(route: HikeRoute, isSaved: Boolean, date: Timestamp?) {
   val scaffoldState = rememberBottomSheetScaffoldState()
   val context = LocalContext.current
 
+  // Needed for the pop-up that allows the user to show the date
   fun showDatePickerDialog(onDateSelected: (String) -> Unit) {
     val calendar = Calendar.getInstance()
     val year = calendar.get(Calendar.YEAR)
@@ -182,7 +186,7 @@ fun HikeDetails(route: HikeRoute, isSaved: Boolean, date: Timestamp?) {
                 modifier = Modifier.padding(16.dp).weight(1f),
             ) {
               Text(
-                  text = route.name ?: "Unnammed Hike",
+                  text = route.name ?: "Unnamed Hike",
                   style = MaterialTheme.typography.titleLarge,
                   textAlign = TextAlign.Center,
                   modifier = Modifier.testTag(TEST_TAG_HIKE_NAME))
@@ -288,15 +292,14 @@ fun HikeDetails(route: HikeRoute, isSaved: Boolean, date: Timestamp?) {
 
 @Composable
 fun AppropriatenessMessageWrapper(isSuitable: Boolean) {
-  // The color of the card's message is chosen based on whether the hike is suitable or not
+  // The text, icon and color of the card's message are chosen based on whether the hike is suitable
+  // or not
   val suitableLabelColor = if (isSuitable) Color(0xFF4CAF50) else Color(0xFFFFC107)
 
-  // The text and icon of the card's message are chosen based on whether the hike is suitable or not
   val suitableLabelText =
       if (isSuitable) LocalContext.current.getString(R.string.map_screen_suitable_hike_label)
       else LocalContext.current.getString(R.string.map_screen_challenging_hike_label)
 
-  // The icon of the card's message is chosen based on whether the hike is suitable or not
   val suitableLabelIcon =
       painterResource(if (isSuitable) R.drawable.check_circle else R.drawable.warning)
 
@@ -321,82 +324,4 @@ fun DetailRow(label: String, value: String, valueColor: Color = Color.Black) {
             color = valueColor,
             modifier = Modifier.testTag(TEST_TAG_DETAIL_ROW_VALUE))
       }
-}
-
-fun getGeographicalCenter(bounds: Bounds): GeoPoint {
-  Log.d(
-      "Bounds",
-      "minLat: ${bounds.minLat}, maxLat: ${bounds.maxLat}, minLon: ${bounds.minLon}, maxLon: ${bounds.maxLon}")
-  val minLong = bounds.minLon
-  val maxLong = bounds.maxLon
-  val minLat = bounds.minLat
-  val maxLat = bounds.maxLat
-
-  val centerLat = (minLat + maxLat) / 2
-  var centerLong = (minLong + maxLong) / 2
-
-  // Adjust if the longitude crosses the Date Line (i.e., difference > 180 degrees)
-  if (maxLong - minLong > 180) {
-    centerLong = (minLong + maxLong + 360) / 2
-  } else if (minLong - maxLong > 180) {
-    centerLong = (minLong + maxLong - 360) / 2
-  }
-
-  // Normalize longitude to be in the range -180 to 180
-  if (centerLong > 180) {
-    centerLong -= 360
-  } else if (centerLong < -180) {
-    centerLong += 360
-  }
-
-  Log.d("Bounds", "centerLat: $centerLat, centerLong: $centerLong")
-
-  return GeoPoint(centerLat, centerLong)
-}
-
-fun calculateBestZoomLevel(bounds: Bounds): Int {
-  val minLong = bounds.minLon
-  val maxLong = bounds.maxLon
-  val minLat = bounds.minLat
-  val maxLat = bounds.maxLat
-
-  val centerLat = (minLat + maxLat) / 2
-
-  val latDiff = maxLat - minLat
-  val longDiff = maxLong - minLong
-
-  // Adjust longitude difference based on the latitude compression factor
-  val adjustedLongDiff = longDiff * cos(Math.toRadians(centerLat))
-
-  // Calculate the maximum degree difference between lat and adjusted long
-  val maxDegreeDiff = kotlin.math.max(latDiff, adjustedLongDiff)
-
-  val zoomLevels =
-      listOf(
-          360.0,
-          180.0,
-          90.0,
-          45.0,
-          22.5,
-          11.25,
-          5.625,
-          2.813,
-          1.406,
-          0.703,
-          0.352,
-          0.176,
-          0.088,
-          0.044,
-          0.022,
-          0.011,
-          0.005,
-          0.003,
-          0.001,
-          0.0005,
-          0.00025)
-
-  val bestZoomLevel =
-      zoomLevels.indexOfFirst { it <= maxDegreeDiff }.takeIf { it != -1 } ?: (zoomLevels.size - 1)
-
-  return bestZoomLevel
 }
