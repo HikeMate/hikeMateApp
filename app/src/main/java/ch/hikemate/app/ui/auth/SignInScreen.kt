@@ -154,11 +154,10 @@ fun SignInScreen(
                   icon = R.drawable.google_logo,
                   modifier = Modifier.testTag(SignInScreen.TEST_TAG_SIGN_IN_WITH_GOOGLE),
               ) {
-                  authViewModel.signInWithGoogle(
-                      coroutineScope = coroutineScope,
-                      context = context,
-                      startAddAccountIntentLauncher = addAccountLauncher)
-
+                authViewModel.signInWithGoogle(
+                    coroutineScope = coroutineScope,
+                    context = context,
+                    startAddAccountIntentLauncher = addAccountLauncher)
               }
             }
           }

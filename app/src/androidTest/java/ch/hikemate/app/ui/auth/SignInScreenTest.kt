@@ -7,9 +7,8 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.espresso.intent.Intents
-import ch.hikemate.app.MainActivity
-import ch.hikemate.app.ui.components.AppIcon
 import ch.hikemate.app.model.authentication.AuthViewModel
+import ch.hikemate.app.ui.components.AppIcon
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.TopLevelDestinations
 import com.google.firebase.auth.FirebaseUser
@@ -55,7 +54,7 @@ class SignInScreenTest : TestCase() {
 
   @Test
   fun everythingIsOnScreen() {
-      setupSignInScreen()
+    setupSignInScreen()
     composeTestRule.onNodeWithTag(AppIcon.TEST_TAG).assertIsDisplayed()
     composeTestRule.onNodeWithTag("appIcon").assertIsDisplayed()
 
