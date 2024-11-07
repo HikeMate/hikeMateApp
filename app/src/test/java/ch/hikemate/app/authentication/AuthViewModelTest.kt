@@ -11,6 +11,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mock
@@ -143,7 +144,8 @@ class AuthViewModelTest {
     // Verify that currentUser is initially null
     assertNull(viewModel.currentUser.first())
 
-    viewModel.signInWithEmailAndPassword("mock@example.com", "password", {}, {})
+    viewModel.signInWithEmailAndPassword(
+        "mock@example.com", "password", {}, { fail("Error callback should not be called") })
 
     val currentUser = viewModel.currentUser.first() // Get the first (current) value of the flow
 
@@ -170,7 +172,8 @@ class AuthViewModelTest {
         // Verify that currentUser is initially null
         assertNull(viewModel.currentUser.first())
 
-        viewModel.signInWithEmailAndPassword("mock@example.com", "password", {}, {})
+        viewModel.signInWithEmailAndPassword(
+            "mock@example.com", "password", { fail("Success callback should not be called") }, {})
 
         val currentUser = viewModel.currentUser.first()
 

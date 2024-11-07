@@ -16,6 +16,7 @@ import org.junit.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.times
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.verify
 
 class SignInWithEmailScreenTest : TestCase() {
@@ -24,6 +25,9 @@ class SignInWithEmailScreenTest : TestCase() {
   private lateinit var navigationActions: NavigationActions
   private lateinit var authRepository: AuthRepository
   private lateinit var authViewModel: AuthViewModel
+
+  private val TEST_EMAIL = "test@example.com"
+  private val TEST_PASSWORD = "password"
 
   @Before
   fun setUp() {
@@ -52,22 +56,23 @@ class SignInWithEmailScreenTest : TestCase() {
   fun canWriteToEmailAndPasswordFields() {
     composeTestRule
         .onNodeWithTag(SignInWithEmailScreen.TEST_TAG_EMAIL_INPUT)
-        .performTextInput("test@gmail.com")
+        .performTextInput(TEST_EMAIL)
     composeTestRule
         .onNodeWithTag(SignInWithEmailScreen.TEST_TAG_PASSWORD_INPUT)
-        .performTextInput("password")
+        .performTextInput(TEST_PASSWORD)
   }
 
   @Test
   fun clickOnSignInButton() {
     composeTestRule
         .onNodeWithTag(SignInWithEmailScreen.TEST_TAG_EMAIL_INPUT)
-        .performTextInput("test@gmail.com")
+        .performTextInput(TEST_EMAIL)
     composeTestRule
         .onNodeWithTag(SignInWithEmailScreen.TEST_TAG_PASSWORD_INPUT)
-        .performTextInput("password")
+        .performTextInput(TEST_PASSWORD)
     composeTestRule.onNodeWithTag(SignInWithEmailScreen.TEST_TAG_SIGN_IN_BUTTON).performClick()
 
-    verify(authRepository, times(1)).signInWithEmailAndPassword(any(), any(), any(), any())
+    verify(authRepository, times(1))
+        .signInWithEmailAndPassword(any(), any(), eq(TEST_EMAIL), eq(TEST_PASSWORD))
   }
 }

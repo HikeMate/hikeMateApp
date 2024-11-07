@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,9 +26,9 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -49,7 +50,6 @@ object SignInScreen {
 /** A composable function to display the sign in screen */
 @Composable
 fun SignInScreen(navigationActions: NavigationActions) {
-  val context = LocalContext.current
   Scaffold(
       modifier = Modifier.fillMaxSize().testTag(Screen.AUTH),
       content = { padding ->
@@ -97,7 +97,7 @@ fun SignInScreen(navigationActions: NavigationActions) {
             // Sign in with email button
             Column {
               SignInButton(
-                  text = context.getString(R.string.SIGN_IN_WITH_EMAIL),
+                  text = stringResource(R.string.sign_in_with_email),
                   icon = R.drawable.app_icon,
                   modifier = Modifier.testTag(SignInScreen.TEST_TAG_SIGN_IN_WITH_EMAIL),
               ) {
@@ -106,7 +106,7 @@ fun SignInScreen(navigationActions: NavigationActions) {
 
               // Sign in with Google button
               SignInButton(
-                  text = context.getString(R.string.SIGN_IN_WITH_GOOGLE),
+                  text = stringResource(R.string.sign_in_with_google),
                   icon = R.drawable.google_logo,
                   modifier = Modifier.testTag(SignInScreen.TEST_TAG_SIGN_IN_WITH_GOOGLE),
               ) {
@@ -125,7 +125,7 @@ fun SignInScreen(navigationActions: NavigationActions) {
  * A composable function to display the sign in with an icon
  *
  * @param onSignInClick A lambda function to handle the sign in click event
- * @param icon The icon to display on the button
+ * @param icon The resource ID of the icon to display on the button
  */
 @Composable
 fun SignInButton(
@@ -136,7 +136,7 @@ fun SignInButton(
 ) {
   Button(
       onClick = onSignInClick,
-      colors = ButtonDefaults.buttonColors(containerColor = Color.White),
+      colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surface),
       shape = RoundedCornerShape(50),
       modifier =
           modifier
@@ -151,13 +151,13 @@ fun SignInButton(
               // Load the Google logo from resources
               Image(
                   painter = painterResource(id = icon),
-                  contentDescription = text,
+                  contentDescription = null,
                   modifier = Modifier.size(30.dp).padding(end = 8.dp))
 
               // Text for the button
               Text(
                   text = text,
-                  color = Color.Black, // Text color
+                  color = MaterialTheme.colorScheme.onSurface, // Text color
                   fontSize = 18.sp, // Font size
                   fontWeight = FontWeight.Bold,
               )

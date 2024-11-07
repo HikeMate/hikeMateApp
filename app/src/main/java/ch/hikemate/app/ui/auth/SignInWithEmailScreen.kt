@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -85,7 +86,7 @@ fun SignInWithEmailScreen(navigationActions: NavigationActions, authViewModel: A
       verticalArrangement = Arrangement.spacedBy(16.dp)) {
         BackButton(navigationActions)
         Text(
-            context.getString(R.string.SIGN_IN_WITH_EMAIL_TITLE),
+            stringResource(R.string.sign_in_with_email_title),
             style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 32.sp),
             modifier = Modifier.testTag(SignInWithEmailScreen.TEST_TAG_TITLE))
 
@@ -95,7 +96,7 @@ fun SignInWithEmailScreen(navigationActions: NavigationActions, authViewModel: A
             colors = inputColors,
             value = email,
             onValueChange = { email = it },
-            label = { Text(context.getString(R.string.SIGN_IN_WITH_EMAIL_EMAIL_LABEL)) })
+            label = { Text(stringResource(R.string.sign_in_with_email_email_label)) })
 
         OutlinedTextField(
             modifier =
@@ -104,13 +105,13 @@ fun SignInWithEmailScreen(navigationActions: NavigationActions, authViewModel: A
             colors = inputColors,
             value = password,
             onValueChange = { password = it },
-            label = { Text(context.getString(R.string.SIGN_IN_WITH_EMAIL_PASSWORD_LABEL)) })
+            label = { Text(stringResource(R.string.sign_in_with_email_password_label)) })
 
         BigButton(
             modifier =
                 Modifier.fillMaxWidth().testTag(SignInWithEmailScreen.TEST_TAG_SIGN_IN_BUTTON),
             buttonType = ButtonType.PRIMARY,
-            label = context.getString(R.string.SIGN_IN_WITH_EMAIL_SIGN_IN_BUTTON),
+            label = stringResource(R.string.sign_in_with_email_sign_in_button),
             onClick = {
               authViewModel.signInWithEmailAndPassword(
                   email,
@@ -139,7 +140,7 @@ fun SignInWithEmailScreen(navigationActions: NavigationActions, authViewModel: A
                   modifier = Modifier.testTag(SignInWithEmailScreen.TEST_TAG_GO_TO_SIGN_UP_BUTTON),
               ) {
                 Text(
-                    context.getString(R.string.SIGN_IN_WITH_EMAIL_GO_TO_SIGN_UP),
+                    stringResource(R.string.sign_in_with_email_go_to_sign_up),
                     style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 16.sp),
                 )
               }
