@@ -74,11 +74,7 @@ fun SignInScreen(
   val addAccountLauncher =
       rememberLauncherForActivityResult(
           contract = ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
-            Toast.makeText(
-                    context,
-                CONNECTED_ACCOUNT_MESSAGE,
-                    Toast.LENGTH_LONG)
-                .show()
+            Toast.makeText(context, CONNECTED_ACCOUNT_MESSAGE, Toast.LENGTH_LONG).show()
             // startAddAccountIntentLauncher is null, since it is only called when the user has no
             // Google account connected to the device, however they just added one.
             authViewModel.signInWithGoogle(coroutineScope, context, null)
