@@ -2,11 +2,17 @@ package ch.hikemate.app.ui.components
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.copy
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.core.math.MathUtils
 import kotlin.math.ceil
 
@@ -33,27 +39,30 @@ fun ElevationGraph(
   if (elevationData.isEmpty()) {
     return
   }
-  Canvas(modifier) {
-    // Averaging the elevation data to reduce the number of points
-    val averageSize = ceil(elevationData.size.toDouble() / maxNumberOfPoints).toInt()
-    val elevationDataAveraged = elevationData.chunked(averageSize) { chunk -> chunk.average() }
 
-    val height = size.height
-    val width = size.width
+  // Averaging the elevation data to reduce the number of points
+  val averageSize = remember { ceil(elevationData.size.toDouble() / maxNumberOfPoints).toInt() }
+  val elevationDataAveraged = remember {
+    elevationData.chunked(averageSize) { chunk -> chunk.average() }
+  }
 
-    // Bunch of variables to scale the graph in height
-    val maxElevation = elevationDataAveraged.maxOrNull() ?: 0.0
-    val minElevation = elevationDataAveraged.minOrNull() ?: 0.0
-    val elevationRange = maxElevation - minElevation
-    val elevationStep = elevationRange / height
+  var height by remember { mutableFloatStateOf(0.0f) }
+  var width by remember { mutableFloatStateOf(0.0f) }
 
-    val widthStep = width / (elevationDataAveraged.size - 1)
+  // Bunch of variables to scale the graph in height
+  val maxElevation = remember(elevationDataAveraged) { elevationDataAveraged.maxOrNull() ?: 0.0 }
+  val minElevation = remember(elevationDataAveraged) { elevationDataAveraged.minOrNull() ?: 0.0 }
+  val elevationRange = maxElevation - minElevation
+  val elevationStep = elevationRange / height
 
-    // Build (x, y) tuples to draw the path
-    // Scale the points width to fit the whole width
-    // Scale the points height to fit the whole height, but keeping the scale.
-    // The height is inverted because the origin of the canvas is at the top left corner
-    val scaledData =
+  val widthStep = width / (elevationDataAveraged.size - 1)
+
+  // Build (x, y) tuples to draw the path
+  // Scale the points width to fit the whole width
+  // Scale the points height to fit the whole height, but keeping the scale.
+  // The height is inverted because the origin of the canvas is at the top left corner
+  val scaledData =
+      remember(height, width) {
         elevationDataAveraged
             .mapIndexed { index, elevation ->
               Pair(
@@ -64,20 +73,27 @@ fun ElevationGraph(
               // We clamp the points to ensure they are not outside the canvas
               Pair(it.first, MathUtils.clamp(it.second, strokeWidth, height - strokeWidth))
             }
+      }
 
-    val path = Path()
-    path.moveTo(scaledData.first().first, scaledData.first().second)
+  val path = Path()
+  path.moveTo(scaledData.first().first, scaledData.first().second)
 
-    for ((x, y) in scaledData.drop(1)) {
-      path.lineTo(x, y)
-    }
-
-    drawPath(path, strokeColor, style = Stroke(width = strokeWidth))
-
-    path.lineTo(width, height)
-    path.lineTo(0f, height)
-    clipPath(path, clipOp = androidx.compose.ui.graphics.ClipOp.Intersect) {
-      drawRect(color = fillColor)
-    }
+  for ((x, y) in scaledData.drop(1)) {
+    path.lineTo(x, y)
   }
+
+  val outlinePath = path.copy()
+  outlinePath.lineTo(width, height)
+  outlinePath.lineTo(0f, height)
+
+  Canvas(
+      modifier.onGloballyPositioned { coordinates ->
+        height = coordinates.size.height.toFloat()
+        width = coordinates.size.width.toFloat()
+      }) {
+        drawPath(path, strokeColor, style = Stroke(width = strokeWidth))
+        clipPath(outlinePath, clipOp = androidx.compose.ui.graphics.ClipOp.Intersect) {
+          drawRect(color = fillColor)
+        }
+      }
 }

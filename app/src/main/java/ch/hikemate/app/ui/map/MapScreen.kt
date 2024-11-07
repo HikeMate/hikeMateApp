@@ -362,7 +362,7 @@ fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel, isSea
                 }
               }
             } else {
-              items(routes.value.size) { index: Int ->
+              items(routes.value.size, key = { routes.value[it].id }) { index: Int ->
                 val route = routes.value[index]
                 val isSuitable = index % 2 == 0
                 HikeCardFor(route, isSuitable, hikingRoutesViewModel)

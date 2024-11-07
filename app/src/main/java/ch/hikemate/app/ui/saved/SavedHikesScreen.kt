@@ -96,7 +96,7 @@ private fun PlannedHikes(hikes: List<SavedHike>?) {
     }
   } else {
     LazyColumn {
-      items(plannedHikes.size) { index ->
+      items(plannedHikes.size, key = { plannedHikes[it].id }) { index ->
         val hike = plannedHikes[index]
         HikeCard(
             title = hike.name,
@@ -136,7 +136,7 @@ private fun SavedHikes(hikes: List<SavedHike>?) {
     }
   } else {
     LazyColumn {
-      items(savedHikes.size) { index ->
+      items(savedHikes.size, key = { savedHikes[it].id }) { index ->
         val hike = savedHikes[index]
         HikeCard(
             title = hike.name,
