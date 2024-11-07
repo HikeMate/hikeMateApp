@@ -1,6 +1,5 @@
 package ch.hikemate.app.ui.saved
 
-import android.widget.Toast
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,7 +25,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.hikemate.app.R
 import ch.hikemate.app.model.route.saved.SavedHike
 import ch.hikemate.app.model.route.saved.SavedHikesViewModel
@@ -34,6 +32,7 @@ import ch.hikemate.app.ui.components.HikeCard
 import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
+import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.navigation.SideBarNavigation
 import ch.hikemate.app.utils.humanReadablePlannedLabel
 
@@ -48,7 +47,7 @@ const val TEST_TAG_SAVED_HIKES_HIKE_CARD = "SavedHikesHikeCard"
 
 @Composable
 fun SavedHikesScreen(
-    savedHikesViewModel: SavedHikesViewModel = viewModel(factory = SavedHikesViewModel.Factory),
+    savedHikesViewModel: SavedHikesViewModel,
     navigationActions: NavigationActions
 ) {
   // The Screen will need to be incorporated into the SideBarNavigation composable
@@ -65,8 +64,8 @@ fun SavedHikesScreen(
     Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
       Column(modifier = Modifier.weight(1f).testTag(TEST_TAG_SAVED_HIKES_SECTION_CONTAINER)) {
         when (currentSection) {
-          SavedHikesScreen.Planned -> PlannedHikes(savedHikes)
-          SavedHikesScreen.Saved -> SavedHikes(savedHikes)
+          SavedHikesScreen.Planned -> PlannedHikes(savedHikes, navigationActions)
+          SavedHikesScreen.Saved -> SavedHikes(savedHikes, navigationActions)
         }
       }
 
@@ -77,7 +76,7 @@ fun SavedHikesScreen(
 }
 
 @Composable
-private fun PlannedHikes(hikes: List<SavedHike>?) {
+private fun PlannedHikes(hikes: List<SavedHike>?, navigationActions: NavigationActions) {
   val context = LocalContext.current
   Text(
       context.getString(R.string.saved_hikes_screen_planned_section_title),
@@ -100,9 +99,7 @@ private fun PlannedHikes(hikes: List<SavedHike>?) {
         HikeCard(
             title = hike.name,
             altitudeDifference = (index + 1) * 329,
-            onClick = {
-              Toast.makeText(context, "Hike details not implemented yet", Toast.LENGTH_SHORT).show()
-            },
+            onClick = { navigationActions.navigateTo(Screen.HIKE_DETAILS) },
             messageIcon = painterResource(R.drawable.calendar_today),
             messageContent = hike.date!!.humanReadablePlannedLabel(LocalContext.current),
             messageColor = Color(0xFF3B82F6),
@@ -113,7 +110,7 @@ private fun PlannedHikes(hikes: List<SavedHike>?) {
 }
 
 @Composable
-private fun SavedHikes(hikes: List<SavedHike>?) {
+private fun SavedHikes(hikes: List<SavedHike>?, navigationActions: NavigationActions) {
   val context = LocalContext.current
   Text(
       context.getString(R.string.saved_hikes_screen_saved_section_title),
@@ -136,9 +133,7 @@ private fun SavedHikes(hikes: List<SavedHike>?) {
         HikeCard(
             title = hike.name,
             altitudeDifference = 1000,
-            onClick = {
-              Toast.makeText(context, "Hike details not implemented yet", Toast.LENGTH_SHORT).show()
-            },
+            onClick = { navigationActions.navigateTo(Screen.HIKE_DETAILS) },
             modifier = Modifier.testTag(TEST_TAG_SAVED_HIKES_HIKE_CARD))
       }
     }

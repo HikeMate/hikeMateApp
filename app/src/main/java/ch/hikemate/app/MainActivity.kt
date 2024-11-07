@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -17,9 +18,8 @@ import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.model.authentication.FirebaseAuthRepository
 import ch.hikemate.app.model.profile.ProfileRepositoryDummy
 import ch.hikemate.app.model.profile.ProfileViewModel
-import ch.hikemate.app.model.route.Bounds
-import ch.hikemate.app.model.route.HikeRoute
-import ch.hikemate.app.model.route.LatLong
+import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
+import ch.hikemate.app.model.route.saved.SavedHikesViewModel
 import ch.hikemate.app.ui.auth.SignInScreen
 import ch.hikemate.app.ui.map.HikeDetailScreen
 import ch.hikemate.app.ui.map.MapScreen
@@ -37,23 +37,22 @@ class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-    // setContent { HikeMateTheme { Surface(modifier = Modifier.fillMaxSize()) { HikeMateApp() } } }
-    setContent {
-      HikeMateTheme {
-        Surface(modifier = Modifier.fillMaxSize()) {
-          HikeDetailScreen(
-              route =
-                  HikeRoute(
-                      id = "matterhorn_glacier_trail_1",
-                      bounds = Bounds(minLat = 45.9, minLon = 7.6, maxLat = 46.0, maxLon = 7.7),
-                      ways = listOf(LatLong(45.9, 7.6), LatLong(45.95, 7.65), LatLong(46.0, 7.7)),
-                      name = "Matterhorn Glacier Trail",
-                      description =
-                          "A scenic trail with breathtaking views of the Matterhorn and surrounding glaciers."),
-              onBack = {})
-        }
-      }
-    }
+    setContent { HikeMateTheme { Surface(modifier = Modifier.fillMaxSize()) { HikeMateApp() } } }
+    /*setContent { HikeMateTheme { Surface(modifier = Modifier.fillMaxSize()) {
+      HikeDetails(
+        route =
+        HikeRoute(
+          id = "matterhorn_glacier_trail_1",
+          bounds = Bounds(minLat = 45.9, minLon = 7.6, maxLat = 46.0, maxLon = 7.7),
+          ways = listOf(LatLong(45.9, 7.6), LatLong(45.95, 7.65), LatLong(46.0, 7.7)),
+          name = "Matterhorn Glacier Trail",
+          description =
+          "A scenic trail with breathtaking views of the Matterhorn and surrounding glaciers."),
+        isSaved = true,
+        date = null
+      )
+    } } }*/
+
   }
 }
 
@@ -72,6 +71,10 @@ fun HikeMateApp() {
 
   val authViewModel = AuthViewModel(FirebaseAuthRepository())
 
+  val listOfHikeRoutesViewModel: ListOfHikeRoutesViewModel =
+      viewModel(factory = ListOfHikeRoutesViewModel.Factory)
+  val savedHikesViewModel: SavedHikesViewModel = viewModel(factory = SavedHikesViewModel.Factory)
+
   NavHost(navController = navController, startDestination = TopLevelDestinations.AUTH.route) {
     navigation(
         startDestination = Screen.AUTH,
@@ -84,14 +87,21 @@ fun HikeMateApp() {
         startDestination = Screen.SAVED_HIKES,
         route = Route.SAVED_HIKES,
     ) {
-      composable(Screen.SAVED_HIKES) { SavedHikesScreen(navigationActions = navigationActions) }
+      composable(Screen.SAVED_HIKES) {
+        SavedHikesScreen(
+            navigationActions = navigationActions, savedHikesViewModel = savedHikesViewModel)
+      }
     }
 
     navigation(
         startDestination = Screen.MAP,
         route = Route.MAP,
     ) {
-      composable(Screen.MAP) { MapScreen(navigationActions = navigationActions) }
+      composable(Screen.MAP) {
+        MapScreen(
+            navigationActions = navigationActions,
+            hikingRoutesViewModel = listOfHikeRoutesViewModel)
+      }
     }
     navigation(
         startDestination = Screen.PROFILE,
@@ -106,6 +116,17 @@ fun HikeMateApp() {
       composable(Screen.EDIT_PROFILE) {
         EditProfileScreen(
             navigationActions = navigationActions, profileViewModel = profileViewModel)
+      }
+    }
+    navigation(
+        startDestination = Screen.HIKE_DETAILS,
+        route = Route.HIKE_DETAILS,
+    ) {
+      composable(Screen.HIKE_DETAILS) {
+        HikeDetailScreen(
+            listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
+            navigationActions = navigationActions,
+        )
       }
     }
   }

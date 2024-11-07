@@ -14,6 +14,7 @@ object Route {
   const val MAP = "Map"
   const val AUTH = "Auth"
   const val PROFILE = "Profile"
+  const val HIKE_DETAILS = "HikeDetails"
 }
 
 /** Object containing screen constants. */
@@ -23,6 +24,7 @@ object Screen {
   const val MAP = "Map Screen"
   const val PROFILE = "Profile Screen"
   const val EDIT_PROFILE = "Edit-profile Screen"
+  const val HIKE_DETAILS = "HikeDetails Screen"
 }
 
 /**

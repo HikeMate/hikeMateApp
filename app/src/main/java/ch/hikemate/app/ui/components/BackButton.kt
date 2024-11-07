@@ -1,5 +1,6 @@
 package ch.hikemate.app.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -26,13 +27,14 @@ object BackButton {
  * @param navigationActions The navigation actions.
  */
 @Composable
-fun BackButton(navigationActions: NavigationActions) {
+fun BackButton(navigationActions: NavigationActions, backgroundColor: Color = Color.Transparent) {
   IconButton(
       onClick = { navigationActions.goBack() },
       modifier =
           Modifier.testTag(BackButton.BACK_BUTTON_TEST_TAG)
               .size(50.dp)
               .padding(8.dp)
+              .background(color = backgroundColor, shape = RoundedCornerShape(20))
               .border(width = 1.dp, color = Color.Black, shape = RoundedCornerShape(20))) {
         Icon(
             imageVector = Icons.AutoMirrored.Filled.ArrowBack,

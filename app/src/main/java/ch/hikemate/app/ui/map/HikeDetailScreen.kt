@@ -1,6 +1,7 @@
 package ch.hikemate.app.ui.map
 
 import android.app.DatePickerDialog
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -27,6 +28,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,13 +44,14 @@ import androidx.compose.ui.viewinterop.AndroidView
 import ch.hikemate.app.R
 import ch.hikemate.app.model.route.Bounds
 import ch.hikemate.app.model.route.HikeRoute
+import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
 import ch.hikemate.app.ui.components.AppropriatenessMessage
+import ch.hikemate.app.ui.components.BackButton
+import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Screen
-import ch.hikemate.app.utils.ZOOM_LEVELS
 import com.google.firebase.Timestamp
 import java.util.Calendar
 import kotlin.math.cos
-import kotlin.math.sqrt
 import org.osmdroid.config.Configuration
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.CustomZoomButtonsController
@@ -57,11 +60,26 @@ import org.osmdroid.views.MapView
 const val MAP_MIN_ZOOM = 3.0
 const val MAP_MAX_ZOOM = 18.0
 
+const val TEST_TAG_MAP = "map"
+const val TEST_TAG_HIKE_NAME = "hikeName"
+const val TEST_TAG_BOOKMARK_ICON = "bookmarkIcon"
+const val TEST_TAG_ELEVATION_GRAPH = "elevationGraph"
+const val TEST_TAG_DETAIL_ROW_TAG = "detailRowTag"
+const val TEST_TAG_DETAIL_ROW_VALUE = "detailRowValue"
+const val TEST_TAG_ADD_DATE_BUTTON = "addDateButton"
+const val TEST_TAG_PLANNED_DATE_TEXT_BOX = "plannedDateTextBox"
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HikeDetailScreen(route: HikeRoute, onBack: () -> Unit) {
+fun HikeDetailScreen(
+    listOfHikeRoutesViewModel: ListOfHikeRoutesViewModel,
+    navigationActions: NavigationActions
+) {
 
-  val scaffoldState = rememberBottomSheetScaffoldState()
+  val route: HikeRoute =
+      listOfHikeRoutesViewModel.selectedHikeRoute.collectAsState().value
+          ?: throw IllegalStateException(
+              "Selected HikeRoute is null. This screen should only be shown when a route is selected.")
 
   val context = LocalContext.current
 
@@ -84,11 +102,13 @@ fun HikeDetailScreen(route: HikeRoute, onBack: () -> Unit) {
   val mapView = remember {
     MapView(context).apply {
       // Set map's initial state
-      // controller.setZoom(mapInitialZoomLevel)
+      Log.d(
+          "HikeDetailScreen", "Setting map's initial state ${calculateBestZoomLevel(route.bounds)}")
+      controller.setZoom(calculateBestZoomLevel(route.bounds))
       controller.setCenter(getGeographicalCenter(route.bounds))
       // Limit the zoom to avoid the user zooming out or out too much
       minZoomLevel = MAP_MIN_ZOOM
-      maxZoomLevel = getBestZoomLevel(route.bounds)
+      maxZoomLevel = MAP_MAX_ZOOM
       // Avoid repeating the map when the user reaches the edge or zooms out
       // We keep the horizontal repetition enabled to allow the user to scroll the map
       // horizontally without limits (from Asia to America, for example)
@@ -103,9 +123,17 @@ fun HikeDetailScreen(route: HikeRoute, onBack: () -> Unit) {
     }
   }
 
-  Box(modifier = Modifier.fillMaxSize().testTag(Screen.MAP)) {
+  showHikeOnMap(mapView, route, getRandomColor(), navigationActions)
+
+  Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {
     AndroidView(
-        factory = { mapView }, modifier = Modifier.fillMaxSize().testTag(MapScreen.TEST_TAG_MAP))
+        factory = { mapView },
+        modifier =
+            Modifier.fillMaxWidth()
+                .padding(bottom = 300.dp) // Reserve space for the scaffold at the bottom
+                .testTag(TEST_TAG_MAP))
+    BackButton(
+        navigationActions = navigationActions, backgroundColor = MaterialTheme.colorScheme.surface)
     ZoomMapButton(
         onZoomIn = { mapView.controller.zoomIn() },
         onZoomOut = { mapView.controller.zoomOut() },
@@ -154,9 +182,10 @@ fun HikeDetails(route: HikeRoute, isSaved: Boolean, date: Timestamp?) {
                 modifier = Modifier.padding(16.dp).weight(1f),
             ) {
               Text(
-                  text = route.id ?: "",
+                  text = route.id,
                   style = MaterialTheme.typography.titleLarge,
-                  textAlign = TextAlign.Center)
+                  textAlign = TextAlign.Center,
+                  modifier = Modifier.testTag(TEST_TAG_HIKE_NAME))
               AppropriatenessMessageWrapper(isSuitable = true)
             }
 
@@ -166,13 +195,18 @@ fun HikeDetails(route: HikeRoute, isSaved: Boolean, date: Timestamp?) {
             Image(
                 painter = painterResource(bookmark),
                 contentDescription = null,
-                modifier = Modifier.size(60.dp, 80.dp),
+                modifier = Modifier.size(60.dp, 80.dp).testTag(TEST_TAG_BOOKMARK_ICON),
                 contentScale = ContentScale.FillBounds,
             )
           }
 
           // Elevation box
-          Box(modifier = Modifier.fillMaxWidth().height(30.dp).background(Color.Gray))
+          Box(
+              modifier =
+                  Modifier.fillMaxWidth()
+                      .height(30.dp)
+                      .background(Color.Gray)
+                      .testTag(TEST_TAG_ELEVATION_GRAPH))
 
           DetailRow(label = "Distance", value = "5km")
           DetailRow(label = "Elevation Gain", value = "834m")
@@ -190,15 +224,26 @@ fun HikeDetails(route: HikeRoute, isSaved: Boolean, date: Timestamp?) {
                 Text(
                     text = "Planned for",
                     style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.clickable { showDatePickerDialog { TODO() } })
+                    modifier =
+                        Modifier.clickable {
+                              showDatePickerDialog {
+                                // TODO ON SUCCESS
+                              }
+                            }
+                            .testTag(TEST_TAG_DETAIL_ROW_TAG))
                 Button(
-                    modifier = Modifier.width(90.dp).height(25.dp),
+                    modifier =
+                        Modifier.width(90.dp).height(25.dp).testTag(TEST_TAG_ADD_DATE_BUTTON),
                     contentPadding = PaddingValues(0.dp),
                     colors =
                         ButtonDefaults.buttonColors(
                             containerColor = Color(0xFF4285F4), // Blue color to match the image
                             contentColor = Color.White),
-                    onClick = {},
+                    onClick = {
+                      showDatePickerDialog {
+                        // TODO ON SUCCESS
+                      }
+                    },
                 ) {
                   Text(
                       text = "Add a date",
@@ -225,7 +270,9 @@ fun HikeDetails(route: HikeRoute, isSaved: Boolean, date: Timestamp?) {
                       Text(
                           text = "dd/mm/yyyy",
                           style = MaterialTheme.typography.bodySmall,
-                          modifier = Modifier.clickable { TODO() })
+                          modifier =
+                              Modifier.clickable { showDatePickerDialog {} }
+                                  .testTag(TEST_TAG_PLANNED_DATE_TEXT_BOX))
                     }
               }
             }
@@ -262,15 +309,22 @@ fun DetailRow(label: String, value: String, valueColor: Color = Color.Black) {
   Row(
       horizontalArrangement = Arrangement.SpaceBetween,
       modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-        Text(text = label, style = MaterialTheme.typography.bodyLarge)
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.testTag(TEST_TAG_DETAIL_ROW_TAG))
         Text(
             text = value,
             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-            color = valueColor)
+            color = valueColor,
+            modifier = Modifier.testTag(TEST_TAG_DETAIL_ROW_VALUE))
       }
 }
 
 fun getGeographicalCenter(bounds: Bounds): GeoPoint {
+  Log.d(
+      "Bounds",
+      "minLat: ${bounds.minLat}, maxLat: ${bounds.maxLat}, minLon: ${bounds.minLon}, maxLon: ${bounds.maxLon}")
   val minLong = bounds.minLon
   val maxLong = bounds.maxLon
   val minLat = bounds.minLat
@@ -293,44 +347,54 @@ fun getGeographicalCenter(bounds: Bounds): GeoPoint {
     centerLong += 360
   }
 
+  Log.d("Bounds", "centerLat: $centerLat, centerLong: $centerLong")
+
   return GeoPoint(centerLat, centerLong)
 }
 
-fun getBestZoomLevel(bounds: Bounds): Double {
+fun calculateBestZoomLevel(bounds: Bounds): Int {
   val minLong = bounds.minLon
   val maxLong = bounds.maxLon
   val minLat = bounds.minLat
   val maxLat = bounds.maxLat
 
+  val centerLat = (minLat + maxLat) / 2
+
   val latDiff = maxLat - minLat
   val longDiff = maxLong - minLong
 
-  // Convert latitude difference to meters (assuming the average distance is 111 km per degree)
-  val latDistanceMeters = latDiff * 111000
+  // Adjust longitude difference based on the latitude compression factor
+  val adjustedLongDiff = longDiff * cos(Math.toRadians(centerLat))
 
-  // Convert longitude difference to meters (adjust for latitude at the equator)
-  val longDistanceMeters = longDiff * 111000 * cos(Math.toRadians((minLat + maxLat) / 2))
+  // Calculate the maximum degree difference between lat and adjusted long
+  val maxDegreeDiff = kotlin.math.max(latDiff, adjustedLongDiff)
 
-  // Calculate the diagonal of the bounding box in meters
-  val diagonalDistanceMeters =
-      sqrt(latDistanceMeters * latDistanceMeters + longDistanceMeters * longDistanceMeters)
+  val zoomLevels =
+      listOf(
+          360.0,
+          180.0,
+          90.0,
+          45.0,
+          22.5,
+          11.25,
+          5.625,
+          2.813,
+          1.406,
+          0.703,
+          0.352,
+          0.176,
+          0.088,
+          0.044,
+          0.022,
+          0.011,
+          0.005,
+          0.003,
+          0.001,
+          0.0005,
+          0.00025)
 
-  // Find the best zoom level
-  var bestZoomLevel = 0
-  for (zoomLevel in ZOOM_LEVELS) {
-    // Calculate the visible area in meters at this zoom level
-    val visibleAreaInMeters = zoomLevel.metersPerPixel * diagonalDistanceMeters
+  val bestZoomLevel =
+      zoomLevels.indexOfFirst { it <= maxDegreeDiff }.takeIf { it != -1 } ?: (zoomLevels.size - 1)
 
-    // Find the zoom level that best matches the area
-    if (visibleAreaInMeters > diagonalDistanceMeters) {
-      bestZoomLevel = zoomLevel.level
-      break
-    }
-  }
-
-  if (bestZoomLevel <= MAP_MAX_ZOOM) {
-    return bestZoomLevel.toDouble()
-  } else {
-    return MAP_MAX_ZOOM
-  }
+  return bestZoomLevel
 }
