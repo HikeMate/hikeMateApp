@@ -130,6 +130,13 @@ object MapScreen {
    */
   private const val CENTER_MAP_ANIMATION_TIME = 500L
 
+  /**
+   * (Config) Duration in milliseconds of the animation when centering the map on a marker that was
+   * clicked. This duration is shorter than the center animation, because if the marker was clicked,
+   * it means it is already on the screen, hence the distance is minimal.
+   */
+  private const val CENTER_MAP_ON_MARKER_ANIMATION_TIME = 200L
+
   // These are the limits of the map. They are defined by the
   // latitude values that the map can display.
   // The latitude goes from -85 to 85, because going beyond
@@ -189,11 +196,15 @@ object MapScreen {
     // Create a new marker with the new position
     // TODO : Make the user location marker centered on the pin's bottom, not the image center
     // TODO : Make the user location marker look nicer
-    // TODO : Remove the title popup that appears when the marker is clicked
     val newMarker =
         Marker(mapView).apply {
           position = GeoPoint(location.latitude, location.longitude)
           setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
+          setOnMarkerClickListener { marker, mapView ->
+            mapView.controller.animateTo(
+                marker.position, mapView.zoomLevelDouble, CENTER_MAP_ON_MARKER_ANIMATION_TIME)
+            true
+          }
         }
 
     // Add the new marker to the map
