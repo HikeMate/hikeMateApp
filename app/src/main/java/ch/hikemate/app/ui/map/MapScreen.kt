@@ -195,7 +195,6 @@ object MapScreen {
     clearUserPosition(previous, mapView)
 
     // Create a new marker with the new position
-    // TODO : Make the user location marker centered on the pin's bottom, not the image center
     // TODO : Make the user location marker look nicer
     val newMarker =
         Marker(mapView).apply {
@@ -206,6 +205,7 @@ object MapScreen {
                 marker.position, mapView.zoomLevelDouble, CENTER_MAP_ON_MARKER_ANIMATION_TIME)
             true
           }
+          setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
         }
 
     // Add the new marker to the map
