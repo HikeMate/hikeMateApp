@@ -448,6 +448,7 @@ fun MapScreen(
                   android.Manifest.permission.ACCESS_FINE_LOCATION,
                   android.Manifest.permission.ACCESS_COARSE_LOCATION))
   var showLocationPermissionDialog by remember { mutableStateOf(false) }
+  var centerMapOnUserPosition by remember { mutableStateOf(false) }
 
   // Only do the configuration on the first composition, not on every recomposition
   LaunchedEffect(Unit) {
@@ -524,10 +525,15 @@ fun MapScreen(
                 Toast.LENGTH_LONG)
             .show()
       }
+      if (centerMapOnUserPosition) {
+        centerMapOnUserPosition = false
+        MapScreen.centerMapOnUserLocation(context, mapView)
+      }
     }
 
     // The user just revoked location permission for the app, stop location features
     else {
+      centerMapOnUserPosition = false
       MapScreen.stopUserLocationUpdates(context, locationUpdatedCallback)
       MapScreen.clearUserPosition(userLocationMarker, mapView, invalidate = true)
     }
@@ -562,6 +568,7 @@ fun MapScreen(
     LocationPermissionAlertDialog(
         onConfirm = {
           showLocationPermissionDialog = false
+          centerMapOnUserPosition = true
 
           // If should show rationale is true, it is safe to launch permission requests
           if (locationPermissionState.shouldShowRationale) {
@@ -586,7 +593,10 @@ fun MapScreen(
                     Uri.fromParts("package", context.packageName, null)))
           }
         },
-        onDismiss = { showLocationPermissionDialog = false },
+        onDismiss = {
+          showLocationPermissionDialog = false
+          centerMapOnUserPosition = false
+        },
         simpleMessage = !locationPermissionState.shouldShowRationale)
   }
 
@@ -653,7 +663,6 @@ fun MapScreen(
                 }
                 // If the user yet needs to grant the permission, show a custom educational alert
                 else {
-                  // TODO : Maintain state so that if the user grants the permission, the map centers on the user's location
                   showLocationPermissionDialog = true
                 }
               },
