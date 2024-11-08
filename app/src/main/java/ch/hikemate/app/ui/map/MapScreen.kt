@@ -187,6 +187,9 @@ object MapScreen {
     clearUserPosition(previous, mapView)
 
     // Create a new marker with the new position
+    // TODO : Make the user location marker centered on the pin's bottom, not the image center
+    // TODO : Make the user location marker look nicer
+    // TODO : Remove the title popup that appears when the marker is clicked
     val newMarker =
         Marker(mapView).apply {
           position = GeoPoint(location.latitude, location.longitude)
@@ -413,6 +416,7 @@ fun clearHikesFromMap(mapView: MapView, userLocationMarker: Marker?) {
   mapView.invalidate()
 }
 
+// TODO : Move as much as possible of the location logic into a view model or a utils object
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun MapScreen(
