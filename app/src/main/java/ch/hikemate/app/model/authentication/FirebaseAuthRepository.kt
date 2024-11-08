@@ -37,8 +37,7 @@ class FirebaseAuthRepository : AuthRepository {
     // client ID
     val googleIdOption: GetGoogleIdOption =
         GetGoogleIdOption.Builder()
-            .setFilterByAuthorizedAccounts(
-                true) // Only allow accounts already signed in on the device
+            .setFilterByAuthorizedAccounts(false) // Allow all kinds of Google accounts
             .setServerClientId(token) // Server client ID for OAuth
             .setAutoSelectEnabled(true) // Auto-select if only one account is available
             .build()
@@ -109,10 +108,10 @@ class FirebaseAuthRepository : AuthRepository {
   }
 
   override fun signInWithEmailAndPassword(
+      email: String,
+      password: String,
       onSuccess: (FirebaseUser?) -> Unit,
       onErrorAction: (Exception) -> Unit,
-      email: String,
-      password: String
   ) {
     val auth = FirebaseAuth.getInstance()
     auth.signInWithEmailAndPassword(email, password).addOnCompleteListener { task ->

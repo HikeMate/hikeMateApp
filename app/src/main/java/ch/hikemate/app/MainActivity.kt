@@ -20,7 +20,9 @@ import ch.hikemate.app.model.profile.ProfileRepositoryDummy
 import ch.hikemate.app.model.profile.ProfileViewModel
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
 import ch.hikemate.app.model.route.saved.SavedHikesViewModel
+import ch.hikemate.app.ui.auth.CreateAccountScreen
 import ch.hikemate.app.ui.auth.SignInScreen
+import ch.hikemate.app.ui.auth.SignInWithEmailScreen
 import ch.hikemate.app.ui.map.HikeDetailScreen
 import ch.hikemate.app.ui.map.MapScreen
 import ch.hikemate.app.ui.navigation.NavigationActions
@@ -65,7 +67,11 @@ fun HikeMateApp() {
         startDestination = Screen.AUTH,
         route = Route.AUTH,
     ) {
-      composable(Screen.AUTH) { SignInScreen(navigationActions) }
+      composable(Screen.AUTH) { SignInScreen(navigationActions, authViewModel) }
+      composable(Screen.SIGN_IN_WITH_EMAIL) {
+        SignInWithEmailScreen(navigationActions, authViewModel)
+      }
+      composable(Screen.CREATE_ACCOUNT) { CreateAccountScreen(navigationActions, authViewModel) }
     }
 
     navigation(

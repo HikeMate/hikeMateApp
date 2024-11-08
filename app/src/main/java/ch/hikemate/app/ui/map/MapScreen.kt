@@ -41,6 +41,7 @@ import ch.hikemate.app.R
 import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
 import ch.hikemate.app.ui.components.HikeCard
+import ch.hikemate.app.ui.components.HikeCardStyleProperties
 import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
@@ -117,6 +118,8 @@ object MapScreen {
   const val TEST_TAG_EMPTY_HIKES_LIST_MESSAGE = "emptyHikesListMessage"
   const val TEST_TAG_SEARCHING_MESSAGE = "searchingMessage"
   const val TEST_TAG_SEARCH_LOADING_ANIMATION = "searchLoadingAnimation"
+
+  const val MINIMAL_SEARCH_TIME_IN_MS = 500 // ms
 }
 
 /**
@@ -233,7 +236,8 @@ fun MapScreen(
 
   // Show hikes on the map
   val routes by hikingRoutesViewModel.hikeRoutes.collectAsState()
-  LaunchedEffect(routes) {
+  LaunchedEffect(routes, isSearching) {
+    if (isSearching) return@LaunchedEffect
     clearHikesFromMap(mapView)
     if (routes.size <= MapScreen.MAX_HIKES_DRAWN_ON_MAP) {
       routes.forEach { showHikeOnMap(mapView, it, getRandomColor(), navigationActions) }
@@ -250,6 +254,31 @@ fun MapScreen(
           .show()
       Log.d(MapScreen.LOG_TAG, "Too many hikes (${routes.size}) to display on the map")
     }
+  }
+
+  /**
+   * Launches a search for hikes in the area displayed on the map. The search is launched only if it
+   * is not already ongoing.
+   */
+  fun launchSearch() {
+    if (isSearching) return
+    isSearching = true
+    val startTime = System.currentTimeMillis()
+    hikingRoutesViewModel.setArea(
+        mapView.boundingBox,
+        onSuccess = {
+          if (System.currentTimeMillis() - startTime < MapScreen.MINIMAL_SEARCH_TIME_IN_MS) {
+            Thread.sleep(
+                MapScreen.MINIMAL_SEARCH_TIME_IN_MS - (System.currentTimeMillis() - startTime))
+          }
+          isSearching = false
+        },
+        onFailure = {
+          isSearching = false
+          Handler(Looper.getMainLooper()).post {
+            Toast.makeText(context, "Error while searching for hikes", Toast.LENGTH_SHORT).show()
+          }
+        })
   }
 
   SideBarNavigation(
@@ -273,21 +302,7 @@ fun MapScreen(
           // Search button to request OSM for hikes in the displayed area
           if (!isSearching) {
             MapSearchButton(
-                onClick = {
-                  if (isSearching) return@MapSearchButton
-                  isSearching = true
-                  hikingRoutesViewModel.setArea(
-                      mapView.boundingBox,
-                      onSuccess = { isSearching = false },
-                      onFailure = {
-                        isSearching = false
-                        Handler(Looper.getMainLooper()).post {
-                          Toast.makeText(
-                                  context, "Error while searching for hikes", Toast.LENGTH_SHORT)
-                              .show()
-                        }
-                      })
-                },
+                onClick = { launchSearch() },
                 modifier =
                     Modifier.align(Alignment.BottomCenter)
                         .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
@@ -365,7 +380,7 @@ fun CollapsibleHikesList(
                 }
               }
             } else {
-              items(routes.value.size) { index: Int ->
+              items(routes.value.size, key = { routes.value[it].id }) { index: Int ->
                 val route = routes.value[index]
                 val isSuitable = index % 2 == 0
                 HikeCardFor(route, isSuitable, hikingRoutesViewModel, navigationActions)
@@ -400,13 +415,16 @@ fun HikeCardFor(
 
   HikeCard(
       title = route.name ?: stringResource(R.string.map_screen_hike_title_default),
-      altitudeDifference = 1000,
+      // This generates a random list of elevation data for the hike
+      // with a random number of points and altitude between 0 and 1000
+      elevationData = (0..(0..1000).random()).map { it.toDouble() }.shuffled(),
       onClick = {
         // The user clicked on the route to select it
         viewModel.selectRoute(route)
         navigationActions.navigateTo(Screen.HIKE_DETAILS)
       },
       messageContent = suitableLabelText,
-      messageIcon = painterResource(suitableLabelIcon),
-      messageColor = suitableLabelColor)
+      styleProperties =
+          HikeCardStyleProperties(
+              messageIcon = painterResource(suitableLabelIcon), messageColor = suitableLabelColor))
 }

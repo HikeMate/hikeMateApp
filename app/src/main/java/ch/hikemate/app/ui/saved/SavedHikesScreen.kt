@@ -29,6 +29,7 @@ import ch.hikemate.app.R
 import ch.hikemate.app.model.route.saved.SavedHike
 import ch.hikemate.app.model.route.saved.SavedHikesViewModel
 import ch.hikemate.app.ui.components.HikeCard
+import ch.hikemate.app.ui.components.HikeCardStyleProperties
 import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
@@ -94,16 +95,20 @@ private fun PlannedHikes(hikes: List<SavedHike>?, navigationActions: NavigationA
     }
   } else {
     LazyColumn {
-      items(plannedHikes.size) { index ->
+      items(plannedHikes.size, key = { plannedHikes[it].id }) { index ->
         val hike = plannedHikes[index]
         HikeCard(
             title = hike.name,
-            altitudeDifference = (index + 1) * 329,
+            // This generates a random list of elevation data for the hike
+            // with a random number of points and altitude between 0 and 1000
+            elevationData = (0..(0..1000).random()).map { it.toDouble() }.shuffled(),
             onClick = { navigationActions.navigateTo(Screen.HIKE_DETAILS) },
-            messageIcon = painterResource(R.drawable.calendar_today),
             messageContent = hike.date!!.humanReadablePlannedLabel(LocalContext.current),
-            messageColor = Color(0xFF3B82F6),
-            modifier = Modifier.testTag(TEST_TAG_SAVED_HIKES_HIKE_CARD))
+            modifier = Modifier.testTag(TEST_TAG_SAVED_HIKES_HIKE_CARD),
+            styleProperties =
+                HikeCardStyleProperties(
+                    messageIcon = painterResource(R.drawable.calendar_today),
+                    messageColor = Color(0xFF3B82F6)))
       }
     }
   }
@@ -132,8 +137,10 @@ private fun SavedHikes(hikes: List<SavedHike>?, navigationActions: NavigationAct
         val hike = savedHikes[index]
         HikeCard(
             title = hike.name,
-            altitudeDifference = 1000,
             onClick = { navigationActions.navigateTo(Screen.HIKE_DETAILS) },
+            // This generates a random list of elevation data for the hike
+            // with a random number of points and altitude between 0 and 1000
+            elevationData = (0..(0..1000).random()).map { it.toDouble() }.shuffled(),
             modifier = Modifier.testTag(TEST_TAG_SAVED_HIKES_HIKE_CARD))
       }
     }

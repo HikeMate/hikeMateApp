@@ -59,10 +59,10 @@ interface AuthRepository {
    * @param password The password of the user.
    */
   fun signInWithEmailAndPassword(
-      onSuccess: (FirebaseUser?) -> Unit,
-      onErrorAction: (Exception) -> Unit,
       email: String,
       password: String,
+      onSuccess: (FirebaseUser?) -> Unit,
+      onErrorAction: (Exception) -> Unit,
   )
 
   /**

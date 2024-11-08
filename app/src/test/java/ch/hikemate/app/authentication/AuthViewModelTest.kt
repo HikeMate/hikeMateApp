@@ -11,6 +11,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mock
@@ -133,7 +134,7 @@ class AuthViewModelTest {
 
     // Simulate a successful email and password sign-in by invoking the onSuccess callback
     doAnswer { invocation ->
-          val onSuccess = invocation.getArgument<(FirebaseUser?) -> Unit>(0)
+          val onSuccess = invocation.getArgument<(FirebaseUser?) -> Unit>(2)
           onSuccess(mockFirebaseUser) // Call the success callback with a mock user
           null
         }
@@ -143,7 +144,8 @@ class AuthViewModelTest {
     // Verify that currentUser is initially null
     assertNull(viewModel.currentUser.first())
 
-    viewModel.signInWithEmailAndPassword("mock@example.com", "password")
+    viewModel.signInWithEmailAndPassword(
+        "mock@example.com", "password", {}, { fail("Error callback should not be called") })
 
     val currentUser = viewModel.currentUser.first() // Get the first (current) value of the flow
 
@@ -160,7 +162,7 @@ class AuthViewModelTest {
 
         // Simulate an unsuccessful email and password sign-in by invoking the onError callback
         doAnswer { invocation ->
-              val onErrorAction = invocation.getArgument<(Exception) -> Unit>(1)
+              val onErrorAction = invocation.getArgument<(Exception) -> Unit>(3)
               onErrorAction(Exception("Error"))
               null
             }
@@ -170,7 +172,8 @@ class AuthViewModelTest {
         // Verify that currentUser is initially null
         assertNull(viewModel.currentUser.first())
 
-        viewModel.signInWithEmailAndPassword("mock@example.com", "password")
+        viewModel.signInWithEmailAndPassword(
+            "mock@example.com", "password", { fail("Success callback should not be called") }, {})
 
         val currentUser = viewModel.currentUser.first()
 
@@ -199,7 +202,8 @@ class AuthViewModelTest {
         // Verify that currentUser is initially null
         assertNull(viewModel.currentUser.first())
 
-        viewModel.createAccountWithEmailAndPassword("mock@example.com", "password")
+        viewModel.createAccountWithEmailAndPassword(
+            "mock@example.com", "password", {}, { fail("Error callback should not be called") })
 
         val currentUser = viewModel.currentUser.first() // Get the first (current) value of the flow
 
@@ -227,7 +231,8 @@ class AuthViewModelTest {
         // Verify that currentUser is initially null
         assertNull(viewModel.currentUser.first())
 
-        viewModel.createAccountWithEmailAndPassword("mock@example.com", "password")
+        viewModel.createAccountWithEmailAndPassword(
+            "mock@example.com", "password", { fail("Success callback should not be called") }, {})
 
         val currentUser = viewModel.currentUser.first()
 

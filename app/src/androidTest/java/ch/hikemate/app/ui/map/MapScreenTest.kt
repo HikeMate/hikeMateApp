@@ -4,6 +4,7 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
@@ -20,6 +21,7 @@ import ch.hikemate.app.ui.navigation.TEST_TAG_SIDEBAR_BUTTON
 import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -233,5 +235,30 @@ class MapScreenTest : TestCase() {
 
     // Check that the repository is called with valid bounds
     verify(hikesRepository, times(1)).getRoutes(any(), any(), any())
+  }
+
+  @OptIn(ExperimentalCoroutinesApi::class)
+  @Test
+  fun searchingHikesTakesAMinimalTime() = runTest {
+    setUpMap()
+    `when`(hikesRepository.getRoutes(any(), any(), any())).thenAnswer {
+      val onSuccess = it.getArgument<(List<HikeRoute>) -> Unit>(1)
+      onSuccess(emptyList())
+    }
+
+    val startTime = System.currentTimeMillis()
+    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).performClick()
+    while (composeTestRule
+        .onNodeWithTag(MapScreen.TEST_TAG_SEARCH_LOADING_ANIMATION)
+        .isDisplayed()) {
+      // Wait for the search to finish
+    }
+    val endTime = System.currentTimeMillis()
+
+    // Check that the search took at least the minimal time
+    assert(endTime - startTime >= MapScreen.MINIMAL_SEARCH_TIME_IN_MS)
+    // Check that the search took at most twice the minimal time (only because we mocked it, so it
+    // should return quickly)
+    assert(endTime - startTime < 2 * MapScreen.MINIMAL_SEARCH_TIME_IN_MS)
   }
 }
