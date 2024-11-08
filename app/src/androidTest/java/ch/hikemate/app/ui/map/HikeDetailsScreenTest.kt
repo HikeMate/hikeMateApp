@@ -11,6 +11,7 @@ import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
 import ch.hikemate.app.ui.components.BackButton.BACK_BUTTON_TEST_TAG
 import ch.hikemate.app.ui.navigation.NavigationActions
 import com.google.firebase.Timestamp
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -135,6 +136,8 @@ class HikeDetailScreenTest {
           listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
           navigationActions = mockNavigationActions)
     }
+
+    every { mockNavigationActions.goBack() } returns Unit
 
     // Click the back button and verify the navigation action is triggered
     composeTestRule.onNodeWithTag(BACK_BUTTON_TEST_TAG).performClick()
