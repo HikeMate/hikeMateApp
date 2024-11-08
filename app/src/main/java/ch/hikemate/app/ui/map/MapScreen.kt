@@ -28,6 +28,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -612,6 +613,15 @@ fun MapScreen(
             Toast.makeText(context, "Error while searching for hikes", Toast.LENGTH_SHORT).show()
           }
         })
+  }
+
+  DisposableEffect(Unit) {
+    onDispose {
+      MapScreen.stopUserLocationUpdates(context, locationUpdatedCallback)
+      mapView.overlays.clear()
+      mapView.onPause()
+      mapView.onDetach()
+    }
   }
 
   SideBarNavigation(
