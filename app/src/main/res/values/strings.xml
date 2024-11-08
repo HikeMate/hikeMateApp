@@ -92,4 +92,24 @@
     <string name="profile_screen_hiking_level_choice_intermediate">Intermediate</string>
     <string name="profile_screen_hiking_level_choice_expert">Expert</string>
     <string name="edit_profile_screen_save_button_text">Save profile</string>
+
+    <!-- Authentication -->
+    <string name="sign_in_with_email">Sign in with Email</string>
+    <string name="sign_in_with_google">Sign in with Google</string>
+
+    <string name="sign_in_with_email_title">Sign in</string>
+    <string name="sign_in_with_email_email_label">Email</string>
+    <string name="sign_in_with_email_password_label">Password</string>
+    <string name="sign_in_with_email_sign_in_button">Sign in</string>
+    <string name="sign_in_with_email_go_to_sign_up">I want to sign up</string>
+
+    <string name="create_account_title">Create an account</string>
+    <string name="create_account_name_label">Name</string>
+    <string name="create_account_email_label">Email</string>
+    <string name="create_account_password_label">Password</string>
+    <string name="create_account_repeat_password_label">Repeat password</string>
+    <string name="create_account_create_account_button">Create account</string>
+    <string name="create_account_password_mismatch_error">Passwords do not match</string>
+    <string name="create_account_email_format_error">Invalid email format</string>
+    <string name="create_account_fields_must_be_filled_error">All fields must be filled</string>
 </resources>

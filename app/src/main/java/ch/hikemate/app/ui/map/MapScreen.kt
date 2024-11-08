@@ -50,6 +50,7 @@ import ch.hikemate.app.R
 import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
 import ch.hikemate.app.ui.components.HikeCard
+import ch.hikemate.app.ui.components.HikeCardStyleProperties
 import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
@@ -107,7 +108,7 @@ object MapScreen {
    * zooming out too much and seeing too much of the blank background behind the map tiles while
    * still being able to see a reasonable area of the world map.
    */
-  const val MAP_MIN_ZOOM = 2.5
+  const val MAP_MIN_ZOOM = 3.0
 
   /** (Config) Initial position of the center of the map. */
   val MAP_INITIAL_CENTER = GeoPoint(46.5, 6.6)
@@ -129,6 +130,13 @@ object MapScreen {
    */
   private const val CENTER_MAP_ANIMATION_TIME = 500L
 
+  // These are the limits of the map. They are defined by the
+  // latitude values that the map can display.
+  // The latitude goes from -85 to 85, because going beyond
+  // that would (weirdly) let the user see the blank
+  const val MAP_MAX_LATITUDE = 85.0
+  const val MAP_MIN_LATITUDE = -85.0
+
   const val MIN_HUE = 0
   const val MAX_HUE = 360
   const val MIN_SATURATION = 42
@@ -145,6 +153,8 @@ object MapScreen {
   const val TEST_TAG_EMPTY_HIKES_LIST_MESSAGE = "emptyHikesListMessage"
   const val TEST_TAG_SEARCHING_MESSAGE = "searchingMessage"
   const val TEST_TAG_SEARCH_LOADING_ANIMATION = "searchLoadingAnimation"
+
+  const val MINIMAL_SEARCH_TIME_IN_MS = 500 // ms
 
   /**
    * Clears the marker representing the user's position from the map.
@@ -450,12 +460,16 @@ fun MapScreen(
       minZoomLevel = mapMinZoomLevel
       maxZoomLevel = mapMaxZoomLevel
       // Avoid repeating the map when the user reaches the edge or zooms out
-      isHorizontalMapRepetitionEnabled = false
+      // We keep the horizontal repetition enabled to allow the user to scroll the map
+      // horizontally without limits (from Asia to America, for example)
+      isHorizontalMapRepetitionEnabled = true
       isVerticalMapRepetitionEnabled = false
       // Disable built-in zoom controls since we have our own
       zoomController.setVisibility(CustomZoomButtonsController.Visibility.NEVER)
       // Enable touch-controls such as pinch to zoom
       setMultiTouchControls(true)
+      // Limit the vertical scrollable area to avoid the user scrolling too far
+      setScrollableAreaLimitLatitude(MapScreen.MAP_MAX_LATITUDE, MapScreen.MAP_MIN_LATITUDE, 0)
     }
   }
   var userLocationMarker: Marker? by remember { mutableStateOf(null) }
@@ -508,7 +522,8 @@ fun MapScreen(
 
   // Show hikes on the map
   val routes by hikingRoutesViewModel.hikeRoutes.collectAsState()
-  LaunchedEffect(routes) {
+  LaunchedEffect(routes, isSearching) {
+    if (isSearching) return@LaunchedEffect
     clearHikesFromMap(mapView, userLocationMarker)
     if (routes.size <= MapScreen.MAX_HIKES_DRAWN_ON_MAP) {
       routes.forEach { showHikeOnMap(mapView, it, getRandomColor()) }
@@ -559,6 +574,31 @@ fun MapScreen(
         simpleMessage = !locationPermissionState.shouldShowRationale)
   }
 
+  /**
+   * Launches a search for hikes in the area displayed on the map. The search is launched only if it
+   * is not already ongoing.
+   */
+  fun launchSearch() {
+    if (isSearching) return
+    isSearching = true
+    val startTime = System.currentTimeMillis()
+    hikingRoutesViewModel.setArea(
+        mapView.boundingBox,
+        onSuccess = {
+          if (System.currentTimeMillis() - startTime < MapScreen.MINIMAL_SEARCH_TIME_IN_MS) {
+            Thread.sleep(
+                MapScreen.MINIMAL_SEARCH_TIME_IN_MS - (System.currentTimeMillis() - startTime))
+          }
+          isSearching = false
+        },
+        onFailure = {
+          isSearching = false
+          Handler(Looper.getMainLooper()).post {
+            Toast.makeText(context, "Error while searching for hikes", Toast.LENGTH_SHORT).show()
+          }
+        })
+  }
+
   SideBarNavigation(
       onTabSelect = { navigationActions.navigateTo(it) },
       tabList = LIST_TOP_LEVEL_DESTINATIONS,
@@ -598,21 +638,7 @@ fun MapScreen(
           // Search button to request OSM for hikes in the displayed area
           if (!isSearching) {
             MapSearchButton(
-                onClick = {
-                  if (isSearching) return@MapSearchButton
-                  isSearching = true
-                  hikingRoutesViewModel.setArea(
-                      mapView.boundingBox,
-                      onSuccess = { isSearching = false },
-                      onFailure = {
-                        isSearching = false
-                        Handler(Looper.getMainLooper()).post {
-                          Toast.makeText(
-                                  context, "Error while searching for hikes", Toast.LENGTH_SHORT)
-                              .show()
-                        }
-                      })
-                },
+                onClick = { launchSearch() },
                 modifier =
                     Modifier.align(Alignment.BottomCenter)
                         .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
@@ -732,7 +758,7 @@ fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel, isSea
                 }
               }
             } else {
-              items(routes.value.size) { index: Int ->
+              items(routes.value.size, key = { routes.value[it].id }) { index: Int ->
                 val route = routes.value[index]
                 val isSuitable = index % 2 == 0
                 HikeCardFor(route, isSuitable, hikingRoutesViewModel)
@@ -762,13 +788,16 @@ fun HikeCardFor(route: HikeRoute, isSuitable: Boolean, viewModel: ListOfHikeRout
 
   HikeCard(
       title = route.name ?: stringResource(R.string.map_screen_hike_title_default),
-      altitudeDifference = 1000,
+      // This generates a random list of elevation data for the hike
+      // with a random number of points and altitude between 0 and 1000
+      elevationData = (0..(0..1000).random()).map { it.toDouble() }.shuffled(),
       onClick = {
         // The user clicked on the route to select it
         viewModel.selectRoute(route)
         Toast.makeText(context, "Hike details not implemented yet", Toast.LENGTH_SHORT).show()
       },
       messageContent = suitableLabelText,
-      messageIcon = painterResource(suitableLabelIcon),
-      messageColor = suitableLabelColor)
+      styleProperties =
+          HikeCardStyleProperties(
+              messageIcon = painterResource(suitableLabelIcon), messageColor = suitableLabelColor))
 }
