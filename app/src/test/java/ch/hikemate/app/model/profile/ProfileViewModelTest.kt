@@ -171,4 +171,50 @@ class ProfileViewModelTest {
 
     assert(profileViewModel.profile.value == profile)
   }
+
+  @Test
+  fun checkAndCreateProfile_profileDoesNotExist() {
+    `when`(repository.getProfileById(any(), any(), any())).thenAnswer {
+      val onSuccess = it.getArgument<(Profile?) -> Unit>(1)
+      onSuccess(null)
+    }
+    `when`(repository.createProfile(any(), any(), any())).thenAnswer {
+      val onSuccess = it.getArgument<(Profile) -> Unit>(1)
+      onSuccess(profile)
+    }
+
+    profileViewModel.checkAndCreateProfile("1", firebaseAuth)
+
+    verify(repository).getProfileById(eq("1"), any(), any())
+    verify(repository).createProfile(eq(firebaseAuth), any(), any())
+    assert(profileViewModel.profile.value == profile)
+  }
+
+  @Test
+  fun checkAndCreateProfile_failure() {
+    val exception = Exception("Error")
+    `when`(repository.getProfileById(any(), any(), any())).thenAnswer {
+      val onFailure = it.getArgument<(Exception) -> Unit>(2)
+      onFailure(exception)
+    }
+
+    profileViewModel.checkAndCreateProfile("1", firebaseAuth)
+
+    verify(repository).getProfileById(eq("1"), any(), any())
+    assert(profileViewModel.profile.value == null)
+  }
+
+  @Test
+  fun createProfile_failure() {
+    val exception = Exception("Error")
+    `when`(repository.createProfile(any(), any(), any())).thenAnswer {
+      val onFailure = it.getArgument<(Exception) -> Unit>(2)
+      onFailure(exception)
+    }
+
+    profileViewModel.createProfile(firebaseAuth)
+
+    verify(repository).createProfile(eq(firebaseAuth), any(), any())
+    assert(profileViewModel.profile.value == null)
+  }
 }
