@@ -2,6 +2,9 @@ package ch.hikemate.app.ui.map
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
 import android.location.Location
 import android.net.Uri
 import android.os.Handler
@@ -9,6 +12,7 @@ import android.os.Looper
 import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -138,6 +142,12 @@ object MapScreen {
    */
   private const val CENTER_MAP_ON_MARKER_ANIMATION_TIME = 200L
 
+  /**
+   * (Config) Size of the icon representing the user's location on the map. The size is defined
+   * empirically to make the icon visible and not too big.
+   */
+  private const val USER_LOCATION_MARKER_ICON_SIZE = 40
+
   // These are the limits of the map. They are defined by the
   // latitude values that the map can display.
   // The latitude goes from -85 to 85, because going beyond
@@ -182,6 +192,27 @@ object MapScreen {
   }
 
   /**
+   * Get the icon to use for the user's location marker.
+   *
+   * @param context The context where the icon will be used
+   * @return The icon to use for the user's location marker
+   */
+  private fun getUserLocationMarkerIcon(context: Context): Drawable {
+    // Retrieve the actual drawable resource
+    val originalDrawable = AppCompatResources.getDrawable(context, R.drawable.user_location)
+
+    // Resize the vector resource to look good on the map
+    val bitmap =
+        Bitmap.createBitmap(
+            USER_LOCATION_MARKER_ICON_SIZE, USER_LOCATION_MARKER_ICON_SIZE, Bitmap.Config.ARGB_8888)
+    val canvas = android.graphics.Canvas(bitmap)
+    originalDrawable?.setBounds(0, 0, canvas.width, canvas.height)
+    originalDrawable?.draw(canvas)
+
+    return BitmapDrawable(context.resources, bitmap)
+  }
+
+  /**
    * Draws a new marker on the map representing the user's position. The previous marker is cleared
    * to avoid duplicates. The map is invalidated to redraw the map with the new marker.
    *
@@ -195,9 +226,9 @@ object MapScreen {
     clearUserPosition(previous, mapView)
 
     // Create a new marker with the new position
-    // TODO : Make the user location marker look nicer
     val newMarker =
         Marker(mapView).apply {
+          icon = getUserLocationMarkerIcon(mapView.context)
           position = GeoPoint(location.latitude, location.longitude)
           setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
           setOnMarkerClickListener { marker, mapView ->
@@ -205,7 +236,6 @@ object MapScreen {
                 marker.position, mapView.zoomLevelDouble, CENTER_MAP_ON_MARKER_ANIMATION_TIME)
             true
           }
-          setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
         }
 
     // Add the new marker to the map
