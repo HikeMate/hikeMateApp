@@ -188,7 +188,8 @@ fun HikeDetails(route: HikeRoute, isSaved: Boolean, date: Timestamp?) {
               Text(
                   text = route.name ?: "Unnamed Hike",
                   style = MaterialTheme.typography.titleLarge,
-                  textAlign = TextAlign.Center,
+                  textAlign = TextAlign.Left
+                ,
                   modifier = Modifier.testTag(TEST_TAG_HIKE_NAME))
               AppropriatenessMessageWrapper(isSuitable = true)
             }
