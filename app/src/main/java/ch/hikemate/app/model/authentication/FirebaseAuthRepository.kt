@@ -21,21 +21,6 @@ import kotlinx.coroutines.launch
 
 class FirebaseAuthRepository : AuthRepository {
 
-  /**
-   * Sign in with Google using Firebase Authentication.
-   *
-   * @param onSuccess Callback to invoke when login is successful. Passes the FirebaseUser if
-   *   successful.
-   * @param onErrorAction Callback to invoke when an error occurs during login. Passes the Throwable
-   *   error.
-   * @param context The Android Context, used for accessing resources and system services.
-   * @param coroutineScope The CoroutineScope to launch the login task in a non-blocking way.
-   * @param credentialManager (Optional) CredentialManager for handling credential requests. Pass
-   *   explicitly when testing with mocks.
-   * @param startAddAccountIntentLauncher (Optional) to handle the scenario where no Google
-   *   credentials are found on the device. When `NoCredentialException` is thrown, this launcher
-   *   prompts the user to add a Google account.
-   */
   override fun signInWithGoogle(
       onSuccess: (FirebaseUser?) -> Unit,
       onErrorAction: (Exception) -> Unit,
@@ -52,8 +37,7 @@ class FirebaseAuthRepository : AuthRepository {
     // client ID
     val googleIdOption: GetGoogleIdOption =
         GetGoogleIdOption.Builder()
-            .setFilterByAuthorizedAccounts(
-                true) // Only allow accounts already signed in on the device
+            .setFilterByAuthorizedAccounts(false) // Allow all kinds of Google accounts
             .setServerClientId(token) // Server client ID for OAuth
             .setAutoSelectEnabled(true) // Auto-select if only one account is available
             .build()
@@ -87,7 +71,7 @@ class FirebaseAuthRepository : AuthRepository {
             onSuccess(auth.currentUser)
           } else {
             Log.d("SignInButton", "signInWithCredential:failure")
-            onErrorAction(task.exception ?: Exception("Unknown error"))
+            onErrorAction(task.exception ?: Exception())
           }
         }
       } catch (e: NoCredentialException) {
@@ -107,11 +91,38 @@ class FirebaseAuthRepository : AuthRepository {
     return intent
   }
 
-  /**
-   * Signs out the current user from Firebase and invokes the success callback.
-   *
-   * @param onSuccess Callback to invoke after the user has successfully signed out.
-   */
+  override fun createAccountWithEmailAndPassword(
+      onSuccess: (FirebaseUser?) -> Unit,
+      onErrorAction: (Exception) -> Unit,
+      email: String,
+      password: String
+  ) {
+    val auth = FirebaseAuth.getInstance()
+    auth.createUserWithEmailAndPassword(email, password).addOnCompleteListener { task ->
+      if (task.isSuccessful) {
+        onSuccess(auth.currentUser)
+      } else {
+        onErrorAction(task.exception ?: Exception())
+      }
+    }
+  }
+
+  override fun signInWithEmailAndPassword(
+      email: String,
+      password: String,
+      onSuccess: (FirebaseUser?) -> Unit,
+      onErrorAction: (Exception) -> Unit,
+  ) {
+    val auth = FirebaseAuth.getInstance()
+    auth.signInWithEmailAndPassword(email, password).addOnCompleteListener { task ->
+      if (task.isSuccessful) {
+        onSuccess(auth.currentUser)
+      } else {
+        onErrorAction(task.exception ?: Exception())
+      }
+    }
+  }
+
   override fun signOut(onSuccess: () -> Unit) {
     Firebase.auth.signOut()
     onSuccess()
