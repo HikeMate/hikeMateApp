@@ -399,9 +399,6 @@ fun HikeCardFor(
     viewModel: ListOfHikeRoutesViewModel,
     navigationActions: NavigationActions
 ) {
-  // The context is needed to display a toast when the user clicks on the route
-  val context = LocalContext.current
-
   // The color of the card's message is chosen based on whether the hike is suitable or not
   val suitableLabelColor = if (isSuitable) Color(0xFF4CAF50) else Color(0xFFFFC107)
 
