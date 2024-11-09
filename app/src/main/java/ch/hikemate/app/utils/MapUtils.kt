@@ -31,15 +31,11 @@ fun getGeographicalCenter(bounds: Bounds): GeoPoint {
   // Adjust if the longitude crosses the Date Line (i.e., difference > 180 degrees)
   if (maxLong - minLong > 180) {
     centerLong = (minLong + maxLong + 360) / 2
-  } else if (minLong - maxLong > 180) {
-    centerLong = (minLong + maxLong - 360) / 2
   }
 
   // Normalize longitude to be in the range -180 to 180
   if (centerLong > 180) {
     centerLong -= 360
-  } else if (centerLong < -180) {
-    centerLong += 360
   }
 
   Log.d("Bounds", "centerLat: $centerLat, centerLong: $centerLong")
