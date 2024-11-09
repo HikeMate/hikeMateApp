@@ -48,7 +48,6 @@ class MapUtilsTest {
     assertEquals(expectedZoomLevel, result)
   }
 
-
   /*
    * Tests for getGeoPointFromBounds function
    */

@@ -156,9 +156,9 @@ fun HikeDetails(route: HikeRoute, isSaved: Boolean, date: Timestamp?) {
   // Needed for the pop-up that allows the user to show the date
   fun showDatePickerDialog(onDateSelected: (String) -> Unit) {
     val calendar = Calendar.getInstance()
-    val year = calendar.get(Calendar.YEAR)
-    val month = calendar.get(Calendar.MONTH)
-    val day = calendar.get(Calendar.DAY_OF_MONTH)
+    val year = calendar[Calendar.YEAR]
+    val month = calendar[Calendar.MONTH]
+    val day = calendar[Calendar.DAY_OF_MONTH]
 
     DatePickerDialog(
             context,
