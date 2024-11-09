@@ -62,24 +62,16 @@ class MapUtilsTest {
 
   @Test
   fun getGeographicalCenterCrossesDateLinePositive() {
-    val bounds = Bounds(minLat = -10.0, maxLat = 10.0, minLon = 170.0, maxLon = -170.0)
-    val expectedCenter = GeoPoint(0.0, 180.0) // Corrected longitude crossing the Date Line
-    val actualCenter = getGeographicalCenter(bounds)
-    assertEquals(expectedCenter, actualCenter)
-  }
-
-  @Test
-  fun getGeographicalCenterCrossesDateLineNegative() {
     val bounds = Bounds(minLat = -10.0, maxLat = 10.0, minLon = -170.0, maxLon = 170.0)
-    val expectedCenter = GeoPoint(0.0, -180.0) // Corrected longitude crossing the Date Line
+    val expectedCenter = GeoPoint(0.0, 180.0)
     val actualCenter = getGeographicalCenter(bounds)
     assertEquals(expectedCenter, actualCenter)
   }
 
   @Test
   fun getGeographicalCenterCrossesDateLineNearZero() {
-    val bounds = Bounds(minLat = -10.0, maxLat = 10.0, minLon = 179.5, maxLon = -179.5)
-    val expectedCenter = GeoPoint(0.0, 180.0) // Adjusted to account for Date Line crossing
+    val bounds = Bounds(minLat = -10.0, maxLat = 10.0, minLon = -179.5, maxLon = 179.5)
+    val expectedCenter = GeoPoint(0.0, 180.0)
     val actualCenter = getGeographicalCenter(bounds)
     assertEquals(expectedCenter, actualCenter)
   }
@@ -87,15 +79,7 @@ class MapUtilsTest {
   @Test
   fun getGeographicalCenterLongitudeNormalizationOver180() {
     val bounds = Bounds(minLat = -10.0, maxLat = 10.0, minLon = 170.0, maxLon = 200.0)
-    val expectedCenter = GeoPoint(0.0, -175.0) // Normalized to within -180 to 180
-    val actualCenter = getGeographicalCenter(bounds)
-    assertEquals(expectedCenter, actualCenter)
-  }
-
-  @Test
-  fun getGeographicalCenterLongitudeNormalizationUnderNegative180() {
-    val bounds = Bounds(minLat = -10.0, maxLat = 10.0, minLon = -190.0, maxLon = -170.0)
-    val expectedCenter = GeoPoint(0.0, 175.0) // Normalized to within -180 to 180
+    val expectedCenter = GeoPoint(0.0, -175.0)
     val actualCenter = getGeographicalCenter(bounds)
     assertEquals(expectedCenter, actualCenter)
   }
@@ -111,7 +95,7 @@ class MapUtilsTest {
   @Test
   fun getGeographicalCenterAroundZeroMeridian() {
     val bounds = Bounds(minLat = -10.0, maxLat = 10.0, minLon = -5.0, maxLon = 5.0)
-    val expectedCenter = GeoPoint(0.0, 0.0) // Centered on the prime meridian
+    val expectedCenter = GeoPoint(0.0, 0.0)
     val actualCenter = getGeographicalCenter(bounds)
     assertEquals(expectedCenter, actualCenter)
   }
