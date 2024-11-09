@@ -105,4 +105,21 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
         onSuccess = { _currentUser.value = null },
     )
   }
+
+  /**
+   * Deletes the current user's account. On successful deletion, the _currentUser is set to null.
+   *
+   * @param password The password of the user.
+   * @param onSuccess The action to be executed on successful account deletion.
+   * @param onErrorAction The action to be executed on error.
+   */
+  fun deleteAccount(password: String, onSuccess: () -> Unit, onErrorAction: (Exception) -> Unit) {
+    repository.deleteAccount(
+        password = password,
+        onSuccess = {
+          _currentUser.value = null
+          onSuccess()
+        },
+        onErrorAction = onErrorAction)
+  }
 }

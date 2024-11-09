@@ -71,4 +71,20 @@ interface AuthRepository {
    * @param onSuccess Callback to invoke after the user has successfully signed out.
    */
   fun signOut(onSuccess: () -> Unit = {})
+
+  /**
+   * Deletes the current user's account and invokes the success callback. Takes the user's email and
+   * password as parameters for account deletion as we need to re-authenticate the user before
+   * deleting the account.
+   *
+   * @param password The password of the user.
+   * @param onSuccess Callback to invoke after the user's account has been successfully deleted.
+   * @param onErrorAction Callback to invoke when an error occurs during account deletion. Passes
+   *   the Throwable error.
+   */
+  fun deleteAccount(
+      password: String,
+      onSuccess: () -> Unit = {},
+      onErrorAction: (Exception) -> Unit
+  )
 }

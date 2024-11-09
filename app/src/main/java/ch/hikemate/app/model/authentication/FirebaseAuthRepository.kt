@@ -10,11 +10,15 @@ import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.NoCredentialException
 import ch.hikemate.app.R
+import ch.hikemate.app.model.profile.ProfileRepositoryFirestore
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.firebase.auth.AuthCredential
+import com.google.firebase.auth.EmailAuthCredential
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -126,5 +130,47 @@ class FirebaseAuthRepository : AuthRepository {
   override fun signOut(onSuccess: () -> Unit) {
     Firebase.auth.signOut()
     onSuccess()
+  }
+
+  override fun deleteAccount(
+      password: String,
+      onSuccess: () -> Unit,
+      onErrorAction: (Exception) -> Unit
+  ) {
+    val user = FirebaseAuth.getInstance().currentUser
+    if (user != null) {
+      val email = user.email ?: throw Exception("User email is null")
+      Log.d("DeleteAccount", "User email: '$email', password: '$password'")
+
+      // Delete profile from Firestore
+        // No need to handle the result of the deletion operation
+        // as the user account will be deleted regardless
+      ProfileRepositoryFirestore(FirebaseFirestore.getInstance())
+          .deleteProfileById(user.uid, {}, {})
+
+        Log.d("DeleteAccount", "Profile deleted")
+
+      // Re-authenticate the user
+      val credential: AuthCredential = GoogleAuthProvider.getCredential(email, password)
+
+      user.reauthenticate(credential).addOnCompleteListener { reauthTask ->
+        if (reauthTask.isSuccessful) {
+            Log.d("DeleteAccount", "User re-authenticated")
+          // Delete the user account
+          user.delete().addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                Log.d("DeleteAccount", "User account deleted")
+              onSuccess()
+            } else {
+              onErrorAction(task.exception ?: Exception())
+            }
+          }
+        } else {
+          onErrorAction(reauthTask.exception ?: Exception())
+        }
+      }
+    } else {
+      onErrorAction(Exception("No user is currently signed in"))
+    }
   }
 }

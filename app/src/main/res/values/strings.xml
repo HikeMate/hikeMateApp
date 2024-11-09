@@ -97,4 +97,11 @@
     <string name="create_account_password_mismatch_error">Passwords do not match</string>
     <string name="create_account_email_format_error">Invalid email format</string>
     <string name="create_account_fields_must_be_filled_error">All fields must be filled</string>
+
+    <!-- Delete Account -->
+    <string name="delete_account_title">Delete my account</string>
+    <string name="delete_account_info">For security, please enter your password before deleting your account to confirm your identity.</string>
+    <string name="delete_account_password_label">Password</string>
+    <string name="delete_account_delete_button">Delete account</string>
+    <string name="delete_account_password_must_be_filled_error">You should provide a password</string>
 </resources>

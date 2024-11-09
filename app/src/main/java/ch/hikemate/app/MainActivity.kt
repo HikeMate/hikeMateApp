@@ -25,6 +25,7 @@ import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.navigation.TopLevelDestinations
+import ch.hikemate.app.ui.profile.DeleteAccountScreen
 import ch.hikemate.app.ui.profile.EditProfileScreen
 import ch.hikemate.app.ui.profile.ProfileScreen
 import ch.hikemate.app.ui.saved.SavedHikesScreen
@@ -64,6 +65,7 @@ fun HikeMateApp() {
         SignInWithEmailScreen(navigationActions, authViewModel)
       }
       composable(Screen.CREATE_ACCOUNT) { CreateAccountScreen(navigationActions, authViewModel) }
+      composable(Screen.DELETE_ACCOUNT) { DeleteAccountScreen(navigationActions, authViewModel) }
     }
 
     navigation(
