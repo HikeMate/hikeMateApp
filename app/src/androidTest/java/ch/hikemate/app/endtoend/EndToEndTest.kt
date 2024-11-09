@@ -33,7 +33,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class EndToEndTest: TestCase() {
+class EndToEndTest : TestCase() {
   @get:Rule val composeTestRule = createAndroidComposeRule<MainActivity>()
   private val auth = FirebaseAuth.getInstance()
   private val email = "end2endTest@gmail.com"
