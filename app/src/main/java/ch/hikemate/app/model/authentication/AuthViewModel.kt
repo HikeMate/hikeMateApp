@@ -22,6 +22,11 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
   val currentUser: StateFlow<FirebaseUser?>
     get() = _currentUser
 
+  /** Checks if the user is currently logged in. */
+  fun isUserLoggedIn(): Boolean {
+    return _currentUser.value != null
+  }
+
   /**
    * Initiates the sign-in process using Google Sign-In.* Note: This function only changes the state
    * of currentUser, it has no return or onSuccess invocation.
