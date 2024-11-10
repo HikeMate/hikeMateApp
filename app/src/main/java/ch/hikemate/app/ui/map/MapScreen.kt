@@ -452,6 +452,44 @@ object MapScreen {
       Log.e(LOG_TAG, "Security exception while accessing location in centerMapOnUserLocation", e)
     }
   }
+
+  /**
+   * Launches a search for hikes in the area displayed on the map. The search is launched only if it
+   * is not already ongoing.
+   *
+   * @param isSearching Whether a search is already ongoing
+   * @param setIsSearchingToTrue Function to set the search state to true
+   * @param setIsSearchingToFalse Function to set the search state to false
+   * @param hikingRoutesViewModel The view model to use to search for hikes
+   * @param mapView The map view where the search area is defined
+   * @param context The context where the search is launched
+   */
+  fun launchSearch(
+      isSearching: Boolean,
+      setIsSearchingToTrue: () -> Unit,
+      setIsSearchingToFalse: () -> Unit,
+      hikingRoutesViewModel: ListOfHikeRoutesViewModel,
+      mapView: MapView,
+      context: Context
+  ) {
+    if (isSearching) return
+    setIsSearchingToTrue()
+    val startTime = System.currentTimeMillis()
+    hikingRoutesViewModel.setArea(
+        mapView.boundingBox,
+        onSuccess = {
+          if (System.currentTimeMillis() - startTime < MINIMAL_SEARCH_TIME_IN_MS) {
+            Thread.sleep(MINIMAL_SEARCH_TIME_IN_MS - (System.currentTimeMillis() - startTime))
+          }
+          setIsSearchingToFalse()
+        },
+        onFailure = {
+          setIsSearchingToFalse()
+          Handler(Looper.getMainLooper()).post {
+            Toast.makeText(context, "Error while searching for hikes", Toast.LENGTH_SHORT).show()
+          }
+        })
+  }
 }
 
 /**
@@ -516,7 +554,6 @@ fun clearHikesFromMap(mapView: MapView, userLocationMarker: Marker?) {
   mapView.invalidate()
 }
 
-// TODO : Move as much as possible of the location logic into a view model or a utils object
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun MapScreen(
@@ -645,31 +682,6 @@ fun MapScreen(
       locationPermissionState = locationPermissionState,
       context = context)
 
-  /**
-   * Launches a search for hikes in the area displayed on the map. The search is launched only if it
-   * is not already ongoing.
-   */
-  fun launchSearch() {
-    if (isSearching) return
-    isSearching = true
-    val startTime = System.currentTimeMillis()
-    hikingRoutesViewModel.setArea(
-        mapView.boundingBox,
-        onSuccess = {
-          if (System.currentTimeMillis() - startTime < MapScreen.MINIMAL_SEARCH_TIME_IN_MS) {
-            Thread.sleep(
-                MapScreen.MINIMAL_SEARCH_TIME_IN_MS - (System.currentTimeMillis() - startTime))
-          }
-          isSearching = false
-        },
-        onFailure = {
-          isSearching = false
-          Handler(Looper.getMainLooper()).post {
-            Toast.makeText(context, "Error while searching for hikes", Toast.LENGTH_SHORT).show()
-          }
-        })
-  }
-
   DisposableEffect(Unit) {
     onDispose {
       MapScreen.stopUserLocationUpdates(context, locationUpdatedCallback)
@@ -717,7 +729,15 @@ fun MapScreen(
           // Search button to request OSM for hikes in the displayed area
           if (!isSearching) {
             MapSearchButton(
-                onClick = { launchSearch() },
+                onClick = {
+                  MapScreen.launchSearch(
+                      isSearching,
+                      { isSearching = true },
+                      { isSearching = false },
+                      hikingRoutesViewModel,
+                      mapView,
+                      context)
+                },
                 modifier =
                     Modifier.align(Alignment.BottomCenter)
                         .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
