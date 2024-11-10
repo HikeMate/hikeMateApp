@@ -54,45 +54,55 @@ fun HikeMateApp() {
   val firestore = FirebaseFirestore.getInstance()
   val profileViewModel = ProfileViewModel(ProfileRepositoryFirestore(firestore))
   val authViewModel = AuthViewModel(FirebaseAuthRepository())
-  NavHost(navController = navController, startDestination = TopLevelDestinations.AUTH.route) {
-    navigation(
-        startDestination = Screen.AUTH,
-        route = Route.AUTH,
-    ) {
-      composable(Screen.AUTH) { SignInScreen(navigationActions, authViewModel) }
-      composable(Screen.SIGN_IN_WITH_EMAIL) {
-        SignInWithEmailScreen(navigationActions, authViewModel)
-      }
-      composable(Screen.CREATE_ACCOUNT) { CreateAccountScreen(navigationActions, authViewModel) }
-    }
 
-    navigation(
-        startDestination = Screen.SAVED_HIKES,
-        route = Route.SAVED_HIKES,
-    ) {
-      composable(Screen.SAVED_HIKES) { SavedHikesScreen(navigationActions = navigationActions) }
-    }
 
-    navigation(
-        startDestination = Screen.MAP,
-        route = Route.MAP,
-    ) {
-      composable(Screen.MAP) { MapScreen(navigationActions = navigationActions) }
-    }
-    navigation(
-        startDestination = Screen.PROFILE,
-        route = Route.PROFILE,
-    ) {
-      composable(Screen.PROFILE) {
-        ProfileScreen(
-            navigationActions = navigationActions,
-            profileViewModel = profileViewModel,
-            authViewModel = authViewModel)
+  val isUserLoggedIn = authViewModel.isUserLoggedIn()
+
+
+  NavHost(
+      navController = navController,
+      startDestination =
+          if (isUserLoggedIn) TopLevelDestinations.MAP.route else TopLevelDestinations.AUTH.route) {
+        navigation(
+            startDestination = Screen.AUTH,
+            route = Route.AUTH,
+        ) {
+          composable(Screen.AUTH) { SignInScreen(navigationActions, authViewModel) }
+          composable(Screen.SIGN_IN_WITH_EMAIL) {
+            SignInWithEmailScreen(navigationActions, authViewModel)
+          }
+          composable(Screen.CREATE_ACCOUNT) {
+            CreateAccountScreen(navigationActions, authViewModel)
+          }
+        }
+
+        navigation(
+            startDestination = Screen.SAVED_HIKES,
+            route = Route.SAVED_HIKES,
+        ) {
+          composable(Screen.SAVED_HIKES) { SavedHikesScreen(navigationActions = navigationActions) }
+        }
+
+        navigation(
+            startDestination = Screen.MAP,
+            route = Route.MAP,
+        ) {
+          composable(Screen.MAP) { MapScreen(navigationActions = navigationActions) }
+        }
+        navigation(
+            startDestination = Screen.PROFILE,
+            route = Route.PROFILE,
+        ) {
+          composable(Screen.PROFILE) {
+            ProfileScreen(
+                navigationActions = navigationActions,
+                profileViewModel = profileViewModel,
+                authViewModel = authViewModel)
+          }
+          composable(Screen.EDIT_PROFILE) {
+            EditProfileScreen(
+                navigationActions = navigationActions, profileViewModel = profileViewModel)
+          }
+        }
       }
-      composable(Screen.EDIT_PROFILE) {
-        EditProfileScreen(
-            navigationActions = navigationActions, profileViewModel = profileViewModel)
-      }
-    }
-  }
 }
