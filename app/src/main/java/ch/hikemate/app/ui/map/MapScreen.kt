@@ -419,7 +419,7 @@ object MapScreen {
             .show()
       }
       if (centerMapOnUserPosition) {
-        centerMapOnUserLocation(context, mapView)
+        centerMapOnUserLocation(context, mapView, userLocationMarker)
       }
     }
 
@@ -430,7 +430,7 @@ object MapScreen {
     }
   }
 
-  fun centerMapOnUserLocation(context: Context, mapView: MapView) {
+  fun centerMapOnUserLocation(context: Context, mapView: MapView, userLocationMarker: Marker?) {
     val fusedLocationClient: FusedLocationProviderClient =
         LocationServices.getFusedLocationProviderClient(context)
 
@@ -443,6 +443,16 @@ object MapScreen {
               centerMapOnUserLocation(mapView, it)
             } else {
               Log.e(LOG_TAG, "Location obtained in centerMapOnUserLocation is null")
+
+              // Clear the user's position on the map
+              clearUserPosition(userLocationMarker, mapView, invalidate = true)
+
+              // Notify the user that they must enable location services
+              Toast.makeText(
+                      context,
+                      context.getString(R.string.map_screen_location_not_available),
+                      Toast.LENGTH_LONG)
+                  .show()
             }
           }
           .addOnFailureListener {
@@ -716,7 +726,7 @@ fun MapScreen(
                 // If the user has granted at least one of the two permissions, center the map on
                 // the user's location
                 if (hasLocationPermission) {
-                  MapScreen.centerMapOnUserLocation(context, mapView)
+                  MapScreen.centerMapOnUserLocation(context, mapView, userLocationMarker)
                 }
                 // If the user yet needs to grant the permission, show a custom educational alert
                 else {
