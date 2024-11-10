@@ -629,41 +629,21 @@ fun MapScreen(
     }
   }
 
-  if (showLocationPermissionDialog) {
-    LocationPermissionAlertDialog(
-        onConfirm = {
-          showLocationPermissionDialog = false
-          centerMapOnUserPosition = true
-
-          // If should show rationale is true, it is safe to launch permission requests
-          if (locationPermissionState.shouldShowRationale) {
-            locationPermissionState.launchMultiplePermissionRequest()
-          }
-
-          // If the user is asked for the first time, it is safe to launch permission requests
-          else if (PermissionUtils.firstTimeAskingPermission(
-              context, android.Manifest.permission.ACCESS_FINE_LOCATION)) {
-            PermissionUtils.setFirstTimeAskingPermission(
-                context, android.Manifest.permission.ACCESS_FINE_LOCATION, false)
-            PermissionUtils.setFirstTimeAskingPermission(
-                context, android.Manifest.permission.ACCESS_COARSE_LOCATION, false)
-            locationPermissionState.launchMultiplePermissionRequest()
-          }
-
-          // Otherwise, the user should be brought to the settings page
-          else {
-            context.startActivity(
-                Intent(
-                    Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                    Uri.fromParts("package", context.packageName, null)))
-          }
-        },
-        onDismiss = {
-          showLocationPermissionDialog = false
-          centerMapOnUserPosition = false
-        },
-        simpleMessage = !locationPermissionState.shouldShowRationale)
-  }
+  // Show a dialog to explain the user why the location permission is needed
+  // Only shows when the user has clicked on the "center map on my position" button
+  LocationPermissionAlertDialog(
+      show = showLocationPermissionDialog,
+      onConfirm = {
+        showLocationPermissionDialog = false
+        centerMapOnUserPosition = true
+      },
+      onDismiss = {
+        showLocationPermissionDialog = false
+        centerMapOnUserPosition = false
+      },
+      simpleMessage = !locationPermissionState.shouldShowRationale,
+      locationPermissionState = locationPermissionState,
+      context = context)
 
   /**
    * Launches a search for hikes in the area displayed on the map. The search is launched only if it
@@ -755,12 +735,18 @@ fun MapScreen(
       }
 }
 
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun LocationPermissionAlertDialog(
+    show: Boolean,
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
-    simpleMessage: Boolean
+    simpleMessage: Boolean,
+    locationPermissionState: MultiplePermissionsState,
+    context: Context = LocalContext.current
 ) {
+  if (!show) return
+
   AlertDialog(
       icon = {
         Icon(painter = painterResource(id = R.drawable.my_location), contentDescription = null)
@@ -775,9 +761,34 @@ fun LocationPermissionAlertDialog(
       },
       onDismissRequest = onDismiss,
       confirmButton = {
-        Button(onClick = onConfirm) {
-          Text(text = stringResource(R.string.map_screen_location_rationale_grant_button))
-        }
+        Button(
+            onClick = {
+              onConfirm()
+              // If should show rationale is true, it is safe to launch permission requests
+              if (locationPermissionState.shouldShowRationale) {
+                locationPermissionState.launchMultiplePermissionRequest()
+              }
+
+              // If the user is asked for the first time, it is safe to launch permission requests
+              else if (PermissionUtils.firstTimeAskingPermission(
+                  context, android.Manifest.permission.ACCESS_FINE_LOCATION)) {
+                PermissionUtils.setFirstTimeAskingPermission(
+                    context, android.Manifest.permission.ACCESS_FINE_LOCATION, false)
+                PermissionUtils.setFirstTimeAskingPermission(
+                    context, android.Manifest.permission.ACCESS_COARSE_LOCATION, false)
+                locationPermissionState.launchMultiplePermissionRequest()
+              }
+
+              // Otherwise, the user should be brought to the settings page
+              else {
+                context.startActivity(
+                    Intent(
+                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                        Uri.fromParts("package", context.packageName, null)))
+              }
+            }) {
+              Text(text = stringResource(R.string.map_screen_location_rationale_grant_button))
+            }
       },
       dismissButton = {
         Button(onClick = onDismiss) {
