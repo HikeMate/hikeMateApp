@@ -1,6 +1,8 @@
 package ch.hikemate.app.utils
 
 import android.content.Context
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.MultiplePermissionsState
 
 /**
  * Utility class for handling permissions.
@@ -41,5 +43,10 @@ object PermissionUtils {
     return context
         .getSharedPreferences(PERMISSIONS_SHARED_PREFERENCES, Context.MODE_PRIVATE)
         .getBoolean(permission, true)
+  }
+
+  @OptIn(ExperimentalPermissionsApi::class)
+  fun anyPermissionGranted(state: MultiplePermissionsState): Boolean {
+    return state.revokedPermissions.size != state.permissions.size
   }
 }

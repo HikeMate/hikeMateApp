@@ -2,17 +2,12 @@ package ch.hikemate.app.ui.map
 
 import android.content.Context
 import android.content.Intent
-import android.graphics.Bitmap
-import android.graphics.drawable.BitmapDrawable
-import android.graphics.drawable.Drawable
-import android.location.Location
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
-import androidx.appcompat.content.res.AppCompatResources
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -61,17 +56,14 @@ import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.navigation.SideBarNavigation
+import ch.hikemate.app.utils.LocationUtils
+import ch.hikemate.app.utils.MapUtils
 import ch.hikemate.app.utils.PermissionUtils
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.MultiplePermissionsState
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
-import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
-import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
-import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.Priority
-import com.google.android.gms.tasks.CancellationTokenSource
 import org.osmdroid.config.Configuration
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.CustomZoomButtonsController
@@ -126,27 +118,27 @@ object MapScreen {
    * defined empirically to avoid draining the battery too much while still providing a good
    * experience to the user.
    */
-  private const val USER_LOCATION_UPDATE_INTERVAL = 5000L
+  const val USER_LOCATION_UPDATE_INTERVAL = 5000L
 
   /**
    * (Config) Duration in milliseconds of the animation when centering the map on the user's
    * location. The duration is defined empirically to make the transition smooth and not too fast.
    * The value is arbitrary and can be adjusted based on the user's experience.
    */
-  private const val CENTER_MAP_ANIMATION_TIME = 500L
+  const val CENTER_MAP_ANIMATION_TIME = 500L
 
   /**
    * (Config) Duration in milliseconds of the animation when centering the map on a marker that was
    * clicked. This duration is shorter than the center animation, because if the marker was clicked,
    * it means it is already on the screen, hence the distance is minimal.
    */
-  private const val CENTER_MAP_ON_MARKER_ANIMATION_TIME = 200L
+  const val CENTER_MAP_ON_MARKER_ANIMATION_TIME = 200L
 
   /**
    * (Config) Size of the icon representing the user's location on the map. The size is defined
    * empirically to make the icon visible and not too big.
    */
-  private const val USER_LOCATION_MARKER_ICON_SIZE = 40
+  const val USER_LOCATION_MARKER_ICON_SIZE = 40
 
   // These are the limits of the map. They are defined by the
   // latitude values that the map can display.
@@ -173,295 +165,6 @@ object MapScreen {
   const val TEST_TAG_SEARCH_LOADING_ANIMATION = "searchLoadingAnimation"
 
   const val MINIMAL_SEARCH_TIME_IN_MS = 500 // ms
-
-  /**
-   * Clears the marker representing the user's position from the map.
-   *
-   * The map is NOT invalidated. If needed, use [org.osmdroid.views.MapView.invalidate].
-   *
-   * To update the user's position to a new location, use [updateUserPosition].
-   *
-   * @param previous The previous marker representing the user's position
-   * @param mapView The map view where the marker is displayed
-   */
-  private fun clearUserPosition(previous: Marker?, mapView: MapView, invalidate: Boolean = false) {
-    previous?.let { mapView.overlays.remove(it) }
-    if (invalidate) {
-      mapView.invalidate()
-    }
-  }
-
-  /**
-   * Get the icon to use for the user's location marker.
-   *
-   * @param context The context where the icon will be used
-   * @return The icon to use for the user's location marker
-   */
-  private fun getUserLocationMarkerIcon(context: Context): Drawable {
-    // Retrieve the actual drawable resource
-    val originalDrawable = AppCompatResources.getDrawable(context, R.drawable.user_location)
-
-    // Resize the vector resource to look good on the map
-    val bitmap =
-        Bitmap.createBitmap(
-            USER_LOCATION_MARKER_ICON_SIZE, USER_LOCATION_MARKER_ICON_SIZE, Bitmap.Config.ARGB_8888)
-    val canvas = android.graphics.Canvas(bitmap)
-    originalDrawable?.setBounds(0, 0, canvas.width, canvas.height)
-    originalDrawable?.draw(canvas)
-
-    return BitmapDrawable(context.resources, bitmap)
-  }
-
-  /**
-   * Draws a new marker on the map representing the user's position. The previous marker is cleared
-   * to avoid duplicates. The map is invalidated to redraw the map with the new marker.
-   *
-   * @param previous The previous marker representing the user's position
-   * @param mapView The map view where the marker will be displayed
-   * @param location The new location of the user
-   * @return The new marker representing the user's position
-   */
-  private fun updateUserPosition(previous: Marker?, mapView: MapView, location: Location): Marker {
-    // Clear the previous marker to avoid duplicates
-    clearUserPosition(previous, mapView)
-
-    // Create a new marker with the new position
-    val newMarker =
-        Marker(mapView).apply {
-          icon = getUserLocationMarkerIcon(mapView.context)
-          position = GeoPoint(location.latitude, location.longitude)
-          setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
-          setOnMarkerClickListener { marker, mapView ->
-            mapView.controller.animateTo(
-                marker.position, mapView.zoomLevelDouble, CENTER_MAP_ON_MARKER_ANIMATION_TIME)
-            true
-          }
-        }
-
-    // Add the new marker to the map
-    mapView.overlays.add(newMarker)
-    mapView.invalidate()
-
-    return newMarker
-  }
-
-  /**
-   * Centers the map on the user's location.
-   *
-   * Animates the map so that the transition is smooth and not instant.
-   *
-   * @param mapView The map view to center
-   * @param location The user's location to center the map on
-   */
-  private fun centerMapOnUserLocation(mapView: MapView, location: Location) {
-    mapView.controller.animateTo(
-        GeoPoint(location.latitude, location.longitude),
-        mapView.zoomLevelDouble,
-        CENTER_MAP_ANIMATION_TIME)
-  }
-
-  /**
-   * Starts listening for user location updates. Make sure to stop the updates when they are no
-   * longer needed to avoid draining the battery, or when the permission is revoked.
-   *
-   * This function handles exceptions when the location permission is not granted, but won't disable
-   * updates even if a [SecurityException] is caught. It is up to the caller to handle the exception
-   * and stop the updates if needed.
-   *
-   * @param context The context where the location updates will be requested
-   * @param locationCallback The callback that will be called when the user's location is updated
-   * @see [stopUserLocationUpdates]
-   */
-  private fun startUserLocationUpdates(
-      context: Context,
-      locationCallback: LocationCallback
-  ): Boolean {
-    // Create a client to work with user location
-    val fusedLocationProviderClient: FusedLocationProviderClient =
-        LocationServices.getFusedLocationProviderClient(context)
-
-    // Calls can produce SecurityExceptions if the permission is not granted
-    try {
-      // Request periodic updates of the user's location when it changes
-      fusedLocationProviderClient.requestLocationUpdates(
-          LocationRequest.Builder(
-                  // Whether to prioritize battery or position accuracy
-                  Priority.PRIORITY_BALANCED_POWER_ACCURACY,
-                  // Update interval in milliseconds
-                  USER_LOCATION_UPDATE_INTERVAL)
-              .build(),
-          locationCallback,
-          Looper.getMainLooper())
-
-      Log.d(LOG_TAG, "User location updates requested through FusedLocationProviderClient")
-
-      // Periodic updates were started successfully
-      return true
-    } catch (e: SecurityException) {
-      // Periodic updates could not be started
-      return false
-    }
-  }
-
-  /**
-   * Stops listening for user location updates. Make sure to stop the updates when they are no
-   * longer needed to avoid draining the battery, or when the permission is revoked.
-   *
-   * @param context The context where the location updates were requested
-   * @param locationCallback The callback that was called when the user's location was updated
-   * @see [startUserLocationUpdates]
-   */
-  fun stopUserLocationUpdates(context: Context, locationCallback: LocationCallback) {
-    // Create a client to work with user location
-    val fusedLocationProviderClient: FusedLocationProviderClient =
-        LocationServices.getFusedLocationProviderClient(context)
-
-    // Notify the client we don't want location updates anymore
-    fusedLocationProviderClient.removeLocationUpdates(locationCallback)
-
-    Log.d(LOG_TAG, "User location updates stopped through FusedLocationProviderClient")
-  }
-
-  /**
-   * Handles a user location update received by the location callback.
-   *
-   * Does not display any feedback to the user (toast, ...).
-   *
-   * If no location is available, the user's position is cleared from the map.
-   *
-   * @param locationResult The location update result received by the callback
-   * @param mapView The map view where the user's location will be displayed
-   * @param userLocationMarker The marker representing the user's location on the map
-   * @return The updated user location marker, if any, or null if no position was available.
-   */
-  fun onUserLocationUpdate(
-      locationResult: LocationResult,
-      mapView: MapView,
-      userLocationMarker: Marker?
-  ): Marker? {
-    // Extract the actual location from the update result
-    val location = locationResult.lastLocation
-
-    Log.d(LOG_TAG, "User location update received: $locationResult")
-
-    // The result might be null if the location is not available
-    var result: Marker? = null
-    if (location != null) {
-      // If a new position is available, show it on the map
-      result = updateUserPosition(userLocationMarker, mapView, location)
-    } else {
-      Log.e(LOG_TAG, "User location update contains null location")
-
-      // If no location is available, clear the user's position from the map
-      clearUserPosition(userLocationMarker, mapView, invalidate = true)
-    }
-
-    // Return the updated user location marker, if any
-    return result
-  }
-
-  /**
-   * Util function to check if the user has granted the location permission.
-   *
-   * Does not check whether fine location permission has been granted, checks that at least coarse
-   * location was granted.
-   *
-   * @param locationPermissionState The state of the location permission
-   * @return True if the user has granted the location permission, false otherwise
-   */
-  @OptIn(ExperimentalPermissionsApi::class)
-  fun hasLocationPermission(locationPermissionState: MultiplePermissionsState): Boolean {
-    return locationPermissionState.revokedPermissions.size !=
-        locationPermissionState.permissions.size
-  }
-
-  /**
-   * To be called when the user grants a new location permission or revokes one.
-   *
-   * @param context The context where the location permission was updated
-   * @param locationPermissionState State about the location revoked/granted permissions
-   * @param mapView Map view used to update the user's location or center the map if needed
-   * @param locationUpdatedCallback Callback used to start or stop listening for location updates
-   * @param centerMapOnUserPosition Whether the map should be centered on the user's position
-   * @param userLocationMarker The marker representing the user's location on the map
-   * @return The new value of centerMapOnUserPosition. If the map was centered on the user's
-   *   position, the value will be false, otherwise the same value as provided in parameters will be
-   *   returned.
-   */
-  @OptIn(ExperimentalPermissionsApi::class)
-  fun onLocationPermissionsUpdated(
-      context: Context,
-      locationPermissionState: MultiplePermissionsState,
-      mapView: MapView,
-      locationUpdatedCallback: LocationCallback,
-      centerMapOnUserPosition: Boolean,
-      userLocationMarker: Marker?
-  ) {
-    Log.d(
-        LOG_TAG,
-        "Location permission changed (revoked: ${locationPermissionState.revokedPermissions})")
-    val hasLocationPermission = hasLocationPermission(locationPermissionState)
-
-    // The user just enabled location permission for the app, start location features
-    if (hasLocationPermission) {
-      Log.d(LOG_TAG, "Location permission granted, requesting location updates")
-      PermissionUtils.setFirstTimeAskingPermission(
-          context, android.Manifest.permission.ACCESS_FINE_LOCATION, true)
-      PermissionUtils.setFirstTimeAskingPermission(
-          context, android.Manifest.permission.ACCESS_COARSE_LOCATION, true)
-      val featuresEnabledSuccessfully = startUserLocationUpdates(context, locationUpdatedCallback)
-      if (!featuresEnabledSuccessfully) {
-        Log.e(LOG_TAG, "Failed to enable location features")
-        Toast.makeText(
-                context,
-                context.getString(R.string.map_screen_location_features_failed),
-                Toast.LENGTH_LONG)
-            .show()
-      }
-      if (centerMapOnUserPosition) {
-        centerMapOnUserLocation(context, mapView, userLocationMarker)
-      }
-    }
-
-    // The user just revoked location permission for the app, stop location features
-    else {
-      stopUserLocationUpdates(context, locationUpdatedCallback)
-      clearUserPosition(userLocationMarker, mapView, invalidate = true)
-    }
-  }
-
-  fun centerMapOnUserLocation(context: Context, mapView: MapView, userLocationMarker: Marker?) {
-    val fusedLocationClient: FusedLocationProviderClient =
-        LocationServices.getFusedLocationProviderClient(context)
-
-    try {
-      fusedLocationClient
-          .getCurrentLocation(
-              Priority.PRIORITY_BALANCED_POWER_ACCURACY, CancellationTokenSource().token)
-          .addOnSuccessListener {
-            if (it != null) {
-              centerMapOnUserLocation(mapView, it)
-            } else {
-              Log.e(LOG_TAG, "Location obtained in centerMapOnUserLocation is null")
-
-              // Clear the user's position on the map
-              clearUserPosition(userLocationMarker, mapView, invalidate = true)
-
-              // Notify the user that they must enable location services
-              Toast.makeText(
-                      context,
-                      context.getString(R.string.map_screen_location_not_available),
-                      Toast.LENGTH_LONG)
-                  .show()
-            }
-          }
-          .addOnFailureListener {
-            Log.e(LOG_TAG, "Error while accessing location in centerMapOnUserLocation", it)
-          }
-    } catch (e: SecurityException) {
-      Log.e(LOG_TAG, "Security exception while accessing location in centerMapOnUserLocation", e)
-    }
-  }
 
   /**
    * Launches a search for hikes in the area displayed on the map. The search is launched only if it
@@ -632,14 +335,14 @@ fun MapScreen(
     object : LocationCallback() {
       override fun onLocationResult(locationResult: LocationResult) {
         userLocationMarker =
-            MapScreen.onUserLocationUpdate(locationResult, mapView, userLocationMarker)
+            LocationUtils.onUserLocationUpdate(locationResult, mapView, userLocationMarker)
       }
     }
   }
 
   LaunchedEffect(locationPermissionState.revokedPermissions) {
     // Update the map and start/stop listening for location updates
-    MapScreen.onLocationPermissionsUpdated(
+    LocationUtils.onLocationPermissionsUpdated(
         context,
         locationPermissionState,
         mapView,
@@ -694,7 +397,7 @@ fun MapScreen(
 
   DisposableEffect(Unit) {
     onDispose {
-      MapScreen.stopUserLocationUpdates(context, locationUpdatedCallback)
+      LocationUtils.stopUserLocationUpdates(context, locationUpdatedCallback)
       mapView.overlays.clear()
       mapView.onPause()
       mapView.onDetach()
@@ -722,11 +425,12 @@ fun MapScreen(
           // Button to center the map on the user's location
           MapMyLocationButton(
               onClick = {
-                val hasLocationPermission = MapScreen.hasLocationPermission(locationPermissionState)
+                val hasLocationPermission =
+                    LocationUtils.hasLocationPermission(locationPermissionState)
                 // If the user has granted at least one of the two permissions, center the map on
                 // the user's location
                 if (hasLocationPermission) {
-                  MapScreen.centerMapOnUserLocation(context, mapView, userLocationMarker)
+                  MapUtils.centerMapOnUserLocation(context, mapView, userLocationMarker)
                 }
                 // If the user yet needs to grant the permission, show a custom educational alert
                 else {
