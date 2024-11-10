@@ -163,6 +163,10 @@ object MapScreen {
   const val TEST_TAG_EMPTY_HIKES_LIST_MESSAGE = "emptyHikesListMessage"
   const val TEST_TAG_SEARCHING_MESSAGE = "searchingMessage"
   const val TEST_TAG_SEARCH_LOADING_ANIMATION = "searchLoadingAnimation"
+  const val TEST_TAG_CENTER_MAP_BUTTON = "centerMapButton"
+  const val TEST_TAG_LOCATION_PERMISSION_ALERT = "locationPermissionAlert"
+  const val TEST_TAG_NO_THANKS_ALERT_BUTTON = "noThanksAlertButton"
+  const val TEST_TAG_GRANT_ALERT_BUTTON = "grantAlertButton"
 
   const val MINIMAL_SEARCH_TIME_IN_MS = 500 // ms
 
@@ -439,7 +443,8 @@ fun MapScreen(
               },
               modifier =
                   Modifier.align(Alignment.BottomStart)
-                      .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
+                      .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
+                      .testTag(MapScreen.TEST_TAG_CENTER_MAP_BUTTON))
           // Search button to request OSM for hikes in the displayed area
           if (!isSearching) {
             MapSearchButton(
@@ -482,6 +487,7 @@ fun LocationPermissionAlertDialog(
   if (!show) return
 
   AlertDialog(
+      modifier = Modifier.testTag(MapScreen.TEST_TAG_LOCATION_PERMISSION_ALERT),
       icon = {
         Icon(painter = painterResource(id = R.drawable.my_location), contentDescription = null)
       },
@@ -496,6 +502,7 @@ fun LocationPermissionAlertDialog(
       onDismissRequest = onDismiss,
       confirmButton = {
         Button(
+            modifier = Modifier.testTag(MapScreen.TEST_TAG_GRANT_ALERT_BUTTON),
             onClick = {
               onConfirm()
               // If should show rationale is true, it is safe to launch permission requests
@@ -525,9 +532,11 @@ fun LocationPermissionAlertDialog(
             }
       },
       dismissButton = {
-        Button(onClick = onDismiss) {
-          Text(text = stringResource(R.string.map_screen_location_rationale_cancel_button))
-        }
+        Button(
+            modifier = Modifier.testTag(MapScreen.TEST_TAG_NO_THANKS_ALERT_BUTTON),
+            onClick = onDismiss) {
+              Text(text = stringResource(R.string.map_screen_location_rationale_cancel_button))
+            }
       })
 }
 
