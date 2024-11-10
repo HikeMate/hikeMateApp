@@ -237,7 +237,6 @@ class MapScreenTest : TestCase() {
     verify(hikesRepository, times(1)).getRoutes(any(), any(), any())
   }
 
-  @OptIn(ExperimentalCoroutinesApi::class)
   @Test
   fun searchingHikesTakesAMinimalTime() = runTest {
     setUpMap()
