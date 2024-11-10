@@ -184,7 +184,7 @@ object MapScreen {
    * @param previous The previous marker representing the user's position
    * @param mapView The map view where the marker is displayed
    */
-  fun clearUserPosition(previous: Marker?, mapView: MapView, invalidate: Boolean = false) {
+  private fun clearUserPosition(previous: Marker?, mapView: MapView, invalidate: Boolean = false) {
     previous?.let { mapView.overlays.remove(it) }
     if (invalidate) {
       mapView.invalidate()
@@ -272,7 +272,10 @@ object MapScreen {
    * @param locationCallback The callback that will be called when the user's location is updated
    * @see [stopUserLocationUpdates]
    */
-  fun startUserLocationUpdates(context: Context, locationCallback: LocationCallback): Boolean {
+  private fun startUserLocationUpdates(
+      context: Context,
+      locationCallback: LocationCallback
+  ): Boolean {
     // Create a client to work with user location
     val fusedLocationProviderClient: FusedLocationProviderClient =
         LocationServices.getFusedLocationProviderClient(context)
@@ -370,6 +373,61 @@ object MapScreen {
   fun hasLocationPermission(locationPermissionState: MultiplePermissionsState): Boolean {
     return locationPermissionState.revokedPermissions.size !=
         locationPermissionState.permissions.size
+  }
+
+  /**
+   * To be called when the user grants a new location permission or revokes one.
+   *
+   * @param context The context where the location permission was updated
+   * @param locationPermissionState State about the location revoked/granted permissions
+   * @param mapView Map view used to update the user's location or center the map if needed
+   * @param locationUpdatedCallback Callback used to start or stop listening for location updates
+   * @param centerMapOnUserPosition Whether the map should be centered on the user's position
+   * @param userLocationMarker The marker representing the user's location on the map
+   * @return The new value of centerMapOnUserPosition. If the map was centered on the user's
+   *   position, the value will be false, otherwise the same value as provided in parameters will be
+   *   returned.
+   */
+  @OptIn(ExperimentalPermissionsApi::class)
+  fun onLocationPermissionsUpdated(
+      context: Context,
+      locationPermissionState: MultiplePermissionsState,
+      mapView: MapView,
+      locationUpdatedCallback: LocationCallback,
+      centerMapOnUserPosition: Boolean,
+      userLocationMarker: Marker?
+  ) {
+    Log.d(
+        LOG_TAG,
+        "Location permission changed (revoked: ${locationPermissionState.revokedPermissions})")
+    val hasLocationPermission = hasLocationPermission(locationPermissionState)
+
+    // The user just enabled location permission for the app, start location features
+    if (hasLocationPermission) {
+      Log.d(LOG_TAG, "Location permission granted, requesting location updates")
+      PermissionUtils.setFirstTimeAskingPermission(
+          context, android.Manifest.permission.ACCESS_FINE_LOCATION, true)
+      PermissionUtils.setFirstTimeAskingPermission(
+          context, android.Manifest.permission.ACCESS_COARSE_LOCATION, true)
+      val featuresEnabledSuccessfully = startUserLocationUpdates(context, locationUpdatedCallback)
+      if (!featuresEnabledSuccessfully) {
+        Log.e(LOG_TAG, "Failed to enable location features")
+        Toast.makeText(
+                context,
+                context.getString(R.string.map_screen_location_features_failed),
+                Toast.LENGTH_LONG)
+            .show()
+      }
+      if (centerMapOnUserPosition) {
+        centerMapOnUserLocation(context, mapView)
+      }
+    }
+
+    // The user just revoked location permission for the app, stop location features
+    else {
+      stopUserLocationUpdates(context, locationUpdatedCallback)
+      clearUserPosition(userLocationMarker, mapView, invalidate = true)
+    }
   }
 
   fun centerMapOnUserLocation(context: Context, mapView: MapView) {
@@ -533,40 +591,17 @@ fun MapScreen(
   }
 
   LaunchedEffect(locationPermissionState.revokedPermissions) {
-    Log.d(
-        MapScreen.LOG_TAG,
-        "Location permission changed (revoked: ${locationPermissionState.revokedPermissions})")
-    val hasLocationPermission = MapScreen.hasLocationPermission(locationPermissionState)
+    // Update the map and start/stop listening for location updates
+    MapScreen.onLocationPermissionsUpdated(
+        context,
+        locationPermissionState,
+        mapView,
+        locationUpdatedCallback,
+        centerMapOnUserPosition,
+        userLocationMarker)
 
-    // The user just enabled location permission for the app, start location features
-    if (hasLocationPermission) {
-      Log.d(MapScreen.LOG_TAG, "Location permission granted, requesting location updates")
-      PermissionUtils.setFirstTimeAskingPermission(
-          context, android.Manifest.permission.ACCESS_FINE_LOCATION, true)
-      PermissionUtils.setFirstTimeAskingPermission(
-          context, android.Manifest.permission.ACCESS_COARSE_LOCATION, true)
-      val featuresEnabledSuccessfully =
-          MapScreen.startUserLocationUpdates(context, locationUpdatedCallback)
-      if (!featuresEnabledSuccessfully) {
-        Log.e(MapScreen.LOG_TAG, "Failed to enable location features")
-        Toast.makeText(
-                context,
-                context.getString(R.string.map_screen_location_features_failed),
-                Toast.LENGTH_LONG)
-            .show()
-      }
-      if (centerMapOnUserPosition) {
-        centerMapOnUserPosition = false
-        MapScreen.centerMapOnUserLocation(context, mapView)
-      }
-    }
-
-    // The user just revoked location permission for the app, stop location features
-    else {
-      centerMapOnUserPosition = false
-      MapScreen.stopUserLocationUpdates(context, locationUpdatedCallback)
-      MapScreen.clearUserPosition(userLocationMarker, mapView, invalidate = true)
-    }
+    // Once the update has been made, reset the flag to avoid re-centering the map
+    centerMapOnUserPosition = false
   }
 
   // Keep track of whether a search for hikes is ongoing
