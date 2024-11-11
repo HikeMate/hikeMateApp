@@ -58,67 +58,74 @@ fun HikeMateApp() {
 
   val authViewModel = AuthViewModel(FirebaseAuthRepository())
 
+  val isUserLoggedIn = authViewModel.isUserLoggedIn()
+
   val listOfHikeRoutesViewModel: ListOfHikeRoutesViewModel =
       viewModel(factory = ListOfHikeRoutesViewModel.Factory)
   val savedHikesViewModel: SavedHikesViewModel = viewModel(factory = SavedHikesViewModel.Factory)
 
-  NavHost(navController = navController, startDestination = TopLevelDestinations.AUTH.route) {
-    navigation(
-        startDestination = Screen.AUTH,
-        route = Route.AUTH,
-    ) {
-      composable(Screen.AUTH) { SignInScreen(navigationActions, authViewModel) }
-      composable(Screen.SIGN_IN_WITH_EMAIL) {
-        SignInWithEmailScreen(navigationActions, authViewModel)
-      }
-      composable(Screen.CREATE_ACCOUNT) { CreateAccountScreen(navigationActions, authViewModel) }
-    }
+  NavHost(
+      navController = navController,
+      startDestination =
+          if (isUserLoggedIn) TopLevelDestinations.MAP.route else TopLevelDestinations.AUTH.route) {
+        navigation(
+            startDestination = Screen.AUTH,
+            route = Route.AUTH,
+        ) {
+          composable(Screen.AUTH) { SignInScreen(navigationActions, authViewModel) }
+          composable(Screen.SIGN_IN_WITH_EMAIL) {
+            SignInWithEmailScreen(navigationActions, authViewModel)
+          }
+          composable(Screen.CREATE_ACCOUNT) {
+            CreateAccountScreen(navigationActions, authViewModel)
+          }
+        }
 
-    navigation(
-        startDestination = Screen.SAVED_HIKES,
-        route = Route.SAVED_HIKES,
-    ) {
-      composable(Screen.SAVED_HIKES) {
-        SavedHikesScreen(
-            navigationActions = navigationActions, savedHikesViewModel = savedHikesViewModel)
-      }
-    }
+        navigation(
+            startDestination = Screen.SAVED_HIKES,
+            route = Route.SAVED_HIKES,
+        ) {
+          composable(Screen.SAVED_HIKES) {
+            SavedHikesScreen(
+                navigationActions = navigationActions, savedHikesViewModel = savedHikesViewModel)
+          }
+        }
 
-    navigation(
-        startDestination = Screen.MAP,
-        route = Route.MAP,
-    ) {
-      composable(Screen.MAP) {
-        MapScreen(
-            navigationActions = navigationActions,
-            hikingRoutesViewModel = listOfHikeRoutesViewModel)
+        navigation(
+            startDestination = Screen.MAP,
+            route = Route.MAP,
+        ) {
+          composable(Screen.MAP) {
+            MapScreen(
+                navigationActions = navigationActions,
+                hikingRoutesViewModel = listOfHikeRoutesViewModel)
+          }
+        }
+        navigation(
+            startDestination = Screen.HIKE_DETAILS,
+            route = Route.HIKE_DETAILS,
+        ) {
+          composable(Screen.HIKE_DETAILS) {
+            HikeDetailScreen(
+                listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
+                navigationActions = navigationActions,
+            )
+          }
+        }
+        navigation(
+            startDestination = Screen.PROFILE,
+            route = Route.PROFILE,
+        ) {
+          composable(Screen.PROFILE) {
+            ProfileScreen(
+                navigationActions = navigationActions,
+                profileViewModel = profileViewModel,
+                authViewModel = authViewModel)
+          }
+          composable(Screen.EDIT_PROFILE) {
+            EditProfileScreen(
+                navigationActions = navigationActions, profileViewModel = profileViewModel)
+          }
+        }
       }
-    }
-    navigation(
-        startDestination = Screen.PROFILE,
-        route = Route.PROFILE,
-    ) {
-      composable(Screen.PROFILE) {
-        ProfileScreen(
-            navigationActions = navigationActions,
-            profileViewModel = profileViewModel,
-            authViewModel = authViewModel)
-      }
-      composable(Screen.EDIT_PROFILE) {
-        EditProfileScreen(
-            navigationActions = navigationActions, profileViewModel = profileViewModel)
-      }
-    }
-    navigation(
-        startDestination = Screen.HIKE_DETAILS,
-        route = Route.HIKE_DETAILS,
-    ) {
-      composable(Screen.HIKE_DETAILS) {
-        HikeDetailScreen(
-            listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
-            navigationActions = navigationActions,
-        )
-      }
-    }
-  }
 }
