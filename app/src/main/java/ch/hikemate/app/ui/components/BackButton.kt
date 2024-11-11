@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -27,19 +28,19 @@ object BackButton {
  * @param navigationActions The navigation actions.
  */
 @Composable
-fun BackButton(navigationActions: NavigationActions, backgroundColor: Color = Color.Transparent) {
+fun BackButton(navigationActions: NavigationActions) {
   IconButton(
       onClick = { navigationActions.goBack() },
       modifier =
           Modifier.testTag(BackButton.BACK_BUTTON_TEST_TAG)
               .size(50.dp)
               .padding(8.dp)
-              .background(color = backgroundColor, shape = RoundedCornerShape(20))
+              .background(color = MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(20))
               .border(width = 1.dp, color = Color.Black, shape = RoundedCornerShape(20))) {
         Icon(
             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
             modifier = Modifier.fillMaxSize(),
             contentDescription = "Back",
-            tint = Color.Black)
+            tint = MaterialTheme.colorScheme.onSurface)
       }
 }

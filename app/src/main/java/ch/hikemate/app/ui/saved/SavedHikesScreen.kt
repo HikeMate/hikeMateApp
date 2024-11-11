@@ -1,5 +1,6 @@
 package ch.hikemate.app.ui.saved
 
+import android.widget.Toast
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,6 +26,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.hikemate.app.R
 import ch.hikemate.app.model.route.saved.SavedHike
 import ch.hikemate.app.model.route.saved.SavedHikesViewModel
@@ -33,7 +35,6 @@ import ch.hikemate.app.ui.components.HikeCardStyleProperties
 import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
-import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.navigation.SideBarNavigation
 import ch.hikemate.app.utils.humanReadablePlannedLabel
 
@@ -48,7 +49,7 @@ const val TEST_TAG_SAVED_HIKES_HIKE_CARD = "SavedHikesHikeCard"
 
 @Composable
 fun SavedHikesScreen(
-    savedHikesViewModel: SavedHikesViewModel,
+    savedHikesViewModel: SavedHikesViewModel = viewModel(factory = SavedHikesViewModel.Factory),
     navigationActions: NavigationActions
 ) {
   // The Screen will need to be incorporated into the SideBarNavigation composable
@@ -102,7 +103,13 @@ private fun PlannedHikes(hikes: List<SavedHike>?, navigationActions: NavigationA
             // This generates a random list of elevation data for the hike
             // with a random number of points and altitude between 0 and 1000
             elevationData = (0..(0..1000).random()).map { it.toDouble() }.shuffled(),
-            onClick = { navigationActions.navigateTo(Screen.HIKE_DETAILS) },
+            onClick = {
+              Toast.makeText(
+                      context,
+                      "Hike details not implemented yet for this screen, since the listOfHikeRoutesVM does not support fetching just a single hike for the moment",
+                      Toast.LENGTH_SHORT)
+                  .show()
+            },
             messageContent = hike.date!!.humanReadablePlannedLabel(LocalContext.current),
             modifier = Modifier.testTag(TEST_TAG_SAVED_HIKES_HIKE_CARD),
             styleProperties =
@@ -133,11 +140,17 @@ private fun SavedHikes(hikes: List<SavedHike>?, navigationActions: NavigationAct
     }
   } else {
     LazyColumn {
-      items(savedHikes.size) { index ->
+      items(savedHikes.size, key = { savedHikes[it].id }) { index ->
         val hike = savedHikes[index]
         HikeCard(
             title = hike.name,
-            onClick = { navigationActions.navigateTo(Screen.HIKE_DETAILS) },
+            onClick = {
+              Toast.makeText(
+                      context,
+                      "Hike details not implemented yet for this screen, since the listOfHikeRoutesVM does not support fetching just a single hike for the moment",
+                      Toast.LENGTH_SHORT)
+                  .show()
+            },
             // This generates a random list of elevation data for the hike
             // with a random number of points and altitude between 0 and 1000
             elevationData = (0..(0..1000).random()).map { it.toDouble() }.shuffled(),

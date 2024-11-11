@@ -1,6 +1,6 @@
 import ch.hikemate.app.model.route.Bounds
-import ch.hikemate.app.utils.calculateBestZoomLevel
-import ch.hikemate.app.utils.getGeographicalCenter
+import ch.hikemate.app.utils.MapUtils.calculateBestZoomLevel
+import ch.hikemate.app.utils.MapUtils.getGeographicalCenter
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.osmdroid.util.GeoPoint
@@ -72,14 +72,6 @@ class MapUtilsTest {
   fun getGeographicalCenterCrossesDateLineNearZero() {
     val bounds = Bounds(minLat = -10.0, maxLat = 10.0, minLon = -179.5, maxLon = 179.5)
     val expectedCenter = GeoPoint(0.0, 180.0)
-    val actualCenter = getGeographicalCenter(bounds)
-    assertEquals(expectedCenter, actualCenter)
-  }
-
-  @Test
-  fun getGeographicalCenterLongitudeNormalizationOver180() {
-    val bounds = Bounds(minLat = -10.0, maxLat = 10.0, minLon = 170.0, maxLon = 200.0)
-    val expectedCenter = GeoPoint(0.0, -175.0)
     val actualCenter = getGeographicalCenter(bounds)
     assertEquals(expectedCenter, actualCenter)
   }

@@ -36,7 +36,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.hikemate.app.R
 import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
@@ -47,11 +46,11 @@ import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.navigation.SideBarNavigation
+import ch.hikemate.app.utils.MapUtils.showHikeOnMap
 import org.osmdroid.config.Configuration
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
-import org.osmdroid.views.overlay.Polyline
 
 object MapScreen {
   /**
@@ -146,33 +145,6 @@ fun getRandomColor(): Int {
 }
 
 /**
- * Shows a hike on the map.
- *
- * @param mapView The map view where the hike will be shown.
- * @param hike The hike to be shown.
- * @param color The color of the hike.
- */
-fun showHikeOnMap(
-    mapView: MapView,
-    hike: HikeRoute,
-    color: Int,
-    navigationActions: NavigationActions
-) {
-  val line = Polyline()
-
-  line.setPoints(hike.ways.map { GeoPoint(it.lat, it.lon) })
-  line.outlinePaint.color = color
-  line.outlinePaint.strokeWidth = MapScreen.STROKE_WIDTH
-
-  line.setOnClickListener { _, _, _ ->
-    navigationActions.navigateTo(Screen.HIKE_DETAILS)
-    true
-  }
-
-  mapView.overlays.add(line)
-}
-
-/**
  * Clears all hikes that are displayed on the map. Intended to be used when the list of hikes
  * changes and new hikes need to be drawn.
  */
@@ -240,11 +212,27 @@ fun MapScreen(
     if (isSearching) return@LaunchedEffect
     clearHikesFromMap(mapView)
     if (routes.size <= MapScreen.MAX_HIKES_DRAWN_ON_MAP) {
-      routes.forEach { showHikeOnMap(mapView, it, getRandomColor(), navigationActions) }
+      routes.forEach {
+        showHikeOnMap(
+            mapView,
+            it,
+            getRandomColor(),
+            onLineClick = {
+              hikingRoutesViewModel.selectRoute(it)
+              navigationActions.navigateTo(Screen.HIKE_DETAILS)
+            })
+      }
       Log.d(MapScreen.LOG_TAG, "Displayed ${routes.size} hikes on the map")
     } else {
       routes.subList(0, MapScreen.MAX_HIKES_DRAWN_ON_MAP).forEach {
-        showHikeOnMap(mapView, it, getRandomColor(), navigationActions = navigationActions)
+        showHikeOnMap(
+            mapView,
+            it,
+            getRandomColor(),
+            onLineClick = {
+              hikingRoutesViewModel.selectRoute(it)
+              navigationActions.navigateTo(Screen.HIKE_DETAILS)
+            })
       }
       Toast.makeText(
               context,
