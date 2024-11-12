@@ -66,8 +66,8 @@ fun SavedHikesScreen(
     Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
       Column(modifier = Modifier.weight(1f).testTag(TEST_TAG_SAVED_HIKES_SECTION_CONTAINER)) {
         when (currentSection) {
-          SavedHikesScreen.Planned -> PlannedHikes(savedHikes, navigationActions)
-          SavedHikesScreen.Saved -> SavedHikes(savedHikes, navigationActions)
+          SavedHikesScreen.Planned -> PlannedHikes(savedHikes)
+          SavedHikesScreen.Saved -> SavedHikes(savedHikes)
         }
       }
 
@@ -78,7 +78,7 @@ fun SavedHikesScreen(
 }
 
 @Composable
-private fun PlannedHikes(hikes: List<SavedHike>?, navigationActions: NavigationActions) {
+private fun PlannedHikes(hikes: List<SavedHike>?) {
   val context = LocalContext.current
   Text(
       context.getString(R.string.saved_hikes_screen_planned_section_title),
@@ -122,7 +122,7 @@ private fun PlannedHikes(hikes: List<SavedHike>?, navigationActions: NavigationA
 }
 
 @Composable
-private fun SavedHikes(hikes: List<SavedHike>?, navigationActions: NavigationActions) {
+private fun SavedHikes(hikes: List<SavedHike>?) {
   val context = LocalContext.current
   Text(
       context.getString(R.string.saved_hikes_screen_saved_section_title),
