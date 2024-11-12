@@ -552,6 +552,13 @@ fun MapSearchButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
       }
 }
 
+/**
+ * Composable for the "Center on my location" button.
+ *
+ * Represents an icon button with a "My Location" icon. The onclick callback is provided as a
+ * parameter, but the button is meant to be used with the location permission to center the map on
+ * the user's location.
+ */
 @Composable
 fun MapMyLocationButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
   IconButton(
