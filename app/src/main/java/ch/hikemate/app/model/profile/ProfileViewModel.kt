@@ -2,9 +2,9 @@ package ch.hikemate.app.model.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.firestore
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,58 +15,53 @@ import kotlinx.coroutines.flow.asStateFlow
  * @param repository The profile repository.
  */
 open class ProfileViewModel(private val repository: ProfileRepository) : ViewModel() {
-  // The profile, i.e the profile for the detail view
-  // This will probably always be the current user profile
+
+  // The profile for the detail view
   private val profile_ = MutableStateFlow<Profile?>(null)
   val profile: StateFlow<Profile?> = profile_.asStateFlow()
 
+  // StateFlow to indicate if the profile is ready
+  private val _isProfileReady = MutableStateFlow(false)
+  val isProfileReady: StateFlow<Boolean> = _isProfileReady.asStateFlow()
+
   init {
+    FirebaseAuth.getInstance().addAuthStateListener { auth ->
+      auth.currentUser?.uid?.let { userId ->
+        getProfileById(userId)
+      }
+    }
     repository.init {
-      val firebaseInstance = FirebaseAuth.getInstance()
-      // If the user is logged in, check if the profile exists
-      firebaseInstance.currentUser?.uid?.let { checkAndCreateProfile(it, firebaseInstance) }
+      FirebaseAuth.getInstance().currentUser?.uid?.let { getProfileById(it) }
     }
   }
 
-  /**
-   * Checks if the profile exists and creates it if it does not.
-   *
-   * @param userId The ID of the user.
-   * @param firebaseInstance The Firebase authentication instance.
-   */
-  fun checkAndCreateProfile(userId: String, firebaseInstance: FirebaseAuth) {
-    repository.getProfileById(
-        userId,
-        onSuccess = { if (it == null) createProfile(firebaseInstance) else profile_.value = it },
-        onFailure = {})
+  // Factory for creating instances of ProfileViewModel
+  companion object {
+    val Factory: ViewModelProvider.Factory =
+      object : ViewModelProvider.Factory {
+        @Suppress("UNCHECKED_CAST")
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+          return ProfileViewModel(ProfileRepositoryFirestore(Firebase.firestore)) as T
+        }
+      }
   }
 
-  /**
-   * Calls repository to create a profile.
-   *
-   * @param firebaseInstance The Firebase authentication instance, needed to get the currentUser
-   *   info.
-   */
-  fun createProfile(firebaseInstance: FirebaseAuth) {
-    repository.createProfile(firebaseInstance, onSuccess = { profile_.value = it }, onFailure = {})
-  }
   /**
    * Get a profile by its ID.
    *
    * @param id The ID of the profile to fetch.
    */
   fun getProfileById(id: String) {
-    repository.getProfileById(id, onSuccess = { profile_.value = it }, onFailure = {})
-  }
-
-  companion object {
-    val Factory: ViewModelProvider.Factory =
-        object : ViewModelProvider.Factory {
-          @Suppress("UNCHECKED_CAST")
-          override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return ProfileViewModel(ProfileRepositoryFirestore(Firebase.firestore)) as T
-          }
-        }
+    repository.getProfileById(
+      id,
+      onSuccess = { profile ->
+        profile_.value = profile
+        _isProfileReady.value = profile != null // Update readiness status
+      },
+      onFailure = {
+        _isProfileReady.value = false // Set readiness to false on failure
+      }
+    )
   }
 
   /**
@@ -76,7 +71,15 @@ open class ProfileViewModel(private val repository: ProfileRepository) : ViewMod
    */
   fun addProfile(profile: Profile) {
     repository.addProfile(
-        profile = profile, onSuccess = { getProfileById(profile.id) }, onFailure = {})
+      profile = profile,
+      onSuccess = {
+        getProfileById(profile.id)
+        _isProfileReady.value = true // Set readiness after creation
+      },
+      onFailure = {
+        _isProfileReady.value = false
+      }
+    )
   }
 
   /**
@@ -86,7 +89,15 @@ open class ProfileViewModel(private val repository: ProfileRepository) : ViewMod
    */
   fun updateProfile(profile: Profile) {
     repository.updateProfile(
-        profile = profile, onSuccess = { profile_.value = profile }, onFailure = {})
+      profile = profile,
+      onSuccess = {
+        profile_.value = profile
+        _isProfileReady.value = true // Update readiness on successful update
+      },
+      onFailure = {
+        _isProfileReady.value = false
+      }
+    )
   }
 
   /**
@@ -95,6 +106,20 @@ open class ProfileViewModel(private val repository: ProfileRepository) : ViewMod
    * @param id The ID of the profile to delete.
    */
   fun deleteProfileById(id: String) {
-    repository.deleteProfileById(id = id, onSuccess = { profile_.value = null }, onFailure = {})
+    repository.deleteProfileById(
+      id = id,
+      onSuccess = {
+        profile_.value = null
+        _isProfileReady.value = false // Reset readiness after deletion
+      },
+      onFailure = {}
+    )
+  }
+
+  /**
+   * Reload the profile.
+   */
+  fun reloadProfile() {
+    profile_.value?.let { getProfileById(it.id) }
   }
 }

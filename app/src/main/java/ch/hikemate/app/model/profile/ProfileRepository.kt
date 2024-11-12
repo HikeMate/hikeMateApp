@@ -1,11 +1,11 @@
 package ch.hikemate.app.model.profile
 
-import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 
 /** Interface for the profile repository. */
 interface ProfileRepository {
   fun createProfile(
-      firebaseAuth: FirebaseAuth,
+      fireUser: FirebaseUser?,
       onSuccess: (Profile) -> Unit,
       onFailure: (Exception) -> Unit
   )

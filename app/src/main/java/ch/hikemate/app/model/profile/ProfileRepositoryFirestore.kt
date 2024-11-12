@@ -1,10 +1,11 @@
 package ch.hikemate.app.model.profile
 
 import android.util.Log
+import androidx.test.services.events.TimeStamp
 import com.google.android.gms.tasks.Task
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
-import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
@@ -42,21 +43,29 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
    * @param onFailure The callback to call if the profile creation fails.
    */
   override fun createProfile(
-      firebaseAuth: FirebaseAuth,
+      fireUser: FirebaseUser?,
       onSuccess: (Profile) -> Unit,
       onFailure: (Exception) -> Unit
   ) {
+    if (fireUser == null) {
+      onFailure(Exception("User is null"))
+      return
+    }
     val profile =
         Profile(
-            firebaseAuth.currentUser!!.uid,
+            fireUser.uid,
             // This shouldn't null.
-            firebaseAuth.currentUser!!.displayName ?: "Unnamed hiker",
+            fireUser.displayName ?: "Unnamed hiker",
             // This shouldn't null.
-            firebaseAuth.currentUser!!.email ?: "unnamedhiker@example.com",
+            fireUser.email ?: "unnamedhiker@example.com",
             HikingLevel.BEGINNER,
             Timestamp.now())
-
-    updateProfile(profile, onSuccess = { onSuccess(profile) }, onFailure = onFailure)
+    profileExists(
+        profile.id,
+        onSuccess = { exists ->
+          updateProfile(profile, onSuccess = { onSuccess(profile) }, onFailure = onFailure)
+        },
+        onFailure = { onFailure(Exception("Error getting document with id ${profile.id}")) })
   }
 
   /**
@@ -170,11 +179,11 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
   fun documentToProfile(document: DocumentSnapshot): Profile? {
     return try {
       val uid = document.id
-      val name = document.getString("name") ?: return null
-      val email = document.getString("email") ?: return null
-      val hikingLevelString = document.getString("hikingLevel") ?: return null
-      val hikingLevel = HikingLevel.values().find { it.name == hikingLevelString } ?: return null
-      val joinedDate = document.getTimestamp("joinedDate") ?: return null
+      val name = document.getString("name") ?: ""
+      val email = document.getString("email") ?: ""
+      val hikingLevelString = document.getString("hikingLevel") ?: HikingLevel.BEGINNER
+      val hikingLevel = HikingLevel.values().find { it.name == hikingLevelString } ?: HikingLevel.BEGINNER
+      val joinedDate = document.getTimestamp("joinedDate") ?: Timestamp.now()
       Profile(uid, name, email, hikingLevel, joinedDate)
     } catch (e: Exception) {
       Log.e("ProfileRepositoryFirestore", "Error converting document to Profile", e)

@@ -6,7 +6,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.firebase.FirebaseApp
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseUser
-import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertNotNull
 import org.junit.Before
 import org.junit.Test
@@ -51,44 +50,6 @@ class ProfileViewModelTest {
     firebaseAuth = mock(com.google.firebase.auth.FirebaseAuth::class.java)
 
     FirebaseApp.initializeApp(context)
-  }
-
-  @Test
-  fun createProfile_works() {
-    // Arrange
-    val profileMock = mock(FirebaseUser::class.java)
-    `when`(firebaseAuth.currentUser).thenReturn(profileMock)
-    `when`(firebaseAuth.currentUser!!.uid).thenReturn("1")
-    `when`(repository.createProfile(any(), any(), any())).thenAnswer {
-      val onSuccess = it.getArgument<(Profile) -> Unit>(1)
-      onSuccess(profile)
-    }
-
-    profileViewModel.createProfile(firebaseAuth)
-
-    verify(repository).createProfile(eq(firebaseAuth), any(), any())
-    assertEquals(profile, profileViewModel.profile.value)
-  }
-
-  @Test
-  fun createsProfile_whenNonExists() {
-    `when`(repository.getProfileById(any(), any(), any())).thenAnswer {
-      val onFailure = it.getArgument<(String) -> Unit>(2)
-      onFailure("Profile does not exist")
-    }
-    `when`(repository.createProfile(any(), any(), any())).thenAnswer {
-      val onSuccess = it.getArgument<(Profile) -> Unit>(1)
-      onSuccess(profile)
-    }
-    `when`(repository.init(any())).thenAnswer {
-      val init = it.getArgument<() -> Unit>(0)
-      init()
-    }
-
-    profileViewModel.createProfile(firebaseAuth)
-
-    verify(repository).createProfile(eq(firebaseAuth), any(), any())
-    assertEquals(profile, profileViewModel.profile.value)
   }
 
   @Test
@@ -155,66 +116,6 @@ class ProfileViewModelTest {
 
     verify(repository).deleteProfileById(eq("1"), any(), any())
 
-    assert(profileViewModel.profile.value == null)
-  }
-
-  @Test
-  fun checkAndCreateProfile_calls_getProfileById() {
-    `when`(repository.getProfileById(any(), any(), any())).thenAnswer {
-      val onSuccess = it.getArgument<(Profile) -> Unit>(1)
-      onSuccess(profile)
-    }
-
-    profileViewModel.checkAndCreateProfile("1", firebaseAuth)
-
-    verify(repository).getProfileById(eq("1"), any(), any())
-
-    assert(profileViewModel.profile.value == profile)
-  }
-
-  @Test
-  fun checkAndCreateProfile_profileDoesNotExist() {
-    `when`(repository.getProfileById(any(), any(), any())).thenAnswer {
-      val onSuccess = it.getArgument<(Profile?) -> Unit>(1)
-      onSuccess(null)
-    }
-    `when`(repository.createProfile(any(), any(), any())).thenAnswer {
-      val onSuccess = it.getArgument<(Profile) -> Unit>(1)
-      onSuccess(profile)
-    }
-
-    profileViewModel.checkAndCreateProfile("1", firebaseAuth)
-
-    verify(repository).getProfileById(eq("1"), any(), any())
-    verify(repository).createProfile(eq(firebaseAuth), any(), any())
-    assert(profileViewModel.profile.value == profile)
-  }
-
-  @Test
-  fun checkAndCreateProfile_failure() {
-    val exception = Exception("Error")
-    `when`(repository.getProfileById(any(), any(), any())).thenAnswer {
-      val onFailure = it.getArgument<(Exception) -> Unit>(2)
-      onFailure(exception)
-    }
-
-    profileViewModel.checkAndCreateProfile("1", firebaseAuth)
-
-    verify(repository).getProfileById(eq("1"), any(), any())
-    assert(profileViewModel.profile.value == null)
-  }
-
-  @Test
-  fun createProfile_failure() {
-    val exception = Exception("Error")
-    `when`(repository.createProfile(any(), any(), any())).thenAnswer {
-      val onFailure = it.getArgument<(Exception) -> Unit>(2)
-      onFailure(exception)
-    }
-
-    profileViewModel.createProfile(firebaseAuth)
-
-    verify(repository).createProfile(eq(firebaseAuth), any(), any())
     assert(profileViewModel.profile.value == null)
   }
 }

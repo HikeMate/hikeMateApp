@@ -83,7 +83,7 @@ class ProfileRepositoryFirestoreTest {
         .`when`(task)
         .addOnCompleteListener(any())
     repository.createProfile(
-        firebaseAuth,
+        firebaseAuth.currentUser,
         onSuccess = { profile_ ->
           assert(profile_.id == "1")
           assert(profile_.name == "John Doe")

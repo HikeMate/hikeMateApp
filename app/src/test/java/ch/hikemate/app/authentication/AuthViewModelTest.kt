@@ -1,8 +1,12 @@
 package ch.hikemate.app.authentication
 
 import android.content.Context
+import androidx.compose.runtime.MutableState
 import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.model.authentication.FirebaseAuthRepository
+import ch.hikemate.app.model.profile.Profile
+import ch.hikemate.app.model.profile.ProfileRepository
+import com.google.android.gms.tasks.Task
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -23,15 +27,22 @@ import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.whenever
 
 class AuthViewModelTest {
   @Mock private lateinit var mockRepository: FirebaseAuthRepository
+
+  @Mock private lateinit var mockProfile: ProfileRepository
 
   @Mock private lateinit var mockContext: Context
 
   @Mock private lateinit var mockFirebaseAuth: FirebaseAuth
 
   @Mock private lateinit var mockFirebaseUser: FirebaseUser
+
+  @Mock private lateinit var mockProfileUser: Profile
+
+  @Mock private lateinit var mockTask: Task<Void>
 
   private lateinit var staticFirebaseApp: MockedStatic<FirebaseApp>
 
@@ -45,7 +56,10 @@ class AuthViewModelTest {
     mockRepository = mock()
     mockContext = mock()
     mockFirebaseAuth = mock()
+      mockProfileUser=mock()
+      mockTask=mock()
     mockFirebaseUser = mock()
+    mockProfile=mock()
 
     staticFirebaseApp = mockStatic(FirebaseApp::class.java)
     staticFirebaseAuth = mockStatic(FirebaseAuth::class.java)
@@ -59,13 +73,13 @@ class AuthViewModelTest {
   // Helper functions to setup the ViewModel with a signed-in or signed-out user
   private fun setupSignedInUser() {
     `when`(mockFirebaseAuth.currentUser).thenReturn(mockFirebaseUser)
-    viewModel = AuthViewModel(mockRepository)
+    viewModel = AuthViewModel(mockRepository,mockProfile)
   }
 
   // Helper functions to setup the ViewModel with a signed-in or signed-out user
   private fun setupSignedOutUser() {
     `when`(mockFirebaseAuth.currentUser).thenReturn(null)
-    viewModel = AuthViewModel(mockRepository)
+    viewModel = AuthViewModel(mockRepository,mockProfile)
   }
 
   @After
@@ -74,33 +88,40 @@ class AuthViewModelTest {
     staticFirebaseAuth.close()
   }
 
-  @Test
-  fun signInWithGoogle_calls_repository_and_updates_currentUser_on_success() = runTest {
-    setupSignedOutUser()
+    @Test
+    fun signInWithGoogle_calls_repository_and_updates_currentUser_on_success() = runTest {
+        setupSignedOutUser()
 
-    // Simulate a successful Google sign-in by invoking the onSuccess callback
-    doAnswer { arguments ->
-          val onSuccess = arguments.getArgument<(FirebaseUser?) -> Unit>(0)
-          onSuccess(mockFirebaseUser) // Call the success callback with a mock user
-          null
-        }
-        .`when`(mockRepository)
-        .signInWithGoogle(any(), any(), any(), any(), any(), anyOrNull())
+        // Mock the sign-in process to immediately invoke the onSuccess callback with a mock user
+        doAnswer { invocation ->
+            val onSuccess = invocation.getArgument<(FirebaseUser?) -> Unit>(0)
+            onSuccess(mockFirebaseUser) // Trigger success callback with mock user
+            null
+        }.whenever(mockRepository)
+            .signInWithGoogle(any(), any(), any(), any(), any(), anyOrNull())
 
-    // Verify that currentUser is initially null
-    assertNull(viewModel.currentUser.first())
+        // Mock the profile creation to immediately invoke the onSuccess callback
+        doAnswer { invocation ->
+            val onSuccess = invocation.getArgument<(Profile) -> Unit>(1)
+            onSuccess(mockProfileUser) // Trigger success callback with mock profile
+            null
+        }.whenever(mockProfile)
+            .createProfile(any(), any(), any())
 
-    viewModel.signInWithGoogle(this, mockContext, null)
+        // Verify that `currentUser` is initially null
+        assertNull(viewModel.currentUser.first())
 
-    // Verify call to the repository
-    verify(mockRepository).signInWithGoogle(any(), any(), any(), any(), any(), anyOrNull())
+        // Call the function being tested
+        viewModel.signInWithGoogle(this, mockContext, null)
 
-    val currentUser = viewModel.currentUser.first() // Get the first (current) value of the flow
+        // Verify interactions with the repository and profile repository
+        verify(mockRepository).signInWithGoogle(any(), any(), any(), any(), any(), anyOrNull())
+        verify(mockProfile).createProfile(any(), any(), any())
+        val currentUser = viewModel.currentUser.first() // Get the first (current) value of the flow
 
-    // Confirm that currentUser is now logged in
-    assertEquals(mockFirebaseUser, currentUser)
-  }
-
+        // Confirm that currentUser is now logged in
+        assertEquals(mockFirebaseUser, currentUser)
+    }
   @Test
   fun signInWithGoogle_calls_repository_and_does_not_update_currentUser_on_error() = runTest {
     setupSignedOutUser()
@@ -154,7 +175,6 @@ class AuthViewModelTest {
 
     assertEquals(mockFirebaseUser, currentUser)
   }
-
   @Test
   fun signInWithEmailAndPassword_calls_repository_and_does_not_update_currentUser_on_error() =
       runTest {
@@ -184,34 +204,54 @@ class AuthViewModelTest {
         assertNull(currentUser)
       }
 
-  @Test
-  fun createAccountWithEmailAndPassword_calls_repository_and_updates_currentUser_on_success() =
-      runTest {
-        setupSignedOutUser()
+    @Test
+    fun createAccountWithEmailAndPassword_calls_repository_and_updates_currentUser_on_success() =
+        runTest {
+            setupSignedOutUser()
 
-        // Simulate a successful email and password account creation by invoking the onSuccess
-        // callback
-        doAnswer { invocation ->
-              val onSuccess = invocation.getArgument<(FirebaseUser?) -> Unit>(0)
-              onSuccess(mockFirebaseUser) // Call the success callback with a mock user
-              null
-            }
-            .`when`(mockRepository)
-            .createAccountWithEmailAndPassword(any(), any(), any(), any())
+            // Simulate successful creation of account and invoke onSuccess callback
+            doAnswer { invocation ->
+                val onSuccess = invocation.getArgument<(FirebaseUser?) -> Unit>(0)
+                onSuccess(mockFirebaseUser) // Pass mock user to onSuccess callback
+                null
+            }.whenever(mockRepository)
+                .createAccountWithEmailAndPassword(any(), any(), any(), any())
 
-        // Verify that currentUser is initially null
-        assertNull(viewModel.currentUser.first())
+            // Mock user profile update to complete successfully
+            whenever(mockFirebaseUser.updateProfile(any())).thenReturn(mockTask)
+            whenever(mockTask.isSuccessful).thenReturn(true)
 
-        viewModel.createAccountWithEmailAndPassword(
-            "mock@example.com", "password", {}, { fail("Error callback should not be called") })
+            // Simulate profile creation success
+            doAnswer { invocation ->
+                val onSuccess = invocation.getArgument<() -> Unit>(1)
+                onSuccess() // Trigger the success callback for profile creation
+                null
+            }.whenever(mockProfile)
+                .createProfile(any(), any(), any())
 
-        val currentUser = viewModel.currentUser.first() // Get the first (current) value of the flow
+            // Verify initial state of `currentUser` is null
+            assertNull(viewModel.currentUser.first())
 
-        // Verify call to the repository
-        verify(mockRepository).createAccountWithEmailAndPassword(any(), any(), any(), any())
+            // Call the function being tested
+            viewModel.createAccountWithEmailAndPassword(
+                name = "",
+                email = "mock@example.com",
+                password = "password",
+                onSuccess = {},
+                onErrorAction = { fail("Error callback should not be called") }
+            )
 
-        assertEquals(mockFirebaseUser, currentUser)
-      }
+            // Verify repository interaction
+            verify(mockRepository).createAccountWithEmailAndPassword(any(), any(), any(), any())
+
+            // Verify that profile update was called
+            verify(mockFirebaseUser).updateProfile(any())
+
+            // Verify profile creation
+            verify(mockProfile).createProfile(any(), any(), any())
+
+            assertEquals(mockFirebaseUser, viewModel.currentUser)
+        }
 
   @Test
   fun createAccountWithEmailAndPassword_calls_repository_and_does_not_update_currentUser_on_error() =
@@ -231,7 +271,7 @@ class AuthViewModelTest {
         // Verify that currentUser is initially null
         assertNull(viewModel.currentUser.first())
 
-        viewModel.createAccountWithEmailAndPassword(
+        viewModel.createAccountWithEmailAndPassword("",
             "mock@example.com", "password", { fail("Success callback should not be called") }, {})
 
         val currentUser = viewModel.currentUser.first()

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -28,6 +29,8 @@ import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.navigation.SideBarNavigation
 import com.google.firebase.Timestamp
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 object ProfileScreen {
   const val TEST_TAG_TITLE = "profileScreenTitle"
@@ -42,7 +45,6 @@ object ProfileScreen {
       Profile(
           "custom-id", "John Doe", "john.doe@gmail.com", HikingLevel.INTERMEDIATE, Timestamp.now())
 }
-
 /**
  * A composable to display an information of the profile.
  *
@@ -74,6 +76,9 @@ fun ProfileScreen(
   val context = LocalContext.current
 
   // TODO: show an error if the profile is null. For now display it for test purposes
+
+  LaunchedEffect(Unit) { profileViewModel.reloadProfile() }
+
   val profileState = profileViewModel.profile.collectAsState()
 
   val profile: Profile = profileState.value ?: ProfileScreen.DEFAULT_PROFILE
