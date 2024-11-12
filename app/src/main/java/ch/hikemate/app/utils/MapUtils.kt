@@ -11,7 +11,7 @@ import org.osmdroid.views.overlay.Polyline
 
 object MapUtils {
 
-  val LOG_TAG = "MapUtils"
+  const val LOG_TAG = "MapUtils"
 
   /**
    * Shows a hike on the map.
@@ -61,12 +61,7 @@ object MapUtils {
     val maxLat = bounds.maxLat
 
     val centerLat = (minLat + maxLat) / 2
-    var centerLong = (minLong + maxLong) / 2
-
-    // Adjust if the longitude crosses the Date Line (i.e., difference > 180 degrees)
-    if (maxLong - minLong > 180) {
-      centerLong = (minLong + 360 + maxLong) / 2
-    }
+    val centerLong = (minLong + maxLong) / 2
 
     Log.d(LOG_TAG, "getGeographicalCenter: centerLat: $centerLat, centerLong: $centerLong")
 
