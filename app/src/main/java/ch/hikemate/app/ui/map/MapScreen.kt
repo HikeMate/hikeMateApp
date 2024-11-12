@@ -340,7 +340,7 @@ fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel, isSea
   val context = LocalContext.current
 
   // Map of route ID to the elevation data of the route
-  val elevationDatas = remember { mutableStateOf(emptyMap<String, List<Double>>()) }
+  val elevationDataMappings = remember { mutableStateOf(emptyMap<String, List<Double>>()) }
 
   // BottomSheetScaffold adds a layout at the bottom of the screen that the user can expand to view
   // the list of hikes
@@ -354,7 +354,7 @@ fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel, isSea
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.fillMaxWidth()) {
                   Text(
-                      text = "Searching for hikes...",
+                      text = stringResource(R.string.map_search_for_hikes),
                       style = MaterialTheme.typography.bodyLarge,
                       textAlign = TextAlign.Center,
                       modifier =
@@ -379,10 +379,10 @@ fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel, isSea
                 val route = routes.value[index]
                 val isSuitable = index % 2 == 0
                 hikingRoutesViewModel.getRoutesElevation(
-                    route, { elevationDatas.value += (route.id to it) })
+                    route, { elevationDataMappings.value += (route.id to it) })
                 Log.d("MapScreen", "Loading hike card for route: ${route.name}")
                 HikeCardFor(
-                    route, isSuitable, hikingRoutesViewModel, elevationDatas.value[route.id])
+                    route, isSuitable, hikingRoutesViewModel, elevationDataMappings.value[route.id])
               }
             }
           }

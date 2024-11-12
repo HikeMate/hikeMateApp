@@ -34,6 +34,7 @@
     <string name="map_screen_hike_title_default">Unnamed Hike</string>
     <string name="zoom_in">Zoom in</string>
     <string name="zoom_out">Zoom out</string>
+    <string name="map_search_for_hikes">Searching for hikes…</string>
 
 
     <!-- Saved Hikes Screen -->

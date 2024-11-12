@@ -3,6 +3,7 @@ package ch.hikemate.app.ui.components
 import android.graphics.Paint
 import android.util.Log
 import androidx.compose.foundation.Canvas
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -59,8 +60,10 @@ fun ElevationGraph(
 ) {
   val context = LocalContext.current
 
+  val textColor = MaterialTheme.colorScheme.onSurface.toArgb()
+
   val elevationData = if (elevations.isNullOrEmpty()) listOf(0.0) else elevations
-  Log.d("ElevationGraph", "ElevationGraph: $elevationData")
+  Log.d("ElevationGraph", "Elevation data for the graph: $elevationData")
 
   // Averaging the elevation data to reduce the number of points
   val averageSize = ceil(elevationData.size.toDouble() / maxNumberOfPoints).toInt()
@@ -122,7 +125,7 @@ fun ElevationGraph(
                 10f,
                 height / 2,
                 Paint().apply {
-                  color = Color.Black.toArgb()
+                  color = textColor
                   textSize = 40f
                 })
           }
@@ -134,7 +137,7 @@ fun ElevationGraph(
                 10f,
                 height / 2,
                 Paint().apply {
-                  color = Color.Black.toArgb()
+                  color = textColor
                   textSize = 40f
                 })
           }

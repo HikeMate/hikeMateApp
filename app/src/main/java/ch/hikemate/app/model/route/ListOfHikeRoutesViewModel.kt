@@ -86,6 +86,10 @@ open class ListOfHikeRoutesViewModel(
     }
   }
 
+  /**
+   * Gets the elevation data asynchronously for a route and return it as a list of doubles on
+   * success.
+   */
   fun getRoutesElevation(
       route: HikeRoute,
       onSuccess: (List<Double>) -> Unit = {},
