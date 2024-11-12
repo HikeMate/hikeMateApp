@@ -25,7 +25,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,8 +49,6 @@ import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.navigation.TopLevelDestinations
 import ch.hikemate.app.ui.theme.kaushanTitleFontFamily
 import ch.hikemate.app.ui.theme.primaryColor
-import com.google.firebase.auth.FirebaseUser
-import kotlinx.coroutines.flow.StateFlow
 
 object SignInScreen {
   const val TEST_TAG_TITLE = "sign_in_title"
@@ -67,12 +64,10 @@ private const val CONNECTED_ACCOUNT_MESSAGE =
 fun SignInScreen(
     navigationActions: NavigationActions,
     authViewModel: AuthViewModel,
-    currUserStateFlow: StateFlow<FirebaseUser?> = authViewModel.currentUser
 ) {
 
   val context = LocalContext.current
   val coroutineScope = rememberCoroutineScope()
-  val currUser = currUserStateFlow.collectAsState().value
 
   // Create the launcher for adding a Google account in case there is no Google account connected
   // to the device. Necessary since the Google sign-in process requires a Google account to be
@@ -88,8 +83,8 @@ fun SignInScreen(
           }
 
   // If the user is already signed in, navigate to the map screen
-  LaunchedEffect(currUser) {
-    if (currUser != null) {
+  LaunchedEffect(authViewModel.isUserLoggedIn()) {
+    if (authViewModel.isUserLoggedIn()) {
       navigationActions.navigateTo(TopLevelDestinations.MAP)
     }
   }
