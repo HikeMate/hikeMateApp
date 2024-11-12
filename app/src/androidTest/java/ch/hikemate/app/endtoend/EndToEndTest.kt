@@ -24,6 +24,7 @@ import ch.hikemate.app.ui.navigation.TEST_TAG_SIDEBAR_BUTTON
 import ch.hikemate.app.ui.navigation.TopLevelDestinations
 import ch.hikemate.app.ui.saved.TEST_TAG_SAVED_HIKES_SECTION_CONTAINER
 import com.google.firebase.FirebaseApp
+import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import java.util.UUID
 import junit.framework.TestCase
@@ -54,6 +55,8 @@ class EndToEndTest : TestCase() {
   @After
   fun deleteUser() {
     // Sign out after deleting for sanity check and un-reliability
+    val credential = EmailAuthProvider.getCredential(email, password)
+    auth.currentUser?.reauthenticate(credential)
     auth.currentUser?.delete()
     auth.signOut()
   }
