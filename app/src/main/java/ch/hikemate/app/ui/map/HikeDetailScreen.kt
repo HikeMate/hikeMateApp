@@ -122,7 +122,7 @@ fun HikeDetailScreen(
   val mapView = remember {
     MapView(context).apply {
       // Set map's initial state
-      controller.setZoom(calculateBestZoomLevel(route.bounds))
+      controller.setZoom(calculateBestZoomLevel(route.bounds).toDouble())
       controller.setCenter(getGeographicalCenter(route.bounds))
       // Limit the zoom to avoid the user zooming out or out too much
       minZoomLevel = MAP_MIN_ZOOM
