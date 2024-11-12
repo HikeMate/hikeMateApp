@@ -25,6 +25,7 @@ import ch.hikemate.app.ui.navigation.TopLevelDestinations
 import ch.hikemate.app.ui.saved.TEST_TAG_SAVED_HIKES_SECTION_CONTAINER
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
+import java.util.UUID
 import junit.framework.TestCase
 import org.junit.After
 import org.junit.Before
@@ -36,7 +37,9 @@ import org.junit.runner.RunWith
 class EndToEndTest : TestCase() {
   @get:Rule val composeTestRule = createAndroidComposeRule<MainActivity>()
   private val auth = FirebaseAuth.getInstance()
-  private val email = "end2endTest@gmail.com"
+  private val myUuid = UUID.randomUUID()
+  private val myUuidAsString = myUuid.toString()
+  private val email = "$myUuidAsString@gmail.com"
   private val password = "password"
 
   @Before

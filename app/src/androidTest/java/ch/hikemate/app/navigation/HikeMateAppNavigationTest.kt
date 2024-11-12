@@ -19,6 +19,8 @@ import ch.hikemate.app.ui.navigation.TEST_TAG_SIDEBAR_BUTTON
 import ch.hikemate.app.ui.saved.TEST_TAG_SAVED_HIKES_SECTION_CONTAINER
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
+import java.util.UUID
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -29,7 +31,9 @@ class HikeMateAppNavigationTest {
   // Set up the Compose test rule
   @get:Rule val composeTestRule = createComposeRule()
   private val auth = FirebaseAuth.getInstance()
-  private val email = "navTesting@gmail.com"
+  private val myUuid = UUID.randomUUID()
+  private val myUuidAsString = myUuid.toString()
+  private val email = "$myUuidAsString@gmail.com"
   private val password = "password"
 
   @Before
@@ -46,7 +50,8 @@ class HikeMateAppNavigationTest {
     auth.signOut()
   }
 
-  private fun deleteUser() {
+  @After
+  fun deleteUser() {
     auth.currentUser?.delete()
     auth.signOut()
   }
@@ -105,8 +110,5 @@ class HikeMateAppNavigationTest {
     composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
     composeTestRule.onNodeWithTag(TEST_TAG_DRAWER_ITEM_PREFIX + Route.PROFILE).performClick()
     composeTestRule.onNodeWithTag(Screen.PROFILE).assertIsDisplayed()
-
-    // Delete the user
-    deleteUser()
   }
 }
