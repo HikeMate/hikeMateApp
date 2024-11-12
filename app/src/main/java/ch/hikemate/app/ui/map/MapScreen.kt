@@ -29,6 +29,7 @@ import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -175,22 +176,18 @@ object MapScreen {
    * is not already ongoing.
    *
    * @param isSearching Whether a search is already ongoing
-   * @param setIsSearchingToTrue Function to set the search state to true
-   * @param setIsSearchingToFalse Function to set the search state to false
    * @param hikingRoutesViewModel The view model to use to search for hikes
    * @param mapView The map view where the search area is defined
    * @param context The context where the search is launched
    */
   fun launchSearch(
-      isSearching: Boolean,
-      setIsSearchingToTrue: () -> Unit,
-      setIsSearchingToFalse: () -> Unit,
+      isSearching: MutableState<Boolean>,
       hikingRoutesViewModel: ListOfHikeRoutesViewModel,
       mapView: MapView,
       context: Context
   ) {
-    if (isSearching) return
-    setIsSearchingToTrue()
+    if (isSearching.value) return
+    isSearching.value = true
     val startTime = System.currentTimeMillis()
     hikingRoutesViewModel.setArea(
         mapView.boundingBox,
@@ -198,10 +195,10 @@ object MapScreen {
           if (System.currentTimeMillis() - startTime < MINIMAL_SEARCH_TIME_IN_MS) {
             Thread.sleep(MINIMAL_SEARCH_TIME_IN_MS - (System.currentTimeMillis() - startTime))
           }
-          setIsSearchingToFalse()
+          isSearching.value = false
         },
         onFailure = {
-          setIsSearchingToFalse()
+          isSearching.value = false
           Handler(Looper.getMainLooper()).post {
             Toast.makeText(context, "Error while searching for hikes", Toast.LENGTH_SHORT).show()
           }
@@ -359,12 +356,12 @@ fun MapScreen(
   }
 
   // Keep track of whether a search for hikes is ongoing
-  var isSearching by remember { mutableStateOf(false) }
+  val isSearching = remember { mutableStateOf(false) }
 
   // Show hikes on the map
   val routes by hikingRoutesViewModel.hikeRoutes.collectAsState()
   LaunchedEffect(routes, isSearching) {
-    if (isSearching) return@LaunchedEffect
+    if (isSearching.value) return@LaunchedEffect
     clearHikesFromMap(mapView, userLocationMarker)
     if (routes.size <= MapScreen.MAX_HIKES_DRAWN_ON_MAP) {
       routes.forEach { showHikeOnMap(mapView, it, getRandomColor()) }
@@ -446,16 +443,10 @@ fun MapScreen(
                       .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
                       .testTag(MapScreen.TEST_TAG_CENTER_MAP_BUTTON))
           // Search button to request OSM for hikes in the displayed area
-          if (!isSearching) {
+          if (!isSearching.value) {
             MapSearchButton(
                 onClick = {
-                  MapScreen.launchSearch(
-                      isSearching,
-                      { isSearching = true },
-                      { isSearching = false },
-                      hikingRoutesViewModel,
-                      mapView,
-                      context)
+                  MapScreen.launchSearch(isSearching, hikingRoutesViewModel, mapView, context)
                 },
                 modifier =
                     Modifier.align(Alignment.BottomCenter)
@@ -468,7 +459,7 @@ fun MapScreen(
               modifier =
                   Modifier.align(Alignment.BottomEnd)
                       .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
-          CollapsibleHikesList(hikingRoutesViewModel, isSearching)
+          CollapsibleHikesList(hikingRoutesViewModel, isSearching.value)
           // Put SideBarNavigation after to make it appear on top of the map and HikeList
         }
       }
