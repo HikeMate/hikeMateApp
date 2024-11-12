@@ -48,6 +48,7 @@ import ch.hikemate.app.R
 import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
 import ch.hikemate.app.ui.components.BackButton
+import ch.hikemate.app.ui.components.ElevationGraph
 import ch.hikemate.app.ui.map.HikeDetailScreen.MAP_MAX_ZOOM
 import ch.hikemate.app.ui.map.HikeDetailScreen.MAP_MIN_ZOOM
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_ADD_DATE_BUTTON
@@ -227,12 +228,13 @@ fun HikeDetails(route: HikeRoute, isSaved: Boolean, date: Timestamp?) {
             )
           }
 
-          // Elevation box
-          Box(
+          ElevationGraph(
+              elevationData = listOf(150.0, 175.5, 200.3, 225.8, 210.0),
               modifier =
                   Modifier.fillMaxWidth()
                       .height(30.dp)
-                      .background(Color.Gray)
+                      .padding(4.dp)
+                      .background(color = MaterialTheme.colorScheme.surface)
                       .testTag(TEST_TAG_ELEVATION_GRAPH))
 
           DetailRow(

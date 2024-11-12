@@ -9,18 +9,25 @@ import ch.hikemate.app.model.route.HikeRoutesRepository
 import ch.hikemate.app.model.route.LatLong
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
 import ch.hikemate.app.ui.components.BackButton.BACK_BUTTON_TEST_TAG
+import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_ADD_DATE_BUTTON
+import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_BOOKMARK_ICON
+import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DETAIL_ROW_TAG
+import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DETAIL_ROW_VALUE
+import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_ELEVATION_GRAPH
+import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_HIKE_NAME
+import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_MAP
+import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_PLANNED_DATE_TEXT_BOX
 import ch.hikemate.app.ui.navigation.NavigationActions
 import com.google.firebase.Timestamp
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.Mockito.doNothing
 import org.mockito.Mockito.mock
+import org.mockito.kotlin.verify
 
 @RunWith(AndroidJUnit4::class)
 class HikeDetailScreenTest {
@@ -43,7 +50,7 @@ class HikeDetailScreenTest {
   @OptIn(ExperimentalCoroutinesApi::class)
   @Before
   fun setUp() {
-    mockNavigationActions = mockk()
+    mockNavigationActions = mock()
     hikesRepository = mock()
 
     listOfHikeRoutesViewModel =
@@ -68,7 +75,7 @@ class HikeDetailScreenTest {
   fun hikeDetails_displaysHikeNameAndBookmarkIcon() {
     composeTestRule.setContent { HikeDetails(route = route, isSaved = true, date = null) }
 
-    composeTestRule.onNodeWithTag(TEST_TAG_HIKE_NAME).assertTextEquals("Sample Hike")
+    composeTestRule.onNodeWithTag(TEST_TAG_HIKE_NAME).assertTextEquals(route.name!!)
     composeTestRule.onNodeWithTag(TEST_TAG_BOOKMARK_ICON).assertIsDisplayed()
   }
 
@@ -137,11 +144,11 @@ class HikeDetailScreenTest {
           navigationActions = mockNavigationActions)
     }
 
-    every { mockNavigationActions.goBack() } returns Unit
+    doNothing().`when`(mockNavigationActions).goBack()
 
     // Click the back button and verify the navigation action is triggered
     composeTestRule.onNodeWithTag(BACK_BUTTON_TEST_TAG).performClick()
-    verify { mockNavigationActions.goBack() }
+    verify(mockNavigationActions).goBack()
   }
 
   @Test
@@ -150,7 +157,5 @@ class HikeDetailScreenTest {
 
     // Check if the add date button is clickable and triggers an interaction
     composeTestRule.onNodeWithTag(TEST_TAG_ADD_DATE_BUTTON).assertHasClickAction().performClick()
-    // Here you may want to verify that the date picker dialog is shown, depending on how it's
-    // implemented
   }
 }
