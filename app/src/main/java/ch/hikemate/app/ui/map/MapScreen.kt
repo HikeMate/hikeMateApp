@@ -46,7 +46,7 @@ import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.navigation.SideBarNavigation
-import ch.hikemate.app.utils.MapUtils.showHikeOnMap
+import ch.hikemate.app.utils.MapUtils
 import org.osmdroid.config.Configuration
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.CustomZoomButtonsController
@@ -213,7 +213,7 @@ fun MapScreen(
     clearHikesFromMap(mapView)
     if (routes.size <= MapScreen.MAX_HIKES_DRAWN_ON_MAP) {
       routes.forEach {
-        showHikeOnMap(
+        MapUtils.showHikeOnMap(
             mapView,
             it,
             getRandomColor(),
@@ -225,7 +225,7 @@ fun MapScreen(
       Log.d(MapScreen.LOG_TAG, "Displayed ${routes.size} hikes on the map")
     } else {
       routes.subList(0, MapScreen.MAX_HIKES_DRAWN_ON_MAP).forEach {
-        showHikeOnMap(
+        MapUtils.showHikeOnMap(
             mapView,
             it,
             getRandomColor(),

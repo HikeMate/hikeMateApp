@@ -47,7 +47,6 @@
     <string name="hike_detail_screen_value_not_saved">Not saved</string>
     <string name="hike_detail_screen_value_planned">Planned</string>
     <string name="hike_detail_screen_add_a_date_button_text">Add a date</string>
-    <string name="hike_detail_screen_value_default_date">dd/mm/yyy</string>
 
 
     <!-- Saved Hikes Screen -->

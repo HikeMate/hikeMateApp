@@ -4,7 +4,6 @@ import android.app.DatePickerDialog
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -49,6 +48,7 @@ import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
 import ch.hikemate.app.ui.components.BackButton
 import ch.hikemate.app.ui.components.ElevationGraph
+import ch.hikemate.app.ui.components.ElevationGraphStyleProperties
 import ch.hikemate.app.ui.map.HikeDetailScreen.MAP_MAX_ZOOM
 import ch.hikemate.app.ui.map.HikeDetailScreen.MAP_MIN_ZOOM
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_ADD_DATE_BUTTON
@@ -61,9 +61,7 @@ import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_MAP
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_PLANNED_DATE_TEXT_BOX
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Screen
-import ch.hikemate.app.utils.MapUtils.calculateBestZoomLevel
-import ch.hikemate.app.utils.MapUtils.getGeographicalCenter
-import ch.hikemate.app.utils.MapUtils.showHikeOnMap
+import ch.hikemate.app.utils.MapUtils
 import ch.hikemate.app.utils.from
 import ch.hikemate.app.utils.humanReadablePlannedLabel
 import com.google.firebase.Timestamp
@@ -96,7 +94,7 @@ fun HikeDetailScreen(
 
   if (listOfHikeRoutesViewModel.selectedHikeRoute.collectAsState().value == null) {
     Toast.makeText(context, "No route selected, returning to map.", Toast.LENGTH_SHORT).show()
-    navigationActions.navigateTo(Screen.MAP)
+    navigationActions.goBack()
   }
 
   val route = listOfHikeRoutesViewModel.selectedHikeRoute.collectAsState().value!!
@@ -122,8 +120,8 @@ fun HikeDetailScreen(
   val mapView = remember {
     MapView(context).apply {
       // Set map's initial state
-      controller.setZoom(calculateBestZoomLevel(route.bounds).toDouble())
-      controller.setCenter(getGeographicalCenter(route.bounds))
+      controller.setZoom(MapUtils.calculateBestZoomLevel(route.bounds).toDouble())
+      controller.setCenter(MapUtils.getGeographicalCenter(route.bounds))
       // Limit the zoom to avoid the user zooming out or out too much
       minZoomLevel = MAP_MIN_ZOOM
       maxZoomLevel = MAP_MAX_ZOOM
@@ -143,7 +141,9 @@ fun HikeDetailScreen(
 
   // Show the selected hike on the map
   // OnLineClick does nothing, the line should not be clickable
-  showHikeOnMap(mapView = mapView, hike = route, color = getRandomColor(), onLineClick = {})
+  val hikeLineColor = getRandomColor()
+
+  MapUtils.showHikeOnMap(mapView = mapView, hike = route, color = hikeLineColor, onLineClick = {})
 
   Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {
     // Map
@@ -172,27 +172,6 @@ fun HikeDetailScreen(
 @Composable
 fun HikeDetails(route: HikeRoute, isSaved: Boolean, date: Timestamp?) {
   val scaffoldState = rememberBottomSheetScaffoldState()
-  val context = LocalContext.current
-
-  // Needed for the pop-up that allows the user to show the date
-  fun showDatePickerDialog(onDateSelected: (String) -> Unit) {
-    val calendar = Calendar.getInstance()
-    val year = calendar[Calendar.YEAR]
-    val month = calendar[Calendar.MONTH]
-    val day = calendar[Calendar.DAY_OF_MONTH]
-
-    DatePickerDialog(
-            context,
-            { _, selectedYear, selectedMonth, selectedDay ->
-              val timestamp = Timestamp.from(selectedYear, selectedMonth, selectedDay)
-              val formattedDate = timestamp.humanReadablePlannedLabel(context)
-              onDateSelected(formattedDate)
-            },
-            year,
-            month,
-            day)
-        .show()
-  }
 
   BottomSheetScaffold(
       scaffoldState = scaffoldState,
@@ -234,8 +213,11 @@ fun HikeDetails(route: HikeRoute, isSaved: Boolean, date: Timestamp?) {
                   Modifier.fillMaxWidth()
                       .height(30.dp)
                       .padding(4.dp)
-                      .background(color = MaterialTheme.colorScheme.surface)
-                      .testTag(TEST_TAG_ELEVATION_GRAPH))
+                      .testTag(TEST_TAG_ELEVATION_GRAPH),
+              styleProperties =
+                  ElevationGraphStyleProperties(
+                      strokeColor = MaterialTheme.colorScheme.onSurface,
+                      fillColor = MaterialTheme.colorScheme.surface))
 
           DetailRow(
               label = stringResource(R.string.hike_detail_screen_label_distance), value = "5km")
@@ -250,86 +232,113 @@ fun HikeDetails(route: HikeRoute, isSaved: Boolean, date: Timestamp?) {
               value = "Easy",
               valueColor = Color.Green)
 
-          // Row to display and change the date
-          if (isSaved) {
-            if (date == null) {
-              DetailRow(
-                  label = stringResource(R.string.hike_detail_screen_label_status),
-                  value = stringResource(R.string.hike_detail_screen_value_saved),
-                  valueColor = Color(0xFF3B9DE8))
-              Row(
-                  modifier = Modifier.fillMaxWidth(),
-                  horizontalArrangement = Arrangement.SpaceBetween,
-              ) {
-                Text(
-                    text = stringResource(R.string.hike_detail_screen_label_planned_for),
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier =
-                        Modifier.clickable {
-                              showDatePickerDialog {
-                                // TODO ON SUCCESS
-                              }
-                            }
-                            .testTag(TEST_TAG_DETAIL_ROW_TAG))
-                Button(
-                    modifier =
-                        Modifier.width(90.dp).height(25.dp).testTag(TEST_TAG_ADD_DATE_BUTTON),
-                    contentPadding = PaddingValues(0.dp),
-                    colors =
-                        ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF4285F4), // Blue color to match the image
-                            contentColor = Color.White),
-                    onClick = {
-                      showDatePickerDialog {
-                        // TODO ON SUCCESS
-                      }
-                    },
-                ) {
-                  Text(
-                      text = stringResource(R.string.hike_detail_screen_add_a_date_button_text),
-                      style = MaterialTheme.typography.bodySmall,
-                      fontWeight = FontWeight.Bold,
-                  )
-                }
-              }
-            } else { // A Date is set
-              DetailRow(
-                  label = stringResource(R.string.hike_detail_screen_label_status),
-                  value = stringResource(R.string.hike_detail_screen_value_planned),
-                  valueColor = Color(0xFF3B9DE8))
-              Row(
-                  modifier = Modifier.fillMaxWidth(),
-                  horizontalArrangement = Arrangement.SpaceBetween,
-              ) {
-                Text(
-                    text = stringResource(R.string.hike_detail_screen_label_planned_for),
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier =
-                        Modifier.clickable { showDatePickerDialog { TODO() } }
-                            .testTag(TEST_TAG_DETAIL_ROW_TAG))
-                Box(
-                    modifier =
-                        Modifier.border(
-                                BorderStroke(1.dp, Color.Black), shape = RoundedCornerShape(4.dp))
-                            .padding(horizontal = 8.dp, vertical = 4.dp)) {
-                      Text(
-                          text = stringResource(R.string.hike_detail_screen_value_default_date),
-                          style = MaterialTheme.typography.bodySmall,
-                          modifier =
-                              Modifier.clickable { showDatePickerDialog {} }
-                                  .testTag(TEST_TAG_PLANNED_DATE_TEXT_BOX))
-                    }
-              }
-            }
-          } else {
-            DetailRow(
-                label = stringResource(R.string.hike_detail_screen_label_status),
-                value = stringResource(R.string.hike_detail_screen_value_not_saved),
-                valueColor = Color.Black)
-          }
+          DateDetailRow(isSaved, date)
         }
       },
       sheetPeekHeight = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT) {}
+}
+
+@Composable
+fun DateDetailRow(isSaved: Boolean, date: Timestamp?) {
+  // Row to display and change the date
+
+  val context = LocalContext.current
+
+  // Needed for the pop-up that allows the user to show the date
+  fun showDatePickerDialog(onDateSelected: (String) -> Unit) {
+    val calendar = Calendar.getInstance()
+    val year = calendar[Calendar.YEAR]
+    val month = calendar[Calendar.MONTH]
+    val day = calendar[Calendar.DAY_OF_MONTH]
+
+    DatePickerDialog(
+            context,
+            { _, selectedYear, selectedMonth, selectedDay ->
+              val timestamp = Timestamp.from(selectedYear, selectedMonth, selectedDay)
+              val formattedDate = timestamp.humanReadablePlannedLabel(context)
+              onDateSelected(formattedDate)
+            },
+            year,
+            month,
+            day)
+        .show()
+  }
+
+  if (isSaved) {
+    if (date == null) {
+      DetailRow(
+          label = stringResource(R.string.hike_detail_screen_label_status),
+          value = stringResource(R.string.hike_detail_screen_value_saved),
+          valueColor = Color(0xFF3B9DE8))
+      Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.SpaceBetween,
+      ) {
+        Text(
+            text = stringResource(R.string.hike_detail_screen_label_planned_for),
+            style = MaterialTheme.typography.bodyLarge,
+            modifier =
+                Modifier.clickable {
+                      showDatePickerDialog {
+                        // TODO ON SUCCESS
+                      }
+                    }
+                    .testTag(TEST_TAG_DETAIL_ROW_TAG))
+        Button(
+            modifier = Modifier.width(90.dp).height(25.dp).testTag(TEST_TAG_ADD_DATE_BUTTON),
+            contentPadding = PaddingValues(0.dp),
+            colors =
+                ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF4285F4), // Blue color to match the image
+                    contentColor = Color.White),
+            onClick = {
+              showDatePickerDialog {
+                // TODO ON SUCCESS
+              }
+            },
+        ) {
+          Text(
+              text = stringResource(R.string.hike_detail_screen_add_a_date_button_text),
+              style = MaterialTheme.typography.bodySmall,
+              fontWeight = FontWeight.Bold,
+          )
+        }
+      }
+    } else { // A Date is set
+      DetailRow(
+          label = stringResource(R.string.hike_detail_screen_label_status),
+          value = stringResource(R.string.hike_detail_screen_value_planned),
+          valueColor = Color(0xFF3B9DE8))
+      Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.SpaceBetween,
+      ) {
+        Text(
+            text = stringResource(R.string.hike_detail_screen_label_planned_for),
+            style = MaterialTheme.typography.bodyLarge,
+            modifier =
+                Modifier.clickable { showDatePickerDialog { TODO() } }
+                    .testTag(TEST_TAG_DETAIL_ROW_TAG))
+        Box(
+            modifier =
+                Modifier.border(BorderStroke(1.dp, Color.Black), shape = RoundedCornerShape(4.dp))
+                    .padding(horizontal = 8.dp, vertical = 4.dp)) {
+              Text(
+                  text = "dd/mm/yy", // Here, the date should be displayed once the vM can show the
+                  // saved Date
+                  style = MaterialTheme.typography.bodySmall,
+                  modifier =
+                      Modifier.clickable { showDatePickerDialog {} }
+                          .testTag(TEST_TAG_PLANNED_DATE_TEXT_BOX))
+            }
+      }
+    }
+  } else {
+    DetailRow(
+        label = stringResource(R.string.hike_detail_screen_label_status),
+        value = stringResource(R.string.hike_detail_screen_value_not_saved),
+        valueColor = Color.Black)
+  }
 }
 
 @Composable

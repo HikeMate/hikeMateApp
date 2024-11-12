@@ -11,6 +11,8 @@ import org.osmdroid.views.overlay.Polyline
 
 object MapUtils {
 
+  val LOG_TAG = "MapUtils"
+
   /**
    * Shows a hike on the map.
    *
@@ -51,7 +53,7 @@ object MapUtils {
    */
   fun getGeographicalCenter(bounds: Bounds): GeoPoint {
     Log.d(
-        "MapUtils",
+        LOG_TAG,
         "minLat: ${bounds.minLat}, maxLat: ${bounds.maxLat}, minLon: ${bounds.minLon}, maxLon: ${bounds.maxLon}")
     val minLong = bounds.minLon
     val maxLong = bounds.maxLon
@@ -63,10 +65,10 @@ object MapUtils {
 
     // Adjust if the longitude crosses the Date Line (i.e., difference > 180 degrees)
     if (maxLong - minLong > 180) {
-      centerLong = (minLong + maxLong + 360) / 2
+      centerLong = (minLong + 360 + maxLong) / 2
     }
 
-    Log.d("MapUtils", "getGeographicalCenter: centerLat: $centerLat, centerLong: $centerLong")
+    Log.d(LOG_TAG, "getGeographicalCenter: centerLat: $centerLat, centerLong: $centerLong")
 
     return GeoPoint(centerLat, centerLong)
   }
@@ -102,7 +104,9 @@ object MapUtils {
     // Calculate the maximum degree difference between lat and adjusted long
     val maxDegreeDiff = kotlin.math.max(latDiff, adjustedLongDiff)
 
-    val zoomLevels =
+    // The coverage of each zoom level in degrees. The Index is the OSM Zoom leve, as per the
+    // documentation
+    val degreeCoverageIndexedByZoom =
         listOf(
             360.0,
             180.0,
@@ -127,9 +131,10 @@ object MapUtils {
             0.00025)
 
     val bestZoomLevel =
-        zoomLevels.indexOfFirst { it <= maxDegreeDiff }.takeIf { it != -1 } ?: (zoomLevels.size - 1)
+        degreeCoverageIndexedByZoom.indexOfFirst { it <= maxDegreeDiff }.takeIf { it != -1 }
+            ?: (degreeCoverageIndexedByZoom.size - 1)
 
-    Log.d("MapUtils", "calculateBestZoomLevel: bestZoomLevel: $bestZoomLevel")
+    Log.d(LOG_TAG, "calculateBestZoomLevel: bestZoomLevel: $bestZoomLevel")
     return bestZoomLevel
   }
 }
