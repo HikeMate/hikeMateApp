@@ -52,6 +52,7 @@ class HikeMateAppNavigationTest {
 
   @After
   fun deleteUser() {
+    // Sign out after deleting for sanity check and un-reliability
     auth.currentUser?.delete()
     auth.signOut()
   }
