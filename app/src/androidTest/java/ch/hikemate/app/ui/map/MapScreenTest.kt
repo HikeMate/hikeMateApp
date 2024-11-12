@@ -68,8 +68,7 @@ class MapScreenTest : TestCase() {
     hikesRepository = mock(HikeRoutesRepository::class.java)
     elevationService = mock(ElevationService::class.java)
     listOfHikeRoutesViewModel =
-        ListOfHikeRoutesViewModel(
-            hikesRepository, elevationService, UnconfinedTestDispatcher())
+        ListOfHikeRoutesViewModel(hikesRepository, elevationService, UnconfinedTestDispatcher())
   }
 
   @Test
