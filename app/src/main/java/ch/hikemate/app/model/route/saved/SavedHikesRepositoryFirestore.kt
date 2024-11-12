@@ -11,7 +11,7 @@ class SavedHikesRepositoryFirestore(
     private val auth: FirebaseAuth
 ) : SavedHikesRepository {
 
-  data class UserSavedHikes(val userId: String, val savedHikes: List<SavedHike>)
+  data class UserSavedHikes(val savedHikes: List<SavedHike>)
 
   override suspend fun loadSavedHikes(): List<SavedHike> {
     checkNotNull(auth.currentUser) { ERROR_MSG_USER_NOT_AUTHENTICATED }
@@ -32,7 +32,7 @@ class SavedHikesRepositoryFirestore(
     val documentExists = documentReference.get().await().exists()
 
     if (!documentExists) {
-      documentReference.set(UserSavedHikes(auth.currentUser!!.uid, listOf(hike)))
+      documentReference.set(UserSavedHikes(listOf(hike)))
     } else {
       documentReference.update(UserSavedHikes::savedHikes.name, arrayUnion(hike)).await()
     }

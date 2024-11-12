@@ -42,7 +42,7 @@ class SavedHikesRepositoryFirestoreTest {
   private val savedHike = SavedHike("3", "Hike 3", null)
   private val plannedHike = SavedHike("5", "Hike 5", Timestamp(0, 0))
   private val userSavedHikes =
-      SavedHikesRepositoryFirestore.UserSavedHikes(userUid, listOf(savedHike, plannedHike))
+      SavedHikesRepositoryFirestore.UserSavedHikes(listOf(savedHike, plannedHike))
 
   @Before
   fun setUp() {
@@ -177,7 +177,7 @@ class SavedHikesRepositoryFirestoreTest {
 
         // Then
         verify(mockDocumentReference)
-            .set(SavedHikesRepositoryFirestore.UserSavedHikes(userUid, listOf(newHike)))
+            .set(SavedHikesRepositoryFirestore.UserSavedHikes(listOf(newHike)))
       }
 
   @Test
