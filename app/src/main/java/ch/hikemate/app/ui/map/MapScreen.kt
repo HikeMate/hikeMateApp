@@ -339,6 +339,9 @@ fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel, isSea
   val routes = hikingRoutesViewModel.hikeRoutes.collectAsState()
   val context = LocalContext.current
 
+  // Map of route ID to the elevation data of the route
+  val elevationDatas = remember { mutableStateOf(emptyMap<String, List<Double>>()) }
+
   // BottomSheetScaffold adds a layout at the bottom of the screen that the user can expand to view
   // the list of hikes
   BottomSheetScaffold(
@@ -346,40 +349,40 @@ fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel, isSea
       sheetContainerColor = MaterialTheme.colorScheme.surface,
       sheetContent = {
         Column(modifier = Modifier.fillMaxSize().testTag(MapScreen.TEST_TAG_HIKES_LIST)) {
-          LazyColumn(modifier = Modifier.fillMaxSize()) {
-            if (isSearching) {
-              item {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.fillMaxWidth()) {
-                      Text(
-                          text = "Searching for hikes...",
-                          style = MaterialTheme.typography.bodyLarge,
-                          textAlign = TextAlign.Center,
-                          modifier =
-                              Modifier.padding(bottom = 16.dp)
-                                  .testTag(MapScreen.TEST_TAG_SEARCHING_MESSAGE))
-                      CircularProgressIndicator(
-                          modifier = Modifier.testTag(MapScreen.TEST_TAG_SEARCH_LOADING_ANIMATION))
-                    }
-              }
-            } else if (routes.value.isEmpty()) {
-              item {
-                // Use a box to center the Text composable of the empty list message
-                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+          if (isSearching) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth()) {
                   Text(
-                      text = context.getString(R.string.map_screen_empty_hikes_list_message),
+                      text = "Searching for hikes...",
                       style = MaterialTheme.typography.bodyLarge,
-                      // Align the text within the Text composable to the center
                       textAlign = TextAlign.Center,
-                      modifier = Modifier.testTag(MapScreen.TEST_TAG_EMPTY_HIKES_LIST_MESSAGE))
+                      modifier =
+                          Modifier.padding(bottom = 16.dp)
+                              .testTag(MapScreen.TEST_TAG_SEARCHING_MESSAGE))
+                  CircularProgressIndicator(
+                      modifier = Modifier.testTag(MapScreen.TEST_TAG_SEARCH_LOADING_ANIMATION))
                 }
-              }
-            } else {
+          } else if (routes.value.isEmpty()) {
+            // Use a box to center the Text composable of the empty list message
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+              Text(
+                  text = context.getString(R.string.map_screen_empty_hikes_list_message),
+                  style = MaterialTheme.typography.bodyLarge,
+                  // Align the text within the Text composable to the center
+                  textAlign = TextAlign.Center,
+                  modifier = Modifier.testTag(MapScreen.TEST_TAG_EMPTY_HIKES_LIST_MESSAGE))
+            }
+          } else {
+            LazyColumn(modifier = Modifier.fillMaxSize()) {
               items(routes.value.size, key = { routes.value[it].id }) { index: Int ->
                 val route = routes.value[index]
                 val isSuitable = index % 2 == 0
-                HikeCardFor(route, isSuitable, hikingRoutesViewModel)
+                hikingRoutesViewModel.getRoutesElevation(
+                    route, { elevationDatas.value += (route.id to it) })
+                Log.d("MapScreen", "Loading hike card for route: ${route.name}")
+                HikeCardFor(
+                    route, isSuitable, hikingRoutesViewModel, elevationDatas.value[route.id])
               }
             }
           }
@@ -389,7 +392,12 @@ fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel, isSea
 }
 
 @Composable
-fun HikeCardFor(route: HikeRoute, isSuitable: Boolean, viewModel: ListOfHikeRoutesViewModel) {
+fun HikeCardFor(
+    route: HikeRoute,
+    isSuitable: Boolean,
+    viewModel: ListOfHikeRoutesViewModel,
+    elevationData: List<Double>?
+) {
   // The context is needed to display a toast when the user clicks on the route
   val context = LocalContext.current
 
@@ -406,9 +414,7 @@ fun HikeCardFor(route: HikeRoute, isSuitable: Boolean, viewModel: ListOfHikeRout
 
   HikeCard(
       title = route.name ?: stringResource(R.string.map_screen_hike_title_default),
-      // This generates a random list of elevation data for the hike
-      // with a random number of points and altitude between 0 and 1000
-      elevationData = (0..(0..1000).random()).map { it.toDouble() }.shuffled(),
+      elevationData = elevationData,
       onClick = {
         // The user clicked on the route to select it
         viewModel.selectRoute(route)

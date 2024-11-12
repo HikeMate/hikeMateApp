@@ -11,6 +11,7 @@
     <!-- Hike Card -->
     <string name="hike_card_altitude_label">Altitude difference</string>
     <string name="hike_card_altitude_value_template">%sm</string>
+    <string name="hike_card_no_data_label">No data</string>
 
     <!-- Map Screen -->
     <string name="map_screen_menu_button_content_description">Menu</string>
@@ -97,4 +98,7 @@
     <string name="create_account_password_mismatch_error">Passwords do not match</string>
     <string name="create_account_email_format_error">Invalid email format</string>
     <string name="create_account_fields_must_be_filled_error">All fields must be filled</string>
+
+    <!-- Elevation graph -->
+    <string name="elevation_graph_loading_label">Loading graph…</string>
 </resources>

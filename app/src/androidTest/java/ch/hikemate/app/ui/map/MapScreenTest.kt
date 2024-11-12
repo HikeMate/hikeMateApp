@@ -11,6 +11,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.platform.app.InstrumentationRegistry
 import ch.hikemate.app.R
+import ch.hikemate.app.model.elevation.ElevationService
 import ch.hikemate.app.model.route.Bounds
 import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.HikeRoutesRepository
@@ -34,6 +35,7 @@ import org.osmdroid.util.BoundingBox
 
 class MapScreenTest : TestCase() {
   private lateinit var hikesRepository: HikeRoutesRepository
+  private lateinit var elevationService: ElevationService
   private lateinit var listOfHikeRoutesViewModel: ListOfHikeRoutesViewModel
   private lateinit var navigationActions: NavigationActions
 
@@ -64,8 +66,10 @@ class MapScreenTest : TestCase() {
 
     navigationActions = mock(NavigationActions::class.java)
     hikesRepository = mock(HikeRoutesRepository::class.java)
+    elevationService = mock(ElevationService::class.java)
     listOfHikeRoutesViewModel =
-        ListOfHikeRoutesViewModel(hikesRepository, UnconfinedTestDispatcher())
+        ListOfHikeRoutesViewModel(
+            hikesRepository, elevationService, UnconfinedTestDispatcher())
   }
 
   @Test

@@ -4,6 +4,8 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import ch.hikemate.app.model.elevation.ElevationService
+import ch.hikemate.app.model.elevation.ElevationServiceRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,6 +19,7 @@ import org.osmdroid.util.BoundingBox
 /** ViewModel for the list of hike routes */
 open class ListOfHikeRoutesViewModel(
     private val hikeRoutesRepository: HikeRoutesRepository,
+    private val elevationService: ElevationService,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : ViewModel() {
   // List of all routes in the database
@@ -35,7 +38,10 @@ open class ListOfHikeRoutesViewModel(
         object : ViewModelProvider.Factory {
           @Suppress("UNCHECKED_CAST")
           override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return ListOfHikeRoutesViewModel(HikeRoutesRepositoryOverpass(OkHttpClient())) as T
+            return ListOfHikeRoutesViewModel(
+                HikeRoutesRepositoryOverpass(OkHttpClient()),
+                ElevationServiceRepository(OkHttpClient()))
+                as T
           }
         }
 
@@ -61,6 +67,33 @@ open class ListOfHikeRoutesViewModel(
   /** Gets all the routes from the database and updates the routes_ variable */
   fun getRoutes(onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}) {
     viewModelScope.launch { getRoutesAsync(onSuccess = onSuccess, onFailure = onFailure) }
+  }
+
+  private suspend fun getRoutesElevationAsync(
+      route: HikeRoute,
+      onSuccess: (List<Double>) -> Unit = {},
+      onFailure: () -> Unit = {}
+  ) {
+    withContext(dispatcher) {
+      elevationService.getElevation(
+          coordinates = route.ways,
+          hikeID = route.id,
+          onSuccess = { elevationData -> onSuccess(elevationData) },
+          onFailure = { exception ->
+            Log.d(LOG_TAG, "[getRoutesElevationAsync] Failed to get elevation data: $exception")
+            onFailure()
+          })
+    }
+  }
+
+  fun getRoutesElevation(
+      route: HikeRoute,
+      onSuccess: (List<Double>) -> Unit = {},
+      onFailure: () -> Unit = {}
+  ) {
+    viewModelScope.launch {
+      getRoutesElevationAsync(route, onSuccess = onSuccess, onFailure = onFailure)
+    }
   }
 
   /**

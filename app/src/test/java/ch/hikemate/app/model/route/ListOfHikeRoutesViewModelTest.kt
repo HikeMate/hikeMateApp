@@ -1,5 +1,6 @@
 package ch.hikemate.app.model.route
 
+import ch.hikemate.app.model.elevation.ElevationServiceRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -18,6 +19,7 @@ import org.osmdroid.util.BoundingBox
 /** Testing the ListOfRoutesViewModel class */
 class ListOfHikeRoutesViewModelTest {
   private lateinit var hikesRepository: HikeRoutesRepository
+  private lateinit var elevationServiceRepository: ElevationServiceRepository
   private lateinit var listOfHikeRoutesViewModel: ListOfHikeRoutesViewModel
 
   @OptIn(ExperimentalCoroutinesApi::class)
@@ -26,8 +28,10 @@ class ListOfHikeRoutesViewModelTest {
     Dispatchers.setMain(UnconfinedTestDispatcher())
 
     hikesRepository = mock(HikeRoutesRepository::class.java)
+    elevationServiceRepository = mock(ElevationServiceRepository::class.java)
     listOfHikeRoutesViewModel =
-        ListOfHikeRoutesViewModel(hikesRepository, UnconfinedTestDispatcher())
+        ListOfHikeRoutesViewModel(
+            hikesRepository, elevationServiceRepository, UnconfinedTestDispatcher())
   }
 
   @Test
