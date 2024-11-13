@@ -1057,10 +1057,17 @@ class HikeRoutesRepositoryOverpassTest {
       callbackCapture.firstValue.onResponse(mockCall, emptyResponse)
     }
 
+    var onSuccessCalled = false
+
     hikingRouteProviderRepositoryOverpass.getRoutesByIds(
         listOf(simpleRoutes.first().id),
-        { assertEquals(emptyList<HikeRoute>(), it) },
+        {
+          assertEquals(emptyList<HikeRoute>(), it)
+          onSuccessCalled = true
+        },
         { fail("onFailure shouldn't have been called") })
+
+    assert(onSuccessCalled)
   }
 
   @Test
@@ -1116,9 +1123,16 @@ class HikeRoutesRepositoryOverpassTest {
       callbackCapture.firstValue.onResponse(mockCall, doubleResponse)
     }
 
+    var onSuccessCalled = false
+
     hikingRouteProviderRepositoryOverpass.getRoutesByIds(
         listOf(doubleRoutes[0].id, doubleRoutes[1].id),
-        { assertEquals(doubleRoutes, it) },
+        {
+          assertEquals(doubleRoutes, it)
+          onSuccessCalled = true
+        },
         { fail("onFailure shouldn't have been called") })
+
+    assert(onSuccessCalled)
   }
 }
