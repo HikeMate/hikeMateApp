@@ -36,7 +36,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.hikemate.app.R
 import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
@@ -47,11 +46,11 @@ import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.navigation.SideBarNavigation
+import ch.hikemate.app.utils.MapUtils
 import org.osmdroid.config.Configuration
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
-import org.osmdroid.views.overlay.Polyline
 
 object MapScreen {
   /**
@@ -146,32 +145,6 @@ fun getRandomColor(): Int {
 }
 
 /**
- * Shows a hike on the map.
- *
- * @param mapView The map view where the hike will be shown.
- * @param hike The hike to be shown.
- * @param color The color of the hike.
- */
-fun showHikeOnMap(mapView: MapView, hike: HikeRoute, color: Int) {
-  val line = Polyline()
-
-  line.setPoints(hike.ways.map { GeoPoint(it.lat, it.lon) })
-  line.outlinePaint.color = color
-  line.outlinePaint.strokeWidth = MapScreen.STROKE_WIDTH
-
-  line.setOnClickListener { _, _, _ ->
-    Toast.makeText(
-            mapView.context,
-            "Hike details not implemented yet. Hike ID: ${hike.id}",
-            Toast.LENGTH_SHORT)
-        .show()
-    true
-  }
-
-  mapView.overlays.add(line)
-}
-
-/**
  * Clears all hikes that are displayed on the map. Intended to be used when the list of hikes
  * changes and new hikes need to be drawn.
  */
@@ -183,8 +156,7 @@ fun clearHikesFromMap(mapView: MapView) {
 @Composable
 fun MapScreen(
     navigationActions: NavigationActions,
-    hikingRoutesViewModel: ListOfHikeRoutesViewModel =
-        viewModel(factory = ListOfHikeRoutesViewModel.Factory),
+    hikingRoutesViewModel: ListOfHikeRoutesViewModel,
     mapInitialZoomLevel: Double = MapScreen.MAP_INITIAL_ZOOM,
     mapMaxZoomLevel: Double = MapScreen.MAP_MAX_ZOOM,
     mapMinZoomLevel: Double = MapScreen.MAP_MIN_ZOOM,
@@ -240,11 +212,27 @@ fun MapScreen(
     if (isSearching) return@LaunchedEffect
     clearHikesFromMap(mapView)
     if (routes.size <= MapScreen.MAX_HIKES_DRAWN_ON_MAP) {
-      routes.forEach { showHikeOnMap(mapView, it, getRandomColor()) }
+      routes.forEach {
+        MapUtils.showHikeOnMap(
+            mapView,
+            it,
+            getRandomColor(),
+            onLineClick = {
+              hikingRoutesViewModel.selectRoute(it)
+              navigationActions.navigateTo(Screen.HIKE_DETAILS)
+            })
+      }
       Log.d(MapScreen.LOG_TAG, "Displayed ${routes.size} hikes on the map")
     } else {
       routes.subList(0, MapScreen.MAX_HIKES_DRAWN_ON_MAP).forEach {
-        showHikeOnMap(mapView, it, getRandomColor())
+        MapUtils.showHikeOnMap(
+            mapView,
+            it,
+            getRandomColor(),
+            onLineClick = {
+              hikingRoutesViewModel.selectRoute(it)
+              navigationActions.navigateTo(Screen.HIKE_DETAILS)
+            })
       }
       Toast.makeText(
               context,
@@ -314,7 +302,7 @@ fun MapScreen(
               modifier =
                   Modifier.align(Alignment.BottomEnd)
                       .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
-          CollapsibleHikesList(hikingRoutesViewModel, isSearching)
+          CollapsibleHikesList(hikingRoutesViewModel, isSearching, navigationActions)
           // Put SideBarNavigation after to make it appear on top of the map and HikeList
         }
       }
@@ -334,7 +322,11 @@ fun MapSearchButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel, isSearching: Boolean) {
+fun CollapsibleHikesList(
+    hikingRoutesViewModel: ListOfHikeRoutesViewModel,
+    isSearching: Boolean,
+    navigationActions: NavigationActions
+) {
   val scaffoldState = rememberBottomSheetScaffoldState()
   val routes = hikingRoutesViewModel.hikeRoutes.collectAsState()
   val context = LocalContext.current
@@ -379,7 +371,7 @@ fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel, isSea
               items(routes.value.size, key = { routes.value[it].id }) { index: Int ->
                 val route = routes.value[index]
                 val isSuitable = index % 2 == 0
-                HikeCardFor(route, isSuitable, hikingRoutesViewModel)
+                HikeCardFor(route, isSuitable, hikingRoutesViewModel, navigationActions)
               }
             }
           }
@@ -389,10 +381,12 @@ fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel, isSea
 }
 
 @Composable
-fun HikeCardFor(route: HikeRoute, isSuitable: Boolean, viewModel: ListOfHikeRoutesViewModel) {
-  // The context is needed to display a toast when the user clicks on the route
-  val context = LocalContext.current
-
+fun HikeCardFor(
+    route: HikeRoute,
+    isSuitable: Boolean,
+    viewModel: ListOfHikeRoutesViewModel,
+    navigationActions: NavigationActions
+) {
   // The color of the card's message is chosen based on whether the hike is suitable or not
   val suitableLabelColor = if (isSuitable) Color(0xFF4CAF50) else Color(0xFFFFC107)
 
@@ -412,7 +406,7 @@ fun HikeCardFor(route: HikeRoute, isSuitable: Boolean, viewModel: ListOfHikeRout
       onClick = {
         // The user clicked on the route to select it
         viewModel.selectRoute(route)
-        Toast.makeText(context, "Hike details not implemented yet", Toast.LENGTH_SHORT).show()
+        navigationActions.navigateTo(Screen.HIKE_DETAILS)
       },
       messageContent = suitableLabelText,
       styleProperties =

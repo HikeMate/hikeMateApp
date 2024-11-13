@@ -104,7 +104,11 @@ private fun PlannedHikes(hikes: List<SavedHike>?) {
             // with a random number of points and altitude between 0 and 1000
             elevationData = (0..(0..1000).random()).map { it.toDouble() }.shuffled(),
             onClick = {
-              Toast.makeText(context, "Hike details not implemented yet", Toast.LENGTH_SHORT).show()
+              Toast.makeText(
+                      context,
+                      "Hike details not implemented yet for this screen, since the listOfHikeRoutesVM does not support fetching just a single hike for the moment",
+                      Toast.LENGTH_SHORT)
+                  .show()
             },
             messageContent = hike.date!!.humanReadablePlannedLabel(LocalContext.current),
             modifier = Modifier.testTag(TEST_TAG_SAVED_HIKES_HIKE_CARD),
@@ -140,12 +144,16 @@ private fun SavedHikes(hikes: List<SavedHike>?) {
         val hike = savedHikes[index]
         HikeCard(
             title = hike.name,
+            onClick = {
+              Toast.makeText(
+                      context,
+                      "Hike details not implemented yet for this screen, since the listOfHikeRoutesVM does not support fetching just a single hike for the moment",
+                      Toast.LENGTH_SHORT)
+                  .show()
+            },
             // This generates a random list of elevation data for the hike
             // with a random number of points and altitude between 0 and 1000
             elevationData = (0..(0..1000).random()).map { it.toDouble() }.shuffled(),
-            onClick = {
-              Toast.makeText(context, "Hike details not implemented yet", Toast.LENGTH_SHORT).show()
-            },
             modifier = Modifier.testTag(TEST_TAG_SAVED_HIKES_HIKE_CARD))
       }
     }
