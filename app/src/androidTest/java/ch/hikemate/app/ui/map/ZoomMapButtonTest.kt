@@ -5,6 +5,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import ch.hikemate.app.model.elevation.ElevationService
 import ch.hikemate.app.model.route.HikeRoutesRepository
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
 import ch.hikemate.app.ui.navigation.NavigationActions
@@ -17,6 +18,7 @@ import org.mockito.Mockito.verify
 class ZoomMapButtonTest {
 
   private lateinit var hikesRepository: HikeRoutesRepository
+  private lateinit var elevationService: ElevationService
   private lateinit var listOfHikeRoutesViewModel: ListOfHikeRoutesViewModel
   private lateinit var navigationActions: NavigationActions
 
@@ -26,7 +28,8 @@ class ZoomMapButtonTest {
   fun setUp() {
     navigationActions = mock(NavigationActions::class.java)
     hikesRepository = mock(HikeRoutesRepository::class.java)
-    listOfHikeRoutesViewModel = ListOfHikeRoutesViewModel(hikesRepository)
+    elevationService = mock(ElevationService::class.java)
+    listOfHikeRoutesViewModel = ListOfHikeRoutesViewModel(hikesRepository, elevationService)
   }
 
   @Test

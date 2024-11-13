@@ -34,7 +34,7 @@ data class ElevationResult(val latitude: Double, val longitude: Double, val elev
 class ElevationServiceRepository(private val client: OkHttpClient) : ElevationService {
 
   // Cache for the elevation data, indexed by hike ID
-  private val cache = mutableMapOf<Long, List<Double>>()
+  private val cache = mutableMapOf<String, List<Double>>()
 
   /**
    * Get the size of the cache
@@ -47,7 +47,7 @@ class ElevationServiceRepository(private val client: OkHttpClient) : ElevationSe
 
   override fun getElevation(
       coordinates: List<LatLong>,
-      hikeID: Long,
+      hikeID: String,
       onSuccess: (List<Double>) -> Unit,
       onFailure: (Exception) -> Unit
   ) {
@@ -60,6 +60,14 @@ class ElevationServiceRepository(private val client: OkHttpClient) : ElevationSe
       cache[hikeID]?.let { onSuccess(it) }
       return
     }
+
+    // Check if a request is already in progress
+    if (cache[hikeID] == null) {
+      cache[hikeID] = emptyList()
+    } else {
+      return
+    }
+
     // Create the JSON body for the request
     val jsonBody = buildJsonObject {
       // The major object
@@ -126,6 +134,8 @@ class ElevationServiceRepository(private val client: OkHttpClient) : ElevationSe
 
         onFailure(Exception("Failed to get elevation"))
       }
+
+      response.close()
     }
   }
 }

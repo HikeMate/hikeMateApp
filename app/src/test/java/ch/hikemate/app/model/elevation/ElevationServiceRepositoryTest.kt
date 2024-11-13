@@ -161,9 +161,10 @@ class ElevationServiceRepositoryTest {
       callbackCapture.firstValue.onResponse(call, simpleResponse)
     }
 
-    elevationServiceRepository.getElevation(latLong, 0, { list -> assertEquals(smallList, list) }) {
-      fail("Failed to fetch routes from Overpass API")
-    }
+    elevationServiceRepository.getElevation(
+        latLong, "0", { list -> assertEquals(smallList, list) }) {
+          fail("Failed to fetch routes from Overpass API")
+        }
 
     verify(client).newCall(any())
   }
@@ -179,9 +180,10 @@ class ElevationServiceRepositoryTest {
       callbackCapture.firstValue.onResponse(call, longResponse)
     }
 
-    elevationServiceRepository.getElevation(latLong, 0, { list -> assertEquals(longList, list) }) {
-      fail("Failed to fetch routes from Overpass API")
-    }
+    elevationServiceRepository.getElevation(
+        latLong, "0", { list -> assertEquals(longList, list) }) {
+          fail("Failed to fetch routes from Overpass API")
+        }
 
     verify(client).newCall(any())
   }
@@ -199,17 +201,19 @@ class ElevationServiceRepositoryTest {
     }
 
     assertEquals(0, elevationServiceRepository.getCacheSize())
-    elevationServiceRepository.getElevation(latLong, 0, { list -> assertEquals(longList, list) }) {
-      fail("Failed to fetch routes from Overpass API")
-    }
+    elevationServiceRepository.getElevation(
+        latLong, "0", { list -> assertEquals(longList, list) }) {
+          fail("Failed to fetch routes from Overpass API")
+        }
     assertEquals(1, elevationServiceRepository.getCacheSize())
 
     val call2 = mock(Call::class.java)
     `when`(client.newCall(any())).thenReturn(call2)
 
-    elevationServiceRepository.getElevation(latLong, 0, { list -> assertEquals(longList, list) }) {
-      fail("Failed to fetch routes from Overpass API")
-    }
+    elevationServiceRepository.getElevation(
+        latLong, "0", { list -> assertEquals(longList, list) }) {
+          fail("Failed to fetch routes from Overpass API")
+        }
     assertEquals(1, elevationServiceRepository.getCacheSize())
     verify(client).newCall(any())
   }
@@ -232,9 +236,10 @@ class ElevationServiceRepositoryTest {
     assertEquals(0, elevationServiceRepository.getCacheSize())
 
     // First API call
-    elevationServiceRepository.getElevation(latLong, 0, { list -> assertEquals(longList, list) }) {
-      fail("Failed to fetch routes from Overpass API")
-    }
+    elevationServiceRepository.getElevation(
+        latLong, "0", { list -> assertEquals(longList, list) }) {
+          fail("Failed to fetch routes from Overpass API")
+        }
 
     // Check cache size after first call
     assertEquals(1, elevationServiceRepository.getCacheSize())
@@ -252,9 +257,10 @@ class ElevationServiceRepositoryTest {
     }
 
     // Second API call
-    elevationServiceRepository.getElevation(latLong, 1, { list -> assertEquals(smallList, list) }) {
-      fail("Failed to fetch routes from Overpass API")
-    }
+    elevationServiceRepository.getElevation(
+        latLong, "1", { list -> assertEquals(smallList, list) }) {
+          fail("Failed to fetch routes from Overpass API")
+        }
 
     // Verify cache size after second call
     assertEquals(2, elevationServiceRepository.getCacheSize())
@@ -287,7 +293,7 @@ class ElevationServiceRepositoryTest {
 
     assertThrows(Exception::class.java) {
       elevationServiceRepository.getElevation(
-          latLong, 0, { fail("Expected failure but got success") }) { exception ->
+          latLong, "0", { fail("Expected failure but got success") }) { exception ->
             throw exception
           }
     }
@@ -298,7 +304,7 @@ class ElevationServiceRepositoryTest {
   @Test
   fun emptyWhenNoCoordinates() {
     elevationServiceRepository.getElevation(
-        emptyList(), 0, { list -> assertEquals(emptyList<LatLong>(), list) }) {
+        emptyList(), "0", { list -> assertEquals(emptyList<LatLong>(), list) }) {
           fail("Failed to fetch routes from Overpass API")
         }
   }
@@ -315,7 +321,7 @@ class ElevationServiceRepositoryTest {
 
     assertThrows("Failed to get elevation", IOException::class.java) {
       elevationServiceRepository.getElevation(
-          latLong, 0, { fail("Expected failure but got success") }) { exception ->
+          latLong, "0", { fail("Expected failure but got success") }) { exception ->
             throw exception
           }
     }
