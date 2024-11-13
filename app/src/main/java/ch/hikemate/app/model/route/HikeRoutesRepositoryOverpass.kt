@@ -23,7 +23,7 @@ private const val MAX_DISTANCE_BETWEEN_OPENED_PATH = 10 // meters
  *
  * @see <a href="https://dev.overpass-api.de/overpass-doc/">Overpass API documentation</a>
  */
-class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesRepository {
+class HikeRoutesRepositoryOverpass(private val client: OkHttpClient) : HikeRoutesRepository {
   private val cachedHikeRoutes = mutableMapOf<Bounds, List<HikeRoute>>()
 
   /** @return The size of the cache. */
@@ -343,9 +343,7 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
           // int_name has priority over name
           "name" -> if (name == null) name = tagsReader.nextString() else tagsReader.skipValue()
           "name:en" -> nameEn = tagsReader.nextString()
-          "osmc:name",
-          "operator",
-          "symbol" ->
+          "osmc:name" ->
               if (otherName == null) otherName = tagsReader.nextString() else tagsReader.skipValue()
           "from" -> from = tagsReader.nextString()
           "to" -> to = tagsReader.nextString()
@@ -354,7 +352,7 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
         }
       }
 
-      val finalName =
+      val selectedName =
           when {
             name != null -> name
             nameEn != null -> nameEn
@@ -367,9 +365,13 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
 
       // If the description is not set, we'll set it to the from - to, if available
       // We also assert that the name is not the same as the description
-      if (description == null && from != null && to != null && finalName != "$from - $to") {
+      if (description == null && from != null && to != null && selectedName != "$from - $to") {
         description = "$from - $to"
       }
+
+      // Remove fix me from the name
+      val finalName =
+          selectedName?.replace(Regex("""(\? - fixme|fixme - | - fixme| fixme|fixme |[?])"""), "")
 
       if (finalName == null) {
         Log.w(this.javaClass::class.simpleName, "No name found for route")
