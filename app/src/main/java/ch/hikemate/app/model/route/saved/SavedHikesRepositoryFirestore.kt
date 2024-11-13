@@ -48,24 +48,12 @@ class SavedHikesRepositoryFirestore(
 
   override suspend fun getSavedHike(id: String): SavedHike? {
     checkNotNull(auth.currentUser) { ERROR_MSG_USER_NOT_AUTHENTICATED }
-    return db.collection(SAVED_HIKES_COLLECTION)
-        .document(auth.currentUser!!.uid)
-        .get()
-        .await()
-        .toObject(UserSavedHikes::class.java)
-        ?.savedHikes
-        ?.find { it.id == id }
+    return loadSavedHikes().find { it.id == id }
   }
 
   override suspend fun isHikeSaved(id: String): Boolean {
     checkNotNull(auth.currentUser) { ERROR_MSG_USER_NOT_AUTHENTICATED }
-    return db.collection(SAVED_HIKES_COLLECTION)
-        .document(auth.currentUser!!.uid)
-        .get()
-        .await()
-        .toObject(UserSavedHikes::class.java)
-        ?.savedHikes
-        ?.any { it.id == id } ?: false
+    return loadSavedHikes().any { it.id == id }
   }
 
   companion object {
