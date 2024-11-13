@@ -4,6 +4,8 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import ch.hikemate.app.model.elevation.ElevationService
+import ch.hikemate.app.model.elevation.ElevationServiceRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,6 +19,7 @@ import org.osmdroid.util.BoundingBox
 /** ViewModel for the list of hike routes */
 open class ListOfHikeRoutesViewModel(
     private val hikeRoutesRepository: HikeRoutesRepository,
+    private val elevationService: ElevationService,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : ViewModel() {
   // List of all routes in the database
@@ -35,7 +38,10 @@ open class ListOfHikeRoutesViewModel(
         object : ViewModelProvider.Factory {
           @Suppress("UNCHECKED_CAST")
           override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return ListOfHikeRoutesViewModel(HikeRoutesRepositoryOverpass(OkHttpClient())) as T
+            return ListOfHikeRoutesViewModel(
+                HikeRoutesRepositoryOverpass(OkHttpClient()),
+                ElevationServiceRepository(OkHttpClient()))
+                as T
           }
         }
 
@@ -52,7 +58,7 @@ open class ListOfHikeRoutesViewModel(
             onSuccess()
           },
           onFailure = { exception ->
-            Log.d(LOG_TAG, "[getRoutesAsync] Failed to get routes: $exception")
+            Log.e(LOG_TAG, "[getRoutesAsync] Failed to get routes", exception)
             onFailure()
           })
     }
@@ -61,6 +67,37 @@ open class ListOfHikeRoutesViewModel(
   /** Gets all the routes from the database and updates the routes_ variable */
   fun getRoutes(onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}) {
     viewModelScope.launch { getRoutesAsync(onSuccess = onSuccess, onFailure = onFailure) }
+  }
+
+  private suspend fun getRoutesElevationAsync(
+      route: HikeRoute,
+      onSuccess: (List<Double>) -> Unit = {},
+      onFailure: () -> Unit = {}
+  ) {
+    withContext(dispatcher) {
+      elevationService.getElevation(
+          coordinates = route.ways,
+          hikeID = route.id,
+          onSuccess = { elevationData -> onSuccess(elevationData) },
+          onFailure = { exception ->
+            Log.d(LOG_TAG, "[getRoutesElevationAsync] Failed to get elevation data: $exception")
+            onFailure()
+          })
+    }
+  }
+
+  /**
+   * Gets the elevation data asynchronously for a route and return it as a list of doubles on
+   * success.
+   */
+  fun getRoutesElevation(
+      route: HikeRoute,
+      onSuccess: (List<Double>) -> Unit = {},
+      onFailure: () -> Unit = {}
+  ) {
+    viewModelScope.launch {
+      getRoutesElevationAsync(route, onSuccess = onSuccess, onFailure = onFailure)
+    }
   }
 
   /**
@@ -81,5 +118,28 @@ open class ListOfHikeRoutesViewModel(
    */
   fun selectRoute(hikeRoute: HikeRoute) {
     selectedHikeRoute_.value = hikeRoute
+  }
+
+  private suspend fun selectRouteByIdAsync(hikeId: String) {
+    withContext(dispatcher) {
+      hikeRoutesRepository.getRouteById(
+          routeId = hikeId,
+          onSuccess = { route -> selectedHikeRoute_.value = route },
+          onFailure = { exception ->
+            Log.e(LOG_TAG, "[selectRouteByIdAsync] Failed to get route", exception)
+          })
+    }
+  }
+
+  /**
+   * Selects a particular hike (for example to then display it in the details screen).
+   *
+   * Use this function if only the route ID is available. If a [HikeRoute] instance is available,
+   * use [selectRoute] instead.
+   *
+   * @param hikeId The ID of the route to be selected
+   */
+  fun selectRouteById(hikeId: String) {
+    viewModelScope.launch { selectRouteByIdAsync(hikeId) }
   }
 }

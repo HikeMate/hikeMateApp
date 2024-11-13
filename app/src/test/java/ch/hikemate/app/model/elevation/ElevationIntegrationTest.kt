@@ -61,7 +61,7 @@ class ElevationIntegrationTest {
 
     repository.getElevation(
         coordinates,
-        0,
+        "0",
         onSuccess = {
           result = it
           assertNotNull("Response should not be null", result)
@@ -76,7 +76,7 @@ class ElevationIntegrationTest {
 
     repository.getElevation(
         longCoordinates,
-        0,
+        "0",
         onSuccess = {
           result = it
           assertNotNull("Response should not be null", result)

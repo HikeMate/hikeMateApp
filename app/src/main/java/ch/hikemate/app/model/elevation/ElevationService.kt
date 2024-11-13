@@ -14,7 +14,7 @@ fun interface ElevationService {
    */
   fun getElevation(
       coordinates: List<LatLong>,
-      hikeID: Long,
+      hikeID: String,
       onSuccess: (List<Double>) -> Unit,
       onFailure: (Exception) -> Unit
   )

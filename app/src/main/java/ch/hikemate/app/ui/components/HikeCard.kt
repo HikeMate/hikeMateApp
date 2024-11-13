@@ -64,7 +64,7 @@ data class HikeCardStyleProperties(
 fun HikeCard(
     title: String,
     modifier: Modifier = Modifier,
-    elevationData: List<Double> = emptyList(),
+    elevationData: List<Double>?,
     onClick: () -> Unit,
     messageContent: String? = null,
     styleProperties: HikeCardStyleProperties = HikeCardStyleProperties(),
@@ -73,7 +73,8 @@ fun HikeCard(
       messageContent != null &&
           styleProperties.messageIcon != null &&
           styleProperties.messageColor != null
-  val altitudeDifference = elevationData.max() - elevationData.min()
+  val altitudeDifference =
+      if (elevationData.isNullOrEmpty()) null else elevationData.max() - elevationData.min()
 
   Row(
       modifier =
@@ -96,7 +97,7 @@ fun HikeCard(
               verticalAlignment = Alignment.CenterVertically,
               modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
                 ElevationGraph(
-                    elevationData = elevationData,
+                    elevations = elevationData,
                     modifier = Modifier.weight(1f).fillMaxHeight(),
                     styleProperties =
                         ElevationGraphStyleProperties(
@@ -114,8 +115,11 @@ fun HikeCard(
                       style = MaterialTheme.typography.bodySmall)
                   Text(
                       text =
-                          stringResource(
-                              R.string.hike_card_altitude_value_template, altitudeDifference),
+                          if (altitudeDifference == null)
+                              stringResource(R.string.hike_card_no_data_label)
+                          else
+                              stringResource(
+                                  R.string.hike_card_altitude_value_template, altitudeDifference),
                       style = MaterialTheme.typography.bodyLarge,
                       fontWeight = FontWeight.Bold)
                 }
