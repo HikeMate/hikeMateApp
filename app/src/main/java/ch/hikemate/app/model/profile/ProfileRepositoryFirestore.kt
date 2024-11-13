@@ -35,7 +35,8 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
 
   /**
    * Creates a profile for the current user. Calls updateProfile with the information of the
-   * currentUser of the firebaseAuth instance.
+   * currentUser of the firebaseAuth instance. Can be called when Sigining in and already having an
+   * account this will just ignore it.
    *
    * @param firebaseAuth The Firebase authentication instance.
    * @param onSuccess The callback to call if the profile is created successfully.
@@ -62,6 +63,8 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
     profileExists(
         profile.id,
         onSuccess = { exists ->
+          // This is to not create a new profile whenever the user signs in with Google again.
+          // When that happens this function will be called but won't change anything.
           if (!exists)
               updateProfile(profile, onSuccess = { onSuccess(profile) }, onFailure = onFailure)
         },
@@ -94,14 +97,15 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
 
   override fun getProfileById(
       id: String,
-      onSuccess: (Profile?) -> Unit,
+      onSuccess: (Profile) -> Unit,
       onFailure: (Exception) -> Unit
   ) {
 
     db.collection(collectionPath).document(id).get().addOnCompleteListener { task ->
       if (task.isSuccessful) {
         val profile = task.result?.let { documentToProfile(it) }
-        onSuccess(profile)
+        if (profile != null) onSuccess(profile)
+        else onFailure(Exception("Error converting document to Profile"))
       } else {
         task.exception?.let { e ->
           Log.e("ProfileRepositoryFirestore", "Error getting document", e)
@@ -176,19 +180,16 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
    *
    * @param document The Firestore document to convert.
    */
-  fun documentToProfile(document: DocumentSnapshot): Profile? {
-    return try {
-      val uid = document.id
-      val name = document.getString("name") ?: ""
-      val email = document.getString("email") ?: ""
-      val hikingLevelString = document.getString("hikingLevel") ?: HikingLevel.BEGINNER
-      val hikingLevel =
-          HikingLevel.values().find { it.name == hikingLevelString } ?: HikingLevel.BEGINNER
-      val joinedDate = document.getTimestamp("joinedDate") ?: Timestamp.now()
-      Profile(uid, name, email, hikingLevel, joinedDate)
-    } catch (e: Exception) {
-      Log.e("ProfileRepositoryFirestore", "Error converting document to Profile", e)
-      null
-    }
+  fun documentToProfile(document: DocumentSnapshot): Profile {
+
+    val uid = document.id
+    val name = document.getString("name") ?: "Invalid name"
+    val email = document.getString("email") ?: "Invalid email"
+    val hikingLevelString = document.getString("hikingLevel") ?: HikingLevel.BEGINNER
+    val hikingLevel =
+        HikingLevel.values().find { it.name == hikingLevelString } ?: HikingLevel.BEGINNER
+    val joinedDate = document.getTimestamp("joinedDate") ?: Timestamp.now()
+
+    return Profile(uid, name, email, hikingLevel, joinedDate)
   }
 }
