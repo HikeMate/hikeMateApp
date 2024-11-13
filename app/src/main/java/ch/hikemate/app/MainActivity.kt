@@ -108,6 +108,7 @@ fun HikeMateApp() {
           composable(Screen.HIKE_DETAILS) {
             HikeDetailScreen(
                 listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
+                savedHikesViewModel = savedHikesViewModel,
                 navigationActions = navigationActions,
             )
           }

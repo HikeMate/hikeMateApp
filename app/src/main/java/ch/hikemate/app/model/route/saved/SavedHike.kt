@@ -26,3 +26,4 @@ data class SavedHike(
      */
     val date: Timestamp?
 )
+

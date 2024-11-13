@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import ch.hikemate.app.R
+import ch.hikemate.app.model.route.HikeRoute
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.CoroutineDispatcher
@@ -54,6 +55,10 @@ class SavedHikesViewModel(
   fun loadSavedHikes() {
     // Because loading saved hikes is also used by other methods, we extract it
     viewModelScope.launch { loadSavedHikesAsync() }
+  }
+
+  fun isHikeSaved(hike: HikeRoute): SavedHike? {
+    return savedHike.value.find { hike.id==it.id }
   }
 
   /**
