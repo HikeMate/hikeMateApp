@@ -19,6 +19,8 @@ interface HikeRoutesRepository {
    * From a route ID, retrieves the details of that hike.
    *
    * @param routeId The ID of the route to get more info about.
+   * @param onSuccess The callback to be called when the route is successfully fetched.
+   * @param onFailure The callback to be called when the route could not be fetched.
    */
   fun getRouteById(routeId: String, onSuccess: (HikeRoute) -> Unit, onFailure: (Exception) -> Unit)
 }
