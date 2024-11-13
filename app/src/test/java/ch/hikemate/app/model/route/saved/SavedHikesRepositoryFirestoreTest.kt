@@ -50,10 +50,10 @@ class SavedHikesRepositoryFirestoreTest {
 
     savedHikesRepositoryFirestore = SavedHikesRepositoryFirestore(mockFirestore, mockFirebaseAuth)
 
-    // If the collection is the one from the user, return the mock collection reference
+    // If the collection is the correct one, return the mock collection reference
     `when`(mockFirestore.collection(eq(SavedHikesRepositoryFirestore.SAVED_HIKES_COLLECTION)))
         .thenReturn(mockCollectionReference)
-    // If the collection is not the one from the user, throw an exception
+    // If the collection is not the correct one, throw an exception
     `when`(mockFirestore.collection(not(eq(SavedHikesRepositoryFirestore.SAVED_HIKES_COLLECTION))))
         .then { fail("Unexpected collection reference: ${it.arguments[0]}") }
 

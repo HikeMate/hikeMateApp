@@ -54,6 +54,7 @@ interface SavedHikesRepository {
    * Check if the hike with the provided ID exists in the saved hikes list.
    *
    * @param id The ID of the hike to check.
+   * @throws IllegalStateException If the user is not authenticated.
    */
   suspend fun isHikeSaved(id: String): Boolean
 }
