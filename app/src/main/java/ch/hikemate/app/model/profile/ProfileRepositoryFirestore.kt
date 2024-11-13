@@ -60,15 +60,7 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
             fireUser.email ?: "unnamedhiker@example.com",
             HikingLevel.BEGINNER,
             Timestamp.now())
-    profileExists(
-        profile.id,
-        onSuccess = { exists ->
-          // This is to not create a new profile whenever the user signs in with Google again.
-          // When that happens this function will be called but won't change anything.
-          if (!exists)
-              updateProfile(profile, onSuccess = { onSuccess(profile) }, onFailure = onFailure)
-        },
-        onFailure = { onFailure(Exception("Error getting document with id ${profile.id}")) })
+    addProfile(profile, onSuccess = { onSuccess(profile) }, onFailure = onFailure)
   }
 
   /**
