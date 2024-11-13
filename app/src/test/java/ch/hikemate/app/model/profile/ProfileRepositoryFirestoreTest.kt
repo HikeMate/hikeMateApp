@@ -105,7 +105,6 @@ class ProfileRepositoryFirestoreTest {
     `when`(mockDocumentSnapshot.getTimestamp("joinedDate")).thenReturn(testTimestamp)
 
     val profile = repository.documentToProfile(mockDocumentSnapshot)
-    assert(profile != null)
     assert(profile!!.id == "1")
     assert(profile.name == "John Doe")
     assert(profile.email == "john.doe@gmail.com")
@@ -114,7 +113,7 @@ class ProfileRepositoryFirestoreTest {
   }
 
   @Test
-  fun documentToProfile_returnsNullIfDataIsMissing() {
+  fun documentToProfile_returnsEmptyIfDataIsMissing() {
     `when`(mockDocumentSnapshot.id).thenReturn("1")
     `when`(mockDocumentSnapshot.getString("name")).thenReturn("John Doe")
     `when`(mockDocumentSnapshot.getString("email")).thenThrow(RuntimeException("No email field"))
