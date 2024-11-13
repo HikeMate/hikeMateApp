@@ -3,6 +3,7 @@ package ch.hikemate.app.ui.map
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import ch.hikemate.app.model.elevation.ElevationService
 import ch.hikemate.app.model.route.Bounds
 import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.HikeRoutesRepository
@@ -36,6 +37,7 @@ class HikeDetailScreenTest {
 
   private lateinit var mockNavigationActions: NavigationActions
   private lateinit var hikesRepository: HikeRoutesRepository
+  private lateinit var elevationService: ElevationService
   private lateinit var listOfHikeRoutesViewModel: ListOfHikeRoutesViewModel
 
   private val route =
@@ -52,9 +54,10 @@ class HikeDetailScreenTest {
   fun setUp() {
     mockNavigationActions = mock()
     hikesRepository = mock()
+    elevationService = mock()
 
     listOfHikeRoutesViewModel =
-        ListOfHikeRoutesViewModel(hikesRepository, UnconfinedTestDispatcher())
+        ListOfHikeRoutesViewModel(hikesRepository, elevationService, UnconfinedTestDispatcher())
 
     // Set up the VM
     listOfHikeRoutesViewModel.selectRoute(route)

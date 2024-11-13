@@ -63,6 +63,8 @@ class EndToEndTest : TestCase() {
 
   @Test
   fun test() {
+    composeTestRule.waitForIdle()
+
     // Check that we are on the login screen
     composeTestRule.onNodeWithTag(SignInScreen.TEST_TAG_SIGN_IN_WITH_EMAIL).assertIsDisplayed()
     composeTestRule.onNodeWithTag(SignInScreen.TEST_TAG_SIGN_IN_WITH_GOOGLE).assertIsDisplayed()
