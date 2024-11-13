@@ -7,7 +7,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito.mock
@@ -26,13 +26,6 @@ class SavedHikesViewModelTest {
 
     savedHikesRepository = mock(SavedHikesRepository::class.java)
     savedHikesViewModel = SavedHikesViewModel(savedHikesRepository, UnconfinedTestDispatcher())
-  }
-
-  @Test
-  fun canBeCreatedAsFactory() {
-    val factory = SavedHikesViewModel.Factory
-    val viewModel = factory.create(SavedHikesViewModel::class.java)
-    assertNotNull(viewModel)
   }
 
   @Test

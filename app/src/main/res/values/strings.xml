@@ -36,6 +36,20 @@
     <string name="zoom_out">Zoom out</string>
     <string name="map_search_for_hikes">Searching for hikes…</string>
 
+    <!-- Hike Details Screen -->
+    <string name="hike_detail_screen_bookmark_hint_on_isSaved_true">Unsave hike</string>
+    <string name="hike_detail_screen_bookmark_hint_on_isSaved_false">Save hike</string>
+    <string name="hike_detail_screen_label_distance">Distance</string>
+    <string name="hike_detail_screen_label_elevation_gain">Elevation Gain</string>
+    <string name="hike_detail_screen_label_estimated_time">Estimated time</string>
+    <string name="hike_detail_screen_label_difficulty">Difficulty</string>
+    <string name="hike_detail_screen_label_status">Status</string>
+    <string name="hike_detail_screen_label_planned_for">Planned for</string>
+    <string name="hike_detail_screen_value_saved">Saved</string>
+    <string name="hike_detail_screen_value_not_saved">Not saved</string>
+    <string name="hike_detail_screen_value_planned">Planned</string>
+    <string name="hike_detail_screen_add_a_date_button_text">Add a date</string>
+
 
     <!-- Saved Hikes Screen -->
     <string name="saved_hikes_screen_generic_error">

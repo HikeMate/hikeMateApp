@@ -58,7 +58,7 @@ open class ListOfHikeRoutesViewModel(
             onSuccess()
           },
           onFailure = { exception ->
-            Log.d(LOG_TAG, "[getRoutesAsync] Failed to get routes: $exception")
+            Log.e(LOG_TAG, "[getRoutesAsync] Failed to get routes", exception)
             onFailure()
           })
     }
@@ -118,5 +118,28 @@ open class ListOfHikeRoutesViewModel(
    */
   fun selectRoute(hikeRoute: HikeRoute) {
     selectedHikeRoute_.value = hikeRoute
+  }
+
+  private suspend fun selectRouteByIdAsync(hikeId: String) {
+    withContext(dispatcher) {
+      hikeRoutesRepository.getRouteById(
+          routeId = hikeId,
+          onSuccess = { route -> selectedHikeRoute_.value = route },
+          onFailure = { exception ->
+            Log.e(LOG_TAG, "[selectRouteByIdAsync] Failed to get route", exception)
+          })
+    }
+  }
+
+  /**
+   * Selects a particular hike (for example to then display it in the details screen).
+   *
+   * Use this function if only the route ID is available. If a [HikeRoute] instance is available,
+   * use [selectRoute] instead.
+   *
+   * @param hikeId The ID of the route to be selected
+   */
+  fun selectRouteById(hikeId: String) {
+    viewModelScope.launch { selectRouteByIdAsync(hikeId) }
   }
 }

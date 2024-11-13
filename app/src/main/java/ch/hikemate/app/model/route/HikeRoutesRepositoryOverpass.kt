@@ -68,6 +68,27 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
         .enqueue(OverpassResponseHandler(bounds, onSuccess, onFailure))
   }
 
+  override fun getRouteById(
+      routeId: String,
+      onSuccess: (HikeRoute) -> Unit,
+      onFailure: (Exception) -> Unit
+  ) {
+    // Query the Overpass API for this specific route
+    val overpassRequestData =
+        """
+        ${JSON_OVERPASS_FORMAT_TAG};
+        relation($routeId);
+        out geom;
+      """
+            .trimIndent()
+
+    val requestBuilder = Request.Builder().url("$OVERPASS_API_URL?data=$overpassRequestData").get()
+
+    setRequestHeaders(requestBuilder)
+
+    client.newCall(requestBuilder.build()).enqueue(OverpassSingleRouteHandler(onSuccess, onFailure))
+  }
+
   /**
    * Sets the headers for the request. Especially the user-agent.
    *
@@ -80,11 +101,12 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
   /**
    * The response handler for the Overpass API request.
    *
+   * @param requestedBounds The bounds that were requested. If null, the cache is not updated.
    * @param onSuccess The callback to be called when the routes are successfully fetched.
    * @param onFailure The callback to be called when the routes could not be fetched.
    */
-  private inner class OverpassResponseHandler(
-      val requestedBounds: Bounds,
+  private open inner class OverpassResponseHandler(
+      val requestedBounds: Bounds?,
       val onSuccess: (List<HikeRoute>) -> Unit,
       val onFailure: (Exception) -> Unit
   ) : okhttp3.Callback {
@@ -102,7 +124,9 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
       val responseBody = response.body?.charStream() ?: throw Exception("Response body is null")
       val routes = parseRoutes(responseBody)
 
-      cachedHikeRoutes[requestedBounds] = routes
+      if (requestedBounds != null) {
+        cachedHikeRoutes[requestedBounds] = routes
+      }
 
       onSuccess(routes)
     }
@@ -422,4 +446,25 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
       return LatLong(lat, lon)
     }
   }
+
+  /**
+   * The response handler for the Overpass API request.
+   *
+   * @param onHike To be called if a single route is found.
+   * @param noSingleHike To be called if no or multiple routes are found.
+   */
+  private inner class OverpassSingleRouteHandler(
+      val onHike: (HikeRoute) -> Unit,
+      val noSingleHike: (Exception) -> Unit,
+  ) :
+      OverpassResponseHandler(
+          requestedBounds = null,
+          onSuccess = { routes ->
+            when {
+              routes.isEmpty() -> noSingleHike(Exception("No route found"))
+              routes.size != 1 -> noSingleHike(Exception("Multiple routes found"))
+              else -> onHike(routes.first())
+            }
+          },
+          onFailure = { e -> noSingleHike(e) })
 }
