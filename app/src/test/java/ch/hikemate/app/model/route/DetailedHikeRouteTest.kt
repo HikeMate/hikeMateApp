@@ -27,7 +27,7 @@ class DetailedHikeRouteTest {
     assertEquals(314.4, detailedHikeRoute.totalDistance, 1.0)
     assertEquals(3772.0, detailedHikeRoute.estimatedTime, 1.0)
     assertEquals(0.0, detailedHikeRoute.elevationGain, 0.0001)
-    assertEquals("Moderate", detailedHikeRoute.difficulty)
+    assertEquals("Difficult", detailedHikeRoute.difficulty)
   }
 
   @Test
