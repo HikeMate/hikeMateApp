@@ -1,5 +1,3 @@
 package ch.hikemate.app.model.route
 
-class DetailedHikeRouteTest {
-
-}
+class DetailedHikeRouteTest {}

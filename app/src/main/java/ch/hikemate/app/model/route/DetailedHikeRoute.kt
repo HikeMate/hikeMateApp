@@ -20,11 +20,11 @@ import okhttp3.OkHttpClient
  * @param difficulty The difficulty level of the route
  */
 data class DetailedHikeRoute(
-  val hikeRoute: HikeRoute,
-  val totalDistance: Double,
-  val estimatedTime: Double,
-  val elevationGain: Double,
-  val difficulty: String
+    val hikeRoute: HikeRoute,
+    val totalDistance: Double,
+    val estimatedTime: Double,
+    val elevationGain: Double,
+    val difficulty: String
 )
 
 /**
@@ -41,11 +41,11 @@ fun createDetailedHikeRoute(hikeRoute: HikeRoute): DetailedHikeRoute {
   val difficulty = determineDifficulty(totalDistance, elevationGain)
 
   return DetailedHikeRoute(
-    hikeRoute = hikeRoute,
-    totalDistance = totalDistance,
-    estimatedTime = estimatedTime,
-    elevationGain = elevationGain,
-    difficulty = difficulty,
+      hikeRoute = hikeRoute,
+      totalDistance = totalDistance,
+      estimatedTime = estimatedTime,
+      elevationGain = elevationGain,
+      difficulty = difficulty,
   )
 }
 
@@ -57,31 +57,25 @@ fun computeTotalDistance(ways: List<LatLong>): Double {
 }
 
 /**
- * Helper function to compute the total elevation gain based on a list of waypoints.
- * Note: Assuming LatLong has an altitude parameter, or adapt this method as needed.
+ * Helper function to compute the total elevation gain based on a list of waypoints. Note: Assuming
+ * LatLong has an altitude parameter, or adapt this method as needed.
  */
 fun computeElevationGain(ways: List<LatLong>, hikeId: String): Double = runBlocking {
-
   val okHttpClient = OkHttpClient()
   val elevationService = ElevationServiceRepository(client = okHttpClient)
 
-  // Since elevationService.getElevation is asynchronous, we use a CompletableDeferred to wait for the result
+  // Since elevationService.getElevation is asynchronous, we use a CompletableDeferred to wait for
+  // the result
   val deferredResult = CompletableDeferred<List<Double>>()
 
   elevationService.getElevation(
-    coordinates = ways,
-    hikeID = hikeId,
-    onSuccess = { elevation ->
-       deferredResult.complete(elevation)
-    },
-    onFailure = {
-      deferredResult.complete(emptyList())
-    }
-  )
+      coordinates = ways,
+      hikeID = hikeId,
+      onSuccess = { elevation -> deferredResult.complete(elevation) },
+      onFailure = { deferredResult.complete(emptyList()) })
 
   val elevations = deferredResult.await()
   Log.d("Elevation", "Got the elevation from the elevation repository: ${elevations}")
-
 
   // calculate the elevation gain
   var elevationGain = 0.0
@@ -98,10 +92,11 @@ fun computeElevationGain(ways: List<LatLong>, hikeId: String): Double = runBlock
 }
 
 /**
- * Helper function to estimate the time based on distance and elevation gain.
- * The calculation is based on Naismith's rule, which assumes reasonable fitness, typical terrain and normal conditions
+ * Helper function to estimate the time based on distance and elevation gain. The calculation is
+ * based on Naismith's rule, which assumes reasonable fitness, typical terrain and normal conditions
  * - 0.012 minutes per meter of distance (12 min/km)
  * - 0.1 minutes for every meter of elevation gain (10 min/100m of elevation gain )
+ *
  * @link https://en.wikipedia.org/wiki/Naismith%27s_rule
  *
  * TODO parameters
@@ -111,14 +106,14 @@ fun estimateTime(distance: Double, elevationGain: Double): Double {
 }
 
 /**
- * Helper function to determine difficulty based on distance and elevation gain.
- * The calculation is loosely based on the  California Department of Parks & Recreation's trail difficulty rating system:
+ * Helper function to determine difficulty based on distance and elevation gain. The calculation is
+ * loosely based on the California Department of Parks & Recreation's trail difficulty rating
+ * system:
  * - Easy: Less than 3 km in length and less than 250 meters of elevation gain
  * - Moderate: 3-6 km in length or 250-500 meters of elevation gain
  * - Hard: more than 6 km in length or more than 500 meters of elevation gain
  *
  * @link https://www.parks.ca.gov/?page_id=24055
- *
  * @todo parameters
  */
 fun determineDifficulty(distance: Double, elevationGain: Double): String {

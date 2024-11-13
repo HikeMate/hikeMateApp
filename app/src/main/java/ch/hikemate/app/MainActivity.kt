@@ -3,7 +3,6 @@ package ch.hikemate.app
 import android.annotation.SuppressLint
 import android.content.pm.ActivityInfo
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,10 +17,6 @@ import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.model.authentication.FirebaseAuthRepository
 import ch.hikemate.app.model.profile.ProfileRepositoryDummy
 import ch.hikemate.app.model.profile.ProfileViewModel
-import ch.hikemate.app.model.route.DetailedHikeRoute
-import ch.hikemate.app.model.route.LatLong
-import ch.hikemate.app.model.route.computeElevationGain
-import ch.hikemate.app.model.route.createDetailedHikeRoute
 import ch.hikemate.app.ui.auth.CreateAccountScreen
 import ch.hikemate.app.ui.auth.SignInScreen
 import ch.hikemate.app.ui.auth.SignInWithEmailScreen
@@ -40,77 +35,74 @@ class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-    // setContent { HikeMateTheme { Surface(modifier = Modifier.fillMaxSize()) { HikeMateApp() } } }
-    Log.d("MainTest", "Test")
-    Log.d("MainTest", computeElevationGain(
-      listOf(
-        LatLong(46.0207, 7.7491),
-        LatLong(46.0, 7.1 )), "1").toString()
-    )
+    setContent { HikeMateTheme { Surface(modifier = Modifier.fillMaxSize()) { HikeMateApp() } } }
   }
-}
 
-/**
- * The main composable function for the HikeMate application. It sets up the navigation host and
- * defines the navigation graph.
- */
-@Composable
-fun HikeMateApp() {
-  val navController = rememberNavController()
-  val navigationActions = NavigationActions(navController)
+  /**
+   * The main composable function for the HikeMate application. It sets up the navigation host and
+   * defines the navigation graph.
+   */
+  @Composable
+  fun HikeMateApp() {
+    val navController = rememberNavController()
+    val navigationActions = NavigationActions(navController)
 
-  // TODO: Stop using ProfileRepositoryDummy and use the real repository
-  val profileViewModel = ProfileViewModel(ProfileRepositoryDummy())
-  // val profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory)
+    // TODO: Stop using ProfileRepositoryDummy and use the real repository
+    val profileViewModel = ProfileViewModel(ProfileRepositoryDummy())
+    // val profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory)
 
-  val authViewModel = AuthViewModel(FirebaseAuthRepository())
+    val authViewModel = AuthViewModel(FirebaseAuthRepository())
 
-  val isUserLoggedIn = authViewModel.isUserLoggedIn()
+    val isUserLoggedIn = authViewModel.isUserLoggedIn()
 
-  NavHost(
-      navController = navController,
-      startDestination =
-          if (isUserLoggedIn) TopLevelDestinations.MAP.route else TopLevelDestinations.AUTH.route) {
-        navigation(
-            startDestination = Screen.AUTH,
-            route = Route.AUTH,
-        ) {
-          composable(Screen.AUTH) { SignInScreen(navigationActions, authViewModel) }
-          composable(Screen.SIGN_IN_WITH_EMAIL) {
-            SignInWithEmailScreen(navigationActions, authViewModel)
+    NavHost(
+        navController = navController,
+        startDestination =
+            if (isUserLoggedIn) TopLevelDestinations.MAP.route
+            else TopLevelDestinations.AUTH.route) {
+          navigation(
+              startDestination = Screen.AUTH,
+              route = Route.AUTH,
+          ) {
+            composable(Screen.AUTH) { SignInScreen(navigationActions, authViewModel) }
+            composable(Screen.SIGN_IN_WITH_EMAIL) {
+              SignInWithEmailScreen(navigationActions, authViewModel)
+            }
+            composable(Screen.CREATE_ACCOUNT) {
+              CreateAccountScreen(navigationActions, authViewModel)
+            }
           }
-          composable(Screen.CREATE_ACCOUNT) {
-            CreateAccountScreen(navigationActions, authViewModel)
+
+          navigation(
+              startDestination = Screen.SAVED_HIKES,
+              route = Route.SAVED_HIKES,
+          ) {
+            composable(Screen.SAVED_HIKES) {
+              SavedHikesScreen(navigationActions = navigationActions)
+            }
+          }
+
+          navigation(
+              startDestination = Screen.MAP,
+              route = Route.MAP,
+          ) {
+            composable(Screen.MAP) { MapScreen(navigationActions = navigationActions) }
+          }
+          navigation(
+              startDestination = Screen.PROFILE,
+              route = Route.PROFILE,
+          ) {
+            composable(Screen.PROFILE) {
+              ProfileScreen(
+                  navigationActions = navigationActions,
+                  profileViewModel = profileViewModel,
+                  authViewModel = authViewModel)
+            }
+            composable(Screen.EDIT_PROFILE) {
+              EditProfileScreen(
+                  navigationActions = navigationActions, profileViewModel = profileViewModel)
+            }
           }
         }
-
-        navigation(
-            startDestination = Screen.SAVED_HIKES,
-            route = Route.SAVED_HIKES,
-        ) {
-          composable(Screen.SAVED_HIKES) { SavedHikesScreen(navigationActions = navigationActions) }
-        }
-
-        navigation(
-            startDestination = Screen.MAP,
-            route = Route.MAP,
-        ) {
-          composable(Screen.MAP) { MapScreen(navigationActions = navigationActions) }
-        }
-        navigation(
-            startDestination = Screen.PROFILE,
-            route = Route.PROFILE,
-        ) {
-          composable(Screen.PROFILE) {
-            ProfileScreen(
-                navigationActions = navigationActions,
-                profileViewModel = profileViewModel,
-                authViewModel = authViewModel)
-          }
-          composable(Screen.EDIT_PROFILE) {
-            EditProfileScreen(
-                navigationActions = navigationActions, profileViewModel = profileViewModel)
-          }
-        }
-      }
+  }
 }
