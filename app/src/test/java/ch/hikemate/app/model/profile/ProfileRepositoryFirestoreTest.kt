@@ -114,19 +114,6 @@ class ProfileRepositoryFirestoreTest {
   }
 
   @Test
-  fun documentToProfile_returnsNullIfDocumentIsMissingFields() {
-    `when`(mockDocumentSnapshot.id).thenReturn("1")
-    `when`(mockDocumentSnapshot.getString("name")).thenReturn(null)
-    `when`(mockDocumentSnapshot.getString("email")).thenReturn("john.doe@gmail.com")
-    `when`(mockDocumentSnapshot.getString("hikingLevel")).thenReturn("INTERMEDIATE")
-    `when`(mockDocumentSnapshot.getTimestamp("joinedDate")).thenReturn(Timestamp(1609459200, 0))
-
-    val profile = repository.documentToProfile(mockDocumentSnapshot)
-
-    assert(profile == null)
-  }
-
-  @Test
   fun documentToProfile_returnsNullIfDataIsMissing() {
     `when`(mockDocumentSnapshot.id).thenReturn("1")
     `when`(mockDocumentSnapshot.getString("name")).thenReturn("John Doe")

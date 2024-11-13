@@ -29,8 +29,6 @@ import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.navigation.SideBarNavigation
 import com.google.firebase.Timestamp
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 
 object ProfileScreen {
   const val TEST_TAG_TITLE = "profileScreenTitle"

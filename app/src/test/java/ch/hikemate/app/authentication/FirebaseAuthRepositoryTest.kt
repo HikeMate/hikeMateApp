@@ -13,7 +13,6 @@ import androidx.credentials.exceptions.NoCredentialException
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.hikemate.app.model.authentication.FirebaseAuthRepository
-import ch.hikemate.app.model.profile.ProfileRepository
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.android.gms.tasks.Task
 import com.google.firebase.FirebaseApp
@@ -33,8 +32,6 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.Mock
-import org.mockito.Mockito.mock
 
 @ExperimentalCoroutinesApi
 @RunWith(AndroidJUnit4::class)
@@ -46,8 +43,6 @@ class FirebaseAuthRepositoryTest {
   private lateinit var repository: FirebaseAuthRepository
 
   // Mock objects
-  @Mock private lateinit var profileRepository: ProfileRepository
-
   private lateinit var mockCredentialManager: CredentialManager
   private lateinit var mockFirebaseAuth: FirebaseAuth
   private lateinit var mockFirebaseUser: FirebaseUser
@@ -72,7 +67,6 @@ class FirebaseAuthRepositoryTest {
     mockCredential = mockk(relaxed = true)
     mockCredentialResponse = mockk(relaxed = true)
     mockTask = mockk(relaxed = true)
-    profileRepository = mockk(relaxed = true)
 
     mockOnSuccess = mockk(relaxed = true)
     mockOnError = mockk(relaxed = true)
@@ -108,6 +102,7 @@ class FirebaseAuthRepositoryTest {
 
     // Initialize the Firebase and the repository
     FirebaseApp.initializeApp(context)
+    repository = FirebaseAuthRepository()
   }
 
   @After
@@ -218,7 +213,6 @@ class FirebaseAuthRepositoryTest {
         verify { mockFirebaseAuth.signInWithCredential(mockAuthCredential) }
         verify { mockOnSuccess(mockFirebaseUser) }
         verify(exactly = 0) { mockOnError(any()) }
-        verify { profileRepository.createProfile(any(), any(), any()) }
       }
 
   @Test
@@ -310,5 +304,4 @@ class FirebaseAuthRepositoryTest {
         verify { mockFirebaseAuth.signOut() }
         verify { onSuccess() }
       }
-
 }

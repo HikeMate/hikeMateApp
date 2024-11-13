@@ -77,19 +77,24 @@ class AuthViewModel(
 
     repository.createAccountWithEmailAndPassword(
         onSuccess = { user: FirebaseUser? ->
-
           // This should never happen. Since the createProfile function checks whether
           // the user is null or not.
-            user!!.updateProfile(userProfileChangeRequest { displayName = name })
-                .addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
+          user!!
+              .updateProfile(userProfileChangeRequest { displayName = name })
+              .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                  _currentUser.value = user
+                  profileRepository.createProfile(
+                      user,
+                      onSuccess = {
                         _currentUser.value = user
-                        profileRepository.createProfile(user, onSuccess = { onSuccess() },
-                            onFailure = onErrorAction)
-                    } else {
-                        onErrorAction(Exception("Error updating user profile"))
-                    }
+                        onSuccess()
+                      },
+                      onFailure = onErrorAction)
+                } else {
+                  onErrorAction(Exception("Error updating user profile"))
                 }
+              }
         },
         onErrorAction = onErrorAction,
         email = email,

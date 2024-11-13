@@ -1,7 +1,6 @@
 package ch.hikemate.app.model.profile
 
 import android.util.Log
-import androidx.test.services.events.TimeStamp
 import com.google.android.gms.tasks.Task
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
@@ -182,7 +181,8 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
       val name = document.getString("name") ?: ""
       val email = document.getString("email") ?: ""
       val hikingLevelString = document.getString("hikingLevel") ?: HikingLevel.BEGINNER
-      val hikingLevel = HikingLevel.values().find { it.name == hikingLevelString } ?: HikingLevel.BEGINNER
+      val hikingLevel =
+          HikingLevel.values().find { it.name == hikingLevelString } ?: HikingLevel.BEGINNER
       val joinedDate = document.getTimestamp("joinedDate") ?: Timestamp.now()
       Profile(uid, name, email, hikingLevel, joinedDate)
     } catch (e: Exception) {

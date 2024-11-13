@@ -26,24 +26,20 @@ open class ProfileViewModel(private val repository: ProfileRepository) : ViewMod
 
   init {
     FirebaseAuth.getInstance().addAuthStateListener { auth ->
-      auth.currentUser?.uid?.let { userId ->
-        getProfileById(userId)
-      }
+      auth.currentUser?.uid?.let { userId -> getProfileById(userId) }
     }
-    repository.init {
-      FirebaseAuth.getInstance().currentUser?.uid?.let { getProfileById(it) }
-    }
+    repository.init { FirebaseAuth.getInstance().currentUser?.uid?.let { getProfileById(it) } }
   }
 
   // Factory for creating instances of ProfileViewModel
   companion object {
     val Factory: ViewModelProvider.Factory =
-      object : ViewModelProvider.Factory {
-        @Suppress("UNCHECKED_CAST")
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-          return ProfileViewModel(ProfileRepositoryFirestore(Firebase.firestore)) as T
+        object : ViewModelProvider.Factory {
+          @Suppress("UNCHECKED_CAST")
+          override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            return ProfileViewModel(ProfileRepositoryFirestore(Firebase.firestore)) as T
+          }
         }
-      }
   }
 
   /**
@@ -53,15 +49,14 @@ open class ProfileViewModel(private val repository: ProfileRepository) : ViewMod
    */
   fun getProfileById(id: String) {
     repository.getProfileById(
-      id,
-      onSuccess = { profile ->
-        profile_.value = profile
-        _isProfileReady.value = profile != null // Update readiness status
-      },
-      onFailure = {
-        _isProfileReady.value = false // Set readiness to false on failure
-      }
-    )
+        id,
+        onSuccess = { profile ->
+          profile_.value = profile
+          _isProfileReady.value = profile != null // Update readiness status
+        },
+        onFailure = {
+          _isProfileReady.value = false // Set readiness to false on failure
+        })
   }
 
   /**
@@ -71,15 +66,12 @@ open class ProfileViewModel(private val repository: ProfileRepository) : ViewMod
    */
   fun addProfile(profile: Profile) {
     repository.addProfile(
-      profile = profile,
-      onSuccess = {
-        getProfileById(profile.id)
-        _isProfileReady.value = true // Set readiness after creation
-      },
-      onFailure = {
-        _isProfileReady.value = false
-      }
-    )
+        profile = profile,
+        onSuccess = {
+          getProfileById(profile.id)
+          _isProfileReady.value = true // Set readiness after creation
+        },
+        onFailure = { _isProfileReady.value = false })
   }
 
   /**
@@ -89,15 +81,12 @@ open class ProfileViewModel(private val repository: ProfileRepository) : ViewMod
    */
   fun updateProfile(profile: Profile) {
     repository.updateProfile(
-      profile = profile,
-      onSuccess = {
-        profile_.value = profile
-        _isProfileReady.value = true // Update readiness on successful update
-      },
-      onFailure = {
-        _isProfileReady.value = false
-      }
-    )
+        profile = profile,
+        onSuccess = {
+          profile_.value = profile
+          _isProfileReady.value = true // Update readiness on successful update
+        },
+        onFailure = { _isProfileReady.value = false })
   }
 
   /**
@@ -107,18 +96,15 @@ open class ProfileViewModel(private val repository: ProfileRepository) : ViewMod
    */
   fun deleteProfileById(id: String) {
     repository.deleteProfileById(
-      id = id,
-      onSuccess = {
-        profile_.value = null
-        _isProfileReady.value = false // Reset readiness after deletion
-      },
-      onFailure = {}
-    )
+        id = id,
+        onSuccess = {
+          profile_.value = null
+          _isProfileReady.value = false // Reset readiness after deletion
+        },
+        onFailure = {})
   }
 
-  /**
-   * Reload the profile.
-   */
+  /** Reload the profile. */
   fun reloadProfile() {
     profile_.value?.let { getProfileById(it.id) }
   }
