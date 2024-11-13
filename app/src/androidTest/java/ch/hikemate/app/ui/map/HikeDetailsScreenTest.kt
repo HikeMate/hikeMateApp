@@ -5,6 +5,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.hikemate.app.model.elevation.ElevationService
 import ch.hikemate.app.model.route.Bounds
+import ch.hikemate.app.model.route.DetailedHikeRoute
 import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.HikeRoutesRepository
 import ch.hikemate.app.model.route.LatLong
@@ -49,6 +50,8 @@ class HikeDetailScreenTest {
           description =
               "A scenic trail with breathtaking views of the Matterhorn and surrounding glaciers.")
 
+  private val detailedHikeRoute = DetailedHikeRoute.create(route)
+
   @OptIn(ExperimentalCoroutinesApi::class)
   @Before
   fun setUp() {
@@ -76,7 +79,13 @@ class HikeDetailScreenTest {
 
   @Test
   fun hikeDetails_displaysHikeNameAndBookmarkIcon() {
-    composeTestRule.setContent { HikeDetails(route = route, isSaved = true, date = null) }
+    composeTestRule.setContent {
+      HikeDetails(
+          detailedRoute = detailedHikeRoute,
+          isSaved = true,
+          date = null,
+      )
+    }
 
     composeTestRule.onNodeWithTag(TEST_TAG_HIKE_NAME).assertTextEquals(route.name!!)
     composeTestRule.onNodeWithTag(TEST_TAG_BOOKMARK_ICON).assertIsDisplayed()
@@ -84,7 +93,9 @@ class HikeDetailScreenTest {
 
   @Test
   fun hikeDetails_showsElevationGraph() {
-    composeTestRule.setContent { HikeDetails(route = route, isSaved = true, date = null) }
+    composeTestRule.setContent {
+      HikeDetails(detailedRoute = detailedHikeRoute, isSaved = true, date = null)
+    }
 
     // Check if the elevation graph is displayed
     composeTestRule.onNodeWithTag(TEST_TAG_ELEVATION_GRAPH).assertIsDisplayed()
@@ -92,7 +103,9 @@ class HikeDetailScreenTest {
 
   @Test
   fun hikeDetails_displaysPlannedDateButton_whenDateNotSet() {
-    composeTestRule.setContent { HikeDetails(route = route, isSaved = true, date = null) }
+    composeTestRule.setContent {
+      HikeDetails(detailedRoute = detailedHikeRoute, isSaved = true, date = null)
+    }
 
     // Check if the "Add a date" button is displayed
     composeTestRule.onNodeWithTag(TEST_TAG_ADD_DATE_BUTTON).assertIsDisplayed()
@@ -102,7 +115,9 @@ class HikeDetailScreenTest {
   fun hikeDetails_showsPlannedDate_whenDateIsSet() {
     val plannedDate = Timestamp(1622563200, 0) // Example timestamp
 
-    composeTestRule.setContent { HikeDetails(route = route, isSaved = true, date = plannedDate) }
+    composeTestRule.setContent {
+      HikeDetails(detailedRoute = detailedHikeRoute, isSaved = true, date = plannedDate)
+    }
 
     // Check if the planned date text box is displayed
     composeTestRule.onNodeWithTag(TEST_TAG_PLANNED_DATE_TEXT_BOX).assertIsDisplayed()
@@ -110,7 +125,9 @@ class HikeDetailScreenTest {
 
   @Test
   fun hikeDetails_showsCorrectDetailsRowsWhenNotSaved() {
-    composeTestRule.setContent { HikeDetails(route = route, isSaved = false, date = null) }
+    composeTestRule.setContent {
+      HikeDetails(detailedRoute = detailedHikeRoute, isSaved = false, date = null)
+    }
 
     // Check if the detail rows are displayed correctly
     composeTestRule.onAllNodesWithTag(TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(5)
@@ -119,7 +136,9 @@ class HikeDetailScreenTest {
 
   @Test
   fun hikeDetails_showsCorrectDetailsRowsWhenSavedAndNoDateIsSet() {
-    composeTestRule.setContent { HikeDetails(route = route, isSaved = true, date = null) }
+    composeTestRule.setContent {
+      HikeDetails(detailedRoute = detailedHikeRoute, isSaved = true, date = null)
+    }
 
     // Check if the detail rows are displayed correctly
     composeTestRule.onAllNodesWithTag(TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(6)
@@ -130,7 +149,7 @@ class HikeDetailScreenTest {
   @Test
   fun hikeDetails_showsCorrectDetailsRowsWhenSavedAndDateIsSet() {
     composeTestRule.setContent {
-      HikeDetails(route = route, isSaved = true, date = Timestamp.now())
+      HikeDetails(detailedRoute = detailedHikeRoute, isSaved = true, date = Timestamp.now())
     }
 
     // Check if the detail rows are displayed correctly
@@ -156,7 +175,9 @@ class HikeDetailScreenTest {
 
   @Test
   fun hikeDetails_opensDatePicker_whenAddDateButtonClicked() {
-    composeTestRule.setContent { HikeDetails(route = route, isSaved = true, date = null) }
+    composeTestRule.setContent {
+      HikeDetails(detailedRoute = detailedHikeRoute, isSaved = true, date = null)
+    }
 
     // Check if the add date button is clickable and triggers an interaction
     composeTestRule.onNodeWithTag(TEST_TAG_ADD_DATE_BUTTON).assertHasClickAction().performClick()
