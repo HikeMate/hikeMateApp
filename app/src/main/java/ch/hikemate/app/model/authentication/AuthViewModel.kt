@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.StateFlow
 
 class AuthViewModel(
     private val repository: AuthRepository,
+    // Auth view model takes the ProfileRepository for the creation of a Profile.
     private val profileRepository: ProfileRepository
 ) : ViewModel() {
 
@@ -48,8 +49,12 @@ class AuthViewModel(
     repository.signInWithGoogle(
         onSuccess = { user: FirebaseUser? ->
           profileRepository.createProfile(
-              user, onSuccess = { _currentUser.value = user }, onFailure = {})
+              // TODO handle errors
+              user,
+              onSuccess = { _currentUser.value = user },
+              onFailure = {})
         },
+        // TODO handle errors
         onErrorAction = {},
         context = context,
         coroutineScope = coroutineScope,
@@ -78,12 +83,12 @@ class AuthViewModel(
     repository.createAccountWithEmailAndPassword(
         onSuccess = { user: FirebaseUser? ->
           // This should never happen. Since the createProfile function checks whether
-          // the user is null or not.
+          // the user is null or not. So if the user is null the callback will not be called.
           user!!
+              // Update the users display name since the user is created with the email address.
               .updateProfile(userProfileChangeRequest { displayName = name })
               .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
-                  _currentUser.value = user
                   profileRepository.createProfile(
                       user,
                       onSuccess = {
@@ -92,6 +97,7 @@ class AuthViewModel(
                       },
                       onFailure = onErrorAction)
                 } else {
+                  // TODO handle errors in a unanimous way
                   onErrorAction(Exception("Error updating user profile"))
                 }
               }

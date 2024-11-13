@@ -62,7 +62,8 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
     profileExists(
         profile.id,
         onSuccess = { exists ->
-          updateProfile(profile, onSuccess = { onSuccess(profile) }, onFailure = onFailure)
+          if (!exists)
+              updateProfile(profile, onSuccess = { onSuccess(profile) }, onFailure = onFailure)
         },
         onFailure = { onFailure(Exception("Error getting document with id ${profile.id}")) })
   }

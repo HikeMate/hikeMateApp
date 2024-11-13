@@ -8,7 +8,6 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -62,7 +61,6 @@ fun HikeMateApp() {
   val authViewModel = AuthViewModel(FirebaseAuthRepository(), profileRepository)
 
   val isUserLoggedIn = authViewModel.isUserLoggedIn()
-  val isProfileReady by profileViewModel.isProfileReady.collectAsState()
 
   val listOfHikeRoutesViewModel: ListOfHikeRoutesViewModel =
       viewModel(factory = ListOfHikeRoutesViewModel.Factory)

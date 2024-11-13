@@ -5,6 +5,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.firebase.FirebaseApp
 import com.google.firebase.Timestamp
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import junit.framework.TestCase.assertNotNull
 import org.junit.Before
@@ -39,17 +40,27 @@ class ProfileViewModelTest {
   @Before
   fun setUp() {
     context = ApplicationProvider.getApplicationContext()
-
+    FirebaseApp.initializeApp(context)
     MockitoAnnotations.openMocks(this)
-    profileViewModel = ProfileViewModel(repository)
+
+    firebaseAuth = mock(com.google.firebase.auth.FirebaseAuth::class.java)
+    firebaseUser = mock(FirebaseUser::class.java)
+
+    `when`(firebaseAuth.currentUser).thenReturn(firebaseUser)
+    `when`(firebaseUser.uid).thenReturn("1")
+
+    `when`(firebaseAuth.addAuthStateListener(any())).thenAnswer {
+      val listener = it.getArgument<FirebaseAuth.AuthStateListener>(0)
+      listener.onAuthStateChanged(firebaseAuth)
+      null
+    }
 
     `when`(repository.init(any())).thenAnswer {
-      val init = it.getArgument<() -> Unit>(0)
-      init()
+      val initAction = it.getArgument<() -> Unit>(0)
+      initAction()
     }
-    firebaseAuth = mock(com.google.firebase.auth.FirebaseAuth::class.java)
 
-    FirebaseApp.initializeApp(context)
+    profileViewModel = ProfileViewModel(repository)
   }
 
   @Test

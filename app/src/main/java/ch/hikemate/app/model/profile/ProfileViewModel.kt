@@ -20,10 +20,6 @@ open class ProfileViewModel(private val repository: ProfileRepository) : ViewMod
   private val profile_ = MutableStateFlow<Profile?>(null)
   val profile: StateFlow<Profile?> = profile_.asStateFlow()
 
-  // StateFlow to indicate if the profile is ready
-  private val _isProfileReady = MutableStateFlow(false)
-  val isProfileReady: StateFlow<Boolean> = _isProfileReady.asStateFlow()
-
   init {
     FirebaseAuth.getInstance().addAuthStateListener { auth ->
       auth.currentUser?.uid?.let { userId -> getProfileById(userId) }
@@ -49,14 +45,7 @@ open class ProfileViewModel(private val repository: ProfileRepository) : ViewMod
    */
   fun getProfileById(id: String) {
     repository.getProfileById(
-        id,
-        onSuccess = { profile ->
-          profile_.value = profile
-          _isProfileReady.value = profile != null // Update readiness status
-        },
-        onFailure = {
-          _isProfileReady.value = false // Set readiness to false on failure
-        })
+        id, onSuccess = { profile -> profile_.value = profile }, onFailure = {})
   }
 
   /**
@@ -66,12 +55,7 @@ open class ProfileViewModel(private val repository: ProfileRepository) : ViewMod
    */
   fun addProfile(profile: Profile) {
     repository.addProfile(
-        profile = profile,
-        onSuccess = {
-          getProfileById(profile.id)
-          _isProfileReady.value = true // Set readiness after creation
-        },
-        onFailure = { _isProfileReady.value = false })
+        profile = profile, onSuccess = { getProfileById(profile.id) }, onFailure = {})
   }
 
   /**
@@ -81,12 +65,7 @@ open class ProfileViewModel(private val repository: ProfileRepository) : ViewMod
    */
   fun updateProfile(profile: Profile) {
     repository.updateProfile(
-        profile = profile,
-        onSuccess = {
-          profile_.value = profile
-          _isProfileReady.value = true // Update readiness on successful update
-        },
-        onFailure = { _isProfileReady.value = false })
+        profile = profile, onSuccess = { profile_.value = profile }, onFailure = {})
   }
 
   /**
@@ -95,13 +74,7 @@ open class ProfileViewModel(private val repository: ProfileRepository) : ViewMod
    * @param id The ID of the profile to delete.
    */
   fun deleteProfileById(id: String) {
-    repository.deleteProfileById(
-        id = id,
-        onSuccess = {
-          profile_.value = null
-          _isProfileReady.value = false // Reset readiness after deletion
-        },
-        onFailure = {})
+    repository.deleteProfileById(id = id, onSuccess = { profile_.value = null }, onFailure = {})
   }
 
   /** Reload the profile. */
