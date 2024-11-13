@@ -52,7 +52,7 @@ open class ListOfHikeRoutesViewModel(
             onSuccess()
           },
           onFailure = { exception ->
-            Log.d(LOG_TAG, "[getRoutesAsync] Failed to get routes: $exception")
+            Log.e(LOG_TAG, "[getRoutesAsync] Failed to get routes", exception)
             onFailure()
           })
     }
@@ -89,7 +89,7 @@ open class ListOfHikeRoutesViewModel(
           routeId = hikeId,
           onSuccess = { route -> selectedHikeRoute_.value = route },
           onFailure = { exception ->
-            Log.d(LOG_TAG, "[selectRouteByIdAsync] Failed to get route: $exception")
+            Log.e(LOG_TAG, "[selectRouteByIdAsync] Failed to get route", exception)
           })
     }
   }
