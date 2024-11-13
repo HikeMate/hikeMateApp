@@ -1,7 +1,7 @@
 package ch.hikemate.app.model.route
 
 /** Interface for the hiking route provider repository. */
-fun interface HikeRoutesRepository {
+interface HikeRoutesRepository {
   /**
    * Returns the routes inside the given bounding box and zoom level.
    *
@@ -14,4 +14,11 @@ fun interface HikeRoutesRepository {
       onSuccess: (List<HikeRoute>) -> Unit,
       onFailure: (Exception) -> Unit
   )
+
+  /**
+   * From a route ID, retrieves the details of that hike.
+   *
+   * @param routeId The ID of the route to get more info about.
+   */
+  fun getRouteById(routeId: String, onSuccess: (HikeRoute) -> Unit, onFailure: (Exception) -> Unit)
 }
