@@ -108,17 +108,17 @@ class ListOfHikeRoutesViewModelTest {
             name = "Name of Route 1",
             description = "Description of Route 1")
 
-    `when`(hikesRepository.getRouteById(eq("Route 1"), any(), any())).thenAnswer {
+    `when`(hikesRepository.getRouteById(eq(hike.id), any(), any())).thenAnswer {
       val onSuccess = it.getArgument<(HikeRoute) -> Unit>(1)
       onSuccess(hike)
     }
 
     // When
     // Since we use UnconfinedTestDispatcher, we don't need to wait for the coroutine to finish
-    listOfHikeRoutesViewModel.selectRouteById("Route 1")
+    listOfHikeRoutesViewModel.selectRouteById(hike.id)
 
     // Then
-    verify(hikesRepository, times(1)).getRouteById(eq("Route 1"), any(), any())
+    verify(hikesRepository, times(1)).getRouteById(eq(hike.id), any(), any())
     assertEquals(hike, listOfHikeRoutesViewModel.selectedHikeRoute.value)
   }
 }
