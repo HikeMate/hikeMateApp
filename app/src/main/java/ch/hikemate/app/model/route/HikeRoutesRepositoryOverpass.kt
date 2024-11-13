@@ -89,6 +89,28 @@ class HikeRoutesRepositoryOverpass(private val client: OkHttpClient) : HikeRoute
     client.newCall(requestBuilder.build()).enqueue(OverpassSingleRouteHandler(onSuccess, onFailure))
   }
 
+  override fun getRoutesByIds(
+      routeIds: List<String>,
+      onSuccess: (List<HikeRoute>) -> Unit,
+      onFailure: (Exception) -> Unit
+  ) {
+    val overpassRequestDataBuilder = StringBuilder()
+    overpassRequestDataBuilder.append(JSON_OVERPASS_FORMAT_TAG)
+    overpassRequestDataBuilder.append("\n(\n")
+    routeIds.forEach { routeId -> overpassRequestDataBuilder.append("relation($routeId);\n") }
+    overpassRequestDataBuilder.append(");\nout geom;\n")
+
+    val overpassRequestData = overpassRequestDataBuilder.toString()
+
+    val requestBuilder = Request.Builder().url("$OVERPASS_API_URL?data=$overpassRequestData").get()
+
+    setRequestHeaders(requestBuilder)
+
+    client
+        .newCall(requestBuilder.build())
+        .enqueue(OverpassResponseHandler(null, onSuccess, onFailure))
+  }
+
   /**
    * Sets the headers for the request. Especially the user-agent.
    *

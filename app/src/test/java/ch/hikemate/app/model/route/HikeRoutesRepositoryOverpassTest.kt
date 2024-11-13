@@ -333,7 +333,7 @@ class HikeRoutesRepositoryOverpassTest {
         },
         {
             "type": "relation",
-            "id": 124582,
+            "id": 124583,
             "bounds": {
                 "minlat": 45.8689061,
                 "minlon": 6.4395807,
@@ -835,6 +835,29 @@ class HikeRoutesRepositoryOverpassTest {
               "Camino de Santiago",
               "Lausanne - Roll"))
 
+  private val doubleRoutes: List<HikeRoute> =
+      listOf(
+          HikeRoute(
+              "124582",
+              Bounds(45.8689061, 6.4395807, 46.8283926, 7.2109599),
+              listOf(
+                  LatLong(46.8240018, 6.4395807),
+                  LatLong(46.8239650, 6.4396698),
+                  LatLong(46.8235322, 6.4401168),
+                  LatLong(46.8234367, 6.4401715)),
+              "Camino de Santiago",
+              "Lausanne - Roll"),
+          HikeRoute(
+              "124583",
+              Bounds(45.8689061, 6.4395807, 46.8283926, 7.2109599),
+              listOf(
+                  LatLong(46.8240018, 6.4395807),
+                  LatLong(46.8239650, 6.4396698),
+                  LatLong(46.8235322, 6.4401168),
+                  LatLong(46.8234367, 6.4401715)),
+              "Camino de Santiago",
+              "Lausanne - Roll"))
+
   private val combinedRoutes: List<HikeRoute> =
       listOf(
           HikeRoute(
@@ -1093,7 +1116,9 @@ class HikeRoutesRepositoryOverpassTest {
     var failCalled = false
 
     hikingRouteProviderRepositoryOverpass.getRouteById(
-        "124582", { fail("onSuccess shouldn't have been called") }, { failCalled = true })
+        simpleRoutes.first().id,
+        { fail("onSuccess shouldn't have been called") },
+        { failCalled = true })
 
     assert(failCalled)
   }
@@ -1112,7 +1137,9 @@ class HikeRoutesRepositoryOverpassTest {
     var failCalled = false
 
     hikingRouteProviderRepositoryOverpass.getRouteById(
-        "124582", { fail("onSuccess shouldn't have been called") }, { failCalled = true })
+        simpleRoutes.first().id,
+        { fail("onSuccess shouldn't have been called") },
+        { failCalled = true })
 
     assert(failCalled)
   }
@@ -1131,7 +1158,9 @@ class HikeRoutesRepositoryOverpassTest {
     var failCalled = false
 
     hikingRouteProviderRepositoryOverpass.getRouteById(
-        "124582", { fail("onSuccess shouldn't have been called") }, { failCalled = true })
+        simpleRoutes.first().id,
+        { fail("onSuccess shouldn't have been called") },
+        { failCalled = true })
 
     assert(failCalled)
   }
@@ -1147,10 +1176,81 @@ class HikeRoutesRepositoryOverpassTest {
       callbackCapture.firstValue.onResponse(mockCall, simpleResponse)
     }
 
-    var successCalled = false
+    var onSuccessCalled = false
 
     hikingRouteProviderRepositoryOverpass.getRouteById(
-        "124582", { successCalled = true }, { fail("onFailure shouldn't have been called") })
+        simpleRoutes.first().id,
+        {
+          assertEquals(simpleRoutes.first(), it)
+          onSuccessCalled = true
+        },
+        { fail("onFailure shouldn't have been called") })
+
+    assert(onSuccessCalled)
+  }
+
+  @Test
+  fun getRoutesByIds_hasEmptyListOnEmptyResponse() {
+    val mockCall = mock(Call::class.java)
+    `when`(mockClient.newCall(any())).thenReturn(mockCall)
+
+    val callbackCapture = argumentCaptor<okhttp3.Callback>()
+
+    `when`(mockCall.enqueue(callbackCapture.capture())).then {
+      callbackCapture.firstValue.onResponse(mockCall, emptyResponse)
+    }
+
+    var onSuccessCalled = false
+
+    hikingRouteProviderRepositoryOverpass.getRoutesByIds(
+        listOf(simpleRoutes.first().id),
+        {
+          assertEquals(emptyList<HikeRoute>(), it)
+          onSuccessCalled = true
+        },
+        { fail("onFailure shouldn't have been called") })
+
+    assert(onSuccessCalled)
+  }
+
+  @Test
+  fun getRoutesByIds_failsOnFailedResponse() {
+    val mockCall = mock(Call::class.java)
+    `when`(mockClient.newCall(any())).thenReturn(mockCall)
+
+    val callbackCapture = argumentCaptor<okhttp3.Callback>()
+
+    `when`(mockCall.enqueue(callbackCapture.capture())).then {
+      callbackCapture.firstValue.onResponse(mockCall, failedResponse)
+    }
+
+    var failCalled = false
+
+    hikingRouteProviderRepositoryOverpass.getRoutesByIds(
+        listOf(simpleRoutes.first().id),
+        { fail("onSuccess shouldn't have been called") },
+        { failCalled = true })
+
+    assert(failCalled)
+  }
+
+  @Test
+  fun getRoutesByIds_succeedsOnSingleRoute() {
+    val mockCall = mock(Call::class.java)
+    `when`(mockClient.newCall(any())).thenReturn(mockCall)
+
+    val callbackCapture = argumentCaptor<okhttp3.Callback>()
+
+    `when`(mockCall.enqueue(callbackCapture.capture())).then {
+      callbackCapture.firstValue.onResponse(mockCall, simpleResponse)
+    }
+
+    var successCalled = false
+
+    hikingRouteProviderRepositoryOverpass.getRoutesByIds(
+        listOf(simpleRoutes.first().id),
+        { successCalled = true },
+        { fail("onFailure shouldn't have been called") })
 
     assert(successCalled)
   }
@@ -1175,6 +1275,30 @@ class HikeRoutesRepositoryOverpassTest {
         }) {
           fail("Failed to fetch routes from Overpass API")
         }
+
+    assert(onSuccessCalled)
+  }
+
+  @Test
+  fun getRoutesByIds_succeedsOnMultipleRoutes() {
+    val mockCall = mock(Call::class.java)
+    `when`(mockClient.newCall(any())).thenReturn(mockCall)
+
+    val callbackCapture = argumentCaptor<okhttp3.Callback>()
+
+    `when`(mockCall.enqueue(callbackCapture.capture())).then {
+      callbackCapture.firstValue.onResponse(mockCall, doubleResponse)
+    }
+
+    var onSuccessCalled = false
+
+    hikingRouteProviderRepositoryOverpass.getRoutesByIds(
+        listOf(doubleRoutes[0].id, doubleRoutes[1].id),
+        {
+          assertEquals(doubleRoutes, it)
+          onSuccessCalled = true
+        },
+        { fail("onFailure shouldn't have been called") })
 
     assert(onSuccessCalled)
   }
