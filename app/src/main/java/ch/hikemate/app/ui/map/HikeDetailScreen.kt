@@ -207,7 +207,7 @@ fun HikeDetails(route: HikeRoute, isSaved: Boolean, date: Timestamp?) {
           }
 
           ElevationGraph(
-              elevationData = listOf(150.0, 175.5, 200.3, 225.8, 210.0),
+              elevations = listOf(150.0, 175.5, 200.3, 225.8, 210.0),
               modifier =
                   Modifier.fillMaxWidth()
                       .height(30.dp)
