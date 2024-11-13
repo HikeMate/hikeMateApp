@@ -3,6 +3,7 @@ package ch.hikemate.app
 import android.annotation.SuppressLint
 import android.content.pm.ActivityInfo
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,6 +18,10 @@ import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.model.authentication.FirebaseAuthRepository
 import ch.hikemate.app.model.profile.ProfileRepositoryDummy
 import ch.hikemate.app.model.profile.ProfileViewModel
+import ch.hikemate.app.model.route.DetailedHikeRoute
+import ch.hikemate.app.model.route.LatLong
+import ch.hikemate.app.model.route.computeElevationGain
+import ch.hikemate.app.model.route.createDetailedHikeRoute
 import ch.hikemate.app.ui.auth.CreateAccountScreen
 import ch.hikemate.app.ui.auth.SignInScreen
 import ch.hikemate.app.ui.auth.SignInWithEmailScreen
@@ -35,7 +40,13 @@ class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-    setContent { HikeMateTheme { Surface(modifier = Modifier.fillMaxSize()) { HikeMateApp() } } }
+    // setContent { HikeMateTheme { Surface(modifier = Modifier.fillMaxSize()) { HikeMateApp() } } }
+    Log.d("MainTest", "Test")
+    Log.d("MainTest", computeElevationGain(
+      listOf(
+        LatLong(46.0207, 7.7491),
+        LatLong(46.0, 7.1 )), "1").toString()
+    )
   }
 }
 
