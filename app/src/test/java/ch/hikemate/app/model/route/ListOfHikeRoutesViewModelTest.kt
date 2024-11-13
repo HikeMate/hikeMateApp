@@ -96,4 +96,29 @@ class ListOfHikeRoutesViewModelTest {
 
     verify(hikesRepository, times(1)).getRoutes(eq(Bounds(0.0, 0.0, 0.0, 0.0)), any(), any())
   }
+
+  @Test
+  fun selectRouteByIdCallsRepoAndSelectsHike() {
+    // Given
+    val hike =
+        HikeRoute(
+            id = "Route 1",
+            bounds = Bounds(0.0, 0.0, 0.0, 0.0),
+            ways = emptyList(),
+            name = "Name of Route 1",
+            description = "Description of Route 1")
+
+    `when`(hikesRepository.getRouteById(eq("Route 1"), any(), any())).thenAnswer {
+      val onSuccess = it.getArgument<(HikeRoute) -> Unit>(1)
+      onSuccess(hike)
+    }
+
+    // When
+    // Since we use UnconfinedTestDispatcher, we don't need to wait for the coroutine to finish
+    listOfHikeRoutesViewModel.selectRouteById("Route 1")
+
+    // Then
+    verify(hikesRepository, times(1)).getRouteById(eq("Route 1"), any(), any())
+    assertEquals(hike, listOfHikeRoutesViewModel.selectedHikeRoute.value)
+  }
 }
