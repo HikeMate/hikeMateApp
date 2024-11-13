@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import ch.hikemate.app.R
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,7 +25,10 @@ class SavedHikesViewModel(
         object : ViewModelProvider.Factory {
           @Suppress("UNCHECKED_CAST")
           override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return SavedHikesViewModel(SavedHikesRepositoryDummy()) as T
+            return SavedHikesViewModel(
+                SavedHikesRepositoryFirestore(
+                    FirebaseFirestore.getInstance(), FirebaseAuth.getInstance()))
+                as T
           }
         }
 

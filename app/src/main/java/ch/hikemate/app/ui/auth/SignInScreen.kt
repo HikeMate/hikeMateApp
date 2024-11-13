@@ -25,6 +25,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -83,7 +84,7 @@ fun SignInScreen(
           }
 
   // If the user is already signed in, navigate to the map screen
-  LaunchedEffect(authViewModel.isUserLoggedIn()) {
+  LaunchedEffect(authViewModel.currentUser.collectAsState().value) {
     if (authViewModel.isUserLoggedIn()) {
       navigationActions.navigateTo(TopLevelDestinations.MAP)
     }

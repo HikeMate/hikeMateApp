@@ -42,6 +42,11 @@ data class ElevationGraphStyleProperties(
  * number of points is not too high, and thus that performance is not too impacted. The graph is
  * drawn using a Canvas, which implies that it is not interactive.
  *
+ * The graph uses a convention for the elevation data:
+ * - If the data is null, a loading message is displayed (not loaded yet)
+ * - If the data is empty, a message is displayed (no data)
+ * - If the data is not empty, the graph is displayed
+ *
  * @param elevations The list of elevation data
  * @param maxNumberOfPoints The maximum number of points to display (default to 40)
  * @param modifier The modifier for the graph (default to fillMaxSize)
