@@ -1166,9 +1166,16 @@ class HikeRoutesRepositoryOverpassTest {
       callbackCapture.firstValue.onResponse(mockCall, responseWithIncorrectNames)
     }
 
+    var onSuccessCalled = false
     hikingRouteProviderRepositoryOverpass.getRoutes(
-        bounds, { routes -> assertEquals(sanitizedNameSet, routes.map { it.name }.toSet()) }) {
+        bounds,
+        { routes ->
+          assertEquals(sanitizedNameSet, routes.map { it.name }.toSet())
+          onSuccessCalled = true
+        }) {
           fail("Failed to fetch routes from Overpass API")
         }
+
+    assert(onSuccessCalled)
   }
 }
