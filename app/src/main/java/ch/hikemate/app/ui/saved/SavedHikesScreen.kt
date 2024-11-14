@@ -7,7 +7,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -25,6 +29,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.hikemate.app.R
@@ -59,20 +64,49 @@ fun SavedHikesScreen(
       selectedItem = Route.SAVED_HIKES,
   ) { paddingValues ->
     var currentSection by remember { mutableStateOf(SavedHikesScreen.Planned) }
+    val loading by savedHikesViewModel.loadingSavedHikes.collectAsState()
+    val errorMessageId by savedHikesViewModel.errorMessage.collectAsState()
     val savedHikes by savedHikesViewModel.savedHike.collectAsState()
 
     LaunchedEffect(Unit) { savedHikesViewModel.loadSavedHikes() }
 
     Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
       Column(modifier = Modifier.weight(1f).testTag(TEST_TAG_SAVED_HIKES_SECTION_CONTAINER)) {
-        when (currentSection) {
-          SavedHikesScreen.Planned -> PlannedHikes(savedHikes)
-          SavedHikesScreen.Saved -> SavedHikes(savedHikes)
+        when {
+          loading -> LoadingSavedHikes()
+          errorMessageId != null ->
+              ErrorDisplay(errorMessageId!!) { savedHikesViewModel.loadSavedHikes() }
+          currentSection == SavedHikesScreen.Planned -> PlannedHikes(savedHikes)
+          currentSection == SavedHikesScreen.Saved -> SavedHikes(savedHikes)
         }
       }
 
       // Navigation items between nearby hikes, planned hikes, and saved hikes
       SavedHikesBottomMenu(currentSection) { currentSection = it }
+    }
+  }
+}
+
+@Composable
+private fun LoadingSavedHikes() {
+  Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    CircularProgressIndicator()
+  }
+}
+
+@Composable
+private fun ErrorDisplay(errorMessage: Int, onRefresh: () -> Unit) {
+  Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+      Text(
+          text = stringResource(errorMessage),
+          style = MaterialTheme.typography.bodyLarge,
+          modifier = Modifier.padding(16.dp))
+      IconButton(onClick = onRefresh) {
+        Icon(
+            imageVector = Icons.Default.Refresh,
+            contentDescription = stringResource(R.string.saved_hikes_screen_refresh_button_action))
+      }
     }
   }
 }
