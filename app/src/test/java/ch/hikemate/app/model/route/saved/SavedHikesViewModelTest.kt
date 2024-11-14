@@ -12,6 +12,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito.mock
@@ -209,6 +210,7 @@ class SavedHikesViewModelTest {
     verify(savedHikesRepository).removeSavedHike(SavedHike("1", "Test Hike", null))
 
     // Then: check that plannedDate is updated in the state
+    assertNotNull(savedHikesViewModel.hikeDetailState.first())
     assertEquals(newPlannedDate, savedHikesViewModel.hikeDetailState.first()?.plannedDate)
 
     // Verifying addition of the new hike entry with the updated planned date
