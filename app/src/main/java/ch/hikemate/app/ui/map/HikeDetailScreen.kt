@@ -153,7 +153,9 @@ fun HikeDetailScreen(
                 .padding(bottom = 300.dp) // Reserve space for the scaffold at the bottom
                 .testTag(TEST_TAG_MAP))
     // Back Button at the top of the screen
-    BackButton(navigationActions = navigationActions)
+    BackButton(
+        navigationActions = navigationActions,
+        modifier = Modifier.padding(top = 40.dp, start = 16.dp, end = 16.dp))
     // Zoom buttons at the bottom right of the screen
     ZoomMapButton(
         onZoomIn = { mapView.controller.zoomIn() },

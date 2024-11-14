@@ -11,7 +11,7 @@ import ch.hikemate.app.model.route.saved.SavedHike
 import ch.hikemate.app.model.route.saved.SavedHikesRepository
 import ch.hikemate.app.model.route.saved.SavedHikesViewModel
 import ch.hikemate.app.ui.navigation.NavigationActions
-import ch.hikemate.app.ui.navigation.TEST_TAG_SIDEBAR_BUTTON
+import ch.hikemate.app.ui.navigation.TEST_TAG_BOTTOM_BAR
 import com.google.firebase.Timestamp
 import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
 import kotlin.time.Duration.Companion.seconds
@@ -37,10 +37,10 @@ class SavedHikesScreenTest : TestCase() {
   }
 
   @Test
-  fun sidebarNavigationMenuButtonIsDisplayed() {
+  fun bottomBarMenuIsDisplayed() {
     composeTestRule.setContent { SavedHikesScreen(savedHikesViewModel, navigationActions) }
 
-    composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(TEST_TAG_BOTTOM_BAR).assertIsDisplayed()
   }
 
   @Test

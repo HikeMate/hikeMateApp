@@ -5,9 +5,6 @@
     <!--Google APi-->
     <string name="default_web_client_id">154591189513-eilbr2jtms0av2ses4tsvo62009q5t7n.apps.googleusercontent.com</string>
 
-    <!-- Sidebar -->
-    <string name="sidebar_button_content_description">Open sidebar menu</string>
-
     <!-- Hike Card -->
     <string name="hike_card_altitude_label">Altitude difference</string>
     <string name="hike_card_altitude_value_template">%sm</string>

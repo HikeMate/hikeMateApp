@@ -28,11 +28,12 @@ object BackButton {
  * @param navigationActions The navigation actions.
  */
 @Composable
-fun BackButton(navigationActions: NavigationActions) {
+fun BackButton(navigationActions: NavigationActions, modifier: Modifier = Modifier) {
   IconButton(
       onClick = { navigationActions.goBack() },
       modifier =
-          Modifier.testTag(BackButton.BACK_BUTTON_TEST_TAG)
+          modifier
+              .testTag(BackButton.BACK_BUTTON_TEST_TAG)
               .size(50.dp)
               .padding(8.dp)
               .background(color = MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(20))

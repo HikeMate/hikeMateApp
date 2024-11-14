@@ -18,7 +18,7 @@ import ch.hikemate.app.model.route.HikeRoutesRepository
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
 import ch.hikemate.app.ui.components.HikeCard
 import ch.hikemate.app.ui.navigation.NavigationActions
-import ch.hikemate.app.ui.navigation.TEST_TAG_SIDEBAR_BUTTON
+import ch.hikemate.app.ui.navigation.TEST_TAG_BOTTOM_BAR
 import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -84,9 +84,9 @@ class MapScreenTest : TestCase() {
   }
 
   @Test
-  fun menuButtonIsDisplayed() {
+  fun menuIsDisplayed() {
     setUpMap()
-    composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(TEST_TAG_BOTTOM_BAR).assertIsDisplayed()
   }
 
   @Test

@@ -32,10 +32,10 @@ import ch.hikemate.app.model.route.saved.SavedHike
 import ch.hikemate.app.model.route.saved.SavedHikesViewModel
 import ch.hikemate.app.ui.components.HikeCard
 import ch.hikemate.app.ui.components.HikeCardStyleProperties
+import ch.hikemate.app.ui.navigation.BottomBarNavigation
 import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
-import ch.hikemate.app.ui.navigation.SideBarNavigation
 import ch.hikemate.app.utils.humanReadablePlannedLabel
 
 const val TEST_TAG_SAVED_HIKES_BOTTOM_MENU = "SavedHikesBottomMenu"
@@ -52,8 +52,7 @@ fun SavedHikesScreen(
     savedHikesViewModel: SavedHikesViewModel = viewModel(factory = SavedHikesViewModel.Factory),
     navigationActions: NavigationActions
 ) {
-  // The Screen will need to be incorporated into the SideBarNavigation composable
-  SideBarNavigation(
+  BottomBarNavigation(
       onTabSelect = { route -> navigationActions.navigateTo(route) },
       tabList = LIST_TOP_LEVEL_DESTINATIONS,
       selectedItem = Route.SAVED_HIKES,
