@@ -59,8 +59,7 @@ class SavedHikesScreenTest : TestCase() {
         .assertIsDisplayed()
     for (element in SavedHikesSection.values()) {
       composeTestRule
-          .onNodeWithTag(
-              SavedHikesScreen.TEST_TAG_SAVED_HIKES_TABS_MENU_ITEM_PREFIX + element.name)
+          .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_TABS_MENU_ITEM_PREFIX + element.name)
           .assertIsDisplayed()
     }
   }
@@ -80,8 +79,10 @@ class SavedHikesScreenTest : TestCase() {
 
     // Select the planned hikes tab
     composeTestRule
-      .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_TABS_MENU_ITEM_PREFIX +  SavedHikesSection.Planned.name)
-      .performClick()
+        .onNodeWithTag(
+            SavedHikesScreen.TEST_TAG_SAVED_HIKES_TABS_MENU_ITEM_PREFIX +
+                SavedHikesSection.Planned.name)
+        .performClick()
 
     composeTestRule
         .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_SAVED_TITLE)
@@ -112,7 +113,8 @@ class SavedHikesScreenTest : TestCase() {
         // Select the planned hikes tab
         composeTestRule
             .onNodeWithTag(
-                SavedHikesScreen.TEST_TAG_SAVED_HIKES_TABS_MENU_ITEM_PREFIX + SavedHikesSection.Planned.name)
+                SavedHikesScreen.TEST_TAG_SAVED_HIKES_TABS_MENU_ITEM_PREFIX +
+                    SavedHikesSection.Planned.name)
             .performClick()
 
         composeTestRule
@@ -138,7 +140,7 @@ class SavedHikesScreenTest : TestCase() {
 
     composeTestRule
         .onNodeWithTag(
-            SavedHikesScreen.TEST_TAG_SAVED_HIKES_TABS_MENU +
+            SavedHikesScreen.TEST_TAG_SAVED_HIKES_TABS_MENU_ITEM_PREFIX +
                 SavedHikesSection.Saved.name)
         .performClick()
 

@@ -71,7 +71,7 @@ fun SavedHikesScreen(
       tabList = LIST_TOP_LEVEL_DESTINATIONS,
       selectedItem = Route.SAVED_HIKES,
   ) { paddingValues ->
-    var currentSection by remember { mutableStateOf(SavedHikesSection.Planned) }
+    var currentSection by remember { mutableStateOf(SavedHikesSection.Saved) }
     val loading by savedHikesViewModel.loadingSavedHikes.collectAsState()
     val errorMessageId by savedHikesViewModel.errorMessage.collectAsState()
     val savedHikes by savedHikesViewModel.savedHike.collectAsState()
@@ -87,34 +87,39 @@ fun SavedHikesScreen(
           currentSection = SavedHikesSection.values()[pagerState.currentPage]
     }
 
-    Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-      // Navigation items between nearby hikes, planned hikes, and saved hikes
-      SavedHikesTabsMenu(
-          selectedIndex = currentSection.ordinal, onSelectedChange = { currentSection = it })
+    Column(
+        modifier =
+            Modifier.fillMaxSize()
+                .padding(paddingValues)
+                .testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_SECTION_CONTAINER)) {
+          // Navigation items between nearby hikes, planned hikes, and saved hikes
+          SavedHikesTabsMenu(
+              selectedIndex = currentSection.ordinal, onSelectedChange = { currentSection = it })
 
-      when {
-        loading -> CenteredLoadingAnimation()
-        errorMessageId != null ->
-            CenteredErrorAction(
-                errorMessage = errorMessageId!!,
-                actionIcon = Icons.Default.Refresh,
-                actionContentDescription = R.string.saved_hikes_screen_refresh_button_action,
-                onAction = { savedHikesViewModel.loadSavedHikes() })
-        else ->HorizontalPager(
-          state = pagerState,
-          modifier = Modifier.fillMaxWidth().weight(1f),
-        ) { pageIndex ->
-          Column(modifier = Modifier.testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_SECTION_CONTAINER)) {
-            SavedHikesSection.values()[pageIndex].let {
-              when (it) {
-                SavedHikesSection.Planned -> PlannedHikes(savedHikes)
-                SavedHikesSection.Saved -> SavedHikes(savedHikes)
-              }
-            }
+          when {
+            loading -> CenteredLoadingAnimation()
+            errorMessageId != null ->
+                CenteredErrorAction(
+                    errorMessage = errorMessageId!!,
+                    actionIcon = Icons.Default.Refresh,
+                    actionContentDescription = R.string.saved_hikes_screen_refresh_button_action,
+                    onAction = { savedHikesViewModel.loadSavedHikes() })
+            else ->
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxWidth().weight(1f),
+                ) { pageIndex ->
+                  Column {
+                    SavedHikesSection.values()[pageIndex].let {
+                      when (it) {
+                        SavedHikesSection.Planned -> PlannedHikes(savedHikes)
+                        SavedHikesSection.Saved -> SavedHikes(savedHikes)
+                      }
+                    }
+                  }
+                }
           }
         }
-      }
-    }
   }
 }
 
@@ -200,7 +205,7 @@ private fun SavedHikes(hikes: List<SavedHike>?) {
             // This generates a random list of elevation data for the hike
             // with a random number of points and altitude between 0 and 1000
             elevationData = (0..(0..1000).random()).map { it.toDouble() }.shuffled(),
-          modifier = Modifier.testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_HIKE_CARD))
+            modifier = Modifier.testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_HIKE_CARD))
       }
     }
   }
@@ -217,7 +222,9 @@ private fun SavedHikesTabsMenu(selectedIndex: Int, onSelectedChange: (SavedHikes
               icon = { Icon(painter = painterResource(screen.icon), contentDescription = null) },
               selected = selectedIndex == index,
               onClick = { onSelectedChange(screen) },
-              modifier = Modifier.testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_TABS_MENU_ITEM_PREFIX + screen.name))
+              modifier =
+                  Modifier.testTag(
+                      SavedHikesScreen.TEST_TAG_SAVED_HIKES_TABS_MENU_ITEM_PREFIX + screen.name))
         }
       }
 }
