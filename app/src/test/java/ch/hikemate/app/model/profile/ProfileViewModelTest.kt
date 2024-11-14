@@ -5,11 +5,14 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.firebase.FirebaseApp
 import com.google.firebase.Timestamp
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import junit.framework.TestCase.assertNotNull
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mock
+import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.mockito.MockitoAnnotations
 import org.mockito.kotlin.any
@@ -30,21 +33,34 @@ class ProfileViewModelTest {
           joinedDate = Timestamp(1609459200, 0))
 
   @Mock private lateinit var repository: ProfileRepository
+  @Mock private lateinit var firebaseAuth: com.google.firebase.auth.FirebaseAuth
+  @Mock private lateinit var firebaseUser: FirebaseUser
   private lateinit var profileViewModel: ProfileViewModel
 
   @Before
   fun setUp() {
     context = ApplicationProvider.getApplicationContext()
-
+    FirebaseApp.initializeApp(context)
     MockitoAnnotations.openMocks(this)
-    profileViewModel = ProfileViewModel(repository)
 
-    `when`(repository.init(any())).thenAnswer {
-      val init = it.getArgument<() -> Unit>(0)
-      init()
+    firebaseAuth = mock(com.google.firebase.auth.FirebaseAuth::class.java)
+    firebaseUser = mock(FirebaseUser::class.java)
+
+    `when`(firebaseAuth.currentUser).thenReturn(firebaseUser)
+    `when`(firebaseUser.uid).thenReturn("1")
+
+    `when`(firebaseAuth.addAuthStateListener(any())).thenAnswer {
+      val listener = it.getArgument<FirebaseAuth.AuthStateListener>(0)
+      listener.onAuthStateChanged(firebaseAuth)
+      null
     }
 
-    FirebaseApp.initializeApp(context)
+    `when`(repository.init(any())).thenAnswer {
+      val initAction = it.getArgument<() -> Unit>(0)
+      initAction()
+    }
+
+    profileViewModel = ProfileViewModel(repository)
   }
 
   @Test

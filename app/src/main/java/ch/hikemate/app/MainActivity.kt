@@ -16,7 +16,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navigation
 import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.model.authentication.FirebaseAuthRepository
-import ch.hikemate.app.model.profile.ProfileRepositoryDummy
+import ch.hikemate.app.model.profile.ProfileRepositoryFirestore
 import ch.hikemate.app.model.profile.ProfileViewModel
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
 import ch.hikemate.app.model.route.saved.SavedHikesViewModel
@@ -33,11 +33,14 @@ import ch.hikemate.app.ui.profile.EditProfileScreen
 import ch.hikemate.app.ui.profile.ProfileScreen
 import ch.hikemate.app.ui.saved.SavedHikesScreen
 import ch.hikemate.app.ui.theme.HikeMateTheme
+import com.google.firebase.FirebaseApp
+import com.google.firebase.firestore.FirebaseFirestore
 
 class MainActivity : ComponentActivity() {
   @SuppressLint("SourceLockedOrientationActivity")
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
+    FirebaseApp.initializeApp(this) // Initialize Firebase
     requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
     setContent { HikeMateTheme { Surface(modifier = Modifier.fillMaxSize()) { HikeMateApp() } } }
   }
@@ -51,12 +54,10 @@ class MainActivity : ComponentActivity() {
 fun HikeMateApp() {
   val navController = rememberNavController()
   val navigationActions = NavigationActions(navController)
-
-  // TODO: Stop using ProfileRepositoryDummy and use the real repository
-  val profileViewModel = ProfileViewModel(ProfileRepositoryDummy())
-  // val profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory)
-
-  val authViewModel = AuthViewModel(FirebaseAuthRepository())
+  val firestore = FirebaseFirestore.getInstance()
+  val profileRepository = ProfileRepositoryFirestore(firestore)
+  val profileViewModel = ProfileViewModel(profileRepository)
+  val authViewModel = AuthViewModel(FirebaseAuthRepository(), profileRepository)
 
   val isUserLoggedIn = authViewModel.isUserLoggedIn()
 
@@ -112,6 +113,7 @@ fun HikeMateApp() {
             )
           }
         }
+
         navigation(
             startDestination = Screen.PROFILE,
             route = Route.PROFILE,

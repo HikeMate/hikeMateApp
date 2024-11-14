@@ -7,6 +7,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import ch.hikemate.app.model.authentication.AuthRepository
 import ch.hikemate.app.model.authentication.AuthViewModel
+import ch.hikemate.app.model.profile.ProfileRepository
 import ch.hikemate.app.ui.components.BackButton
 import ch.hikemate.app.ui.navigation.NavigationActions
 import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
@@ -22,6 +23,7 @@ import org.mockito.kotlin.verify
 class SignInWithEmailScreenTest : TestCase() {
   @get:Rule val composeTestRule = createComposeRule()
 
+  private lateinit var profileRepository: ProfileRepository
   private lateinit var navigationActions: NavigationActions
   private lateinit var authRepository: AuthRepository
   private lateinit var authViewModel: AuthViewModel
@@ -33,7 +35,8 @@ class SignInWithEmailScreenTest : TestCase() {
   fun setUp() {
     navigationActions = mock(NavigationActions::class.java)
     authRepository = mock(AuthRepository::class.java)
-    authViewModel = AuthViewModel(authRepository)
+    profileRepository = mock(ProfileRepository::class.java)
+    authViewModel = AuthViewModel(authRepository, profileRepository)
 
     composeTestRule.setContent {
       SignInWithEmailScreen(navigationActions = navigationActions, authViewModel = authViewModel)

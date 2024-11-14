@@ -1,17 +1,24 @@
 package ch.hikemate.app.model.profile
 
+import android.content.Context
+import androidx.test.core.app.ApplicationProvider
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
+import com.google.firebase.FirebaseApp
 import com.google.firebase.Timestamp
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.QuerySnapshot
 import junit.framework.TestCase.fail
+import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
 import org.mockito.Mock
 import org.mockito.Mockito.doAnswer
 import org.mockito.Mockito.mock
@@ -22,14 +29,17 @@ import org.mockito.kotlin.timeout
 import org.mockito.kotlin.verify
 
 @Suppress("UNCHECKED_CAST")
+@RunWith(AndroidJUnit4::class)
 class ProfileRepositoryFirestoreTest {
   @Mock private lateinit var mockFirestore: FirebaseFirestore
   @Mock private lateinit var mockDocumentReference: DocumentReference
   @Mock private lateinit var mockCollectionReference: CollectionReference
   @Mock private lateinit var mockDocumentSnapshot: DocumentSnapshot
   @Mock private lateinit var mockProfileQuery: QuerySnapshot
+  @Mock private lateinit var firebaseAuth: com.google.firebase.auth.FirebaseAuth
 
   private lateinit var repository: ProfileRepositoryFirestore
+  private lateinit var context: Context
 
   private val profile =
       Profile(
@@ -41,8 +51,11 @@ class ProfileRepositoryFirestoreTest {
 
   @Before
   fun setUp() {
+    context = ApplicationProvider.getApplicationContext()
+    FirebaseApp.initializeApp(context)
     MockitoAnnotations.openMocks(this)
     repository = ProfileRepositoryFirestore(mockFirestore)
+    firebaseAuth = mock()
 
     `when`(mockFirestore.collection(any())).thenReturn(mockCollectionReference)
     `when`(mockCollectionReference.document(any())).thenReturn(mockDocumentReference)
@@ -54,6 +67,40 @@ class ProfileRepositoryFirestoreTest {
     `when`(mockDocumentReference.id).thenReturn("1")
     val uid = repository.getNewUid()
     assert(uid == "1")
+  }
+
+  @Test
+  fun createProfileWorks() {
+    val profileMock = mock(FirebaseUser::class.java)
+    `when`(firebaseAuth.currentUser).thenReturn(profileMock)
+    `when`(firebaseAuth.currentUser!!.uid).thenReturn("1")
+    `when`(firebaseAuth.currentUser!!.displayName).thenReturn("John Doe")
+    `when`(firebaseAuth.currentUser!!.email).thenReturn("john.doe@gmail.com")
+
+    `when`(mockDocumentReference.set(any())).thenReturn(Tasks.forResult(null)) // Simulate success
+    val task = mock(Task::class.java) as Task<DocumentSnapshot>
+    `when`(task.isSuccessful).thenReturn(true)
+    `when`(task.result).thenReturn(mockDocumentSnapshot)
+    `when`(mockDocumentReference.get()).thenReturn(task)
+
+    doAnswer { invocation ->
+          val listener = invocation.arguments[0] as OnCompleteListener<DocumentSnapshot>
+          listener.onComplete(task)
+          null
+        }
+        .`when`(task)
+        .addOnCompleteListener(any())
+    repository.createProfile(
+        firebaseAuth.currentUser,
+        onSuccess = { profile_ ->
+          assert(profile_.id == "1")
+          assert(profile_.name == "John Doe")
+          assert(profile_.email == "john.doe@gmail.com")
+          assert(profile_.hikingLevel == HikingLevel.BEGINNER)
+        },
+        onFailure = { fail("Failure callback should not be called") })
+
+    verify(mockDocumentReference).set(any())
   }
 
   @Test
@@ -75,20 +122,7 @@ class ProfileRepositoryFirestoreTest {
   }
 
   @Test
-  fun documentToProfile_returnsNullIfDocumentIsMissingFields() {
-    `when`(mockDocumentSnapshot.id).thenReturn("1")
-    `when`(mockDocumentSnapshot.getString("name")).thenReturn(null)
-    `when`(mockDocumentSnapshot.getString("email")).thenReturn("john.doe@gmail.com")
-    `when`(mockDocumentSnapshot.getString("hikingLevel")).thenReturn("INTERMEDIATE")
-    `when`(mockDocumentSnapshot.getTimestamp("joinedDate")).thenReturn(Timestamp(1609459200, 0))
-
-    val profile = repository.documentToProfile(mockDocumentSnapshot)
-
-    assert(profile == null)
-  }
-
-  @Test
-  fun documentToProfile_returnsNullIfDataIsMissing() {
+  fun documentToProfile_returnsEmptyIfDataIsMissing() {
     `when`(mockDocumentSnapshot.id).thenReturn("1")
     `when`(mockDocumentSnapshot.getString("name")).thenReturn("John Doe")
     `when`(mockDocumentSnapshot.getString("email")).thenThrow(RuntimeException("No email field"))
@@ -414,5 +448,30 @@ class ProfileRepositoryFirestoreTest {
         })
 
     verify(timeout(100)) { mockDocumentReference.delete() }
+  }
+
+  @Test
+  fun addProfile_onProfileExistsCheckFailure() {
+    // Arrange
+    val task = mock(Task::class.java) as Task<DocumentSnapshot>
+    val exception = Exception("")
+    `when`(task.isSuccessful).thenReturn(false)
+    `when`(task.exception).thenReturn(exception)
+    `when`(mockDocumentReference.get()).thenReturn(task)
+
+    // Simulate the task being completed
+    doAnswer { invocation ->
+          val listener = invocation.arguments[0] as OnCompleteListener<DocumentSnapshot>
+          listener.onComplete(task)
+          null
+        }
+        .`when`(task)
+        .addOnCompleteListener(any())
+
+    assertThrows(Exception::class.java) {
+      repository.addProfile(profile, onSuccess = {}, onFailure = { throw it })
+    }
+
+    verify(mockDocumentReference).get()
   }
 }

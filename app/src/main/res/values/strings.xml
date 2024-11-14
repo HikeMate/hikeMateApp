@@ -131,6 +131,10 @@
     <string name="create_account_email_format_error">Invalid email format</string>
     <string name="create_account_fields_must_be_filled_error">All fields must be filled</string>
 
+    <!-- Default profile -->
+    <string name="default_display_name">Unnamed hiker</string>
+    <string name="default_email">unnamedhiker@example.com</string>
+
     <!-- Elevation graph -->
     <string name="elevation_graph_loading_label">Loading graph…</string>
 </resources>
