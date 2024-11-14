@@ -23,7 +23,7 @@ private const val MAX_DISTANCE_BETWEEN_OPENED_PATH = 10 // meters
  *
  * @see <a href="https://dev.overpass-api.de/overpass-doc/">Overpass API documentation</a>
  */
-class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesRepository {
+class HikeRoutesRepositoryOverpass(private val client: OkHttpClient) : HikeRoutesRepository {
   private val cachedHikeRoutes = mutableMapOf<Bounds, List<HikeRoute>>()
 
   /** @return The size of the cache. */
@@ -87,6 +87,28 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
     setRequestHeaders(requestBuilder)
 
     client.newCall(requestBuilder.build()).enqueue(OverpassSingleRouteHandler(onSuccess, onFailure))
+  }
+
+  override fun getRoutesByIds(
+      routeIds: List<String>,
+      onSuccess: (List<HikeRoute>) -> Unit,
+      onFailure: (Exception) -> Unit
+  ) {
+    val overpassRequestDataBuilder = StringBuilder()
+    overpassRequestDataBuilder.append(JSON_OVERPASS_FORMAT_TAG)
+    overpassRequestDataBuilder.append("\n(\n")
+    routeIds.forEach { routeId -> overpassRequestDataBuilder.append("relation($routeId);\n") }
+    overpassRequestDataBuilder.append(");\nout geom;\n")
+
+    val overpassRequestData = overpassRequestDataBuilder.toString()
+
+    val requestBuilder = Request.Builder().url("$OVERPASS_API_URL?data=$overpassRequestData").get()
+
+    setRequestHeaders(requestBuilder)
+
+    client
+        .newCall(requestBuilder.build())
+        .enqueue(OverpassResponseHandler(null, onSuccess, onFailure))
   }
 
   /**
