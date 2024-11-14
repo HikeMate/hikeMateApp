@@ -66,6 +66,11 @@ class SavedHikesScreenTest : TestCase() {
   fun plannedScreenWithNoHikesDisplaysCorrectly() {
     composeTestRule.setContent { SavedHikesScreen(savedHikesViewModel, navigationActions) }
 
+    // Select the planned hikes tab
+    composeTestRule
+        .onNodeWithTag(TEST_TAG_SAVED_HIKES_TABS_MENU_ITEM_PREFIX + SavedHikesScreen.Planned.name)
+        .performClick()
+
     composeTestRule.onNodeWithTag(TEST_TAG_SAVED_HIKES_SAVED_TITLE).assertIsNotDisplayed()
     composeTestRule.onNodeWithTag(TEST_TAG_SAVED_HIKES_SAVED_EMPTY_MESSAGE).assertIsNotDisplayed()
     composeTestRule.onNodeWithTag(TEST_TAG_SAVED_HIKES_PLANNED_TITLE).assertIsDisplayed()
@@ -83,6 +88,12 @@ class SavedHikesScreenTest : TestCase() {
         `when`(savedHikesRepository.loadSavedHikes()).thenReturn(savedHikes)
 
         composeTestRule.setContent { SavedHikesScreen(savedHikesViewModel, navigationActions) }
+
+        // Select the planned hikes tab
+        composeTestRule
+            .onNodeWithTag(
+                TEST_TAG_SAVED_HIKES_TABS_MENU_ITEM_PREFIX + SavedHikesScreen.Planned.name)
+            .performClick()
 
         composeTestRule.onNodeWithTag(TEST_TAG_SAVED_HIKES_SAVED_TITLE).assertIsNotDisplayed()
         composeTestRule
