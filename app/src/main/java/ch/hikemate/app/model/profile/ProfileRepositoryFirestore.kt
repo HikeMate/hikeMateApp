@@ -1,6 +1,7 @@
 package ch.hikemate.app.model.profile
 
 import android.util.Log
+import ch.hikemate.app.R
 import com.google.android.gms.tasks.Task
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
@@ -46,9 +47,9 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
         Profile(
             fireUser.uid,
             // This shouldn't null.
-            fireUser.displayName ?: "Unnamed hiker",
+            (fireUser.displayName ?: R.string.default_display_name).toString(),
             // This shouldn't null.
-            fireUser.email ?: "unnamedhiker@example.com",
+            (fireUser.email ?: R.string.default_email).toString(),
             HikingLevel.BEGINNER,
             Timestamp.now())
     addProfile(profile, onSuccess = { onSuccess(profile) }, onFailure = onFailure)
