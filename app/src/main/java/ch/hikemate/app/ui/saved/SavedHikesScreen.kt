@@ -107,7 +107,7 @@ fun SavedHikesScreen(
             else ->
                 HorizontalPager(
                     state = pagerState,
-                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    modifier = Modifier.fillMaxWidth(),
                 ) { pageIndex ->
                   Column {
                     SavedHikesSection.values()[pageIndex].let {
