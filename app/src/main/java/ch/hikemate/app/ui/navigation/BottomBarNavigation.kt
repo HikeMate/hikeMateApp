@@ -1,21 +1,17 @@
 package ch.hikemate.app.ui.navigation
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.semantics.SemanticsPropertyKey
-import androidx.compose.ui.semantics.semantics
 
 const val TEST_TAG_BOTTOM_BAR = "TEST_TAG_BOTTOM_BAR"
 const val TEST_TAG_MENU_ITEM_PREFIX = "TEST_TAG_MENU_ITEM_"
-
-val IsSelectedKey = SemanticsPropertyKey<Boolean>("IsSelected")
 
 /**
  * Composable function for the bottom bar navigation.
@@ -44,16 +40,12 @@ fun BottomBarNavigation(
                   Icon(
                       tab.icon,
                       contentDescription = tab.textId,
-                      modifier = Modifier.testTag(TEST_TAG_MENU_ITEM_PREFIX + tab.route + "Icon"),
                   )
                 },
                 label = { Text(text = tab.textId) },
                 selected = tab.route == selectedItem,
                 onClick = { onTabSelect(tab) },
-                modifier =
-                    Modifier.testTag(TEST_TAG_MENU_ITEM_PREFIX + tab.route).semantics {
-                      set(IsSelectedKey, tab.route == selectedItem)
-                    },
+                modifier = Modifier.testTag(TEST_TAG_MENU_ITEM_PREFIX + tab.route),
             )
           }
         }

@@ -78,7 +78,7 @@ fun SignInWithEmailScreen(navigationActions: NavigationActions, authViewModel: A
       modifier =
           Modifier.testTag(Screen.SIGN_IN_WITH_EMAIL)
               .padding(
-                  // Add padding to the top padding
+                  // Add for the status bar
                   start = 16.dp,
                   end = 16.dp,
                   top = 40.dp,

@@ -109,7 +109,7 @@ fun CreateAccountScreen(navigationActions: NavigationActions, authViewModel: Aut
       modifier =
           Modifier.testTag(Screen.CREATE_ACCOUNT)
               .padding(
-                  // Add padding to the top padding
+                  // Add for the status bar
                   start = 16.dp,
                   end = 16.dp,
                   top = 40.dp,

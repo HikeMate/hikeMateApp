@@ -83,7 +83,7 @@ fun SavedHikesScreen(
           state = pagerState,
           modifier = Modifier.fillMaxWidth().weight(1f),
       ) { pageIndex ->
-        Column(modifier = Modifier.weight(1f).testTag(TEST_TAG_SAVED_HIKES_SECTION_CONTAINER)) {
+        Column(modifier = Modifier.testTag(TEST_TAG_SAVED_HIKES_SECTION_CONTAINER)) {
           SavedHikesScreen.values()[pageIndex].let {
             when (it) {
               SavedHikesScreen.Planned -> PlannedHikes(savedHikes)
