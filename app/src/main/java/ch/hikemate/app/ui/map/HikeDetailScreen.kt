@@ -72,12 +72,16 @@ import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.saved.SavedHikesScreen
 import ch.hikemate.app.utils.MapUtils
 import ch.hikemate.app.utils.from
+import ch.hikemate.app.utils.humanReadableFormat
 import ch.hikemate.app.utils.humanReadablePlannedLabel
+import ch.hikemate.app.utils.toFormattedString
 import com.google.firebase.Timestamp
 import java.util.Calendar
 import org.osmdroid.config.Configuration
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 object HikeDetailScreen {
     const val MAP_MIN_ZOOM = 3.0
@@ -108,10 +112,12 @@ fun HikeDetailScreen(
     }
 
     val route = listOfHikeRoutesViewModel.selectedHikeRoute.collectAsState().value!!
-
     // Only do the configuration on the first composition, not on every recomposition
+    val hikeSaved = remember { mutableStateOf(savedHikesViewModel.isHikeSaved(route.id)) }
+
     LaunchedEffect(Unit) {
 
+        hikeSaved.value = savedHikesViewModel.isHikeSaved(route.id)
         Configuration.getInstance().apply {
             // Set user-agent to avoid rejected requests
             userAgentValue = context.packageName
@@ -159,9 +165,11 @@ fun HikeDetailScreen(
     val hikeLineColor = getRandomColor()
     MapUtils.showHikeOnMap(mapView = mapView, hike = route, color = hikeLineColor, onLineClick = {})
 
-    Box(modifier = Modifier
-        .fillMaxSize()
-        .testTag(Screen.HIKE_DETAILS)) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .testTag(Screen.HIKE_DETAILS)
+    ) {
         // Map
         AndroidView(
             factory = { mapView },
@@ -184,28 +192,39 @@ fun HikeDetailScreen(
         )
 
         // Hike Details bottom sheet
-        val hikeSaved: SavedHike? = savedHikesViewModel.isHikeSaved(route)
-        val isSaved = remember { mutableStateOf(savedHikesViewModel.isHikeSaved(route)!=null) }
-        HikeDetails(route, isSaved, hikeSaved?.date, onClose ={savedHikesViewModel.addSavedHike(it)
-            savedHikesViewModel.loadSavedHikes()
-            Log.d("Nb of saved hikes", savedHikesViewModel.savedHike.value.size.toString())
-        })
+        val isSaved = remember { mutableStateOf(savedHikesViewModel.isHikeSaved(route.id) != null) }
+        HikeDetails(
+            route, isSaved, hikeSaved.value?.date,
+            onAction = {
+                if (hikeSaved.value != null)
+                    savedHikesViewModel.removeSavedHike(hikeSaved.value!!)
+                if (isSaved.value) {
+                    hikeSaved.value = it
+                    savedHikesViewModel.addSavedHike(it)
+                    savedHikesViewModel.loadSavedHikes()
+                }
+            },
+        )
     }
 }
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HikeDetails(route: HikeRoute, isSaved: MutableState<Boolean>, date: Timestamp?, onClose: (SavedHike) -> Unit) {
-    DisposableEffect(Unit){
-        onDispose {
-            if(isSaved.value)
-                onClose(SavedHike(route.id, route.name ?: "Unnamed", date))
-        }
-    }
+fun HikeDetails(
+    route: HikeRoute,
+    isSaved: MutableState<Boolean>,
+    date: Timestamp?,
+    onAction: (SavedHike) -> Unit
+) {
 
     val scaffoldState = rememberBottomSheetScaffoldState()
-    val dateState=remember{ mutableStateOf(date)}
+    val dateState = remember { mutableStateOf(date) }
+    val readableDate = remember { mutableStateOf(dateState.value?.toFormattedString()) }
+
+    LaunchedEffect(dateState.value) {
+        readableDate.value=dateState.value?.toFormattedString()
+    }
 
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
@@ -251,6 +270,14 @@ fun HikeDetails(route: HikeRoute, isSaved: MutableState<Boolean>, date: Timestam
                                 bookmark.intValue =
                                     if (isSaved.value) R.drawable.bookmark_filled_blue else
                                         R.drawable.bookmark_no_fill
+                                readableDate.value = null
+                                onAction(
+                                    SavedHike(
+                                        route.id,
+                                        route.name ?: "Unnamed",
+                                        dateState.value
+                                    )
+                                )
                             },
                         contentScale = ContentScale.FillBounds,
                     )
@@ -288,8 +315,11 @@ fun HikeDetails(route: HikeRoute, isSaved: MutableState<Boolean>, date: Timestam
                     value = "Easy",
                     valueColor = Color.Green
                 )
-
-                DateDetailRow(isSaved.value, dateState)
+                DateDetailRow(
+                    isSaved,
+                    dateState,
+                    readableDate,
+                    onAction = { onAction(SavedHike(route.id, route.name ?: "", dateState.value)) })
             }
         },
         sheetPeekHeight = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT
@@ -297,13 +327,18 @@ fun HikeDetails(route: HikeRoute, isSaved: MutableState<Boolean>, date: Timestam
 }
 
 @Composable
-fun DateDetailRow(isSaved: Boolean, date: MutableState<Timestamp?>) {
+fun DateDetailRow(
+    isSaved: MutableState<Boolean>,
+    date: MutableState<Timestamp?>,
+    readableDate: MutableState<String?>,
+    onAction: () -> Unit
+) {
     // Row to display and change the date
 
     val context = LocalContext.current
 
     // Needed for the pop-up that allows the user to show the date
-    fun showDatePickerDialog(onDateSelected: (String) -> Unit) {
+    fun showDatePickerDialog(onDateSelected: (Timestamp) -> Unit) {
         val calendar = Calendar.getInstance()
         val year = calendar[Calendar.YEAR]
         val month = calendar[Calendar.MONTH]
@@ -312,19 +347,16 @@ fun DateDetailRow(isSaved: Boolean, date: MutableState<Timestamp?>) {
         DatePickerDialog(
             context,
             { _, selectedYear, selectedMonth, selectedDay ->
-                val timestamp = Timestamp.from(selectedYear, selectedMonth, selectedDay)
-                val formattedDate = timestamp.humanReadablePlannedLabel(context)
-                onDateSelected(formattedDate)
+                val timestamp = Timestamp.from(selectedYear, selectedMonth + 1, selectedDay)
+                onDateSelected(timestamp)
             },
             year,
             month,
             day
-        )
-            .show()
+        ).show()
     }
-
-    if (isSaved) {
-        if (date.value == null) {
+    if (isSaved.value) {
+        if (date.value == null || readableDate.value == null) {
             DetailRow(
                 label = stringResource(R.string.hike_detail_screen_label_status),
                 value = stringResource(R.string.hike_detail_screen_value_saved),
@@ -339,12 +371,8 @@ fun DateDetailRow(isSaved: Boolean, date: MutableState<Timestamp?>) {
                     style = MaterialTheme.typography.bodyLarge,
                     modifier =
                     Modifier
-                        .clickable {
-                            showDatePickerDialog {
-                                // TODO ON SUCCESS
-                            }
-                        }
-                        .testTag(TEST_TAG_DETAIL_ROW_TAG))
+                        .testTag(TEST_TAG_DETAIL_ROW_TAG)
+                )
                 Button(
                     modifier = Modifier
                         .width(90.dp)
@@ -358,7 +386,9 @@ fun DateDetailRow(isSaved: Boolean, date: MutableState<Timestamp?>) {
                     ),
                     onClick = {
                         showDatePickerDialog {
-                            // TODO ON SUCCESS
+                            date.value = it
+                            onAction()
+                            readableDate.value = it.toFormattedString()
                         }
                     },
                 ) {
@@ -384,8 +414,8 @@ fun DateDetailRow(isSaved: Boolean, date: MutableState<Timestamp?>) {
                     style = MaterialTheme.typography.bodyLarge,
                     modifier =
                     Modifier
-                        .clickable { showDatePickerDialog { TODO() } }
-                        .testTag(TEST_TAG_DETAIL_ROW_TAG))
+                        .testTag(TEST_TAG_DETAIL_ROW_TAG)
+                )
                 Box(
                     modifier =
                     Modifier
@@ -396,12 +426,18 @@ fun DateDetailRow(isSaved: Boolean, date: MutableState<Timestamp?>) {
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Text(
-                        text = "dd/mm/yy", // Here, the date should be displayed once the vM can show the
+                        text = readableDate.value!!,
                         // saved Date
                         style = MaterialTheme.typography.bodySmall,
                         modifier =
                         Modifier
-                            .clickable { showDatePickerDialog {} }
+                            .clickable {
+                                showDatePickerDialog {
+                                    date.value = it
+                                    onAction()
+                                    readableDate.value = it.toFormattedString()
+                                }
+                            }
                             .testTag(TEST_TAG_PLANNED_DATE_TEXT_BOX))
                 }
             }
@@ -470,3 +506,4 @@ fun AppropriatenessMessage(isSuitable: Boolean) {
         )
     }
 }
+

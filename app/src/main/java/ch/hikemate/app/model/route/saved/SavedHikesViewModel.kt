@@ -57,8 +57,8 @@ class SavedHikesViewModel(
     viewModelScope.launch { loadSavedHikesAsync() }
   }
 
-  fun isHikeSaved(hike: HikeRoute): SavedHike? {
-    return savedHike.value.find { hike.id==it.id }
+  fun isHikeSaved(id:String): SavedHike? {
+    return savedHike.value.find { id==it.id }
   }
 
   /**
