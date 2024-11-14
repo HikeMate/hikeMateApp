@@ -76,7 +76,7 @@ fun EditProfileScreen(
       modifier =
           Modifier.testTag(Screen.EDIT_PROFILE)
               .padding(
-                  // Add padding to the sidebar padding
+                  // Add for the status bar
                   start = 16.dp,
                   end = 16.dp,
                   top = 16.dp,

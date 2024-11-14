@@ -118,6 +118,10 @@ class SavedHikesViewModel(
    */
   val errorMessage: StateFlow<Int?> = _errorMessage.asStateFlow()
 
+  private val _loadingSavedHikes = MutableStateFlow<Boolean>(false)
+  /** Whether the saved hikes list is currently being loaded or reloaded. */
+  val loadingSavedHikes: StateFlow<Boolean> = _loadingSavedHikes.asStateFlow()
+
   /** Load saved hikes from the repository and update the [savedHike] state flow. */
   fun loadSavedHikes() {
     // Because loading saved hikes is also used by other methods, we extract it
@@ -183,12 +187,14 @@ class SavedHikesViewModel(
   private suspend fun loadSavedHikesAsync() {
     withContext(dispatcher) {
       try {
+        _loadingSavedHikes.value = true
         _savedHikes.value = repository.loadSavedHikes()
         _errorMessage.value = null
       } catch (e: Exception) {
         Log.e(LOG_TAG, "Error loading saved hikes", e)
         _errorMessage.value = R.string.saved_hikes_screen_generic_error
       }
+      _loadingSavedHikes.value = false
     }
   }
 }

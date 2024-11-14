@@ -1,6 +1,7 @@
 package ch.hikemate.app.ui.saved
 
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -10,17 +11,22 @@ import androidx.compose.ui.test.performClick
 import ch.hikemate.app.model.route.saved.SavedHike
 import ch.hikemate.app.model.route.saved.SavedHikesRepository
 import ch.hikemate.app.model.route.saved.SavedHikesViewModel
+import ch.hikemate.app.ui.components.CenteredErrorAction
 import ch.hikemate.app.ui.navigation.NavigationActions
-import ch.hikemate.app.ui.navigation.TEST_TAG_SIDEBAR_BUTTON
+import ch.hikemate.app.ui.navigation.TEST_TAG_BOTTOM_BAR
 import com.google.firebase.Timestamp
 import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
 
 class SavedHikesScreenTest : TestCase() {
   private lateinit var savedHikesRepository: SavedHikesRepository
@@ -29,28 +35,31 @@ class SavedHikesScreenTest : TestCase() {
 
   @get:Rule val composeTestRule = createComposeRule()
 
+  @OptIn(ExperimentalCoroutinesApi::class)
   @Before
   fun setUp() {
     navigationActions = mock(NavigationActions::class.java)
     savedHikesRepository = mock(SavedHikesRepository::class.java)
-    savedHikesViewModel = SavedHikesViewModel(savedHikesRepository)
+    savedHikesViewModel = SavedHikesViewModel(savedHikesRepository, UnconfinedTestDispatcher())
   }
 
   @Test
-  fun sidebarNavigationMenuButtonIsDisplayed() {
+  fun bottomBarMenuIsDisplayed() {
     composeTestRule.setContent { SavedHikesScreen(savedHikesViewModel, navigationActions) }
 
-    composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(TEST_TAG_BOTTOM_BAR).assertIsDisplayed()
   }
 
   @Test
   fun bottomMenuIsDisplayedAndHasItems() {
     composeTestRule.setContent { SavedHikesScreen(savedHikesViewModel, navigationActions) }
 
-    composeTestRule.onNodeWithTag(TEST_TAG_SAVED_HIKES_BOTTOM_MENU).assertIsDisplayed()
-    for (element in SavedHikesScreen.values()) {
+    composeTestRule
+        .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_TABS_MENU)
+        .assertIsDisplayed()
+    for (element in SavedHikesSection.values()) {
       composeTestRule
-          .onNodeWithTag(TEST_TAG_SAVED_HIKES_BOTTOM_MENU_ITEM_PREFIX + element.name)
+          .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_TABS_MENU_ITEM_PREFIX + element.name)
           .assertIsDisplayed()
     }
   }
@@ -59,17 +68,34 @@ class SavedHikesScreenTest : TestCase() {
   fun sectionContainerIsDisplayed() {
     composeTestRule.setContent { SavedHikesScreen(savedHikesViewModel, navigationActions) }
 
-    composeTestRule.onNodeWithTag(TEST_TAG_SAVED_HIKES_SECTION_CONTAINER).assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_SECTION_CONTAINER)
+        .assertIsDisplayed()
   }
 
   @Test
   fun plannedScreenWithNoHikesDisplaysCorrectly() {
     composeTestRule.setContent { SavedHikesScreen(savedHikesViewModel, navigationActions) }
 
-    composeTestRule.onNodeWithTag(TEST_TAG_SAVED_HIKES_SAVED_TITLE).assertIsNotDisplayed()
-    composeTestRule.onNodeWithTag(TEST_TAG_SAVED_HIKES_SAVED_EMPTY_MESSAGE).assertIsNotDisplayed()
-    composeTestRule.onNodeWithTag(TEST_TAG_SAVED_HIKES_PLANNED_TITLE).assertIsDisplayed()
-    composeTestRule.onNodeWithTag(TEST_TAG_SAVED_HIKES_PLANNED_EMPTY_MESSAGE).assertIsDisplayed()
+    // Select the planned hikes tab
+    composeTestRule
+        .onNodeWithTag(
+            SavedHikesScreen.TEST_TAG_SAVED_HIKES_TABS_MENU_ITEM_PREFIX +
+                SavedHikesSection.Planned.name)
+        .performClick()
+
+    composeTestRule
+        .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_SAVED_TITLE)
+        .assertIsNotDisplayed()
+    composeTestRule
+        .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_SAVED_EMPTY_MESSAGE)
+        .assertIsNotDisplayed()
+    composeTestRule
+        .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_PLANNED_TITLE)
+        .assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_PLANNED_EMPTY_MESSAGE)
+        .assertIsDisplayed()
   }
 
   @Test
@@ -84,15 +110,28 @@ class SavedHikesScreenTest : TestCase() {
 
         composeTestRule.setContent { SavedHikesScreen(savedHikesViewModel, navigationActions) }
 
-        composeTestRule.onNodeWithTag(TEST_TAG_SAVED_HIKES_SAVED_TITLE).assertIsNotDisplayed()
+        // Select the planned hikes tab
         composeTestRule
-            .onNodeWithTag(TEST_TAG_SAVED_HIKES_SAVED_EMPTY_MESSAGE)
-            .assertIsNotDisplayed()
-        composeTestRule.onNodeWithTag(TEST_TAG_SAVED_HIKES_PLANNED_TITLE).assertIsDisplayed()
+            .onNodeWithTag(
+                SavedHikesScreen.TEST_TAG_SAVED_HIKES_TABS_MENU_ITEM_PREFIX +
+                    SavedHikesSection.Planned.name)
+            .performClick()
+
         composeTestRule
-            .onNodeWithTag(TEST_TAG_SAVED_HIKES_PLANNED_EMPTY_MESSAGE)
+            .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_SAVED_TITLE)
             .assertIsNotDisplayed()
-        composeTestRule.onAllNodesWithTag(TEST_TAG_SAVED_HIKES_HIKE_CARD).assertCountEquals(2)
+        composeTestRule
+            .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_SAVED_EMPTY_MESSAGE)
+            .assertIsNotDisplayed()
+        composeTestRule
+            .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_PLANNED_TITLE)
+            .assertIsDisplayed()
+        composeTestRule
+            .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_PLANNED_EMPTY_MESSAGE)
+            .assertIsNotDisplayed()
+        composeTestRule
+            .onAllNodesWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_HIKE_CARD)
+            .assertCountEquals(2)
       }
 
   @Test
@@ -100,13 +139,23 @@ class SavedHikesScreenTest : TestCase() {
     composeTestRule.setContent { SavedHikesScreen(savedHikesViewModel, navigationActions) }
 
     composeTestRule
-        .onNodeWithTag(TEST_TAG_SAVED_HIKES_BOTTOM_MENU_ITEM_PREFIX + SavedHikesScreen.Saved.name)
+        .onNodeWithTag(
+            SavedHikesScreen.TEST_TAG_SAVED_HIKES_TABS_MENU_ITEM_PREFIX +
+                SavedHikesSection.Saved.name)
         .performClick()
 
-    composeTestRule.onNodeWithTag(TEST_TAG_SAVED_HIKES_PLANNED_TITLE).assertIsNotDisplayed()
-    composeTestRule.onNodeWithTag(TEST_TAG_SAVED_HIKES_PLANNED_EMPTY_MESSAGE).assertIsNotDisplayed()
-    composeTestRule.onNodeWithTag(TEST_TAG_SAVED_HIKES_SAVED_TITLE).assertIsDisplayed()
-    composeTestRule.onNodeWithTag(TEST_TAG_SAVED_HIKES_SAVED_EMPTY_MESSAGE).assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_PLANNED_TITLE)
+        .assertIsNotDisplayed()
+    composeTestRule
+        .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_PLANNED_EMPTY_MESSAGE)
+        .assertIsNotDisplayed()
+    composeTestRule
+        .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_SAVED_TITLE)
+        .assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_SAVED_EMPTY_MESSAGE)
+        .assertIsDisplayed()
   }
 
   @Test
@@ -123,17 +172,43 @@ class SavedHikesScreenTest : TestCase() {
 
         composeTestRule
             .onNodeWithTag(
-                TEST_TAG_SAVED_HIKES_BOTTOM_MENU_ITEM_PREFIX + SavedHikesScreen.Saved.name)
+                SavedHikesScreen.TEST_TAG_SAVED_HIKES_TABS_MENU_ITEM_PREFIX +
+                    SavedHikesSection.Saved.name)
             .performClick()
 
-        composeTestRule.onNodeWithTag(TEST_TAG_SAVED_HIKES_PLANNED_TITLE).assertIsNotDisplayed()
         composeTestRule
-            .onNodeWithTag(TEST_TAG_SAVED_HIKES_PLANNED_EMPTY_MESSAGE)
+            .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_PLANNED_TITLE)
             .assertIsNotDisplayed()
-        composeTestRule.onNodeWithTag(TEST_TAG_SAVED_HIKES_SAVED_TITLE).assertIsDisplayed()
         composeTestRule
-            .onNodeWithTag(TEST_TAG_SAVED_HIKES_SAVED_EMPTY_MESSAGE)
+            .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_PLANNED_EMPTY_MESSAGE)
             .assertIsNotDisplayed()
-        composeTestRule.onAllNodesWithTag(TEST_TAG_SAVED_HIKES_HIKE_CARD).assertCountEquals(2)
+        composeTestRule
+            .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_SAVED_TITLE)
+            .assertIsDisplayed()
+        composeTestRule
+            .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_SAVED_EMPTY_MESSAGE)
+            .assertIsNotDisplayed()
+        composeTestRule
+            .onAllNodesWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_HIKE_CARD)
+            .assertCountEquals(2)
+      }
+
+  @Test
+  fun errorIsDisplayedIfOneOccurs() =
+      runTest(timeout = 5.seconds) {
+        `when`(savedHikesRepository.loadSavedHikes()).thenThrow(RuntimeException("Error"))
+
+        composeTestRule.setContent { SavedHikesScreen(savedHikesViewModel, navigationActions) }
+
+        composeTestRule
+            .onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_MESSAGE)
+            .assertIsDisplayed()
+        composeTestRule
+            .onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_BUTTON)
+            .assertIsDisplayed()
+            .assertHasClickAction()
+            .performClick()
+
+        verify(savedHikesRepository, times(2)).loadSavedHikes()
       }
 }

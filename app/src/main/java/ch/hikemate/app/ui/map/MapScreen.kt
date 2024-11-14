@@ -52,11 +52,11 @@ import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
 import ch.hikemate.app.ui.components.HikeCard
 import ch.hikemate.app.ui.components.HikeCardStyleProperties
+import ch.hikemate.app.ui.navigation.BottomBarNavigation
 import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
-import ch.hikemate.app.ui.navigation.SideBarNavigation
 import ch.hikemate.app.utils.LocationUtils
 import ch.hikemate.app.utils.MapUtils
 import ch.hikemate.app.utils.PermissionUtils
@@ -394,7 +394,7 @@ fun MapScreen(
     }
   }
 
-  SideBarNavigation(
+  BottomBarNavigation(
       onTabSelect = { navigationActions.navigateTo(it) },
       tabList = LIST_TOP_LEVEL_DESTINATIONS,
       selectedItem = Route.MAP) {

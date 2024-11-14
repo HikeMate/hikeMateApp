@@ -5,9 +5,6 @@
     <!--Google APi-->
     <string name="default_web_client_id">154591189513-eilbr2jtms0av2ses4tsvo62009q5t7n.apps.googleusercontent.com</string>
 
-    <!-- Sidebar -->
-    <string name="sidebar_button_content_description">Open sidebar menu</string>
-
     <!-- Hike Card -->
     <string name="hike_card_altitude_label">Altitude difference</string>
     <string name="hike_card_altitude_value_template">%sm</string>
@@ -72,6 +69,7 @@
         An error occurred while loading saved hikes.
         Please check your Internet connection and try again.
     </string>
+    <string name="saved_hikes_screen_refresh_button_action">Refresh</string>
     <string name="saved_hikes_screen_saved_section_title">Saved hikes</string>
     <string name="saved_hikes_screen_saved_section_empty_message">No saved hikes to display</string>
     <string name="saved_hikes_screen_planned_section_title">Planned hikes</string>
@@ -129,6 +127,10 @@
     <string name="create_account_password_mismatch_error">Passwords do not match</string>
     <string name="create_account_email_format_error">Invalid email format</string>
     <string name="create_account_fields_must_be_filled_error">All fields must be filled</string>
+
+    <!-- Default profile -->
+    <string name="default_display_name">Unnamed hiker</string>
+    <string name="default_email">unnamedhiker@example.com</string>
 
     <!-- Elevation graph -->
     <string name="elevation_graph_loading_label">Loading graph…</string>
