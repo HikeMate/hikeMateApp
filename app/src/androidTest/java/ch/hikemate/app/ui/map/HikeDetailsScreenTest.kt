@@ -21,6 +21,8 @@ import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_MAP
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_PLANNED_DATE_TEXT_BOX
 import ch.hikemate.app.ui.navigation.NavigationActions
 import com.google.firebase.Timestamp
+import java.util.Locale
+import kotlin.math.roundToInt
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Before
@@ -50,7 +52,7 @@ class HikeDetailScreenTest {
           description =
               "A scenic trail with breathtaking views of the Matterhorn and surrounding glaciers.")
 
-  private val detailedHikeRoute = DetailedHikeRoute.create(route)
+  private val detailedRoute = DetailedHikeRoute.create(route)
 
   @OptIn(ExperimentalCoroutinesApi::class)
   @Before
@@ -81,7 +83,7 @@ class HikeDetailScreenTest {
   fun hikeDetails_displaysHikeNameAndBookmarkIcon() {
     composeTestRule.setContent {
       HikeDetails(
-          detailedRoute = detailedHikeRoute,
+          detailedRoute = detailedRoute,
           isSaved = true,
           date = null,
       )
@@ -94,7 +96,7 @@ class HikeDetailScreenTest {
   @Test
   fun hikeDetails_showsElevationGraph() {
     composeTestRule.setContent {
-      HikeDetails(detailedRoute = detailedHikeRoute, isSaved = true, date = null)
+      HikeDetails(detailedRoute = detailedRoute, isSaved = true, date = null)
     }
 
     // Check if the elevation graph is displayed
@@ -104,7 +106,7 @@ class HikeDetailScreenTest {
   @Test
   fun hikeDetails_displaysPlannedDateButton_whenDateNotSet() {
     composeTestRule.setContent {
-      HikeDetails(detailedRoute = detailedHikeRoute, isSaved = true, date = null)
+      HikeDetails(detailedRoute = detailedRoute, isSaved = true, date = null)
     }
 
     // Check if the "Add a date" button is displayed
@@ -116,7 +118,7 @@ class HikeDetailScreenTest {
     val plannedDate = Timestamp(1622563200, 0) // Example timestamp
 
     composeTestRule.setContent {
-      HikeDetails(detailedRoute = detailedHikeRoute, isSaved = true, date = plannedDate)
+      HikeDetails(detailedRoute = detailedRoute, isSaved = true, date = plannedDate)
     }
 
     // Check if the planned date text box is displayed
@@ -126,7 +128,7 @@ class HikeDetailScreenTest {
   @Test
   fun hikeDetails_showsCorrectDetailsRowsWhenNotSaved() {
     composeTestRule.setContent {
-      HikeDetails(detailedRoute = detailedHikeRoute, isSaved = false, date = null)
+      HikeDetails(detailedRoute = detailedRoute, isSaved = false, date = null)
     }
 
     // Check if the detail rows are displayed correctly
@@ -137,7 +139,7 @@ class HikeDetailScreenTest {
   @Test
   fun hikeDetails_showsCorrectDetailsRowsWhenSavedAndNoDateIsSet() {
     composeTestRule.setContent {
-      HikeDetails(detailedRoute = detailedHikeRoute, isSaved = true, date = null)
+      HikeDetails(detailedRoute = detailedRoute, isSaved = true, date = null)
     }
 
     // Check if the detail rows are displayed correctly
@@ -149,13 +151,40 @@ class HikeDetailScreenTest {
   @Test
   fun hikeDetails_showsCorrectDetailsRowsWhenSavedAndDateIsSet() {
     composeTestRule.setContent {
-      HikeDetails(detailedRoute = detailedHikeRoute, isSaved = true, date = Timestamp.now())
+      HikeDetails(detailedRoute = detailedRoute, isSaved = true, date = Timestamp.now())
     }
 
     // Check if the detail rows are displayed correctly
     composeTestRule.onAllNodesWithTag(TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(6)
     composeTestRule.onAllNodesWithTag(TEST_TAG_DETAIL_ROW_VALUE).assertCountEquals(5)
     composeTestRule.onNodeWithTag(TEST_TAG_PLANNED_DATE_TEXT_BOX).assertIsDisplayed()
+  }
+
+  @Test
+  fun hikeDetails_showsCorrectDetailedHikesValues() {
+    composeTestRule.setContent {
+      HikeDetails(detailedRoute = detailedRoute, isSaved = true, date = null)
+    }
+
+    val distanceString = String.format(Locale.ENGLISH, "%.2f", detailedRoute.totalDistance)
+    val elevationGainString = detailedRoute.elevationGain.roundToInt().toString()
+    val hourString =
+        String.format(Locale.ENGLISH, "%02d", (detailedRoute.estimatedTime / 60).roundToInt())
+    val minuteString =
+        String.format(Locale.ENGLISH, "%02d", (detailedRoute.estimatedTime % 60).roundToInt())
+
+    composeTestRule
+        .onAllNodesWithTag(TEST_TAG_DETAIL_ROW_VALUE)
+        .assertAny(hasText("${distanceString}km"))
+    composeTestRule
+        .onAllNodesWithTag(TEST_TAG_DETAIL_ROW_VALUE)
+        .assertAny(hasText("${elevationGainString}m"))
+    composeTestRule
+        .onAllNodesWithTag(TEST_TAG_DETAIL_ROW_VALUE)
+        .assertAny(hasText("${hourString}:${minuteString}"))
+    composeTestRule
+        .onAllNodesWithTag(TEST_TAG_DETAIL_ROW_VALUE)
+        .assertAny(hasText(detailedRoute.difficulty))
   }
 
   @Test
@@ -176,7 +205,7 @@ class HikeDetailScreenTest {
   @Test
   fun hikeDetails_opensDatePicker_whenAddDateButtonClicked() {
     composeTestRule.setContent {
-      HikeDetails(detailedRoute = detailedHikeRoute, isSaved = true, date = null)
+      HikeDetails(detailedRoute = detailedRoute, isSaved = true, date = null)
     }
 
     // Check if the add date button is clickable and triggers an interaction
