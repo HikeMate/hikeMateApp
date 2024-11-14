@@ -1,6 +1,5 @@
 package ch.hikemate.app.ui.map
 
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -44,13 +43,14 @@ class HikeDetailScreenTest {
   private lateinit var hikesRepository: HikeRoutesRepository
   private lateinit var elevationService: ElevationService
   private lateinit var listOfHikeRoutesViewModel: ListOfHikeRoutesViewModel
-  private val route = HikeRoute(
-    id = "1",
-    bounds = Bounds(minLat = 45.9, minLon = 7.6, maxLat = 46.0, maxLon = 7.7),
-    ways = listOf(LatLong(45.9, 7.6), LatLong(45.95, 7.65), LatLong(46.0, 7.7)),
-    name = "Sample Hike",
-    description = "A scenic trail with breathtaking views of the Matterhorn and surrounding glaciers."
-  )
+  private val route =
+      HikeRoute(
+          id = "1",
+          bounds = Bounds(minLat = 45.9, minLon = 7.6, maxLat = 46.0, maxLon = 7.7),
+          ways = listOf(LatLong(45.9, 7.6), LatLong(45.95, 7.65), LatLong(46.0, 7.7)),
+          name = "Sample Hike",
+          description =
+              "A scenic trail with breathtaking views of the Matterhorn and surrounding glaciers.")
 
   @OptIn(ExperimentalCoroutinesApi::class)
   @Before
@@ -60,7 +60,8 @@ class HikeDetailScreenTest {
     elevationService = mock(ElevationService::class.java)
     mockSavedHikesRepository = mock(SavedHikesRepository::class.java)
 
-    listOfHikeRoutesViewModel = ListOfHikeRoutesViewModel(hikesRepository, elevationService, UnconfinedTestDispatcher())
+    listOfHikeRoutesViewModel =
+        ListOfHikeRoutesViewModel(hikesRepository, elevationService, UnconfinedTestDispatcher())
     savedHikesViewModel = SavedHikesViewModel(mockSavedHikesRepository)
 
     listOfHikeRoutesViewModel.selectRoute(route)
@@ -71,10 +72,9 @@ class HikeDetailScreenTest {
     savedHikesViewModel.updateHikeDetailState(route)
     composeTestRule.setContent {
       HikeDetailScreen(
-        listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
-        savedHikesViewModel = savedHikesViewModel,
-        navigationActions = mockNavigationActions
-      )
+          listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
+          savedHikesViewModel = savedHikesViewModel,
+          navigationActions = mockNavigationActions)
     }
 
     composeTestRule.onNodeWithTag(TEST_TAG_MAP).assertIsDisplayed()
@@ -83,9 +83,7 @@ class HikeDetailScreenTest {
   @Test
   fun hikeDetails_displaysHikeNameAndBookmarkIcon() {
     savedHikesViewModel.updateHikeDetailState(route)
-    composeTestRule.setContent {
-      HikeDetails(route = route, savedHikesViewModel)
-    }
+    composeTestRule.setContent { HikeDetails(route = route, savedHikesViewModel) }
 
     composeTestRule.onNodeWithTag(TEST_TAG_HIKE_NAME).assertTextEquals(route.name!!)
     composeTestRule.onNodeWithTag(TEST_TAG_BOOKMARK_ICON).assertIsDisplayed().assertHasClickAction()
@@ -94,9 +92,7 @@ class HikeDetailScreenTest {
   @Test
   fun hikeDetails_showsElevationGraph() {
     savedHikesViewModel.updateHikeDetailState(route)
-    composeTestRule.setContent {
-      HikeDetails(route = route, savedHikesViewModel)
-    }
+    composeTestRule.setContent { HikeDetails(route = route, savedHikesViewModel) }
 
     composeTestRule.onNodeWithTag(TEST_TAG_ELEVATION_GRAPH).assertIsDisplayed()
   }
@@ -104,9 +100,7 @@ class HikeDetailScreenTest {
   @Test
   fun hikeDetails_displaysPlannedDateButton_whenDateNotSet() {
     savedHikesViewModel.updateHikeDetailState(route)
-    composeTestRule.setContent {
-      HikeDetails(route = route, savedHikesViewModel)
-    }
+    composeTestRule.setContent { HikeDetails(route = route, savedHikesViewModel) }
 
     composeTestRule.onNodeWithTag(TEST_TAG_ADD_DATE_BUTTON).assertIsDisplayed()
   }
@@ -116,9 +110,7 @@ class HikeDetailScreenTest {
     savedHikesViewModel.updateHikeDetailState(route)
     savedHikesViewModel.updatePlannedDate(Timestamp(1622563200, 0)) // Example timestamp
 
-    composeTestRule.setContent {
-      HikeDetails(route = route, savedHikesViewModel)
-    }
+    composeTestRule.setContent { HikeDetails(route = route, savedHikesViewModel) }
 
     composeTestRule.onNodeWithTag(TEST_TAG_PLANNED_DATE_TEXT_BOX).assertIsDisplayed()
   }
@@ -126,9 +118,7 @@ class HikeDetailScreenTest {
   @Test
   fun hikeDetails_showsCorrectDetailsRowsWhenNotSaved() {
     savedHikesViewModel.updateHikeDetailState(route)
-    composeTestRule.setContent {
-      HikeDetails(route = route, savedHikesViewModel)
-    }
+    composeTestRule.setContent { HikeDetails(route = route, savedHikesViewModel) }
 
     composeTestRule.onAllNodesWithTag(TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(5)
     composeTestRule.onAllNodesWithTag(TEST_TAG_DETAIL_ROW_VALUE).assertCountEquals(5)
@@ -138,9 +128,7 @@ class HikeDetailScreenTest {
   fun hikeDetails_showsCorrectDetailsRowsWhenSavedAndNoDateIsSet() {
     savedHikesViewModel.updateHikeDetailState(route)
     savedHikesViewModel.toggleSaveState()
-    composeTestRule.setContent {
-      HikeDetails(route = route, savedHikesViewModel)
-    }
+    composeTestRule.setContent { HikeDetails(route = route, savedHikesViewModel) }
 
     composeTestRule.onAllNodesWithTag(TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(6)
     composeTestRule.onAllNodesWithTag(TEST_TAG_DETAIL_ROW_VALUE).assertCountEquals(5)
@@ -153,9 +141,7 @@ class HikeDetailScreenTest {
     savedHikesViewModel.toggleSaveState()
     savedHikesViewModel.updatePlannedDate(Timestamp.now())
 
-    composeTestRule.setContent {
-      HikeDetails(route = route, savedHikesViewModel)
-    }
+    composeTestRule.setContent { HikeDetails(route = route, savedHikesViewModel) }
 
     composeTestRule.onAllNodesWithTag(TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(6)
     composeTestRule.onAllNodesWithTag(TEST_TAG_DETAIL_ROW_VALUE).assertCountEquals(5)
@@ -167,10 +153,9 @@ class HikeDetailScreenTest {
     savedHikesViewModel.updateHikeDetailState(route)
     composeTestRule.setContent {
       HikeDetailScreen(
-        listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
-        savedHikesViewModel = savedHikesViewModel,
-        navigationActions = mockNavigationActions
-      )
+          listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
+          savedHikesViewModel = savedHikesViewModel,
+          navigationActions = mockNavigationActions)
     }
 
     doNothing().`when`(mockNavigationActions).goBack()
@@ -182,12 +167,9 @@ class HikeDetailScreenTest {
   fun hikeDetails_opensDatePicker_whenAddDateButtonClicked() {
     savedHikesViewModel.updateHikeDetailState(route)
 
-    if(!savedHikesViewModel.hikeDetailState.value!!.isSaved)
-      savedHikesViewModel.toggleSaveState()
+    if (!savedHikesViewModel.hikeDetailState.value!!.isSaved) savedHikesViewModel.toggleSaveState()
 
-    composeTestRule.setContent {
-      HikeDetails(route = route, savedHikesViewModel)
-    }
+    composeTestRule.setContent { HikeDetails(route = route, savedHikesViewModel) }
 
     composeTestRule.onNodeWithTag(TEST_TAG_ADD_DATE_BUTTON).assertHasClickAction().performClick()
   }
