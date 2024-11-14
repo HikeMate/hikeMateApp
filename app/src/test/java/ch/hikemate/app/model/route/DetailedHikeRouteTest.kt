@@ -1,14 +1,34 @@
+import ch.hikemate.app.model.elevation.ElevationServiceRepository
 import ch.hikemate.app.model.route.Bounds
 import ch.hikemate.app.model.route.DetailedHikeRoute
 import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.LatLong
+import io.mockk.coEvery
+import io.mockk.mockk
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Before
 import org.junit.Test
-import org.mockito.kotlin.timeout
 
 class DetailedHikeRouteTest {
+
+  private lateinit var mockElevationService: ElevationServiceRepository
+  private lateinit var mockDeferred: CompletableDeferred<Double>
+  private var mockElevations = listOf(0.0)
+
+  @Before
+  fun setUp() {
+    mockElevationService = mockk()
+    mockDeferred = mockk()
+
+    coEvery { mockElevationService.getElevation(any(), any(), any(), any()) } answers
+        {
+          val onSuccess = thirdArg<(List<Double>) -> Unit>()
+          onSuccess(mockElevations)
+        }
+  }
 
   @Test
   fun testCreateDetailHikeRoute() {
@@ -20,7 +40,7 @@ class DetailedHikeRouteTest {
             bounds = Bounds(1.0, 2.0, 3.0, 4.0),
             ways = listOf(LatLong(1.0, 2.0), LatLong(2.0, 3.0), LatLong(3.0, 4.0)))
 
-    val detailedHikeRoute = DetailedHikeRoute.create(hikeRoute)
+    val detailedHikeRoute = DetailedHikeRoute.create(hikeRoute, mockElevationService)
 
     // assert the rest of the data is still accessible as expected
     assertEquals(hikeRoute, detailedHikeRoute.route)
@@ -29,8 +49,8 @@ class DetailedHikeRouteTest {
     assertEquals(hikeRoute, detailedHikeRoute.route)
 
     assertEquals(314.4, detailedHikeRoute.totalDistance, 1.0)
-    assertEquals(3772.0, detailedHikeRoute.estimatedTime, 1.0)
     assertEquals(0.0, detailedHikeRoute.elevationGain, 0.0001)
+    assertEquals(3772.0, detailedHikeRoute.estimatedTime, 1.0)
     assertEquals("Difficult", detailedHikeRoute.difficulty)
   }
 
@@ -48,12 +68,12 @@ class DetailedHikeRouteTest {
                     LatLong(5.01, 5.01),
                 ))
 
-    val detailedHikeRoute = DetailedHikeRoute.create(hikeRoute)
+    val detailedHikeRoute = DetailedHikeRoute.create(hikeRoute, mockElevationService)
 
     assertEquals(hikeRoute, detailedHikeRoute.route)
     assertEquals(1.322, detailedHikeRoute.totalDistance, 1.0)
-    assertEquals(18.0, detailedHikeRoute.estimatedTime, 1.0)
     assertEquals(0.0, detailedHikeRoute.elevationGain, 0.0001)
+    assertEquals(18.0, detailedHikeRoute.estimatedTime, 1.0)
     assertEquals("Easy", detailedHikeRoute.difficulty)
   }
 
@@ -71,12 +91,12 @@ class DetailedHikeRouteTest {
                     LatLong(5.0500, 5.0),
                 ))
 
-    val detailedHikeRoute = DetailedHikeRoute.create(hikeRoute)
+    val detailedHikeRoute = DetailedHikeRoute.create(hikeRoute, mockElevationService)
 
     assertEquals(hikeRoute, detailedHikeRoute.route)
     assertEquals(5.56, detailedHikeRoute.totalDistance, 1.0)
-    assertEquals(66.0, detailedHikeRoute.estimatedTime, 1.0)
     assertEquals(0.0, detailedHikeRoute.elevationGain, 0.0001)
+    assertEquals(66.0, detailedHikeRoute.estimatedTime, 1.0)
     assertEquals("Moderate", detailedHikeRoute.difficulty)
   }
 
@@ -94,18 +114,22 @@ class DetailedHikeRouteTest {
                     LatLong(5.1, 5.0),
                 ))
 
-    val detailedHikeRoute = DetailedHikeRoute.create(hikeRoute)
+    val detailedHikeRoute = DetailedHikeRoute.create(hikeRoute, mockElevationService)
 
     assertEquals(hikeRoute, detailedHikeRoute.route)
     assertEquals(11.12, detailedHikeRoute.totalDistance, 1.0)
-    assertEquals(133.0, detailedHikeRoute.estimatedTime, 1.0)
     assertEquals(0.0, detailedHikeRoute.elevationGain, 0.0001)
+    assertEquals(133.0, detailedHikeRoute.estimatedTime, 1.0)
     assertEquals("Difficult", detailedHikeRoute.difficulty)
   }
 
   @Test
   fun testCreateDetailHikeRouteHikeWithElevationGain() =
       runTest(timeout = 10.seconds) {
+
+        // the elevations returned by the mock service are not non-zero
+        mockElevations = listOf(0.0, 200.0)
+
         val hikeRoute =
             HikeRoute(
                 id = "",
@@ -118,18 +142,12 @@ class DetailedHikeRouteTest {
                         LatLong(46.55, 6.75),
                     ))
 
-        var detailedHikeRoute = DetailedHikeRoute.create(hikeRoute)
-
-        // Sometimes the elevationGain is 0, if the Elevation Repository's fetch fails. This retries
-        // until the fetch is successful.
-        while (detailedHikeRoute.elevationGain == 0.0) {
-          detailedHikeRoute = DetailedHikeRoute.create(hikeRoute)
-        }
+        val detailedHikeRoute = DetailedHikeRoute.create(hikeRoute, mockElevationService)
 
         assertEquals(hikeRoute, detailedHikeRoute.route)
         assertEquals(12.75, detailedHikeRoute.totalDistance, 1.0)
-        assertEquals(196.0, detailedHikeRoute.estimatedTime, 1.0)
-        assertEquals(433.0, detailedHikeRoute.elevationGain, 0.0001)
+        assertEquals(200.0, detailedHikeRoute.elevationGain, 0.0001)
+        assertEquals(173.0, detailedHikeRoute.estimatedTime, 1.0)
         assertEquals("Difficult", detailedHikeRoute.difficulty)
       }
 
@@ -142,6 +160,7 @@ class DetailedHikeRouteTest {
             description = "",
             bounds = Bounds(0.0, 0.0, 0.0, 0.0),
             ways =
+                // list of 30 coordinates
                 listOf(
                     LatLong(46.5, 6.60),
                     LatLong(46.55, 6.75),
@@ -175,21 +194,16 @@ class DetailedHikeRouteTest {
                     LatLong(47.95, 8.15),
                     LatLong(48.0, 8.20)))
 
-    val detailedHikeRoute = DetailedHikeRoute.create(hikeRoute)
+    // Elevation gain of 400m. It should not matter that there are only 5 elevations even though
+    // there are 30 waypoints
+    mockElevations = listOf(200.0, 300.0, 400.0, 500.0, 600.0)
 
-    // Sometimes the elevationGain is 0, if the Elevation Repository's fetch fails.
-    if (detailedHikeRoute.elevationGain != 0.0) {
-      assertEquals(hikeRoute, detailedHikeRoute.route)
-      assertEquals(207.0, detailedHikeRoute.totalDistance, 1.0)
-      assertEquals(2714.0, detailedHikeRoute.estimatedTime, 1.0)
-      assertEquals(2231.0, detailedHikeRoute.elevationGain, 0.0001)
-      assertEquals("Difficult", detailedHikeRoute.difficulty)
-    } else {
-      assertEquals(hikeRoute, detailedHikeRoute.route)
-      assertEquals(207.0, detailedHikeRoute.totalDistance, 1.0)
-      assertEquals(2491.0, detailedHikeRoute.estimatedTime, 1.0)
-      assertEquals(0.0, detailedHikeRoute.elevationGain, 0.0001)
-      assertEquals("Difficult", detailedHikeRoute.difficulty)
-    }
+    val detailedHikeRoute = DetailedHikeRoute.create(hikeRoute, mockElevationService)
+
+    assertEquals(hikeRoute, detailedHikeRoute.route)
+    assertEquals(207.59, detailedHikeRoute.totalDistance, 0.1)
+    assertEquals(400.0, detailedHikeRoute.elevationGain, 0.0001)
+    assertEquals(2531.0, detailedHikeRoute.estimatedTime, 1.0)
+    assertEquals("Difficult", detailedHikeRoute.difficulty)
   }
 }

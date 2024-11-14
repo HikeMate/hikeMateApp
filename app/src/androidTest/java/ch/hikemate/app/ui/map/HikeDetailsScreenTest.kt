@@ -52,7 +52,14 @@ class HikeDetailScreenTest {
           description =
               "A scenic trail with breathtaking views of the Matterhorn and surrounding glaciers.")
 
-  private val detailedRoute = DetailedHikeRoute.create(route)
+  private val detailedRoute =
+      DetailedHikeRoute(
+          route = route,
+          totalDistance = 13.543077559212616,
+          elevationGain = 68.0,
+          estimatedTime = 169.3169307105514,
+          difficulty = "Difficult",
+      )
 
   @OptIn(ExperimentalCoroutinesApi::class)
   @Before

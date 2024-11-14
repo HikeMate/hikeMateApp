@@ -30,14 +30,21 @@ data class DetailedHikeRoute(
    * Companion object that creates the detailed attributes for the hike route.
    *
    * @param hikeRoute The route for which detailed information will be computed
+   * @param elevationService The elevation service to use for computing elevation gain. Initialized
+   *   automatically by default
    * @return A DetailedHikeRoute object with the computed attributes: totalDistance, elevationGain,
    *   estimatedTime, and difficulty
    */
   companion object {
-    fun create(hikeRoute: HikeRoute): DetailedHikeRoute {
+    fun create(
+        hikeRoute: HikeRoute,
+        elevationService: ElevationServiceRepository = ElevationServiceRepository(OkHttpClient())
+    ): DetailedHikeRoute {
 
       val totalDistance = computeTotalDistance(hikeRoute.ways)
-      val elevationGain = runBlocking { computeElevationGain(hikeRoute.ways, hikeRoute.id) }
+      val elevationGain = runBlocking {
+        computeElevationGain(hikeRoute.ways, hikeRoute.id, elevationService)
+      }
       val estimatedTime = estimateTime(totalDistance, elevationGain)
       val difficulty = determineDifficulty(totalDistance, elevationGain)
 
@@ -51,15 +58,28 @@ data class DetailedHikeRoute(
   }
 }
 
-/** Helper function to compute the total distance in km of a hike based on a list of waypoints. */
+/**
+ * Helper function to compute the total distance in km of a hike based on a list of waypoints.
+ *
+ * @param ways A list of `LatLong` objects representing the waypoints of the hike.
+ * @return The total distance of the hike in kilometers as a `Double`.
+ */
 private fun computeTotalDistance(ways: List<LatLong>): Double {
   return ways.zipWithNext { point1, point2 -> point1.distanceTo(point2) }.sum() / 1000
 }
 
-/** Helper function to compute the total elevation gain based on a list of waypoints. */
-private fun computeElevationGain(ways: List<LatLong>, hikeId: String): Double = runBlocking {
-  val okHttpClient = OkHttpClient()
-  val elevationService = ElevationServiceRepository(client = okHttpClient)
+/**
+ * Helper function to compute the total elevation gain based on a list of waypoints.
+ *
+ * @param ways A list of `LatLong` objects representing the waypoints of the hike.
+ * @param hikeId the hikes id, needed for the elevation API request
+ * @return The total elevation gain in meters as a `Double`.
+ */
+private fun computeElevationGain(
+    ways: List<LatLong>,
+    hikeId: String,
+    elevationService: ElevationServiceRepository
+): Double = runBlocking {
 
   // Since elevationService.getElevation is asynchronous, we use a CompletableDeferred to wait for
   // the result
@@ -91,6 +111,9 @@ private fun computeElevationGain(ways: List<LatLong>, hikeId: String): Double = 
  * - 12 minutes per kilometer
  * - 0.1 minutes per meter of elevation gain (10 min/100m of elevation gain)
  *
+ * @param distance The distance of the hike in kilometers.
+ * @param elevationGain The elevation gain of the hike in meters.
+ * @return The estimated time for the hike in minutes as a `Double`.
  * @link https://en.wikipedia.org/wiki/Naismith%27s_rule
  */
 private fun estimateTime(distance: Double, elevationGain: Double): Double {
@@ -105,6 +128,9 @@ private fun estimateTime(distance: Double, elevationGain: Double): Double {
  * - Moderate: 3-6 km in length or 250-500 meters of elevation gain
  * - Hard: more than 6 km in length or more than 500 meters of elevation gain
  *
+ * @param distance The total distance of the hike in kilometers.
+ * @param elevationGain The total elevation gain of the hike in meters.
+ * @return A `String` representing the difficulty level: "Easy", "Moderate", or "Difficult".
  * @link https://www.parks.ca.gov/?page_id=24055
  */
 private fun determineDifficulty(distance: Double, elevationGain: Double): String {
