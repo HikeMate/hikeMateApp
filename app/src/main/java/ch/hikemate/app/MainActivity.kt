@@ -4,10 +4,16 @@ import android.annotation.SuppressLint
 import android.content.pm.ActivityInfo
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
@@ -16,7 +22,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navigation
 import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.model.authentication.FirebaseAuthRepository
-import ch.hikemate.app.model.profile.ProfileRepositoryDummy
+import ch.hikemate.app.model.profile.ProfileRepositoryFirestore
 import ch.hikemate.app.model.profile.ProfileViewModel
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
 import ch.hikemate.app.model.route.saved.SavedHikesViewModel
@@ -33,13 +39,30 @@ import ch.hikemate.app.ui.profile.EditProfileScreen
 import ch.hikemate.app.ui.profile.ProfileScreen
 import ch.hikemate.app.ui.saved.SavedHikesScreen
 import ch.hikemate.app.ui.theme.HikeMateTheme
+import com.google.firebase.FirebaseApp
+import com.google.firebase.firestore.FirebaseFirestore
 
 class MainActivity : ComponentActivity() {
   @SuppressLint("SourceLockedOrientationActivity")
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
+    FirebaseApp.initializeApp(this) // Initialize Firebase
     requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-    setContent { HikeMateTheme { Surface(modifier = Modifier.fillMaxSize()) { HikeMateApp() } } }
+
+    setContent {
+      HikeMateTheme {
+        val systemBarStyle by remember {
+          val defaultSystemBarColor = android.graphics.Color.TRANSPARENT
+          mutableStateOf(
+              SystemBarStyle.auto(
+                  lightScrim = defaultSystemBarColor, darkScrim = defaultSystemBarColor))
+        }
+        LaunchedEffect(systemBarStyle) {
+          enableEdgeToEdge(statusBarStyle = systemBarStyle, navigationBarStyle = systemBarStyle)
+        }
+        Surface(modifier = Modifier.fillMaxSize()) { HikeMateApp() }
+      }
+    }
   }
 }
 
@@ -51,12 +74,10 @@ class MainActivity : ComponentActivity() {
 fun HikeMateApp() {
   val navController = rememberNavController()
   val navigationActions = NavigationActions(navController)
-
-  // TODO: Stop using ProfileRepositoryDummy and use the real repository
-  val profileViewModel = ProfileViewModel(ProfileRepositoryDummy())
-  // val profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory)
-
-  val authViewModel = AuthViewModel(FirebaseAuthRepository())
+  val firestore = FirebaseFirestore.getInstance()
+  val profileRepository = ProfileRepositoryFirestore(firestore)
+  val profileViewModel = ProfileViewModel(profileRepository)
+  val authViewModel = AuthViewModel(FirebaseAuthRepository(), profileRepository)
 
   val isUserLoggedIn = authViewModel.isUserLoggedIn()
 
@@ -113,6 +134,7 @@ fun HikeMateApp() {
             )
           }
         }
+
         navigation(
             startDestination = Screen.PROFILE,
             route = Route.PROFILE,

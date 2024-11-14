@@ -1,8 +1,12 @@
 package ch.hikemate.app.model.profile
 
+import android.content.Context
 import android.util.Log
+import ch.hikemate.app.R
 import com.google.android.gms.tasks.Task
 import com.google.firebase.Firebase
+import com.google.firebase.Timestamp
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
@@ -31,6 +35,33 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
     }
   }
 
+  override fun createProfile(
+      fireUser: FirebaseUser?,
+      onSuccess: (Profile) -> Unit,
+      onFailure: (Exception) -> Unit,
+      context: Context
+  ) {
+    if (fireUser == null) {
+      onFailure(Exception("User is null"))
+      return
+    }
+    val displayName = fireUser.displayName ?: context.getString(R.string.default_display_name)
+    val email = fireUser.email ?: context.getString(R.string.default_email)
+    val profile = Profile(fireUser.uid, displayName, email, HikingLevel.BEGINNER, Timestamp.now())
+
+    profileExists(
+        fireUser.uid,
+        onSuccess = { exists ->
+          if (exists) {
+            getProfileById(fireUser.uid, onSuccess, onFailure)
+          } else {
+            val task = db.collection(collectionPath).document(profile.id).set(profile)
+
+            performFirestoreOperation(task as Task<Unit>, { onSuccess(profile) }, onFailure)
+          }
+        },
+        onFailure = onFailure)
+  }
   /**
    * Checks if the profile with the given ID exists.
    *
@@ -60,16 +91,12 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
       onSuccess: (Profile) -> Unit,
       onFailure: (Exception) -> Unit
   ) {
-    // Check that the profile exists
 
     db.collection(collectionPath).document(id).get().addOnCompleteListener { task ->
       if (task.isSuccessful) {
         val profile = task.result?.let { documentToProfile(it) }
-        if (profile != null) {
-          onSuccess(profile)
-        } else {
-          onFailure(Exception("Profile not found"))
-        }
+        if (profile != null) onSuccess(profile)
+        else onFailure(Exception("Error converting document to Profile"))
       } else {
         task.exception?.let { e ->
           Log.e("ProfileRepositoryFirestore", "Error getting document", e)
@@ -77,19 +104,6 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
         }
       }
     }
-  }
-
-  override fun addProfile(profile: Profile, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
-    profileExists(
-        profile.id,
-        onSuccess = { exists ->
-          if (exists) {
-            onFailure(Exception("Profile with id ${profile.id} already exists"))
-          } else {
-            updateProfile(profile, onSuccess, onFailure)
-          }
-        },
-        onFailure = { onFailure(Exception("Error getting document with id ${profile.id}")) })
   }
 
   override fun updateProfile(
@@ -145,13 +159,15 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
    * @param document The Firestore document to convert.
    */
   fun documentToProfile(document: DocumentSnapshot): Profile? {
+
     return try {
       val uid = document.id
-      val name = document.getString("name") ?: return null
-      val email = document.getString("email") ?: return null
-      val hikingLevelString = document.getString("hikingLevel") ?: return null
-      val hikingLevel = HikingLevel.values().find { it.name == hikingLevelString } ?: return null
-      val joinedDate = document.getTimestamp("joinedDate") ?: return null
+      val name = document.getString("name") ?: "Invalid name"
+      val email = document.getString("email") ?: "Invalid email"
+      val hikingLevelString = document.getString("hikingLevel") ?: HikingLevel.BEGINNER
+      val hikingLevel =
+          HikingLevel.values().find { it.name == hikingLevelString } ?: HikingLevel.BEGINNER
+      val joinedDate = document.getTimestamp("joinedDate") ?: Timestamp.now()
       Profile(uid, name, email, hikingLevel, joinedDate)
     } catch (e: Exception) {
       Log.e("ProfileRepositoryFirestore", "Error converting document to Profile", e)

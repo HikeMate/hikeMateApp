@@ -78,10 +78,10 @@ fun SignInWithEmailScreen(navigationActions: NavigationActions, authViewModel: A
       modifier =
           Modifier.testTag(Screen.SIGN_IN_WITH_EMAIL)
               .padding(
-                  // Add padding to the sidebar padding
+                  // Add for the status bar
                   start = 16.dp,
                   end = 16.dp,
-                  top = 16.dp,
+                  top = 40.dp,
               ),
       verticalArrangement = Arrangement.spacedBy(16.dp)) {
         BackButton(navigationActions)

@@ -8,6 +8,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import ch.hikemate.app.model.authentication.AuthRepository
 import ch.hikemate.app.model.authentication.AuthViewModel
+import ch.hikemate.app.model.profile.ProfileRepository
 import ch.hikemate.app.ui.components.BackButton
 import ch.hikemate.app.ui.navigation.NavigationActions
 import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
@@ -26,6 +27,7 @@ class CreateAccountScreenTest : TestCase() {
   private lateinit var navigationActions: NavigationActions
   private lateinit var authRepository: AuthRepository
   private lateinit var authViewModel: AuthViewModel
+  private lateinit var profileRepositoryFirestore: ProfileRepository
 
   private val TEST_NAME = "Test Name"
   private val TEST_EMAIL = "test@example.com"
@@ -37,7 +39,9 @@ class CreateAccountScreenTest : TestCase() {
   fun setUp() {
     navigationActions = mock(NavigationActions::class.java)
     authRepository = mock(AuthRepository::class.java)
-    authViewModel = AuthViewModel(authRepository)
+
+    profileRepositoryFirestore = mock(ProfileRepository::class.java)
+    authViewModel = AuthViewModel(authRepository, profileRepositoryFirestore)
 
     composeTestRule.setContent {
       CreateAccountScreen(navigationActions = navigationActions, authViewModel = authViewModel)

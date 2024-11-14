@@ -91,6 +91,7 @@ fun CreateAccountScreen(navigationActions: NavigationActions, authViewModel: Aut
       }
       else -> {
         authViewModel.createAccountWithEmailAndPassword(
+            name,
             email,
             password,
             onSuccess = {
@@ -100,7 +101,8 @@ fun CreateAccountScreen(navigationActions: NavigationActions, authViewModel: Aut
             onErrorAction = {
               // Show an error message in a toast
               Toast.makeText(context, it.message, Toast.LENGTH_SHORT).show()
-            })
+            },
+            context = context)
       }
     }
   }
@@ -109,10 +111,10 @@ fun CreateAccountScreen(navigationActions: NavigationActions, authViewModel: Aut
       modifier =
           Modifier.testTag(Screen.CREATE_ACCOUNT)
               .padding(
-                  // Add padding to the sidebar padding
+                  // Add for the status bar
                   start = 16.dp,
                   end = 16.dp,
-                  top = 16.dp,
+                  top = 40.dp,
               ),
       verticalArrangement = Arrangement.spacedBy(16.dp)) {
         BackButton(navigationActions)
