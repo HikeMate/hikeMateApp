@@ -2,9 +2,9 @@ package ch.hikemate.app.model.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.firestore
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,19 +15,18 @@ import kotlinx.coroutines.flow.asStateFlow
  * @param repository The profile repository.
  */
 open class ProfileViewModel(private val repository: ProfileRepository) : ViewModel() {
-  // The profile, i.e the profile for the detail view
-  // This will probably always be the current user profile
+
+  // The profile for the detail view
   private val profile_ = MutableStateFlow<Profile?>(null)
   val profile: StateFlow<Profile?> = profile_.asStateFlow()
 
   init {
-    repository.init {
-      // Get the profile of the current user
-      FirebaseAuth.getInstance().currentUser?.uid?.let { getProfileById(it) }
+    FirebaseAuth.getInstance().addAuthStateListener { auth ->
+      auth.currentUser?.uid?.let { userId -> getProfileById(userId) }
     }
   }
 
-  // create factory
+  // Factory for creating instances of ProfileViewModel
   companion object {
     val Factory: ViewModelProvider.Factory =
         object : ViewModelProvider.Factory {
@@ -44,7 +43,8 @@ open class ProfileViewModel(private val repository: ProfileRepository) : ViewMod
    * @param id The ID of the profile to fetch.
    */
   fun getProfileById(id: String) {
-    repository.getProfileById(id, onSuccess = { profile_.value = it }, onFailure = {})
+    repository.getProfileById(
+        id, onSuccess = { profile -> profile_.value = profile }, onFailure = {})
   }
 
   /**
@@ -74,5 +74,10 @@ open class ProfileViewModel(private val repository: ProfileRepository) : ViewMod
    */
   fun deleteProfileById(id: String) {
     repository.deleteProfileById(id = id, onSuccess = { profile_.value = null }, onFailure = {})
+  }
+
+  /** Reload the profile. */
+  fun reloadProfile() {
+    profile_.value?.let { getProfileById(it.id) }
   }
 }

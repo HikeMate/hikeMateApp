@@ -48,7 +48,7 @@ class ProfileScreenTest : TestCase() {
     navigationActions = mock(NavigationActions::class.java)
     authRepository = mock(AuthRepository::class.java)
     profileRepository = mock(ProfileRepository::class.java)
-    authViewModel = AuthViewModel(authRepository)
+    authViewModel = AuthViewModel(authRepository, profileRepository)
     profileViewModel = ProfileViewModel(profileRepository)
 
     composeTestRule.setContent {

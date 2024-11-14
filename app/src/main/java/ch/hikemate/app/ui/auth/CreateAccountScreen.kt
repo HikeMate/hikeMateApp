@@ -91,6 +91,7 @@ fun CreateAccountScreen(navigationActions: NavigationActions, authViewModel: Aut
       }
       else -> {
         authViewModel.createAccountWithEmailAndPassword(
+            name,
             email,
             password,
             onSuccess = {
