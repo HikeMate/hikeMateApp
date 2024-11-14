@@ -120,7 +120,6 @@ fun HikeDetailScreen(
     }
   }
 
-  val hikeDetailState = savedHikesViewModel.hikeDetailState.collectAsState(null)
   // Avoid re-creating the MapView on every recomposition
   val mapView = remember {
     MapView(context).apply {
