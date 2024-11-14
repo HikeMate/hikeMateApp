@@ -11,7 +11,7 @@ class SavedHikesRepositoryFirestore(
     private val auth: FirebaseAuth
 ) : SavedHikesRepository {
 
-  data class UserSavedHikes(val savedHikes: List<SavedHike>)
+  data class UserSavedHikes(val savedHikes: List<SavedHike> = emptyList())
 
   override suspend fun loadSavedHikes(): List<SavedHike> {
     checkNotNull(auth.currentUser) { ERROR_MSG_USER_NOT_AUTHENTICATED }

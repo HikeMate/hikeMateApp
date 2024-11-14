@@ -69,6 +69,36 @@ open class ListOfHikeRoutesViewModel(
     viewModelScope.launch { getRoutesAsync(onSuccess = onSuccess, onFailure = onFailure) }
   }
 
+  /** Gets the routes with the given IDs */
+  fun getRoutesByIds(
+      routeIds: List<String>,
+      onSuccess: (List<HikeRoute>) -> Unit = {},
+      onFailure: () -> Unit = {}
+  ) {
+    viewModelScope.launch {
+      getRoutesByIdsAsync(routeIds, onSuccess = onSuccess, onFailure = onFailure)
+    }
+  }
+
+  private suspend fun getRoutesByIdsAsync(
+      routeIds: List<String>,
+      onSuccess: (List<HikeRoute>) -> Unit = {},
+      onFailure: () -> Unit = {}
+  ) {
+    withContext(dispatcher) {
+      hikeRoutesRepository.getRoutesByIds(
+          routeIds = routeIds,
+          onSuccess = { routes ->
+            hikeRoutes_.value = routes
+            onSuccess(routes)
+          },
+          onFailure = { exception ->
+            Log.e(LOG_TAG, "[getRoutesFromIds] Failed to get routes", exception)
+            onFailure()
+          })
+    }
+  }
+
   private suspend fun getRoutesElevationAsync(
       route: HikeRoute,
       onSuccess: (List<Double>) -> Unit = {},

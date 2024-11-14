@@ -279,7 +279,7 @@ fun DateDetailRow(isSaved: Boolean, date: Timestamp?) {
             modifier =
                 Modifier.clickable {
                       showDatePickerDialog {
-                        // TODO ON SUCCESS
+                        // TODO Do something with the selected date
                       }
                     }
                     .testTag(TEST_TAG_DETAIL_ROW_TAG))
@@ -292,7 +292,7 @@ fun DateDetailRow(isSaved: Boolean, date: Timestamp?) {
                     contentColor = Color.White),
             onClick = {
               showDatePickerDialog {
-                // TODO ON SUCCESS
+                // TODO Do something with the selected date
               }
             },
         ) {
