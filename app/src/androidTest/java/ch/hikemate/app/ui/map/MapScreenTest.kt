@@ -18,13 +18,12 @@ import ch.hikemate.app.model.route.HikeRoutesRepository
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
 import ch.hikemate.app.ui.components.HikeCard
 import ch.hikemate.app.ui.navigation.NavigationActions
+import ch.hikemate.app.ui.navigation.TEST_TAG_BOTTOM_BAR
 import ch.hikemate.app.utils.LocationUtils
 import ch.hikemate.app.utils.MapUtils
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import ch.hikemate.app.ui.navigation.TEST_TAG_BOTTOM_BAR
 import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
 import io.mockk.every
-import io.mockk.mockk
 import io.mockk.mockkObject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
