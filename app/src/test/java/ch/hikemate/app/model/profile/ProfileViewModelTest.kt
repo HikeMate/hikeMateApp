@@ -33,7 +33,7 @@ class ProfileViewModelTest {
           joinedDate = Timestamp(1609459200, 0))
 
   @Mock private lateinit var repository: ProfileRepository
-  @Mock private lateinit var firebaseAuth: com.google.firebase.auth.FirebaseAuth
+  @Mock private lateinit var firebaseAuth: FirebaseAuth
   @Mock private lateinit var firebaseUser: FirebaseUser
   private lateinit var profileViewModel: ProfileViewModel
 
@@ -43,7 +43,7 @@ class ProfileViewModelTest {
     FirebaseApp.initializeApp(context)
     MockitoAnnotations.openMocks(this)
 
-    firebaseAuth = mock(com.google.firebase.auth.FirebaseAuth::class.java)
+    firebaseAuth = mock(FirebaseAuth::class.java)
     firebaseUser = mock(FirebaseUser::class.java)
 
     `when`(firebaseAuth.currentUser).thenReturn(firebaseUser)
@@ -80,24 +80,6 @@ class ProfileViewModelTest {
     profileViewModel.getProfileById("1")
 
     verify(repository).getProfileById(eq("1"), any(), any())
-
-    assert(profileViewModel.profile.value == profile)
-  }
-
-  @Test
-  fun addProfileCallsRepository() {
-    `when`(repository.addProfile(any(), any(), any())).thenAnswer {
-      val onSuccess = it.getArgument<() -> Unit>(1)
-      onSuccess()
-    }
-    `when`(repository.getProfileById(any(), any(), any())).thenAnswer {
-      val onSuccess = it.getArgument<(Profile) -> Unit>(1)
-      onSuccess(profile)
-    }
-
-    profileViewModel.addProfile(profile)
-
-    verify(repository).addProfile(eq(profile), any(), any())
 
     assert(profileViewModel.profile.value == profile)
   }

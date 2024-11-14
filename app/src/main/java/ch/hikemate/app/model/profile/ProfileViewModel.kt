@@ -48,16 +48,6 @@ open class ProfileViewModel(private val repository: ProfileRepository) : ViewMod
   }
 
   /**
-   * Adds a profile.
-   *
-   * @param profile The profile to be added.
-   */
-  fun addProfile(profile: Profile) {
-    repository.addProfile(
-        profile = profile, onSuccess = { getProfileById(profile.id) }, onFailure = {})
-  }
-
-  /**
    * Updates a profile.
    *
    * @param profile The profile to be updated.

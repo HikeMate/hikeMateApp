@@ -1,5 +1,6 @@
 package ch.hikemate.app.model.profile
 
+import android.content.Context
 import com.google.firebase.auth.FirebaseUser
 
 /** Interface for the profile repository. */
@@ -9,14 +10,16 @@ interface ProfileRepository {
    * currentUser of the firebaseAuth instance. Can be called when Sigining in and already having an
    * account this will just ignore it.
    *
-   * @param firebaseAuth The Firebase authentication instance.
+   * @param fireUser The firebase user to create the profile for.
+   * @param context The context of the application.
    * @param onSuccess The callback to call if the profile is created successfully.
    * @param onFailure The callback to call if the profile creation fails.
    */
   fun createProfile(
       fireUser: FirebaseUser?,
       onSuccess: (Profile) -> Unit,
-      onFailure: (Exception) -> Unit
+      onFailure: (Exception) -> Unit,
+      context: Context
   )
 
   /** Generates a new unique ID. */
@@ -37,15 +40,6 @@ interface ProfileRepository {
    * @param onFailure The callback to be called when the profile could not be fetched.
    */
   fun getProfileById(id: String, onSuccess: (Profile) -> Unit, onFailure: (Exception) -> Unit)
-
-  /**
-   * Adds a profile.
-   *
-   * @param profile The profile to be added.
-   * @param onSuccess The callback to be called when the profile is successfully added.
-   * @param onFailure The callback to be called when the profile could not be added.
-   */
-  fun addProfile(profile: Profile, onSuccess: () -> Unit, onFailure: (Exception) -> Unit)
 
   /**
    * Updates a profile.

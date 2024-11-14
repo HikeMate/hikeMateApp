@@ -2,7 +2,6 @@ package ch.hikemate.app.model.profile
 
 import android.content.Context
 import android.util.Log
-import androidx.test.core.app.ApplicationProvider
 import ch.hikemate.app.R
 import com.google.android.gms.tasks.Task
 import com.google.firebase.Firebase
@@ -39,17 +38,29 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
   override fun createProfile(
       fireUser: FirebaseUser?,
       onSuccess: (Profile) -> Unit,
-      onFailure: (Exception) -> Unit
+      onFailure: (Exception) -> Unit,
+      context: Context
   ) {
     if (fireUser == null) {
       onFailure(Exception("User is null"))
       return
     }
-    val context = ApplicationProvider.getApplicationContext<Context>()
     val displayName = fireUser.displayName ?: context.getString(R.string.default_display_name)
     val email = fireUser.email ?: context.getString(R.string.default_email)
     val profile = Profile(fireUser.uid, displayName, email, HikingLevel.BEGINNER, Timestamp.now())
-    addProfile(profile, onSuccess = { onSuccess(profile) }, onFailure = onFailure)
+
+    profileExists(
+        fireUser.uid,
+        onSuccess = { exists ->
+          if (exists) {
+            getProfileById(fireUser.uid, onSuccess, onFailure)
+          } else {
+            val task = db.collection(collectionPath).document(profile.id).set(profile)
+
+            performFirestoreOperation(task as Task<Unit>, { onSuccess(profile) }, onFailure)
+          }
+        },
+        onFailure = onFailure)
   }
   /**
    * Checks if the profile with the given ID exists.
@@ -93,19 +104,6 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
         }
       }
     }
-  }
-
-  override fun addProfile(profile: Profile, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
-    profileExists(
-        profile.id,
-        onSuccess = { exists ->
-          if (exists) {
-            onFailure(Exception("Profile with id ${profile.id} already exists"))
-          } else {
-            updateProfile(profile, onSuccess, onFailure)
-          }
-        },
-        onFailure = { onFailure(Exception("Error getting document with id ${profile.id}")) })
   }
 
   override fun updateProfile(
