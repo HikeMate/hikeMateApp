@@ -122,12 +122,6 @@ class SavedHikesViewModel(
   /** Whether the saved hikes list is currently being loaded or reloaded. */
   val loadingSavedHikes: StateFlow<Boolean> = _loadingSavedHikes.asStateFlow()
 
-  /** Load saved hikes from the repository and update the [savedHike] state flow. */
-  fun loadSavedHikes() {
-    // Because loading saved hikes is also used by other methods, we extract it
-    viewModelScope.launch { loadSavedHikesAsync() }
-  }
-
   /**
    * Get the saved hike with the provided ID.
    *
@@ -145,21 +139,22 @@ class SavedHikesViewModel(
    *
    * @param hike The hike to add as a saved hike.
    */
-  fun addSavedHike(hike: SavedHike) {
-    viewModelScope.launch(dispatcher) {
-      try {
-        repository.addSavedHike(hike)
-        // Makes no sense to reset the error message here, an error might still occur when
-        // loading hikes again
-      } catch (e: Exception) {
-        Log.e(LOG_TAG, "Error adding saved hike", e)
-        _errorMessage.value = R.string.saved_hikes_screen_generic_error
-        return@launch
+  fun addSavedHike(hike: SavedHike) = viewModelScope.launch { addSavedHikeAsync(hike) }
+
+  private suspend fun addSavedHikeAsync(hike: SavedHike) =
+      withContext(dispatcher) {
+        try {
+          repository.addSavedHike(hike)
+          // Makes no sense to reset the error message here, an error might still occur when
+          // loading hikes again
+        } catch (e: Exception) {
+          Log.e(LOG_TAG, "Error adding saved hike", e)
+          _errorMessage.value = R.string.saved_hikes_screen_generic_error
+          return@withContext
+        }
+        // As a side-effect, this call will reset the error message if no error occurs
+        loadSavedHikesAsync()
       }
-      // As a side-effect, this call will reset the error message if no error occurs
-      loadSavedHikesAsync()
-    }
-  }
 
   /**
    * Remove the provided hike from the saved hikes for the user.
@@ -168,21 +163,25 @@ class SavedHikesViewModel(
    *
    * @param hike The hike to remove from the saved hikes.
    */
-  fun removeSavedHike(hike: SavedHike) {
-    viewModelScope.launch(dispatcher) {
-      try {
-        repository.removeSavedHike(hike)
-        // Makes no sense to reset the error message here, an error might still occur when
-        // loading hikes again
-      } catch (e: Exception) {
-        Log.e(LOG_TAG, "Error removing saved hike", e)
-        _errorMessage.value = R.string.saved_hikes_screen_generic_error
-        return@launch
+  fun removeSavedHike(hike: SavedHike) = viewModelScope.launch { removeSavedHikeAsync(hike) }
+
+  private suspend fun removeSavedHikeAsync(hike: SavedHike) =
+      withContext(dispatcher) {
+        try {
+          repository.removeSavedHike(hike)
+          // Makes no sense to reset the error message here, an error might still occur when
+          // loading hikes again
+        } catch (e: Exception) {
+          Log.e(LOG_TAG, "Error removing saved hike", e)
+          _errorMessage.value = R.string.saved_hikes_screen_generic_error
+          return@withContext
+        }
+        // As a side-effect, this call will reset the error message if no error occurs
+        loadSavedHikesAsync()
       }
-      // As a side-effect, this call will reset the error message if no error occurs
-      loadSavedHikesAsync()
-    }
-  }
+
+  /** Load saved hikes from the repository and update the [savedHike] state flow. */
+  fun loadSavedHikes() = viewModelScope.launch { loadSavedHikesAsync() }
 
   private suspend fun loadSavedHikesAsync() {
     withContext(dispatcher) {
