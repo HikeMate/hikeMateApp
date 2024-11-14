@@ -9,6 +9,7 @@ import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.HikeRoutesRepository
 import ch.hikemate.app.model.route.LatLong
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
+import ch.hikemate.app.model.route.saved.SavedHike
 import ch.hikemate.app.model.route.saved.SavedHikesRepository
 import ch.hikemate.app.model.route.saved.SavedHikesViewModel
 import ch.hikemate.app.ui.components.BackButton.BACK_BUTTON_TEST_TAG
@@ -24,6 +25,7 @@ import ch.hikemate.app.ui.navigation.NavigationActions
 import com.google.firebase.Timestamp
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -31,6 +33,7 @@ import org.junit.runner.RunWith
 import org.mockito.Mockito.doNothing
 import org.mockito.Mockito.mock
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 
 @RunWith(AndroidJUnit4::class)
 class HikeDetailScreenTest {
@@ -164,7 +167,15 @@ class HikeDetailScreenTest {
   }
 
   @Test
-  fun hikeDetails_opensDatePicker_whenAddDateButtonClicked() {
+  fun hikeDetails_opensDatePicker_whenAddDateButtonClicked()
+  =runTest{
+    val hikeRoute = HikeRoute("1", Bounds(0.0, 0.0, 0.0, 0.0), emptyList(), "Test Hike")
+    val newPlannedDate = Timestamp.now()
+
+    // Mocking initial repository state
+    whenever(mockSavedHikesRepository.loadSavedHikes())
+      .thenReturn(listOf(SavedHike("1", "Test Hike", null)))
+
     savedHikesViewModel.updateHikeDetailState(route)
 
     if (!savedHikesViewModel.hikeDetailState.value!!.isSaved) savedHikesViewModel.toggleSaveState()
