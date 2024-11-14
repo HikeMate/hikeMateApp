@@ -24,7 +24,6 @@ open class ProfileViewModel(private val repository: ProfileRepository) : ViewMod
     FirebaseAuth.getInstance().addAuthStateListener { auth ->
       auth.currentUser?.uid?.let { userId -> getProfileById(userId) }
     }
-    repository.init { FirebaseAuth.getInstance().currentUser?.uid?.let { getProfileById(it) } }
   }
 
   // Factory for creating instances of ProfileViewModel
