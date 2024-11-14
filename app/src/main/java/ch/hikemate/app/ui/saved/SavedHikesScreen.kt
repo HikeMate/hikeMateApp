@@ -9,9 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -29,12 +27,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.hikemate.app.R
 import ch.hikemate.app.model.route.saved.SavedHike
 import ch.hikemate.app.model.route.saved.SavedHikesViewModel
+import ch.hikemate.app.ui.components.CenteredErrorAction
+import ch.hikemate.app.ui.components.CenteredLoadingAnimation
 import ch.hikemate.app.ui.components.HikeCard
 import ch.hikemate.app.ui.components.HikeCardStyleProperties
 import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
@@ -90,9 +89,14 @@ fun SavedHikesScreen(
               Modifier.weight(1f)
                   .testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_SECTION_CONTAINER)) {
             when {
-              loading -> LoadingSavedHikes()
+              loading -> CenteredLoadingAnimation()
               errorMessageId != null ->
-                  ErrorDisplay(errorMessageId!!) { savedHikesViewModel.loadSavedHikes() }
+                CenteredErrorAction(
+                  errorMessage = errorMessageId!!,
+                  actionIcon = Icons.Default.Refresh,
+                  actionContentDescription = R.string.saved_hikes_screen_refresh_button_action,
+                  onAction = { savedHikesViewModel.loadSavedHikes() }
+                )
               currentSection == SavedHikesSection.Planned -> PlannedHikes(savedHikes)
               currentSection == SavedHikesSection.Saved -> SavedHikes(savedHikes)
             }
@@ -100,35 +104,6 @@ fun SavedHikesScreen(
 
       // Navigation items between nearby hikes, planned hikes, and saved hikes
       SavedHikesBottomMenu(currentSection) { currentSection = it }
-    }
-  }
-}
-
-@Composable
-private fun LoadingSavedHikes() {
-  Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-    CircularProgressIndicator(
-        modifier = Modifier.testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_LOADING_ANIMATION))
-  }
-}
-
-@Composable
-private fun ErrorDisplay(errorMessage: Int, onRefresh: () -> Unit) {
-  Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-      Text(
-          text = stringResource(errorMessage),
-          style = MaterialTheme.typography.bodyLarge,
-          modifier =
-              Modifier.padding(16.dp).testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_ERROR_MESSAGE))
-      IconButton(
-          onClick = onRefresh,
-          modifier = Modifier.testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_REFRESH_BUTTON)) {
-            Icon(
-                imageVector = Icons.Default.Refresh,
-                contentDescription =
-                    stringResource(R.string.saved_hikes_screen_refresh_button_action))
-          }
     }
   }
 }
