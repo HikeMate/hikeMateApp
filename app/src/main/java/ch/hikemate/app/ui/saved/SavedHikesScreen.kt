@@ -63,7 +63,7 @@ fun SavedHikesScreen(
       tabList = LIST_TOP_LEVEL_DESTINATIONS,
       selectedItem = Route.SAVED_HIKES,
   ) { paddingValues ->
-    var currentSection by remember { mutableStateOf(SavedHikesScreen.Planned) }
+    var currentSection by remember { mutableStateOf(SavedHikesSection.Planned) }
     val loading by savedHikesViewModel.loadingSavedHikes.collectAsState()
     val errorMessageId by savedHikesViewModel.errorMessage.collectAsState()
     val savedHikes by savedHikesViewModel.savedHike.collectAsState()
@@ -76,8 +76,8 @@ fun SavedHikesScreen(
           loading -> LoadingSavedHikes()
           errorMessageId != null ->
               ErrorDisplay(errorMessageId!!) { savedHikesViewModel.loadSavedHikes() }
-          currentSection == SavedHikesScreen.Planned -> PlannedHikes(savedHikes)
-          currentSection == SavedHikesScreen.Saved -> SavedHikes(savedHikes)
+          currentSection == SavedHikesSection.Planned -> PlannedHikes(savedHikes)
+          currentSection == SavedHikesSection.Saved -> SavedHikes(savedHikes)
         }
       }
 
@@ -196,11 +196,11 @@ private fun SavedHikes(hikes: List<SavedHike>?) {
 
 @Composable
 private fun SavedHikesBottomMenu(
-    selected: SavedHikesScreen,
-    onSelectedChange: (SavedHikesScreen) -> Unit
+    selected: SavedHikesSection,
+    onSelectedChange: (SavedHikesSection) -> Unit
 ) {
   NavigationBar(modifier = Modifier.testTag(TEST_TAG_SAVED_HIKES_BOTTOM_MENU)) {
-    SavedHikesScreen.values().forEach { screen ->
+    SavedHikesSection.values().forEach { screen ->
       NavigationBarItem(
           icon = { Icon(painter = painterResource(screen.icon), contentDescription = null) },
           label = { Text(screen.label) },
@@ -217,7 +217,7 @@ private fun SavedHikesBottomMenu(
  * The order of the enum values determines the order of the sections in the bottom menu. The first
  * element of the enum will be the left-most section in the bottom menu.
  */
-enum class SavedHikesScreen(val label: String, @DrawableRes val icon: Int) {
+enum class SavedHikesSection(val label: String, @DrawableRes val icon: Int) {
   Planned("Planned", R.drawable.calendar_today),
   Saved("Saved", R.drawable.bookmark)
 }
