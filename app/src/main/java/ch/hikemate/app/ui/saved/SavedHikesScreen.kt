@@ -202,6 +202,6 @@ private fun SavedHikesTabsMenu(selectedIndex: Int, onSelectedChange: (SavedHikes
  * element of the enum will be the left-most section in the bottom menu.
  */
 enum class SavedHikesScreen(val label: String, @DrawableRes val icon: Int) {
-  Planned("Planned", R.drawable.calendar_today),
-  Saved("Saved", R.drawable.bookmark)
+  Saved("Saved", R.drawable.bookmark),
+  Planned("Planned", R.drawable.calendar_today)
 }
