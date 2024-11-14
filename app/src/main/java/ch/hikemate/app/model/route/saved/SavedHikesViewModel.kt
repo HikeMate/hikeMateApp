@@ -105,17 +105,27 @@ class SavedHikesViewModel(
       }
 
   fun updatePlannedDate(timestamp: Timestamp?) {
-    _hikeDetailState.value?.let { currentState ->
-      val updatedHike =
-          SavedHike(currentState.hike.id, currentState.hike.name ?: "Unnamed", timestamp)
-      if (currentState.isSaved) {
-        savedHike.value.find { it.id == currentState.hike.id }?.let { removeSavedHike(it) }
-      }
-      addSavedHike(updatedHike)
-      _hikeDetailState.value = currentState.copy(plannedDate = timestamp)
-      loadSavedHikes()
-    }
+    viewModelScope.launch { updatePlannedDateAsync(timestamp) }
   }
+
+  private suspend fun updatePlannedDateAsync(timestamp: Timestamp?) =
+      withContext(dispatcher) {
+        val current = _hikeDetailState.value ?: return@withContext
+
+        val updated =
+            SavedHike(id = current.hike.id, name = current.hike.name ?: "Unnamed", date = timestamp)
+
+        // If the hike is already saved, we unsave it to save the new instance of it instead
+        if (current.isSaved) {
+          savedHike.value.find { it.id == current.hike.id }?.let { removeSavedHikeAsync(it) }
+        }
+
+        // We save the hike with its new planned date
+        addSavedHikeAsync(updated)
+
+        // We set the new state with the new planned date
+        _hikeDetailState.value = current.copy(plannedDate = timestamp)
+      }
 
   private fun isHikeSaved(): Boolean {
     return _hikeDetailState.value?.isSaved ?: false
