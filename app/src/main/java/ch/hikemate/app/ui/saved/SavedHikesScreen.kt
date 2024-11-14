@@ -44,14 +44,26 @@ import ch.hikemate.app.ui.navigation.SideBarNavigation
 import ch.hikemate.app.utils.humanReadablePlannedLabel
 
 object SavedHikesScreen {
+  // Components used by several (or all) sections
   const val TEST_TAG_SAVED_HIKES_BOTTOM_MENU = "SavedHikesBottomMenu"
   const val TEST_TAG_SAVED_HIKES_BOTTOM_MENU_ITEM_PREFIX = "SavedHikesBottomMenuItem_"
   const val TEST_TAG_SAVED_HIKES_SECTION_CONTAINER = "SavedHikesSectionContainer"
+  const val TEST_TAG_SAVED_HIKES_HIKE_CARD = "SavedHikesHikeCard"
+
+  // Components specific for the Planned section
   const val TEST_TAG_SAVED_HIKES_PLANNED_TITLE = "SavedHikesPlannedTitle"
   const val TEST_TAG_SAVED_HIKES_SAVED_TITLE = "SavedHikesSavedTitle"
+
+  // Components specific for the Saved section
   const val TEST_TAG_SAVED_HIKES_PLANNED_EMPTY_MESSAGE = "SavedHikesPlannedEmptyMessage"
   const val TEST_TAG_SAVED_HIKES_SAVED_EMPTY_MESSAGE = "SavedHikesSavedEmptyMessage"
-  const val TEST_TAG_SAVED_HIKES_HIKE_CARD = "SavedHikesHikeCard"
+
+  // Components specific for the Error section
+  const val TEST_TAG_SAVED_HIKES_ERROR_MESSAGE = "SavedHikesErrorMessage"
+  const val TEST_TAG_SAVED_HIKES_REFRESH_BUTTON = "SavedHikesRefreshButton"
+
+  // Components specific for the Loading section
+  const val TEST_TAG_SAVED_HIKES_LOADING_ANIMATION = "SavedHikesLoadingAnimation"
 }
 
 @Composable
@@ -95,7 +107,8 @@ fun SavedHikesScreen(
 @Composable
 private fun LoadingSavedHikes() {
   Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-    CircularProgressIndicator()
+    CircularProgressIndicator(
+        modifier = Modifier.testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_LOADING_ANIMATION))
   }
 }
 
@@ -106,12 +119,16 @@ private fun ErrorDisplay(errorMessage: Int, onRefresh: () -> Unit) {
       Text(
           text = stringResource(errorMessage),
           style = MaterialTheme.typography.bodyLarge,
-          modifier = Modifier.padding(16.dp))
-      IconButton(onClick = onRefresh) {
-        Icon(
-            imageVector = Icons.Default.Refresh,
-            contentDescription = stringResource(R.string.saved_hikes_screen_refresh_button_action))
-      }
+          modifier =
+              Modifier.padding(16.dp).testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_ERROR_MESSAGE))
+      IconButton(
+          onClick = onRefresh,
+          modifier = Modifier.testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_REFRESH_BUTTON)) {
+            Icon(
+                imageVector = Icons.Default.Refresh,
+                contentDescription =
+                    stringResource(R.string.saved_hikes_screen_refresh_button_action))
+          }
     }
   }
 }
