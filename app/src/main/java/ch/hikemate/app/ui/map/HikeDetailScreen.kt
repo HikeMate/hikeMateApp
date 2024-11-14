@@ -223,12 +223,15 @@ fun HikeDetails(detailedRoute: DetailedHikeRoute, isSaved: Boolean, date: Timest
                       strokeColor = MaterialTheme.colorScheme.onSurface,
                       fillColor = MaterialTheme.colorScheme.surface))
 
-          val distanceString = String.format(Locale.ENGLISH, "%.2f", detailedRoute.totalDistance)
+          val distanceString =
+              String.format(Locale.getDefault(), "%.2f", detailedRoute.totalDistance)
           val elevationGainString = detailedRoute.elevationGain.roundToInt().toString()
           val hourString =
-              String.format(Locale.ENGLISH, "%02d", (detailedRoute.estimatedTime / 60).roundToInt())
+              String.format(
+                  Locale.getDefault(), "%02d", (detailedRoute.estimatedTime / 60).roundToInt())
           val minuteString =
-              String.format(Locale.ENGLISH, "%02d", (detailedRoute.estimatedTime % 60).roundToInt())
+              String.format(
+                  Locale.getDefault(), "%02d", (detailedRoute.estimatedTime % 60).roundToInt())
 
           DetailRow(
               label = stringResource(R.string.hike_detail_screen_label_distance),
