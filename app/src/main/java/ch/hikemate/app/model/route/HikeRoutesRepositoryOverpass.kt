@@ -365,9 +365,7 @@ class HikeRoutesRepositoryOverpass(private val client: OkHttpClient) : HikeRoute
           // int_name has priority over name
           "name" -> if (name == null) name = tagsReader.nextString() else tagsReader.skipValue()
           "name:en" -> nameEn = tagsReader.nextString()
-          "osmc:name",
-          "operator",
-          "symbol" ->
+          "osmc:name" ->
               if (otherName == null) otherName = tagsReader.nextString() else tagsReader.skipValue()
           "from" -> from = tagsReader.nextString()
           "to" -> to = tagsReader.nextString()
@@ -376,7 +374,7 @@ class HikeRoutesRepositoryOverpass(private val client: OkHttpClient) : HikeRoute
         }
       }
 
-      val finalName =
+      val selectedName =
           when {
             name != null -> name
             nameEn != null -> nameEn
@@ -389,9 +387,13 @@ class HikeRoutesRepositoryOverpass(private val client: OkHttpClient) : HikeRoute
 
       // If the description is not set, we'll set it to the from - to, if available
       // We also assert that the name is not the same as the description
-      if (description == null && from != null && to != null && finalName != "$from - $to") {
+      if (description == null && from != null && to != null && selectedName != "$from - $to") {
         description = "$from - $to"
       }
+
+      // Remove fix me from the name
+      val finalName =
+          selectedName?.replace(Regex("""(\? - fixme|fixme - | - fixme| fixme|fixme |[?])"""), "")
 
       if (finalName == null) {
         Log.w(this.javaClass::class.simpleName, "No name found for route")
