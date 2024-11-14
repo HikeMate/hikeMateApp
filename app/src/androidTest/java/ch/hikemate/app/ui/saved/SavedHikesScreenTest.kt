@@ -11,6 +11,7 @@ import androidx.compose.ui.test.performClick
 import ch.hikemate.app.model.route.saved.SavedHike
 import ch.hikemate.app.model.route.saved.SavedHikesRepository
 import ch.hikemate.app.model.route.saved.SavedHikesViewModel
+import ch.hikemate.app.ui.components.CenteredErrorAction
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.TEST_TAG_SIDEBAR_BUTTON
 import com.google.firebase.Timestamp
@@ -187,10 +188,10 @@ class SavedHikesScreenTest : TestCase() {
         composeTestRule.setContent { SavedHikesScreen(savedHikesViewModel, navigationActions) }
 
         composeTestRule
-            .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_ERROR_MESSAGE)
+            .onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_MESSAGE)
             .assertIsDisplayed()
         composeTestRule
-            .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_REFRESH_BUTTON)
+            .onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_BUTTON)
             .assertIsDisplayed()
             .assertHasClickAction()
             .performClick()

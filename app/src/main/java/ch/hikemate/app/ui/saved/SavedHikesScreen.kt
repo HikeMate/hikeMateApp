@@ -56,13 +56,6 @@ object SavedHikesScreen {
   // Components specific for the Saved section
   const val TEST_TAG_SAVED_HIKES_PLANNED_EMPTY_MESSAGE = "SavedHikesPlannedEmptyMessage"
   const val TEST_TAG_SAVED_HIKES_SAVED_EMPTY_MESSAGE = "SavedHikesSavedEmptyMessage"
-
-  // Components specific for the Error section
-  const val TEST_TAG_SAVED_HIKES_ERROR_MESSAGE = "SavedHikesErrorMessage"
-  const val TEST_TAG_SAVED_HIKES_REFRESH_BUTTON = "SavedHikesRefreshButton"
-
-  // Components specific for the Loading section
-  const val TEST_TAG_SAVED_HIKES_LOADING_ANIMATION = "SavedHikesLoadingAnimation"
 }
 
 @Composable
@@ -91,12 +84,11 @@ fun SavedHikesScreen(
             when {
               loading -> CenteredLoadingAnimation()
               errorMessageId != null ->
-                CenteredErrorAction(
-                  errorMessage = errorMessageId!!,
-                  actionIcon = Icons.Default.Refresh,
-                  actionContentDescription = R.string.saved_hikes_screen_refresh_button_action,
-                  onAction = { savedHikesViewModel.loadSavedHikes() }
-                )
+                  CenteredErrorAction(
+                      errorMessage = errorMessageId!!,
+                      actionIcon = Icons.Default.Refresh,
+                      actionContentDescription = R.string.saved_hikes_screen_refresh_button_action,
+                      onAction = { savedHikesViewModel.loadSavedHikes() })
               currentSection == SavedHikesSection.Planned -> PlannedHikes(savedHikes)
               currentSection == SavedHikesSection.Saved -> SavedHikes(savedHikes)
             }
