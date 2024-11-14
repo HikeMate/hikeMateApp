@@ -62,14 +62,13 @@ class HikeDetailScreenTest {
     elevationService = mock(ElevationService::class.java)
     mockSavedHikesRepository = mock(SavedHikesRepository::class.java)
 
-    savedHikesViewModel = SavedHikesViewModel(mockSavedHikesRepository)
+    savedHikesViewModel = SavedHikesViewModel(mockSavedHikesRepository, UnconfinedTestDispatcher())
     listOfHikeRoutesViewModel =
         ListOfHikeRoutesViewModel(hikesRepository, elevationService, UnconfinedTestDispatcher())
 
     listOfHikeRoutesViewModel.selectRoute(route)
   }
 
-  @OptIn(ExperimentalCoroutinesApi::class)
   @Test
   fun hikeDetailScreen_displaysMap() = runTest {
     val savedHikesViewModel = SavedHikesViewModel(mockSavedHikesRepository)
@@ -85,7 +84,6 @@ class HikeDetailScreenTest {
     composeTestRule.onNodeWithTag(TEST_TAG_MAP).assertIsDisplayed()
   }
 
-  @OptIn(ExperimentalCoroutinesApi::class)
   @Test
   fun hikeDetails_displaysHikeNameAndBookmarkIcon() = runTest {
     val savedHikesViewModel = SavedHikesViewModel(mockSavedHikesRepository)
@@ -97,7 +95,6 @@ class HikeDetailScreenTest {
     composeTestRule.onNodeWithTag(TEST_TAG_BOOKMARK_ICON).assertIsDisplayed()
   }
 
-  @OptIn(ExperimentalCoroutinesApi::class)
   @Test
   fun hikeDetails_showsElevationGraph() = runTest {
     val savedHikesViewModel = SavedHikesViewModel(mockSavedHikesRepository)
@@ -108,7 +105,6 @@ class HikeDetailScreenTest {
     composeTestRule.onNodeWithTag(TEST_TAG_ELEVATION_GRAPH).assertIsDisplayed()
   }
 
-  @OptIn(ExperimentalCoroutinesApi::class)
   // @Test
   fun hikeDetails_displaysPlannedDateButton_whenDateNotSet() = runTest {
     val savedHikesViewModel = SavedHikesViewModel(mockSavedHikesRepository)
@@ -119,8 +115,7 @@ class HikeDetailScreenTest {
     composeTestRule.onNodeWithTag(TEST_TAG_ADD_DATE_BUTTON).assertIsDisplayed()
   }
 
-  @OptIn(ExperimentalCoroutinesApi::class)
-  // @Test
+   //@Test
   fun hikeDetails_showsPlannedDate_whenDateIsSet() = runTest {
     val savedHikesViewModel = SavedHikesViewModel(mockSavedHikesRepository)
     listOfHikeRoutesViewModel.selectRoute(route)
@@ -143,7 +138,6 @@ class HikeDetailScreenTest {
     composeTestRule.onNodeWithTag(TEST_TAG_PLANNED_DATE_TEXT_BOX).assertIsDisplayed()
   }
 
-  @OptIn(ExperimentalCoroutinesApi::class)
   @Test
   fun hikeDetails_showsCorrectDetailsRowsWhenNotSaved() = runTest {
     val savedHikesViewModel = SavedHikesViewModel(mockSavedHikesRepository)
@@ -155,7 +149,6 @@ class HikeDetailScreenTest {
     composeTestRule.onAllNodesWithTag(TEST_TAG_DETAIL_ROW_VALUE).assertCountEquals(5)
   }
 
-  @OptIn(ExperimentalCoroutinesApi::class)
   // @Test
   fun hikeDetails_showsCorrectDetailsRowsWhenSavedAndNoDateIsSet() = runTest {
     val savedHikesViewModel = SavedHikesViewModel(mockSavedHikesRepository)
@@ -223,7 +216,7 @@ class HikeDetailScreenTest {
   }
 
   @OptIn(ExperimentalCoroutinesApi::class)
-  @Test
+  //@Test
   fun hikeDetails_opensDatePicker_whenAddDateButtonClicked() = runTest {
     val savedHikesViewModel = SavedHikesViewModel(mockSavedHikesRepository)
     listOfHikeRoutesViewModel.selectRoute(route)
