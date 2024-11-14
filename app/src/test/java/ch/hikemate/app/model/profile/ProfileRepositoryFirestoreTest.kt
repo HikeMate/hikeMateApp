@@ -98,7 +98,8 @@ class ProfileRepositoryFirestoreTest {
           assert(profile_.email == "john.doe@gmail.com")
           assert(profile_.hikingLevel == HikingLevel.BEGINNER)
         },
-        onFailure = { fail("Failure callback should not be called") })
+        onFailure = { fail("Failure callback should not be called") },
+        context = context)
 
     verify(mockDocumentReference).set(any())
   }

@@ -30,7 +30,6 @@ import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
-import org.mockito.kotlin.capture
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.whenever
 
@@ -115,7 +114,7 @@ class AuthViewModelTest {
           null
         }
         .`when`(mockProfile)
-        .createProfile(any(), any(), any())
+        .createProfile(any(), any(), any(), any())
 
     // Verify that `currentUser` is initially null
     assertNull(viewModel.currentUser.first())
@@ -125,7 +124,7 @@ class AuthViewModelTest {
 
     // Verify interactions with the repository and profile repository
     verify(mockRepository).signInWithGoogle(any(), any(), any(), any(), any(), anyOrNull())
-    verify(mockProfile).createProfile(any(), any(), any())
+    verify(mockProfile).createProfile(any(), any(), any(), any())
     val currentUser = viewModel.currentUser.first() // Get the first (current) value of the flow
 
     // Confirm that currentUser is now logged in
@@ -235,7 +234,7 @@ class AuthViewModelTest {
               null
             }
             .whenever(mockProfile)
-            .createProfile(any(), any(), any())
+            .createProfile(any(), any(), any(), any())
 
         // Create ArgumentCaptor for profile update request
         val profileUpdateRequest = ArgumentCaptor.forClass(UserProfileChangeRequest::class.java)
@@ -266,7 +265,7 @@ class AuthViewModelTest {
               null
             }
             .whenever(mockProfile)
-            .createProfile(any(), any(), any())
+            .createProfile(any(), any(), any(), any())
 
         // Verify initial state
         assertNull(viewModel.currentUser.value)
@@ -276,6 +275,7 @@ class AuthViewModelTest {
             name = "Test User",
             email = "test@example.com",
             password = "password123",
+            context = mockContext,
             onSuccess = {},
             onErrorAction = { fail("Error callback should not be called") })
 
@@ -293,7 +293,7 @@ class AuthViewModelTest {
         assertEquals("Test User", profileUpdateRequest.value.displayName)
 
         // Verify profile creation was called with correct user
-        verify(mockProfile).createProfile(eq(mockFirebaseUser), any(), any())
+        verify(mockProfile).createProfile(eq(mockFirebaseUser), any(), any(), any())
 
         // Verify final state
         assertEquals(mockFirebaseUser, viewModel.currentUser.value)
@@ -322,7 +322,8 @@ class AuthViewModelTest {
             "mock@example.com",
             "password",
             { fail("Success callback should not be called") },
-            {})
+            {},
+            context = mockContext)
 
         val currentUser = viewModel.currentUser.first()
 

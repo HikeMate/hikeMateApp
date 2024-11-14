@@ -52,7 +52,8 @@ class AuthViewModel(
               // TODO handle errors
               user,
               onSuccess = { _currentUser.value = user },
-              onFailure = {})
+              onFailure = {},
+              context = context)
         },
         // TODO handle errors
         onErrorAction = {},
@@ -73,7 +74,8 @@ class AuthViewModel(
       email: String,
       password: String,
       onSuccess: () -> Unit,
-      onErrorAction: (Exception) -> Unit
+      onErrorAction: (Exception) -> Unit,
+      context: Context
   ) {
     if (email.isEmpty() || password.isEmpty()) {
       onErrorAction(Exception("Email and password must not be empty"))
@@ -95,7 +97,8 @@ class AuthViewModel(
                         _currentUser.value = user
                         onSuccess()
                       },
-                      onFailure = onErrorAction)
+                      onFailure = onErrorAction,
+                      context = context)
                 } else {
                   // TODO handle errors in a unanimous way
                   onErrorAction(Exception("Error updating user profile"))

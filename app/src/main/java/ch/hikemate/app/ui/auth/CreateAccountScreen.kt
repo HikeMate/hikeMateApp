@@ -101,7 +101,8 @@ fun CreateAccountScreen(navigationActions: NavigationActions, authViewModel: Aut
             onErrorAction = {
               // Show an error message in a toast
               Toast.makeText(context, it.message, Toast.LENGTH_SHORT).show()
-            })
+            },
+            context = context)
       }
     }
   }
