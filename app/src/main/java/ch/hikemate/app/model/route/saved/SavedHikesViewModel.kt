@@ -48,19 +48,27 @@ class SavedHikesViewModel(
   private val _hikeDetailState = MutableStateFlow<HikeDetailState?>(null)
   val hikeDetailState: StateFlow<HikeDetailState?> = _hikeDetailState.asStateFlow()
 
-  fun updateHikeDetailState(route: HikeRoute) {
-    viewModelScope.launch {
-      val savedHike = isHikeSaved(route.id)
-      _hikeDetailState.value =
-          HikeDetailState(
-              hike = route,
-              isSaved = savedHike != null,
-              bookmark =
-                  if (savedHike != null) R.drawable.bookmark_filled_blue
-                  else R.drawable.bookmark_no_fill,
-              plannedDate = savedHike?.date)
-    }
-  }
+  /**
+   * Set the provided route as the "selected" hike for this view model.
+   *
+   * This function will update the [hikeDetailState] state flow with the details of this hike,
+   * whether it is saved and/or planned.
+   */
+  fun updateHikeDetailState(route: HikeRoute) =
+      viewModelScope.launch { updateHikeDetailStateAsync(route) }
+
+  private suspend fun updateHikeDetailStateAsync(route: HikeRoute) =
+      withContext(dispatcher) {
+        val savedHike = isHikeSaved(route.id)
+        _hikeDetailState.value =
+            HikeDetailState(
+                hike = route,
+                isSaved = savedHike != null,
+                bookmark =
+                    if (savedHike != null) R.drawable.bookmark_filled_blue
+                    else R.drawable.bookmark_no_fill,
+                plannedDate = savedHike?.date)
+      }
 
   fun toggleSaveState() {
     _hikeDetailState.value?.let { currentState ->
