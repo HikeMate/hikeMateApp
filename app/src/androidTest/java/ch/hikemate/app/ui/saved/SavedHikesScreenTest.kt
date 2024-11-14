@@ -15,8 +15,9 @@ import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.TEST_TAG_SIDEBAR_BUTTON
 import com.google.firebase.Timestamp
 import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
-import io.mockk.verify
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Rule
@@ -33,11 +34,12 @@ class SavedHikesScreenTest : TestCase() {
 
   @get:Rule val composeTestRule = createComposeRule()
 
+  @OptIn(ExperimentalCoroutinesApi::class)
   @Before
   fun setUp() {
     navigationActions = mock(NavigationActions::class.java)
     savedHikesRepository = mock(SavedHikesRepository::class.java)
-    savedHikesViewModel = SavedHikesViewModel(savedHikesRepository)
+    savedHikesViewModel = SavedHikesViewModel(savedHikesRepository, UnconfinedTestDispatcher())
   }
 
   @Test
