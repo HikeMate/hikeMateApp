@@ -22,6 +22,11 @@ class SavedHikesViewModel(
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : ViewModel() {
 
+  /**
+   * This data class represents the state of a hike detail screen. hike: The hike being displayed.
+   * bookmark: The value of the bookmark (grey/blue) isSaved: Whether the hike is saved by the user.
+   * plannedDate: Date of the planned hike, if any.
+   */
   data class HikeDetailState(
       val hike: HikeRoute,
       val bookmark: Int,
@@ -45,9 +50,11 @@ class SavedHikesViewModel(
     private const val LOG_TAG = "SavedHikesViewModel"
   }
 
+  /** The current state of the hike detail screen. */
   private val _hikeDetailState = MutableStateFlow<HikeDetailState?>(null)
   val hikeDetailState: StateFlow<HikeDetailState?> = _hikeDetailState.asStateFlow()
 
+  /** Re-initialises the state of the hike detail screen with a new route */
   fun updateHikeDetailState(route: HikeRoute) {
     viewModelScope.launch {
       val savedHike = isHikeSaved(route.id)
@@ -62,10 +69,14 @@ class SavedHikesViewModel(
     }
   }
 
+  /**
+   * Toggles the state of the isSaved field in the hike detail state. It also saves the value of the
+   * Hike calling addSavedHike and/or removeSavedHike.
+   */
   fun toggleSaveState() {
     _hikeDetailState.value?.let { currentState ->
       if (currentState.isSaved) {
-        // Remove the saved hike
+        // Remove the saved hike if there was already one
         savedHike.value.find { it.id == currentState.hike.id }?.let { removeSavedHike(it) }
       } else {
         // Add new saved hike
@@ -87,11 +98,17 @@ class SavedHikesViewModel(
     }
   }
 
+  /**
+   * Update the date of the planned hike. It also calls removeSavedHike and addSavedHike to update
+   * the saved hikes list.
+   */
   fun updatePlannedDate(timestamp: Timestamp?) {
     _hikeDetailState.value?.let { currentState ->
       val updatedHike =
           SavedHike(currentState.hike.id, currentState.hike.name ?: "Unnamed", timestamp)
+
       if (currentState.isSaved) {
+        // The contrary is impossible.
         savedHike.value.find { it.id == currentState.hike.id }?.let { removeSavedHike(it) }
       }
       addSavedHike(updatedHike)
@@ -100,6 +117,11 @@ class SavedHikesViewModel(
     }
   }
 
+  /**
+   * Returns whether the current hike detail is saved by the user.
+   *
+   * @return true if the hike is saved, false otherwise
+   */
   private fun isHikeSaved(): Boolean {
     return _hikeDetailState.value?.isSaved ?: false
   }
