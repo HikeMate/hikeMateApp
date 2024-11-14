@@ -44,7 +44,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import ch.hikemate.app.R
-import ch.hikemate.app.model.route.HikeRoute
+import ch.hikemate.app.model.route.DetailedHikeRoute
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
 import ch.hikemate.app.ui.components.BackButton
 import ch.hikemate.app.ui.components.ElevationGraph
@@ -66,6 +66,8 @@ import ch.hikemate.app.utils.from
 import ch.hikemate.app.utils.humanReadablePlannedLabel
 import com.google.firebase.Timestamp
 import java.util.Calendar
+import java.util.Locale
+import kotlin.math.roundToInt
 import org.osmdroid.config.Configuration
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
@@ -98,6 +100,7 @@ fun HikeDetailScreen(
   }
 
   val route = listOfHikeRoutesViewModel.selectedHikeRoute.collectAsState().value!!
+  val detailedRoute = DetailedHikeRoute.create(route)
 
   // Only do the configuration on the first composition, not on every recomposition
   LaunchedEffect(Unit) {
@@ -165,13 +168,13 @@ fun HikeDetailScreen(
                 .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
 
     // Hike Details bottom sheet
-    HikeDetails(route, true, null)
+    HikeDetails(detailedRoute, true, null)
   }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HikeDetails(route: HikeRoute, isSaved: Boolean, date: Timestamp?) {
+fun HikeDetails(detailedRoute: DetailedHikeRoute, isSaved: Boolean, date: Timestamp?) {
   val scaffoldState = rememberBottomSheetScaffoldState()
 
   BottomSheetScaffold(
@@ -187,7 +190,9 @@ fun HikeDetails(route: HikeRoute, isSaved: Boolean, date: Timestamp?) {
                 modifier = Modifier.padding(16.dp).weight(1f),
             ) {
               Text(
-                  text = route.name ?: stringResource(R.string.map_screen_hike_title_default),
+                  text =
+                      detailedRoute.route.name
+                          ?: stringResource(R.string.map_screen_hike_title_default),
                   style = MaterialTheme.typography.titleLarge,
                   textAlign = TextAlign.Left,
                   modifier = Modifier.testTag(TEST_TAG_HIKE_NAME))
@@ -220,17 +225,28 @@ fun HikeDetails(route: HikeRoute, isSaved: Boolean, date: Timestamp?) {
                       strokeColor = MaterialTheme.colorScheme.onSurface,
                       fillColor = MaterialTheme.colorScheme.surface))
 
+          val distanceString =
+              String.format(Locale.getDefault(), "%.2f", detailedRoute.totalDistance)
+          val elevationGainString = detailedRoute.elevationGain.roundToInt().toString()
+          val hourString =
+              String.format(
+                  Locale.getDefault(), "%02d", (detailedRoute.estimatedTime / 60).roundToInt())
+          val minuteString =
+              String.format(
+                  Locale.getDefault(), "%02d", (detailedRoute.estimatedTime % 60).roundToInt())
+
           DetailRow(
-              label = stringResource(R.string.hike_detail_screen_label_distance), value = "5km")
+              label = stringResource(R.string.hike_detail_screen_label_distance),
+              value = "${distanceString}km")
           DetailRow(
               label = stringResource(R.string.hike_detail_screen_label_elevation_gain),
-              value = "834m")
+              value = "${elevationGainString}m")
           DetailRow(
               label = stringResource(R.string.hike_detail_screen_label_estimated_time),
-              value = "3:30")
+              value = "${hourString}:${minuteString}")
           DetailRow(
               label = stringResource(R.string.hike_detail_screen_label_difficulty),
-              value = "Easy",
+              value = detailedRoute.difficulty,
               valueColor = Color.Green)
 
           DateDetailRow(isSaved, date)
