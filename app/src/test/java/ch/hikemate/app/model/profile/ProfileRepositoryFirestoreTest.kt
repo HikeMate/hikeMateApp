@@ -1,8 +1,12 @@
 package ch.hikemate.app.model.profile
 
+import android.content.Context
+import androidx.test.core.app.ApplicationProvider
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
+import com.google.firebase.FirebaseApp
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.CollectionReference
@@ -14,6 +18,7 @@ import junit.framework.TestCase.fail
 import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
 import org.mockito.Mock
 import org.mockito.Mockito.doAnswer
 import org.mockito.Mockito.mock
@@ -24,6 +29,7 @@ import org.mockito.kotlin.timeout
 import org.mockito.kotlin.verify
 
 @Suppress("UNCHECKED_CAST")
+@RunWith(AndroidJUnit4::class)
 class ProfileRepositoryFirestoreTest {
   @Mock private lateinit var mockFirestore: FirebaseFirestore
   @Mock private lateinit var mockDocumentReference: DocumentReference
@@ -33,6 +39,7 @@ class ProfileRepositoryFirestoreTest {
   @Mock private lateinit var firebaseAuth: com.google.firebase.auth.FirebaseAuth
 
   private lateinit var repository: ProfileRepositoryFirestore
+  private lateinit var context: Context
 
   private val profile =
       Profile(
@@ -44,6 +51,8 @@ class ProfileRepositoryFirestoreTest {
 
   @Before
   fun setUp() {
+    context = ApplicationProvider.getApplicationContext()
+    FirebaseApp.initializeApp(context)
     MockitoAnnotations.openMocks(this)
     repository = ProfileRepositoryFirestore(mockFirestore)
     firebaseAuth = mock()
