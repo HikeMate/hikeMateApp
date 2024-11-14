@@ -72,6 +72,7 @@
         An error occurred while loading saved hikes.
         Please check your Internet connection and try again.
     </string>
+    <string name="saved_hikes_screen_refresh_button_action">Refresh</string>
     <string name="saved_hikes_screen_saved_section_title">Saved hikes</string>
     <string name="saved_hikes_screen_saved_section_empty_message">No saved hikes to display</string>
     <string name="saved_hikes_screen_planned_section_title">Planned hikes</string>
