@@ -115,7 +115,7 @@ class HikeDetailScreenTest {
     composeTestRule.onNodeWithTag(TEST_TAG_ADD_DATE_BUTTON).assertIsDisplayed()
   }
 
-   //@Test
+  // @Test
   fun hikeDetails_showsPlannedDate_whenDateIsSet() = runTest {
     val savedHikesViewModel = SavedHikesViewModel(mockSavedHikesRepository)
     listOfHikeRoutesViewModel.selectRoute(route)
@@ -216,7 +216,7 @@ class HikeDetailScreenTest {
   }
 
   @OptIn(ExperimentalCoroutinesApi::class)
-  //@Test
+  // @Test
   fun hikeDetails_opensDatePicker_whenAddDateButtonClicked() = runTest {
     val savedHikesViewModel = SavedHikesViewModel(mockSavedHikesRepository)
     listOfHikeRoutesViewModel.selectRoute(route)
