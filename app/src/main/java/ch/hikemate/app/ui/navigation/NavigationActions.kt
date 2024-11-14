@@ -1,9 +1,10 @@
 package ch.hikemate.app.ui.navigation
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.outlined.Bookmark
 import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.outlined.Place
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -40,9 +41,9 @@ data class TopLevelDestination(val route: String, val icon: ImageVector, val tex
 
 /** Object containing top-level destinations. */
 object TopLevelDestinations {
-  val SAVED_HIKES = TopLevelDestination(Route.SAVED_HIKES, Icons.Outlined.Home, "Saved Hikes")
-  val MAP = TopLevelDestination(Route.MAP, Icons.Outlined.Place, "Map")
-  val PROFILE = TopLevelDestination(Route.PROFILE, Icons.Outlined.Person, "Profile")
+  val SAVED_HIKES = TopLevelDestination(Route.SAVED_HIKES, Icons.Outlined.Bookmark, "Saved Hikes")
+  val MAP = TopLevelDestination(Route.MAP, Icons.Filled.LocationOn, "Map")
+  val PROFILE = TopLevelDestination(Route.PROFILE, Icons.Filled.Person, "Profile")
   val AUTH = TopLevelDestination(Route.AUTH, Icons.Outlined.Person, "Auth")
 }
 

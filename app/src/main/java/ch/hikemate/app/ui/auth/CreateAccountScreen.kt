@@ -110,10 +110,10 @@ fun CreateAccountScreen(navigationActions: NavigationActions, authViewModel: Aut
       modifier =
           Modifier.testTag(Screen.CREATE_ACCOUNT)
               .padding(
-                  // Add padding to the sidebar padding
+                  // Add for the status bar
                   start = 16.dp,
                   end = 16.dp,
-                  top = 16.dp,
+                  top = 40.dp,
               ),
       verticalArrangement = Arrangement.spacedBy(16.dp)) {
         BackButton(navigationActions)

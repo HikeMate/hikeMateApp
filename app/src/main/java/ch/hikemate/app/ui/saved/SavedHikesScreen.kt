@@ -5,14 +5,17 @@ import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -36,16 +39,16 @@ import ch.hikemate.app.ui.components.CenteredErrorAction
 import ch.hikemate.app.ui.components.CenteredLoadingAnimation
 import ch.hikemate.app.ui.components.HikeCard
 import ch.hikemate.app.ui.components.HikeCardStyleProperties
+import ch.hikemate.app.ui.navigation.BottomBarNavigation
 import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
-import ch.hikemate.app.ui.navigation.SideBarNavigation
 import ch.hikemate.app.utils.humanReadablePlannedLabel
 
 object SavedHikesScreen {
   // Components used by several (or all) sections
-  const val TEST_TAG_SAVED_HIKES_BOTTOM_MENU = "SavedHikesBottomMenu"
-  const val TEST_TAG_SAVED_HIKES_BOTTOM_MENU_ITEM_PREFIX = "SavedHikesBottomMenuItem_"
+  const val TEST_TAG_SAVED_HIKES_TABS_MENU = "SavedHikesTabsMenu"
+  const val TEST_TAG_SAVED_HIKES_TABS_MENU_ITEM_PREFIX = "SavedHikesTabsMenuItem_"
   const val TEST_TAG_SAVED_HIKES_SECTION_CONTAINER = "SavedHikesSectionContainer"
   const val TEST_TAG_SAVED_HIKES_HIKE_CARD = "SavedHikesHikeCard"
 
@@ -63,40 +66,60 @@ fun SavedHikesScreen(
     savedHikesViewModel: SavedHikesViewModel = viewModel(factory = SavedHikesViewModel.Factory),
     navigationActions: NavigationActions
 ) {
-  // The Screen will need to be incorporated into the SideBarNavigation composable
-  SideBarNavigation(
+  BottomBarNavigation(
       onTabSelect = { route -> navigationActions.navigateTo(route) },
       tabList = LIST_TOP_LEVEL_DESTINATIONS,
       selectedItem = Route.SAVED_HIKES,
   ) { paddingValues ->
-    var currentSection by remember { mutableStateOf(SavedHikesSection.Planned) }
+    var currentSection by remember { mutableStateOf(SavedHikesSection.Saved) }
     val loading by savedHikesViewModel.loadingSavedHikes.collectAsState()
     val errorMessageId by savedHikesViewModel.errorMessage.collectAsState()
     val savedHikes by savedHikesViewModel.savedHike.collectAsState()
 
+    val pagerState = rememberPagerState { SavedHikesSection.values().size }
+
     LaunchedEffect(Unit) { savedHikesViewModel.loadSavedHikes() }
 
-    Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-      Column(
-          modifier =
-              Modifier.weight(1f)
-                  .testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_SECTION_CONTAINER)) {
-            when {
-              loading -> CenteredLoadingAnimation()
-              errorMessageId != null ->
-                  CenteredErrorAction(
-                      errorMessage = errorMessageId!!,
-                      actionIcon = Icons.Default.Refresh,
-                      actionContentDescription = R.string.saved_hikes_screen_refresh_button_action,
-                      onAction = { savedHikesViewModel.loadSavedHikes() })
-              currentSection == SavedHikesSection.Planned -> PlannedHikes(savedHikes)
-              currentSection == SavedHikesSection.Saved -> SavedHikes(savedHikes)
-            }
-          }
+    LaunchedEffect(currentSection) { pagerState.animateScrollToPage(currentSection.ordinal) }
 
-      // Navigation items between nearby hikes, planned hikes, and saved hikes
-      SavedHikesBottomMenu(currentSection) { currentSection = it }
+    LaunchedEffect(pagerState.currentPage, pagerState.isScrollInProgress) {
+      if (!pagerState.isScrollInProgress)
+          currentSection = SavedHikesSection.values()[pagerState.currentPage]
     }
+
+    Column(
+        modifier =
+            Modifier.fillMaxSize()
+                .padding(paddingValues)
+                .testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_SECTION_CONTAINER)) {
+          // Navigation items between nearby hikes, planned hikes, and saved hikes
+          SavedHikesTabsMenu(
+              selectedIndex = currentSection.ordinal, onSelectedChange = { currentSection = it })
+
+          when {
+            loading -> CenteredLoadingAnimation()
+            errorMessageId != null ->
+                CenteredErrorAction(
+                    errorMessage = errorMessageId!!,
+                    actionIcon = Icons.Default.Refresh,
+                    actionContentDescription = R.string.saved_hikes_screen_refresh_button_action,
+                    onAction = { savedHikesViewModel.loadSavedHikes() })
+            else ->
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxWidth(),
+                ) { pageIndex ->
+                  Column {
+                    SavedHikesSection.values()[pageIndex].let {
+                      when (it) {
+                        SavedHikesSection.Planned -> PlannedHikes(savedHikes)
+                        SavedHikesSection.Saved -> SavedHikes(savedHikes)
+                      }
+                    }
+                  }
+                }
+          }
+        }
   }
 }
 
@@ -189,22 +212,21 @@ private fun SavedHikes(hikes: List<SavedHike>?) {
 }
 
 @Composable
-private fun SavedHikesBottomMenu(
-    selected: SavedHikesSection,
-    onSelectedChange: (SavedHikesSection) -> Unit
-) {
-  NavigationBar(modifier = Modifier.testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_BOTTOM_MENU)) {
-    SavedHikesSection.values().forEach { screen ->
-      NavigationBarItem(
-          icon = { Icon(painter = painterResource(screen.icon), contentDescription = null) },
-          label = { Text(screen.label) },
-          selected = selected == screen,
-          onClick = { onSelectedChange(screen) },
-          modifier =
-              Modifier.testTag(
-                  SavedHikesScreen.TEST_TAG_SAVED_HIKES_BOTTOM_MENU_ITEM_PREFIX + screen.name))
-    }
-  }
+private fun SavedHikesTabsMenu(selectedIndex: Int, onSelectedChange: (SavedHikesSection) -> Unit) {
+  TabRow(
+      selectedTabIndex = selectedIndex,
+      modifier = Modifier.testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_TABS_MENU)) {
+        SavedHikesSection.values().forEachIndexed { index, screen ->
+          Tab(
+              text = { Text(screen.label) },
+              icon = { Icon(painter = painterResource(screen.icon), contentDescription = null) },
+              selected = selectedIndex == index,
+              onClick = { onSelectedChange(screen) },
+              modifier =
+                  Modifier.testTag(
+                      SavedHikesScreen.TEST_TAG_SAVED_HIKES_TABS_MENU_ITEM_PREFIX + screen.name))
+        }
+      }
 }
 
 /**
@@ -214,6 +236,6 @@ private fun SavedHikesBottomMenu(
  * element of the enum will be the left-most section in the bottom menu.
  */
 enum class SavedHikesSection(val label: String, @DrawableRes val icon: Int) {
-  Planned("Planned", R.drawable.calendar_today),
-  Saved("Saved", R.drawable.bookmark)
+  Saved("Saved", R.drawable.bookmark),
+  Planned("Planned", R.drawable.calendar_today)
 }

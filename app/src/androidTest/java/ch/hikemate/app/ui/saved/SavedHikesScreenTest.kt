@@ -13,7 +13,7 @@ import ch.hikemate.app.model.route.saved.SavedHikesRepository
 import ch.hikemate.app.model.route.saved.SavedHikesViewModel
 import ch.hikemate.app.ui.components.CenteredErrorAction
 import ch.hikemate.app.ui.navigation.NavigationActions
-import ch.hikemate.app.ui.navigation.TEST_TAG_SIDEBAR_BUTTON
+import ch.hikemate.app.ui.navigation.TEST_TAG_BOTTOM_BAR
 import com.google.firebase.Timestamp
 import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
 import kotlin.time.Duration.Companion.seconds
@@ -44,10 +44,10 @@ class SavedHikesScreenTest : TestCase() {
   }
 
   @Test
-  fun sidebarNavigationMenuButtonIsDisplayed() {
+  fun bottomBarMenuIsDisplayed() {
     composeTestRule.setContent { SavedHikesScreen(savedHikesViewModel, navigationActions) }
 
-    composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(TEST_TAG_BOTTOM_BAR).assertIsDisplayed()
   }
 
   @Test
@@ -55,12 +55,11 @@ class SavedHikesScreenTest : TestCase() {
     composeTestRule.setContent { SavedHikesScreen(savedHikesViewModel, navigationActions) }
 
     composeTestRule
-        .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_BOTTOM_MENU)
+        .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_TABS_MENU)
         .assertIsDisplayed()
     for (element in SavedHikesSection.values()) {
       composeTestRule
-          .onNodeWithTag(
-              SavedHikesScreen.TEST_TAG_SAVED_HIKES_BOTTOM_MENU_ITEM_PREFIX + element.name)
+          .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_TABS_MENU_ITEM_PREFIX + element.name)
           .assertIsDisplayed()
     }
   }
@@ -77,6 +76,13 @@ class SavedHikesScreenTest : TestCase() {
   @Test
   fun plannedScreenWithNoHikesDisplaysCorrectly() {
     composeTestRule.setContent { SavedHikesScreen(savedHikesViewModel, navigationActions) }
+
+    // Select the planned hikes tab
+    composeTestRule
+        .onNodeWithTag(
+            SavedHikesScreen.TEST_TAG_SAVED_HIKES_TABS_MENU_ITEM_PREFIX +
+                SavedHikesSection.Planned.name)
+        .performClick()
 
     composeTestRule
         .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_SAVED_TITLE)
@@ -104,6 +110,13 @@ class SavedHikesScreenTest : TestCase() {
 
         composeTestRule.setContent { SavedHikesScreen(savedHikesViewModel, navigationActions) }
 
+        // Select the planned hikes tab
+        composeTestRule
+            .onNodeWithTag(
+                SavedHikesScreen.TEST_TAG_SAVED_HIKES_TABS_MENU_ITEM_PREFIX +
+                    SavedHikesSection.Planned.name)
+            .performClick()
+
         composeTestRule
             .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_SAVED_TITLE)
             .assertIsNotDisplayed()
@@ -127,7 +140,7 @@ class SavedHikesScreenTest : TestCase() {
 
     composeTestRule
         .onNodeWithTag(
-            SavedHikesScreen.TEST_TAG_SAVED_HIKES_BOTTOM_MENU_ITEM_PREFIX +
+            SavedHikesScreen.TEST_TAG_SAVED_HIKES_TABS_MENU_ITEM_PREFIX +
                 SavedHikesSection.Saved.name)
         .performClick()
 
@@ -159,7 +172,7 @@ class SavedHikesScreenTest : TestCase() {
 
         composeTestRule
             .onNodeWithTag(
-                SavedHikesScreen.TEST_TAG_SAVED_HIKES_BOTTOM_MENU_ITEM_PREFIX +
+                SavedHikesScreen.TEST_TAG_SAVED_HIKES_TABS_MENU_ITEM_PREFIX +
                     SavedHikesSection.Saved.name)
             .performClick()
 
