@@ -15,7 +15,6 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.QuerySnapshot
 import junit.framework.TestCase.fail
-import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -240,96 +239,6 @@ class ProfileRepositoryFirestoreTest {
   }
 
   @Test
-  fun addProfile_shouldCallFirestoreCollection() {
-    `when`(mockDocumentReference.set(any())).thenReturn(Tasks.forResult(null)) // Simulate success
-    val task = mock(Task::class.java) as Task<DocumentSnapshot>
-    `when`(task.isSuccessful).thenReturn(true)
-    `when`(task.result).thenReturn(mockDocumentSnapshot)
-    `when`(mockDocumentReference.get()).thenReturn(task)
-
-    doAnswer { invocation ->
-          val listener = invocation.arguments[0] as OnCompleteListener<DocumentSnapshot>
-          listener.onComplete(task)
-          null
-        }
-        .`when`(task)
-        .addOnCompleteListener(any())
-
-    repository.addProfile(profile, onSuccess = {}, onFailure = {})
-
-    verify(mockDocumentReference).set(any())
-  }
-
-  @Test
-  fun addProfile_onSuccess() {
-    val task = mock(Task::class.java) as Task<Void>
-    `when`(task.isSuccessful).thenReturn(true)
-    `when`(task.result).thenReturn(null)
-    `when`(mockDocumentReference.set(any())).thenReturn(task)
-
-    val getTask = mock(Task::class.java) as Task<DocumentSnapshot>
-    `when`(getTask.isSuccessful).thenReturn(false) // Simulate that the profile does not exist yet
-    `when`(getTask.exception).thenReturn(RuntimeException("Profile not found"))
-    `when`(mockDocumentReference.get()).thenReturn(getTask)
-
-    // Simulate the task being completed
-    doAnswer { invocation ->
-          val listener = invocation.arguments[0] as OnCompleteListener<Void>
-          listener.onComplete(task)
-          null
-        }
-        .`when`(task)
-        .addOnCompleteListener(any())
-
-    repository.addProfile(
-        profile,
-        onSuccess = {
-          // Do nothing; we just want to verify that the 'set' method was called
-        },
-        onFailure = { fail("Failure callback should not be called") })
-
-    verify(timeout(100)) { mockDocumentReference.set(any()) }
-  }
-
-  @Test
-  fun addProfile_onFailure() {
-    val task = mock(Task::class.java) as Task<Void>
-    `when`(task.isSuccessful).thenReturn(false)
-    `when`(task.exception).thenReturn(RuntimeException("Failed to add profile"))
-    `when`(mockDocumentReference.set(any())).thenReturn(task)
-
-    val addTask = mock(Task::class.java) as Task<DocumentSnapshot>
-    `when`(addTask.isSuccessful).thenReturn(true)
-    `when`(addTask.result).thenReturn(mockDocumentSnapshot)
-    `when`(mockDocumentReference.get()).thenReturn(addTask)
-
-    doAnswer { invocation ->
-          val listener = invocation.arguments[0] as OnCompleteListener<Void>
-          listener.onComplete(task)
-          null
-        }
-        .`when`(task)
-        .addOnCompleteListener(any())
-
-    doAnswer { invocation ->
-          val listener = invocation.arguments[0] as OnCompleteListener<DocumentSnapshot>
-          listener.onComplete(addTask)
-          null
-        }
-        .`when`(addTask)
-        .addOnCompleteListener(any())
-
-    repository.addProfile(
-        profile,
-        onSuccess = { fail("Success callback should not be called") },
-        onFailure = {
-          // Do nothing; we just want to verify that the 'set' method was called
-        })
-
-    verify(timeout(100)) { mockDocumentReference.set(any()) }
-  }
-
-  @Test
   fun updateProfile_shouldCallFirestoreCollection() {
     `when`(mockDocumentReference.set(any())).thenReturn(Tasks.forResult(null)) // Simulate success
 
@@ -449,30 +358,5 @@ class ProfileRepositoryFirestoreTest {
         })
 
     verify(timeout(100)) { mockDocumentReference.delete() }
-  }
-
-  @Test
-  fun addProfile_onProfileExistsCheckFailure() {
-    // Arrange
-    val task = mock(Task::class.java) as Task<DocumentSnapshot>
-    val exception = Exception("")
-    `when`(task.isSuccessful).thenReturn(false)
-    `when`(task.exception).thenReturn(exception)
-    `when`(mockDocumentReference.get()).thenReturn(task)
-
-    // Simulate the task being completed
-    doAnswer { invocation ->
-          val listener = invocation.arguments[0] as OnCompleteListener<DocumentSnapshot>
-          listener.onComplete(task)
-          null
-        }
-        .`when`(task)
-        .addOnCompleteListener(any())
-
-    assertThrows(Exception::class.java) {
-      repository.addProfile(profile, onSuccess = {}, onFailure = { throw it })
-    }
-
-    verify(mockDocumentReference).get()
   }
 }

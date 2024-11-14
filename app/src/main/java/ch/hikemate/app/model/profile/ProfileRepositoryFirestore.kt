@@ -48,7 +48,19 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
     val displayName = fireUser.displayName ?: context.getString(R.string.default_display_name)
     val email = fireUser.email ?: context.getString(R.string.default_email)
     val profile = Profile(fireUser.uid, displayName, email, HikingLevel.BEGINNER, Timestamp.now())
-    addProfile(profile, onSuccess = { onSuccess(profile) }, onFailure = onFailure)
+
+    profileExists(
+        fireUser.uid,
+        onSuccess = { exists ->
+          if (exists) {
+            getProfileById(fireUser.uid, onSuccess, onFailure)
+          } else {
+            val task = db.collection(collectionPath).document(profile.id).set(profile)
+
+            performFirestoreOperation(task as Task<Unit>, { onSuccess(profile) }, onFailure)
+          }
+        },
+        onFailure = onFailure)
   }
   /**
    * Checks if the profile with the given ID exists.
@@ -92,19 +104,6 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
         }
       }
     }
-  }
-
-  override fun addProfile(profile: Profile, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
-    profileExists(
-        profile.id,
-        onSuccess = { exists ->
-          if (exists) {
-            onFailure(Exception("Profile with id ${profile.id} already exists"))
-          } else {
-            updateProfile(profile, onSuccess, onFailure)
-          }
-        },
-        onFailure = { onFailure(Exception("Error getting document with id ${profile.id}")) })
   }
 
   override fun updateProfile(
