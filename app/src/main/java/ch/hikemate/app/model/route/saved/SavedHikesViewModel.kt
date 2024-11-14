@@ -70,30 +70,39 @@ class SavedHikesViewModel(
                 plannedDate = savedHike?.date)
       }
 
-  fun toggleSaveState() {
-    _hikeDetailState.value?.let { currentState ->
-      if (currentState.isSaved) {
-        // Remove the saved hike
-        savedHike.value.find { it.id == currentState.hike.id }?.let { removeSavedHike(it) }
-      } else {
-        // Add new saved hike
-        addSavedHike(
-            SavedHike(
-                currentState.hike.id,
-                currentState.hike.name ?: "Unnamed",
-                currentState.plannedDate))
-        updateHikeDetailState(currentState.hike)
+  /** Toggles the saved state of the currently selected hike. */
+  fun toggleSaveState() = viewModelScope.launch { toggleSaveStateAsync() }
+
+  private suspend fun toggleSaveStateAsync() =
+      withContext(dispatcher) {
+        // We want to toggle the saved state of the currently selected hike
+        val current = _hikeDetailState.value ?: return@withContext
+
+        // If current is already saved, we unsave it
+        if (current.isSaved) {
+          val savedHikeInfos = savedHike.value.find { it.id == current.hike.id }
+          if (savedHikeInfos != null) {
+            // This will mark the current hike as not saved and update the saved hikes list
+            removeSavedHikeAsync(savedHikeInfos)
+          }
+        } else {
+          val savedHikeInfo =
+              SavedHike(
+                  id = current.hike.id,
+                  name = current.hike.name ?: "Unnamed",
+                  date = current.plannedDate)
+          // This will mark the current hike as saved and update the saved hikes list
+          addSavedHikeAsync(savedHikeInfo)
+        }
+
+        // Update the state after toggling
+        _hikeDetailState.value =
+            current.copy(
+                isSaved = !current.isSaved,
+                bookmark =
+                    if (!current.isSaved) R.drawable.bookmark_filled_blue
+                    else R.drawable.bookmark_no_fill)
       }
-      // Update the state after toggling
-      _hikeDetailState.value =
-          currentState.copy(
-              isSaved = !currentState.isSaved,
-              bookmark =
-                  if (!currentState.isSaved) R.drawable.bookmark_filled_blue
-                  else R.drawable.bookmark_no_fill)
-      loadSavedHikes()
-    }
-  }
 
   fun updatePlannedDate(timestamp: Timestamp?) {
     _hikeDetailState.value?.let { currentState ->
