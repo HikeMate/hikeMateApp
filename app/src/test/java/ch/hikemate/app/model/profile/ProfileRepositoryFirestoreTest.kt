@@ -10,7 +10,6 @@ import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.QuerySnapshot
-import junit.framework.TestCase.assertNull
 import junit.framework.TestCase.fail
 import org.junit.Assert.assertThrows
 import org.junit.Before
@@ -105,7 +104,7 @@ class ProfileRepositoryFirestoreTest {
     `when`(mockDocumentSnapshot.getTimestamp("joinedDate")).thenReturn(testTimestamp)
 
     val profile = repository.documentToProfile(mockDocumentSnapshot)
-      assert(profile != null)
+    assert(profile != null)
     assert(profile!!.id == "1")
     assert(profile.name == "John Doe")
     assert(profile.email == "john.doe@gmail.com")
