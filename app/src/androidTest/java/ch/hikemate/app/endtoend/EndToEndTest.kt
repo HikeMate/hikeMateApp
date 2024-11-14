@@ -20,7 +20,7 @@ import ch.hikemate.app.ui.navigation.Screen.PROFILE
 import ch.hikemate.app.ui.navigation.TEST_TAG_BOTTOM_BAR
 import ch.hikemate.app.ui.navigation.TEST_TAG_MENU_ITEM_PREFIX
 import ch.hikemate.app.ui.navigation.TopLevelDestinations
-import ch.hikemate.app.ui.saved.TEST_TAG_SAVED_HIKES_SECTION_CONTAINER
+import ch.hikemate.app.ui.saved.SavedHikesScreen
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
@@ -102,14 +102,18 @@ class EndToEndTest : TestCase() {
         .onNodeWithTag(TEST_TAG_MENU_ITEM_PREFIX + TopLevelDestinations.SAVED_HIKES.route)
         .performClick()
     composeTestRule.onNodeWithTag(TEST_TAG_MAP).assertIsNotDisplayed()
-    composeTestRule.onNodeWithTag(TEST_TAG_SAVED_HIKES_SECTION_CONTAINER).assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_SECTION_CONTAINER)
+        .assertIsDisplayed()
 
     // Check that we can go back to the map
     composeTestRule
         .onNodeWithTag(TEST_TAG_MENU_ITEM_PREFIX + TopLevelDestinations.MAP.route)
         .performClick()
     composeTestRule.onNodeWithTag(TEST_TAG_MAP).assertIsDisplayed()
-    composeTestRule.onNodeWithTag(TEST_TAG_SAVED_HIKES_SECTION_CONTAINER).assertIsNotDisplayed()
+    composeTestRule
+        .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_SECTION_CONTAINER)
+        .assertIsNotDisplayed()
 
     // Check that we can go to the profile screen
     composeTestRule

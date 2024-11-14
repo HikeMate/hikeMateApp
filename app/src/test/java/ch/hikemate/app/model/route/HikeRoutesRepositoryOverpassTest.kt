@@ -686,6 +686,142 @@ class HikeRoutesRepositoryOverpassTest {
           .request(mock())
           .build()
 
+  private val responseWithIncorrectNames =
+      Response.Builder()
+          .code(200)
+          .message("OK")
+          .body(
+              """
+{
+    "version": 0.6,
+    "generator": "Overpass API 0.7.62.1 084b4234",
+    "osm3s": {
+        "timestamp_osm_base": "2024-10-10T19:14:42Z",
+        "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+    },
+    "elements": [
+        {
+            "type": "relation",
+            "id": 124582,
+            "bounds": {
+                "minlat": 45.8689061,
+                "minlon": 6.4395807,
+                "maxlat": 46.8283926,
+                "maxlon": 7.2109599
+            },
+            "members": [
+                {
+                    "type": "way",
+                    "ref": 936770892,
+                    "role": "",
+                    "geometry": [
+                        {
+                            "lat": 46.8240018,
+                            "lon": 6.4395807
+                        }
+                    ]
+                }
+            ],
+            "tags": {
+              "name": "Dézaley - Lavaux Vinorama? - fixme"
+            }
+        },
+        {
+            "type": "relation",
+            "id": 124583,
+            "bounds": {
+                "minlat": 45.8689061,
+                "minlon": 6.4395807,
+                "maxlat": 46.8283926,
+                "maxlon": 7.2109599
+            },
+            "members": [
+                {
+                    "type": "way",
+                    "ref": 936770892,
+                    "role": "",
+                    "geometry": [
+                        {
+                            "lat": 46.8240018,
+                            "lon": 6.4395807
+                        }
+                    ]
+                }
+            ],
+            "tags": {
+              "name": "Dézaley - Lyvaux Vinorama?"
+            }
+        },
+        {
+            "type": "relation",
+            "id": 124584,
+            "bounds": {
+                "minlat": 45.8689061,
+                "minlon": 6.4395807,
+                "maxlat": 46.8283926,
+                "maxlon": 7.2109599
+            },
+            "members": [
+                {
+                    "type": "way",
+                    "ref": 936770892,
+                    "role": "",
+                    "geometry": [
+                        {
+                            "lat": 46.8240018,
+                            "lon": 6.4395807
+                        }
+                    ]
+                }
+            ],
+            "tags": {
+              "name": "Dézaley - Lovaux Vinorama fixme"
+            }
+        },
+        {
+            "type": "relation",
+            "id": 124585,
+            "bounds": {
+                "minlat": 45.8689061,
+                "minlon": 6.4395807,
+                "maxlat": 46.8283926,
+                "maxlon": 7.2109599
+            },
+            "members": [
+                {
+                    "type": "way",
+                    "ref": 936770892,
+                    "role": "",
+                    "geometry": [
+                        {
+                            "lat": 46.8240018,
+                            "lon": 6.4395807
+                        }
+                    ]
+                }
+            ],
+            "tags": {
+              "name": "Dézaley - Luvaux Vinorama - fixme"
+            }
+        }
+    ]
+}
+"""
+                  .trimIndent()
+                  .replace("\n", "")
+                  .toResponseBody())
+          .protocol(Protocol.HTTP_1_1)
+          .header("Content-Type", "application/json")
+          .request(mock())
+          .build()
+
+  private val sanitizedNameSet =
+      setOf(
+          "Dézaley - Lavaux Vinorama",
+          "Dézaley - Lyvaux Vinorama",
+          "Dézaley - Lovaux Vinorama",
+          "Dézaley - Luvaux Vinorama")
+
   private val simpleRoutes: List<HikeRoute> =
       listOf(
           HikeRoute(
@@ -1040,10 +1176,17 @@ class HikeRoutesRepositoryOverpassTest {
       callbackCapture.firstValue.onResponse(mockCall, simpleResponse)
     }
 
+    var onSuccessCalled = false
+
     hikingRouteProviderRepositoryOverpass.getRouteById(
         simpleRoutes.first().id,
-        { assertEquals(simpleRoutes.first(), it) },
+        {
+          assertEquals(simpleRoutes.first(), it)
+          onSuccessCalled = true
+        },
         { fail("onFailure shouldn't have been called") })
+
+    assert(onSuccessCalled)
   }
 
   @Test
@@ -1110,6 +1253,30 @@ class HikeRoutesRepositoryOverpassTest {
         { fail("onFailure shouldn't have been called") })
 
     assert(successCalled)
+  }
+
+  @Test
+  fun namesAreCorrectlySanitized() {
+    val mockCall = mock(Call::class.java)
+    `when`(mockClient.newCall(any())).thenReturn(mockCall)
+
+    val callbackCapture = argumentCaptor<okhttp3.Callback>()
+
+    `when`(mockCall.enqueue(callbackCapture.capture())).then {
+      callbackCapture.firstValue.onResponse(mockCall, responseWithIncorrectNames)
+    }
+
+    var onSuccessCalled = false
+    hikingRouteProviderRepositoryOverpass.getRoutes(
+        bounds,
+        { routes ->
+          assertEquals(sanitizedNameSet, routes.map { it.name }.toSet())
+          onSuccessCalled = true
+        }) {
+          fail("Failed to fetch routes from Overpass API")
+        }
+
+    assert(onSuccessCalled)
   }
 
   @Test

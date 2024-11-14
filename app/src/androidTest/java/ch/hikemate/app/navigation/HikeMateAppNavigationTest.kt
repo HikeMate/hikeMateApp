@@ -15,7 +15,7 @@ import ch.hikemate.app.ui.components.BackButton
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.navigation.TEST_TAG_MENU_ITEM_PREFIX
-import ch.hikemate.app.ui.saved.TEST_TAG_SAVED_HIKES_SECTION_CONTAINER
+import ch.hikemate.app.ui.saved.SavedHikesScreen
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
@@ -106,7 +106,9 @@ class HikeMateAppNavigationTest {
 
     // Go to planned hikes
     composeTestRule.onNodeWithTag(TEST_TAG_MENU_ITEM_PREFIX + Route.SAVED_HIKES).performClick()
-    composeTestRule.onNodeWithTag(TEST_TAG_SAVED_HIKES_SECTION_CONTAINER).assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_SECTION_CONTAINER)
+        .assertIsDisplayed()
 
     // Go to profile screen
     composeTestRule.onNodeWithTag(TEST_TAG_MENU_ITEM_PREFIX + Route.PROFILE).performClick()
