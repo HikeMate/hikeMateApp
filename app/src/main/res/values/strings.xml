@@ -29,6 +29,22 @@
         Too many hikes to display on the map. Only %d hikes are shown.
     </string>
     <string name="map_screen_hike_title_default">Unnamed Hike</string>
+    <string name="map_screen_location_features_failed">Failed to enable location features</string>
+    <string name="map_screen_center_on_pos_content_description">Center map on my position</string>
+    <string name="map_screen_location_rationale_title">Permission Required</string>
+    <string name="map_screen_location_rationale_simple">Please grant HikeMate access to your location to center the map there.</string>
+    <string name="map_screen_location_rationale">
+        HikeMate needs access to your localization to
+        \n\n
+        1. Show your location on the screen and
+        \n\n
+        2. Center the map on your position at the click of a button
+        \n\n
+        If you do not grant the permission, the app will function normally, but the location features won\'t be available.
+    </string>
+    <string name="map_screen_location_rationale_cancel_button">No thanks</string>
+    <string name="map_screen_location_rationale_grant_button">Grant permission</string>
+    <string name="map_screen_location_not_available">Please enable location in settings</string>
     <string name="zoom_in">Zoom in</string>
     <string name="zoom_out">Zoom out</string>
     <string name="map_search_for_hikes">Searching for hikes…</string>

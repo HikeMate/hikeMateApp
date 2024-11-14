@@ -1,7 +1,11 @@
 package ch.hikemate.app.ui.map
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.layout.Box
@@ -10,16 +14,22 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -36,6 +46,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.hikemate.app.R
 import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
@@ -46,11 +57,19 @@ import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
+import ch.hikemate.app.utils.LocationUtils
 import ch.hikemate.app.utils.MapUtils
+import ch.hikemate.app.utils.PermissionUtils
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.MultiplePermissionsState
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationResult
 import org.osmdroid.config.Configuration
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Marker
 
 object MapScreen {
   /**
@@ -94,6 +113,33 @@ object MapScreen {
   /** (Config) Width of the stroke of the lines that represent the hikes on the map. */
   const val STROKE_WIDTH = 10f
 
+  /**
+   * (Config) Interval in milliseconds between updates of the user's location. The interval is
+   * defined empirically to avoid draining the battery too much while still providing a good
+   * experience to the user.
+   */
+  const val USER_LOCATION_UPDATE_INTERVAL = 5000L
+
+  /**
+   * (Config) Duration in milliseconds of the animation when centering the map on the user's
+   * location. The duration is defined empirically to make the transition smooth and not too fast.
+   * The value is arbitrary and can be adjusted based on the user's experience.
+   */
+  const val CENTER_MAP_ANIMATION_TIME = 500L
+
+  /**
+   * (Config) Duration in milliseconds of the animation when centering the map on a marker that was
+   * clicked. This duration is shorter than the center animation, because if the marker was clicked,
+   * it means it is already on the screen, hence the distance is minimal.
+   */
+  const val CENTER_MAP_ON_MARKER_ANIMATION_TIME = 200L
+
+  /**
+   * (Config) Size of the icon representing the user's location on the map. The size is defined
+   * empirically to make the icon visible and not too big.
+   */
+  const val USER_LOCATION_MARKER_ICON_SIZE = 40
+
   // These are the limits of the map. They are defined by the
   // latitude values that the map can display.
   // The latitude goes from -85 to 85, because going beyond
@@ -117,8 +163,46 @@ object MapScreen {
   const val TEST_TAG_EMPTY_HIKES_LIST_MESSAGE = "emptyHikesListMessage"
   const val TEST_TAG_SEARCHING_MESSAGE = "searchingMessage"
   const val TEST_TAG_SEARCH_LOADING_ANIMATION = "searchLoadingAnimation"
+  const val TEST_TAG_CENTER_MAP_BUTTON = "centerMapButton"
+  const val TEST_TAG_LOCATION_PERMISSION_ALERT = "locationPermissionAlert"
+  const val TEST_TAG_NO_THANKS_ALERT_BUTTON = "noThanksAlertButton"
+  const val TEST_TAG_GRANT_ALERT_BUTTON = "grantAlertButton"
 
   const val MINIMAL_SEARCH_TIME_IN_MS = 500 // ms
+
+  /**
+   * Launches a search for hikes in the area displayed on the map. The search is launched only if it
+   * is not already ongoing.
+   *
+   * @param isSearching Whether a search is already ongoing
+   * @param hikingRoutesViewModel The view model to use to search for hikes
+   * @param mapView The map view where the search area is defined
+   * @param context The context where the search is launched
+   */
+  fun launchSearch(
+      isSearching: MutableState<Boolean>,
+      hikingRoutesViewModel: ListOfHikeRoutesViewModel,
+      mapView: MapView,
+      context: Context
+  ) {
+    if (isSearching.value) return
+    isSearching.value = true
+    val startTime = System.currentTimeMillis()
+    hikingRoutesViewModel.setArea(
+        mapView.boundingBox,
+        onSuccess = {
+          if (System.currentTimeMillis() - startTime < MINIMAL_SEARCH_TIME_IN_MS) {
+            Thread.sleep(MINIMAL_SEARCH_TIME_IN_MS - (System.currentTimeMillis() - startTime))
+          }
+          isSearching.value = false
+        },
+        onFailure = {
+          isSearching.value = false
+          Handler(Looper.getMainLooper()).post {
+            Toast.makeText(context, "Error while searching for hikes", Toast.LENGTH_SHORT).show()
+          }
+        })
+  }
 }
 
 /**
@@ -148,21 +232,35 @@ fun getRandomColor(): Int {
  * Clears all hikes that are displayed on the map. Intended to be used when the list of hikes
  * changes and new hikes need to be drawn.
  */
-fun clearHikesFromMap(mapView: MapView) {
+fun clearHikesFromMap(mapView: MapView, userLocationMarker: Marker?) {
   mapView.overlays.clear()
+
+  // If there was a user location marker, do not clear this
+  userLocationMarker?.let { mapView.overlays.add(it) }
+
   mapView.invalidate()
 }
 
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun MapScreen(
     navigationActions: NavigationActions,
-    hikingRoutesViewModel: ListOfHikeRoutesViewModel,
+    hikingRoutesViewModel: ListOfHikeRoutesViewModel =
+        viewModel(factory = ListOfHikeRoutesViewModel.Factory),
     mapInitialZoomLevel: Double = MapScreen.MAP_INITIAL_ZOOM,
     mapMaxZoomLevel: Double = MapScreen.MAP_MAX_ZOOM,
     mapMinZoomLevel: Double = MapScreen.MAP_MIN_ZOOM,
     mapInitialCenter: GeoPoint = MapScreen.MAP_INITIAL_CENTER,
 ) {
   val context = LocalContext.current
+  val locationPermissionState =
+      rememberMultiplePermissionsState(
+          permissions =
+              listOf(
+                  android.Manifest.permission.ACCESS_FINE_LOCATION,
+                  android.Manifest.permission.ACCESS_COARSE_LOCATION))
+  var showLocationPermissionDialog by remember { mutableStateOf(false) }
+  var centerMapOnUserPosition by remember { mutableStateOf(false) }
 
   // Only do the configuration on the first composition, not on every recomposition
   LaunchedEffect(Unit) {
@@ -203,14 +301,41 @@ fun MapScreen(
       setScrollableAreaLimitLatitude(MapScreen.MAP_MAX_LATITUDE, MapScreen.MAP_MIN_LATITUDE, 0)
     }
   }
+  var userLocationMarker: Marker? by remember { mutableStateOf(null) }
+
+  // We need to keep a reference to the instance of location callback, this way we can unregister
+  // it using the same reference, for example when the permission is revoked.
+  val locationUpdatedCallback = remember {
+    object : LocationCallback() {
+      override fun onLocationResult(locationResult: LocationResult) {
+        userLocationMarker =
+            LocationUtils.onUserLocationUpdate(locationResult, mapView, userLocationMarker)
+      }
+    }
+  }
+
+  LaunchedEffect(locationPermissionState.revokedPermissions) {
+    // Update the map and start/stop listening for location updates
+    LocationUtils.onLocationPermissionsUpdated(
+        context,
+        locationPermissionState,
+        mapView,
+        locationUpdatedCallback,
+        centerMapOnUserPosition,
+        userLocationMarker)
+
+    // Once the update has been made, reset the flag to avoid re-centering the map
+    centerMapOnUserPosition = false
+  }
+
   // Keep track of whether a search for hikes is ongoing
-  var isSearching by remember { mutableStateOf(false) }
+  val isSearching = remember { mutableStateOf(false) }
 
   // Show hikes on the map
   val routes by hikingRoutesViewModel.hikeRoutes.collectAsState()
   LaunchedEffect(routes, isSearching) {
-    if (isSearching) return@LaunchedEffect
-    clearHikesFromMap(mapView)
+    if (isSearching.value) return@LaunchedEffect
+    clearHikesFromMap(mapView, userLocationMarker)
     if (routes.size <= MapScreen.MAX_HIKES_DRAWN_ON_MAP) {
       routes.forEach {
         MapUtils.showHikeOnMap(
@@ -244,29 +369,29 @@ fun MapScreen(
     }
   }
 
-  /**
-   * Launches a search for hikes in the area displayed on the map. The search is launched only if it
-   * is not already ongoing.
-   */
-  fun launchSearch() {
-    if (isSearching) return
-    isSearching = true
-    val startTime = System.currentTimeMillis()
-    hikingRoutesViewModel.setArea(
-        mapView.boundingBox,
-        onSuccess = {
-          if (System.currentTimeMillis() - startTime < MapScreen.MINIMAL_SEARCH_TIME_IN_MS) {
-            Thread.sleep(
-                MapScreen.MINIMAL_SEARCH_TIME_IN_MS - (System.currentTimeMillis() - startTime))
-          }
-          isSearching = false
-        },
-        onFailure = {
-          isSearching = false
-          Handler(Looper.getMainLooper()).post {
-            Toast.makeText(context, "Error while searching for hikes", Toast.LENGTH_SHORT).show()
-          }
-        })
+  // Show a dialog to explain the user why the location permission is needed
+  // Only shows when the user has clicked on the "center map on my position" button
+  LocationPermissionAlertDialog(
+      show = showLocationPermissionDialog,
+      onConfirm = {
+        showLocationPermissionDialog = false
+        centerMapOnUserPosition = true
+      },
+      onDismiss = {
+        showLocationPermissionDialog = false
+        centerMapOnUserPosition = false
+      },
+      simpleMessage = !locationPermissionState.shouldShowRationale,
+      locationPermissionState = locationPermissionState,
+      context = context)
+
+  DisposableEffect(Unit) {
+    onDispose {
+      LocationUtils.stopUserLocationUpdates(context, locationUpdatedCallback)
+      mapView.overlays.clear()
+      mapView.onPause()
+      mapView.onDetach()
+    }
   }
 
   BottomBarNavigation(
@@ -287,10 +412,31 @@ fun MapScreen(
                       .testTag(MapScreen.TEST_TAG_MAP)
                       .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT))
 
+          // Button to center the map on the user's location
+          MapMyLocationButton(
+              onClick = {
+                val hasLocationPermission =
+                    LocationUtils.hasLocationPermission(locationPermissionState)
+                // If the user has granted at least one of the two permissions, center the map on
+                // the user's location
+                if (hasLocationPermission) {
+                  MapUtils.centerMapOnUserLocation(context, mapView, userLocationMarker)
+                }
+                // If the user yet needs to grant the permission, show a custom educational alert
+                else {
+                  showLocationPermissionDialog = true
+                }
+              },
+              modifier =
+                  Modifier.align(Alignment.BottomStart)
+                      .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
+                      .testTag(MapScreen.TEST_TAG_CENTER_MAP_BUTTON))
           // Search button to request OSM for hikes in the displayed area
-          if (!isSearching) {
+          if (!isSearching.value) {
             MapSearchButton(
-                onClick = { launchSearch() },
+                onClick = {
+                  MapScreen.launchSearch(isSearching, hikingRoutesViewModel, mapView, context)
+                },
                 modifier =
                     Modifier.align(Alignment.BottomCenter)
                         .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
@@ -302,9 +448,76 @@ fun MapScreen(
               modifier =
                   Modifier.align(Alignment.BottomEnd)
                       .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
-          CollapsibleHikesList(hikingRoutesViewModel, isSearching, navigationActions)
+          CollapsibleHikesList(hikingRoutesViewModel, isSearching.value, navigationActions)
+          // Put SideBarNavigation after to make it appear on top of the map and HikeList
         }
       }
+}
+
+@OptIn(ExperimentalPermissionsApi::class)
+@Composable
+fun LocationPermissionAlertDialog(
+    show: Boolean,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+    simpleMessage: Boolean,
+    locationPermissionState: MultiplePermissionsState,
+    context: Context = LocalContext.current
+) {
+  if (!show) return
+
+  AlertDialog(
+      modifier = Modifier.testTag(MapScreen.TEST_TAG_LOCATION_PERMISSION_ALERT),
+      icon = {
+        Icon(painter = painterResource(id = R.drawable.my_location), contentDescription = null)
+      },
+      title = { Text(text = stringResource(R.string.map_screen_location_rationale_title)) },
+      text = {
+        Text(
+            text =
+                stringResource(
+                    if (simpleMessage) R.string.map_screen_location_rationale_simple
+                    else R.string.map_screen_location_rationale))
+      },
+      onDismissRequest = onDismiss,
+      confirmButton = {
+        Button(
+            modifier = Modifier.testTag(MapScreen.TEST_TAG_GRANT_ALERT_BUTTON),
+            onClick = {
+              onConfirm()
+              // If should show rationale is true, it is safe to launch permission requests
+              if (locationPermissionState.shouldShowRationale) {
+                locationPermissionState.launchMultiplePermissionRequest()
+              }
+
+              // If the user is asked for the first time, it is safe to launch permission requests
+              else if (PermissionUtils.firstTimeAskingPermission(
+                  context, android.Manifest.permission.ACCESS_FINE_LOCATION)) {
+                PermissionUtils.setFirstTimeAskingPermission(
+                    context, android.Manifest.permission.ACCESS_FINE_LOCATION, false)
+                PermissionUtils.setFirstTimeAskingPermission(
+                    context, android.Manifest.permission.ACCESS_COARSE_LOCATION, false)
+                locationPermissionState.launchMultiplePermissionRequest()
+              }
+
+              // Otherwise, the user should be brought to the settings page
+              else {
+                context.startActivity(
+                    Intent(
+                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                        Uri.fromParts("package", context.packageName, null)))
+              }
+            }) {
+              Text(text = stringResource(R.string.map_screen_location_rationale_grant_button))
+            }
+      },
+      dismissButton = {
+        Button(
+            modifier = Modifier.testTag(MapScreen.TEST_TAG_NO_THANKS_ALERT_BUTTON),
+            onClick = onDismiss) {
+              Text(text = stringResource(R.string.map_screen_location_rationale_cancel_button))
+            }
+      })
 }
 
 @Composable
@@ -316,6 +529,28 @@ fun MapSearchButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
         Text(
             text = LocalContext.current.getString(R.string.map_screen_search_button_text),
             color = MaterialTheme.colorScheme.onSurface)
+      }
+}
+
+/**
+ * Composable for the "Center on my location" button.
+ *
+ * Represents an icon button with a "My Location" icon. The onclick callback is provided as a
+ * parameter, but the button is meant to be used with the location permission to center the map on
+ * the user's location.
+ */
+@Composable
+fun MapMyLocationButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+  IconButton(
+      onClick = onClick,
+      modifier = modifier,
+      colors =
+          IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surface)) {
+        Icon(
+            painter = painterResource(id = R.drawable.my_location),
+            tint = MaterialTheme.colorScheme.onSurface,
+            contentDescription =
+                stringResource(R.string.map_screen_center_on_pos_content_description))
       }
 }
 
