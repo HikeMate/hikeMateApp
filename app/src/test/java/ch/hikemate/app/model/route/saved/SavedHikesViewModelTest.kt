@@ -1,9 +1,13 @@
 package ch.hikemate.app.model.route.saved
 
 import ch.hikemate.app.R
+import ch.hikemate.app.model.route.Bounds
+import ch.hikemate.app.model.route.HikeRoute
+import com.google.firebase.Timestamp
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -13,6 +17,8 @@ import org.junit.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.whenever
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SavedHikesViewModelTest {
@@ -145,4 +151,68 @@ class SavedHikesViewModelTest {
         assertEquals(
             R.string.saved_hikes_screen_generic_error, savedHikesViewModel.errorMessage.value)
       }
+
+  @Test
+  fun updateHikeDetailStateSetsCorrectState() = runTest {
+    // Given
+    val hikeRoute = HikeRoute("1", Bounds(0.0, 0.0, 0.0, 0.0), emptyList(), "Test Hike")
+    `when`(savedHikesRepository.isHikeSaved(hikeRoute.id)).thenReturn(null)
+
+    // When
+    savedHikesViewModel.updateHikeDetailState(hikeRoute)
+
+    // Then
+    val expectedState =
+        SavedHikesViewModel.HikeDetailState(
+            hike = hikeRoute,
+            isSaved = false,
+            bookmark = R.drawable.bookmark_no_fill,
+            plannedDate = null)
+    assertEquals(expectedState, savedHikesViewModel.hikeDetailState.first())
+  }
+
+  @Test
+  fun toggleSaveStateAddsOrRemovesHike() = runTest {
+    // Given
+    val hikeRoute = HikeRoute("1", Bounds(0.0, 0.0, 0.0, 0.0), emptyList(), "Test Hike")
+
+    savedHikesViewModel.updateHikeDetailState(hikeRoute)
+
+    // When: toggle to save hike
+    `when`(savedHikesRepository.loadSavedHikes()).thenReturn(emptyList())
+    savedHikesViewModel.toggleSaveState()
+
+    // Then: verify addSavedHike is called and state is updated
+    val captor = argumentCaptor<SavedHike>()
+    verify(savedHikesRepository).addSavedHike(captor.capture())
+    assertEquals(true, savedHikesViewModel.hikeDetailState.first()?.isSaved)
+  }
+
+  @Test
+  fun updatePlannedDateSetsCorrectDate() = runTest {
+    // Given
+    val hikeRoute = HikeRoute("1", Bounds(0.0, 0.0, 0.0, 0.0), emptyList(), "Test Hike")
+    val newPlannedDate = Timestamp.now()
+
+    // Mocking initial repository state
+    whenever(savedHikesRepository.loadSavedHikes())
+        .thenReturn(listOf(SavedHike("1", "Test Hike", null)))
+
+    // Setting up initial state in view model
+    savedHikesViewModel.updateHikeDetailState(hikeRoute)
+    savedHikesViewModel.toggleSaveState()
+
+    // When
+    savedHikesViewModel.updatePlannedDate(newPlannedDate)
+
+    // Verifying removal of the old hike entry
+    verify(savedHikesRepository).removeSavedHike(SavedHike("1", "Test Hike", null))
+
+    // Then: check that plannedDate is updated in the state
+    assertEquals(newPlannedDate, savedHikesViewModel.hikeDetailState.first()?.plannedDate)
+
+    // Verifying addition of the new hike entry with the updated planned date
+    verify(savedHikesRepository)
+        .addSavedHike(SavedHike(hikeRoute.id, hikeRoute.name ?: "", newPlannedDate))
+  }
 }

@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import ch.hikemate.app.R
 import ch.hikemate.app.model.route.HikeRoute
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.CoroutineDispatcher
@@ -21,6 +22,13 @@ class SavedHikesViewModel(
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : ViewModel() {
 
+  data class HikeDetailState(
+      val hike: HikeRoute,
+      val bookmark: Int,
+      val isSaved: Boolean,
+      val plannedDate: Timestamp?
+  )
+
   companion object {
     val Factory: ViewModelProvider.Factory =
         object : ViewModelProvider.Factory {
@@ -35,6 +43,65 @@ class SavedHikesViewModel(
 
     /** Tag used for logging. */
     private const val LOG_TAG = "SavedHikesViewModel"
+  }
+
+  private val _hikeDetailState = MutableStateFlow<HikeDetailState?>(null)
+  val hikeDetailState: StateFlow<HikeDetailState?> = _hikeDetailState.asStateFlow()
+
+  fun updateHikeDetailState(route: HikeRoute) {
+    viewModelScope.launch {
+      val savedHike = isHikeSaved(route.id)
+      _hikeDetailState.value =
+          HikeDetailState(
+              hike = route,
+              isSaved = savedHike != null,
+              bookmark =
+                  if (savedHike != null) R.drawable.bookmark_filled_blue
+                  else R.drawable.bookmark_no_fill,
+              plannedDate = savedHike?.date)
+    }
+  }
+
+  fun toggleSaveState() {
+    _hikeDetailState.value?.let { currentState ->
+      if (currentState.isSaved) {
+        // Remove the saved hike
+        savedHike.value.find { it.id == currentState.hike.id }?.let { removeSavedHike(it) }
+      } else {
+        // Add new saved hike
+        addSavedHike(
+            SavedHike(
+                currentState.hike.id,
+                currentState.hike.name ?: "Unnamed",
+                currentState.plannedDate))
+        updateHikeDetailState(currentState.hike)
+      }
+      // Update the state after toggling
+      _hikeDetailState.value =
+          currentState.copy(
+              isSaved = !currentState.isSaved,
+              bookmark =
+                  if (!currentState.isSaved) R.drawable.bookmark_filled_blue
+                  else R.drawable.bookmark_no_fill)
+      loadSavedHikes()
+    }
+  }
+
+  fun updatePlannedDate(timestamp: Timestamp?) {
+    _hikeDetailState.value?.let { currentState ->
+      val updatedHike =
+          SavedHike(currentState.hike.id, currentState.hike.name ?: "Unnamed", timestamp)
+      if (currentState.isSaved) {
+        savedHike.value.find { it.id == currentState.hike.id }?.let { removeSavedHike(it) }
+      }
+      addSavedHike(updatedHike)
+      _hikeDetailState.value = currentState.copy(plannedDate = timestamp)
+      loadSavedHikes()
+    }
+  }
+
+  private fun isHikeSaved(): Boolean {
+    return _hikeDetailState.value?.isSaved ?: false
   }
 
   private val _savedHikes = MutableStateFlow<List<SavedHike>>(emptyList())
@@ -57,8 +124,14 @@ class SavedHikesViewModel(
     viewModelScope.launch { loadSavedHikesAsync() }
   }
 
-  fun isHikeSaved(id:String): SavedHike? {
-    return savedHike.value.find { id==it.id }
+  /**
+   * Get the saved hike with the provided ID.
+   *
+   * @param id The ID of the hike to get.
+   * @return The saved hike with the provided ID, or null if no such hike is found.
+   */
+  fun isHikeSaved(id: String): SavedHike? {
+    return savedHike.value.find { id == it.id }
   }
 
   /**

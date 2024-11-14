@@ -1,5 +1,6 @@
 package ch.hikemate.app.ui.map
 
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -9,6 +10,8 @@ import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.HikeRoutesRepository
 import ch.hikemate.app.model.route.LatLong
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
+import ch.hikemate.app.model.route.saved.SavedHikesRepository
+import ch.hikemate.app.model.route.saved.SavedHikesViewModel
 import ch.hikemate.app.ui.components.BackButton.BACK_BUTTON_TEST_TAG
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_ADD_DATE_BUTTON
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_BOOKMARK_ICON
@@ -36,6 +39,8 @@ class HikeDetailScreenTest {
   @get:Rule val composeTestRule = createComposeRule()
 
   private lateinit var mockNavigationActions: NavigationActions
+  private lateinit var savedHikesViewModel: SavedHikesViewModel
+  private lateinit var mockSavedHikesRepository: SavedHikesRepository
   private lateinit var hikesRepository: HikeRoutesRepository
   private lateinit var elevationService: ElevationService
   private lateinit var listOfHikeRoutesViewModel: ListOfHikeRoutesViewModel
@@ -55,9 +60,11 @@ class HikeDetailScreenTest {
     mockNavigationActions = mock()
     hikesRepository = mock()
     elevationService = mock()
+    mockSavedHikesRepository = mock()
 
     listOfHikeRoutesViewModel =
         ListOfHikeRoutesViewModel(hikesRepository, elevationService, UnconfinedTestDispatcher())
+    savedHikesViewModel = SavedHikesViewModel(mockSavedHikesRepository)
 
     // Set up the VM
     listOfHikeRoutesViewModel.selectRoute(route)
@@ -68,6 +75,7 @@ class HikeDetailScreenTest {
     composeTestRule.setContent {
       HikeDetailScreen(
           listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
+          savedHikesViewModel = savedHikesViewModel,
           navigationActions = mockNavigationActions)
     }
 
@@ -76,15 +84,19 @@ class HikeDetailScreenTest {
 
   @Test
   fun hikeDetails_displaysHikeNameAndBookmarkIcon() {
-    composeTestRule.setContent { HikeDetails(route = route, isSaved = true, date = null) }
+    composeTestRule.setContent {
+      HikeDetails(route = route, isSaved = mutableStateOf(true), date = null, onAction = {})
+    }
 
     composeTestRule.onNodeWithTag(TEST_TAG_HIKE_NAME).assertTextEquals(route.name!!)
-    composeTestRule.onNodeWithTag(TEST_TAG_BOOKMARK_ICON).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(TEST_TAG_BOOKMARK_ICON).assertIsDisplayed().assertHasClickAction()
   }
 
   @Test
   fun hikeDetails_showsElevationGraph() {
-    composeTestRule.setContent { HikeDetails(route = route, isSaved = true, date = null) }
+    composeTestRule.setContent {
+      HikeDetails(route = route, isSaved = mutableStateOf(true), date = null, onAction = {})
+    }
 
     // Check if the elevation graph is displayed
     composeTestRule.onNodeWithTag(TEST_TAG_ELEVATION_GRAPH).assertIsDisplayed()
@@ -92,7 +104,9 @@ class HikeDetailScreenTest {
 
   @Test
   fun hikeDetails_displaysPlannedDateButton_whenDateNotSet() {
-    composeTestRule.setContent { HikeDetails(route = route, isSaved = true, date = null) }
+    composeTestRule.setContent {
+      HikeDetails(route = route, isSaved = mutableStateOf(true), date = null, onAction = {})
+    }
 
     // Check if the "Add a date" button is displayed
     composeTestRule.onNodeWithTag(TEST_TAG_ADD_DATE_BUTTON).assertIsDisplayed()
@@ -102,7 +116,9 @@ class HikeDetailScreenTest {
   fun hikeDetails_showsPlannedDate_whenDateIsSet() {
     val plannedDate = Timestamp(1622563200, 0) // Example timestamp
 
-    composeTestRule.setContent { HikeDetails(route = route, isSaved = true, date = plannedDate) }
+    composeTestRule.setContent {
+      HikeDetails(route = route, isSaved = mutableStateOf(true), date = plannedDate, onAction = {})
+    }
 
     // Check if the planned date text box is displayed
     composeTestRule.onNodeWithTag(TEST_TAG_PLANNED_DATE_TEXT_BOX).assertIsDisplayed()
@@ -110,7 +126,9 @@ class HikeDetailScreenTest {
 
   @Test
   fun hikeDetails_showsCorrectDetailsRowsWhenNotSaved() {
-    composeTestRule.setContent { HikeDetails(route = route, isSaved = false, date = null) }
+    composeTestRule.setContent {
+      HikeDetails(route = route, isSaved = mutableStateOf(true), date = null, onAction = {})
+    }
 
     // Check if the detail rows are displayed correctly
     composeTestRule.onAllNodesWithTag(TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(5)
@@ -119,7 +137,9 @@ class HikeDetailScreenTest {
 
   @Test
   fun hikeDetails_showsCorrectDetailsRowsWhenSavedAndNoDateIsSet() {
-    composeTestRule.setContent { HikeDetails(route = route, isSaved = true, date = null) }
+    composeTestRule.setContent {
+      HikeDetails(route = route, isSaved = mutableStateOf(true), date = null, onAction = {})
+    }
 
     // Check if the detail rows are displayed correctly
     composeTestRule.onAllNodesWithTag(TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(6)
@@ -130,7 +150,8 @@ class HikeDetailScreenTest {
   @Test
   fun hikeDetails_showsCorrectDetailsRowsWhenSavedAndDateIsSet() {
     composeTestRule.setContent {
-      HikeDetails(route = route, isSaved = true, date = Timestamp.now())
+      HikeDetails(
+          route = route, isSaved = mutableStateOf(true), date = Timestamp.now(), onAction = {})
     }
 
     // Check if the detail rows are displayed correctly
@@ -144,6 +165,7 @@ class HikeDetailScreenTest {
     composeTestRule.setContent {
       HikeDetailScreen(
           listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
+          savedHikesViewModel = savedHikesViewModel,
           navigationActions = mockNavigationActions)
     }
 
@@ -156,7 +178,9 @@ class HikeDetailScreenTest {
 
   @Test
   fun hikeDetails_opensDatePicker_whenAddDateButtonClicked() {
-    composeTestRule.setContent { HikeDetails(route = route, isSaved = true, date = null) }
+    composeTestRule.setContent {
+      HikeDetails(route = route, isSaved = mutableStateOf(true), date = null, onAction = {})
+    }
 
     // Check if the add date button is clickable and triggers an interaction
     composeTestRule.onNodeWithTag(TEST_TAG_ADD_DATE_BUTTON).assertHasClickAction().performClick()

@@ -84,7 +84,8 @@ fun Timestamp.humanReadablePlannedLabel(
     else -> context.getString(R.string.datetime_utils_planned_on_date, formattedDate)
   }
 }
+
 fun Timestamp.toFormattedString(): String {
-    val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-    return dateFormat.format(this.toDate())
+  val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+  return dateFormat.format(this.toDate())
 }
