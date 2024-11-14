@@ -105,6 +105,7 @@ class ProfileRepositoryFirestoreTest {
     `when`(mockDocumentSnapshot.getTimestamp("joinedDate")).thenReturn(testTimestamp)
 
     val profile = repository.documentToProfile(mockDocumentSnapshot)
+      assert(profile != null)
     assert(profile!!.id == "1")
     assert(profile.name == "John Doe")
     assert(profile.email == "john.doe@gmail.com")
@@ -195,7 +196,7 @@ class ProfileRepositoryFirestoreTest {
 
     repository.getProfileById(
         "1",
-        onSuccess = { assertNull(it) },
+        onSuccess = { p -> fail("Success callback should not be called") },
         onFailure = {
           // Do nothing; we just want to verify that this is called
         })

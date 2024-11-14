@@ -105,7 +105,7 @@ class AuthViewModelTest {
           onSuccess(mockFirebaseUser) // Trigger success callback with mock user
           null
         }
-        .whenever(mockRepository)
+        .`when`(mockRepository)
         .signInWithGoogle(any(), any(), any(), any(), any(), anyOrNull())
 
     // Mock the profile creation to immediately invoke the onSuccess callback
@@ -114,7 +114,7 @@ class AuthViewModelTest {
           onSuccess(mockProfileUser) // Trigger success callback with mock profile
           null
         }
-        .whenever(mockProfile)
+        .`when`(mockProfile)
         .createProfile(any(), any(), any())
 
     // Verify that `currentUser` is initially null
@@ -247,11 +247,6 @@ class AuthViewModelTest {
         `when`(mockFirebaseUser.updateProfile(profileUpdateRequest.capture())).thenReturn(mockTask)
         `when`(mockTask.isSuccessful).thenReturn(true)
 
-        `when`(mockTask.addOnCompleteListener(any())).thenAnswer { invocation ->
-          val listener = invocation.getArgument<OnCompleteListener<Void>>(0)
-          listener.onComplete(mockTask)
-          mockTask
-        }
         // Mock task completion
         `when`(mockTask.addOnCompleteListener(any())).thenAnswer { invocation ->
           val listener = invocation.getArgument<OnCompleteListener<Void>>(0)

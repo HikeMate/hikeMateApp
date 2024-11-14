@@ -4,6 +4,15 @@ import com.google.firebase.auth.FirebaseUser
 
 /** Interface for the profile repository. */
 interface ProfileRepository {
+  /**
+   * Creates a profile for the current user. Calls updateProfile with the information of the
+   * currentUser of the firebaseAuth instance. Can be called when Sigining in and already having an
+   * account this will just ignore it.
+   *
+   * @param firebaseAuth The Firebase authentication instance.
+   * @param onSuccess The callback to call if the profile is created successfully.
+   * @param onFailure The callback to call if the profile creation fails.
+   */
   fun createProfile(
       fireUser: FirebaseUser?,
       onSuccess: (Profile) -> Unit,
