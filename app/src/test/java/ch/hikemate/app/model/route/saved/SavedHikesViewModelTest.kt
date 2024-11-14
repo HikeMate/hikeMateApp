@@ -53,7 +53,7 @@ class SavedHikesViewModelTest {
 
         // Then
         assertEquals(
-            R.string.saved_hikes_screen_generic_error, savedHikesViewModel.errorMessage.value)
+            R.string.saved_hikes_screen_generic_error, savedHikesViewModel.errorMessageId.value)
       }
 
   @Test
@@ -98,7 +98,7 @@ class SavedHikesViewModelTest {
 
         // Then
         assertEquals(
-            R.string.saved_hikes_screen_generic_error, savedHikesViewModel.errorMessage.value)
+            R.string.saved_hikes_screen_generic_error, savedHikesViewModel.errorMessageId.value)
       }
 
   @Test
@@ -143,6 +143,6 @@ class SavedHikesViewModelTest {
 
         // Then
         assertEquals(
-            R.string.saved_hikes_screen_generic_error, savedHikesViewModel.errorMessage.value)
+            R.string.saved_hikes_screen_generic_error, savedHikesViewModel.errorMessageId.value)
       }
 }

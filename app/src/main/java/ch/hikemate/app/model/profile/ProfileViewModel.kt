@@ -1,7 +1,9 @@
 package ch.hikemate.app.model.profile
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import ch.hikemate.app.R
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -19,6 +21,13 @@ open class ProfileViewModel(private val repository: ProfileRepository) : ViewMod
   // The profile for the detail view
   private val profile_ = MutableStateFlow<Profile?>(null)
   val profile: StateFlow<Profile?> = profile_.asStateFlow()
+
+  private val _errorMessageId = MutableStateFlow<Int?>(null)
+  /**
+   * If an error occurs while performing an operation related to saved hikes, the resource ID of an
+   * appropriate error message will be set in this state flow.
+   */
+  val errorMessageId: StateFlow<Int?> = _errorMessageId.asStateFlow()
 
   init {
     FirebaseAuth.getInstance().addAuthStateListener { auth ->
@@ -44,7 +53,12 @@ open class ProfileViewModel(private val repository: ProfileRepository) : ViewMod
    */
   fun getProfileById(id: String) {
     repository.getProfileById(
-        id, onSuccess = { profile -> profile_.value = profile }, onFailure = {})
+        id,
+        onSuccess = { profile -> profile_.value = profile },
+        onFailure = {
+          Log.e("ProfileViewModel", "Error fetching profile", it)
+          _errorMessageId.value = R.string.an_error_occurred_while_fetching_the_profile
+        })
   }
 
   /**
@@ -54,7 +68,12 @@ open class ProfileViewModel(private val repository: ProfileRepository) : ViewMod
    */
   fun updateProfile(profile: Profile) {
     repository.updateProfile(
-        profile = profile, onSuccess = { profile_.value = profile }, onFailure = {})
+        profile = profile,
+        onSuccess = { profile_.value = profile },
+        onFailure = {
+          Log.e("ProfileViewModel", "Error updating profile", it)
+          _errorMessageId.value = R.string.an_error_occurred_while_updating_the_profile
+        })
   }
 
   /**
@@ -63,7 +82,13 @@ open class ProfileViewModel(private val repository: ProfileRepository) : ViewMod
    * @param id The ID of the profile to delete.
    */
   fun deleteProfileById(id: String) {
-    repository.deleteProfileById(id = id, onSuccess = { profile_.value = null }, onFailure = {})
+    repository.deleteProfileById(
+        id = id,
+        onSuccess = { profile_.value = null },
+        onFailure = {
+          Log.e("ProfileViewModel", "Error deleting profile", it)
+          _errorMessageId.value = R.string.an_error_occurred_while_deleting_the_profile
+        })
   }
 
   /** Reload the profile. */

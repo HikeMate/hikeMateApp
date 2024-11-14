@@ -74,10 +74,10 @@ class MainActivity : ComponentActivity() {
 fun HikeMateApp() {
   val navController = rememberNavController()
   val navigationActions = NavigationActions(navController)
-  val firestore = FirebaseFirestore.getInstance()
-  val profileRepository = ProfileRepositoryFirestore(firestore)
-  val profileViewModel = ProfileViewModel(profileRepository)
-  val authViewModel = AuthViewModel(FirebaseAuthRepository(), profileRepository)
+  val profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory)
+  val authViewModel =
+      AuthViewModel(
+          FirebaseAuthRepository(), ProfileRepositoryFirestore(FirebaseFirestore.getInstance()))
 
   val isUserLoggedIn = authViewModel.isUserLoggedIn()
 

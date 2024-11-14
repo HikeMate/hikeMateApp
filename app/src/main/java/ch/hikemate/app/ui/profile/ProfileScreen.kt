@@ -4,6 +4,8 @@ import android.icu.text.DateFormat
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -23,12 +25,12 @@ import ch.hikemate.app.model.profile.Profile
 import ch.hikemate.app.model.profile.ProfileViewModel
 import ch.hikemate.app.ui.components.BigButton
 import ch.hikemate.app.ui.components.ButtonType
+import ch.hikemate.app.ui.components.CenteredErrorAction
 import ch.hikemate.app.ui.navigation.BottomBarNavigation
 import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
-import com.google.firebase.Timestamp
 
 object ProfileScreen {
   const val TEST_TAG_TITLE = "profileScreenTitle"
@@ -38,10 +40,6 @@ object ProfileScreen {
   const val TEST_TAG_JOIN_DATE = "profileScreenJoinDateInfo"
   const val TEST_TAG_EDIT_PROFILE_BUTTON = "profileScreenEditProfileButton"
   const val TEST_TAG_SIGN_OUT_BUTTON = "profileScreenSignOutButton"
-
-  val DEFAULT_PROFILE =
-      Profile(
-          "custom-id", "John Doe", "john.doe@gmail.com", HikingLevel.INTERMEDIATE, Timestamp.now())
 }
 /**
  * A composable to display an information of the profile.
@@ -73,13 +71,31 @@ fun ProfileScreen(
 ) {
   val context = LocalContext.current
 
-  // TODO: show an error if the profile is null. For now display it for test purposes
-
   LaunchedEffect(Unit) { profileViewModel.reloadProfile() }
 
+  val errorMessageIdState = profileViewModel.errorMessageId.collectAsState()
   val profileState = profileViewModel.profile.collectAsState()
 
-  val profile: Profile = profileState.value ?: ProfileScreen.DEFAULT_PROFILE
+  if (errorMessageIdState.value != null) {
+    // Display an error message if an error occurred
+    return CenteredErrorAction(
+        errorMessageId = errorMessageIdState.value!!,
+        actionIcon = Icons.Outlined.Home,
+        actionContentDescriptionStringId = R.string.go_back,
+        onAction = { navigationActions.navigateTo(Route.MAP) })
+  }
+
+  if (profileState.value == null) {
+    // Display an error message if an error occurred
+    return CenteredErrorAction(
+        errorMessageId = R.string.error_loading_profile,
+        actionIcon = Icons.Outlined.Home,
+        actionContentDescriptionStringId = R.string.go_back,
+        onAction = { navigationActions.navigateTo(Route.MAP) })
+  }
+
+  // profileState.value is not null, we checked it before
+  val profile: Profile = profileState.value!!
 
   BottomBarNavigation(
       onTabSelect = { navigationActions.navigateTo(it) },

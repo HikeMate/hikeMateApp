@@ -73,7 +73,7 @@ fun SavedHikesScreen(
   ) { paddingValues ->
     var currentSection by remember { mutableStateOf(SavedHikesSection.Saved) }
     val loading by savedHikesViewModel.loadingSavedHikes.collectAsState()
-    val errorMessageId by savedHikesViewModel.errorMessage.collectAsState()
+    val errorMessageId by savedHikesViewModel.errorMessageId.collectAsState()
     val savedHikes by savedHikesViewModel.savedHike.collectAsState()
 
     val pagerState = rememberPagerState { SavedHikesSection.values().size }
@@ -100,9 +100,10 @@ fun SavedHikesScreen(
             loading -> CenteredLoadingAnimation()
             errorMessageId != null ->
                 CenteredErrorAction(
-                    errorMessage = errorMessageId!!,
+                    errorMessageId = errorMessageId!!,
                     actionIcon = Icons.Default.Refresh,
-                    actionContentDescription = R.string.saved_hikes_screen_refresh_button_action,
+                    actionContentDescriptionStringId =
+                        R.string.saved_hikes_screen_refresh_button_action,
                     onAction = { savedHikesViewModel.loadSavedHikes() })
             else ->
                 HorizontalPager(

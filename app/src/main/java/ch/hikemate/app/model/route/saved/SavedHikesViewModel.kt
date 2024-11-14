@@ -43,12 +43,12 @@ class SavedHikesViewModel(
    */
   val savedHike: StateFlow<List<SavedHike>> = _savedHikes.asStateFlow()
 
-  private val _errorMessage = MutableStateFlow<Int?>(null)
+  private val _errorMessageId = MutableStateFlow<Int?>(null)
   /**
    * If an error occurs while performing an operation related to saved hikes, the resource ID of an
    * appropriate error message will be set in this state flow.
    */
-  val errorMessage: StateFlow<Int?> = _errorMessage.asStateFlow()
+  val errorMessageId: StateFlow<Int?> = _errorMessageId.asStateFlow()
 
   private val _loadingSavedHikes = MutableStateFlow<Boolean>(false)
   /** Whether the saved hikes list is currently being loaded or reloaded. */
@@ -75,7 +75,7 @@ class SavedHikesViewModel(
         // loading hikes again
       } catch (e: Exception) {
         Log.e(LOG_TAG, "Error adding saved hike", e)
-        _errorMessage.value = R.string.saved_hikes_screen_generic_error
+        _errorMessageId.value = R.string.saved_hikes_screen_generic_error
         return@launch
       }
       // As a side-effect, this call will reset the error message if no error occurs
@@ -98,7 +98,7 @@ class SavedHikesViewModel(
         // loading hikes again
       } catch (e: Exception) {
         Log.e(LOG_TAG, "Error removing saved hike", e)
-        _errorMessage.value = R.string.saved_hikes_screen_generic_error
+        _errorMessageId.value = R.string.saved_hikes_screen_generic_error
         return@launch
       }
       // As a side-effect, this call will reset the error message if no error occurs
@@ -111,10 +111,10 @@ class SavedHikesViewModel(
       try {
         _loadingSavedHikes.value = true
         _savedHikes.value = repository.loadSavedHikes()
-        _errorMessage.value = null
+        _errorMessageId.value = null
       } catch (e: Exception) {
         Log.e(LOG_TAG, "Error loading saved hikes", e)
-        _errorMessage.value = R.string.saved_hikes_screen_generic_error
+        _errorMessageId.value = R.string.saved_hikes_screen_generic_error
       }
       _loadingSavedHikes.value = false
     }

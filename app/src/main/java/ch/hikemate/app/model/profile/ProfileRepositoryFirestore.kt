@@ -162,12 +162,14 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
 
     return try {
       val uid = document.id
-      val name = document.getString("name") ?: "Invalid name"
-      val email = document.getString("email") ?: "Invalid email"
-      val hikingLevelString = document.getString("hikingLevel") ?: HikingLevel.BEGINNER
-      val hikingLevel =
-          HikingLevel.values().find { it.name == hikingLevelString } ?: HikingLevel.BEGINNER
-      val joinedDate = document.getTimestamp("joinedDate") ?: Timestamp.now()
+      val name = document.getString("name")
+      val email = document.getString("email")
+      val hikingLevelString = document.getString("hikingLevel")
+      val hikingLevel = HikingLevel.values().find { it.name == hikingLevelString }
+      val joinedDate = document.getTimestamp("joinedDate")
+      if (name == null || email == null || hikingLevel == null || joinedDate == null) {
+        return null
+      }
       Profile(uid, name, email, hikingLevel, joinedDate)
     } catch (e: Exception) {
       Log.e("ProfileRepositoryFirestore", "Error converting document to Profile", e)
