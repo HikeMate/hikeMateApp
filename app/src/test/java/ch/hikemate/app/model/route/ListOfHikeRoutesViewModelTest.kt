@@ -169,4 +169,58 @@ class ListOfHikeRoutesViewModelTest {
     verify(hikesRepository, times(1)).getRouteById(eq(hike.id), any(), any())
     assertEquals(hike, listOfHikeRoutesViewModel.selectedHikeRoute.value)
   }
+
+  @Test
+  fun getRoutesByIdsCallsRepo() {
+    val hikesIds = listOf("Route 1", "Route 2")
+
+    // Since we use UnconfinedTestDispatcher, we don't need to wait for the coroutine to finish
+    listOfHikeRoutesViewModel.getRoutesByIds(hikesIds)
+
+    verify(hikesRepository, times(1)).getRoutesByIds(eq(hikesIds), any(), any())
+  }
+
+  @Test
+  fun getRoutesByIdsUpdatesHikeRoutes() {
+    val hikes =
+        listOf(
+            HikeRoute("Route 1", Bounds(0.0, 0.0, 0.0, 0.0), emptyList()),
+            HikeRoute("Route 2", Bounds(0.0, 0.0, 0.0, 0.0), emptyList()))
+
+    val hikesIds = hikes.map { it.id }
+
+    `when`(hikesRepository.getRoutesByIds(eq(hikesIds), any(), any())).thenAnswer {
+      val onSuccess = it.getArgument<(List<HikeRoute>) -> Unit>(1)
+      onSuccess(hikes)
+    }
+
+    // Since we use UnconfinedTestDispatcher, we don't need to wait for the coroutine to finish
+    listOfHikeRoutesViewModel.getRoutesByIds(hikesIds)
+
+    assertEquals(2, listOfHikeRoutesViewModel.hikeRoutes.value.size)
+  }
+
+  @Test
+  fun getRoutesByIdsCallsOnFailure() {
+    val hikesIds = listOf("Route 1", "Route 2")
+
+    `when`(hikesRepository.getRoutesByIds(eq(hikesIds), any(), any())).thenAnswer {
+      val onFailure = it.getArgument<(Exception) -> Unit>(2)
+      onFailure(Exception("Test exception"))
+    }
+
+    var onFailedCalled = false
+    // Since we use UnconfinedTestDispatcher, we don't need to wait for the coroutine to finish
+    listOfHikeRoutesViewModel.getRoutesByIds(
+        hikesIds,
+        { fail("Should not have succeeded") },
+        {
+          // Should be called
+          onFailedCalled = true
+        })
+
+    assertTrue(onFailedCalled)
+    // Verify that the onFailure function was called
+    verify(hikesRepository, times(1)).getRoutesByIds(eq(hikesIds), any(), any())
+  }
 }

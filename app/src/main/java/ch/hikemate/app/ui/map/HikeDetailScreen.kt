@@ -297,6 +297,7 @@ fun DateDetailRow(
             text = stringResource(R.string.hike_detail_screen_label_planned_for),
             style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier.testTag(TEST_TAG_DETAIL_ROW_TAG))
+
         Button(
             modifier = Modifier.width(90.dp).height(25.dp).testTag(TEST_TAG_ADD_DATE_BUTTON),
             contentPadding = PaddingValues(0.dp),
