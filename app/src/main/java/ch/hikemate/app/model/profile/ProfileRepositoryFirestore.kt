@@ -36,27 +36,21 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
     }
   }
 
-    override fun createProfile(
-        fireUser: FirebaseUser?,
-        onSuccess: (Profile) -> Unit,
-        onFailure: (Exception) -> Unit
-    ) {
-        if (fireUser == null) {
-            onFailure(Exception("User is null"))
-            return
-        }
-        val context = ApplicationProvider.getApplicationContext<Context>()
-        val displayName = fireUser.displayName ?: context.getString(R.string.default_display_name)
-        val email = fireUser.email ?: context.getString(R.string.default_email)
-        val profile = Profile(
-            fireUser.uid,
-            displayName,
-            email,
-            HikingLevel.BEGINNER,
-            Timestamp.now()
-        )
-        addProfile(profile, onSuccess = { onSuccess(profile) }, onFailure = onFailure)
+  override fun createProfile(
+      fireUser: FirebaseUser?,
+      onSuccess: (Profile) -> Unit,
+      onFailure: (Exception) -> Unit
+  ) {
+    if (fireUser == null) {
+      onFailure(Exception("User is null"))
+      return
     }
+    val context = ApplicationProvider.getApplicationContext<Context>()
+    val displayName = fireUser.displayName ?: context.getString(R.string.default_display_name)
+    val email = fireUser.email ?: context.getString(R.string.default_email)
+    val profile = Profile(fireUser.uid, displayName, email, HikingLevel.BEGINNER, Timestamp.now())
+    addProfile(profile, onSuccess = { onSuccess(profile) }, onFailure = onFailure)
+  }
   /**
    * Checks if the profile with the given ID exists.
    *
