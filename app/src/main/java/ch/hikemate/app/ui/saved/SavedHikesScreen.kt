@@ -5,12 +5,15 @@ import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -38,8 +41,8 @@ import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.utils.humanReadablePlannedLabel
 
-const val TEST_TAG_SAVED_HIKES_BOTTOM_MENU = "SavedHikesBottomMenu"
-const val TEST_TAG_SAVED_HIKES_BOTTOM_MENU_ITEM_PREFIX = "SavedHikesBottomMenuItem_"
+const val TEST_TAG_SAVED_HIKES_TABS_MENU = "SavedHikesTabsMenu"
+const val TEST_TAG_SAVED_HIKES_TABS_MENU_ITEM_PREFIX = "SavedHikesTabsMenuItem_"
 const val TEST_TAG_SAVED_HIKES_SECTION_CONTAINER = "SavedHikesSectionContainer"
 const val TEST_TAG_SAVED_HIKES_PLANNED_TITLE = "SavedHikesPlannedTitle"
 const val TEST_TAG_SAVED_HIKES_SAVED_TITLE = "SavedHikesSavedTitle"
@@ -60,18 +63,35 @@ fun SavedHikesScreen(
     var currentSection by remember { mutableStateOf(SavedHikesScreen.Planned) }
     val savedHikes by savedHikesViewModel.savedHike.collectAsState()
 
+    val pagerState = rememberPagerState { SavedHikesScreen.values().size }
+
     LaunchedEffect(Unit) { savedHikesViewModel.loadSavedHikes() }
 
+    LaunchedEffect(currentSection) { pagerState.animateScrollToPage(currentSection.ordinal) }
+
+    LaunchedEffect(pagerState.currentPage, pagerState.isScrollInProgress) {
+      if (!pagerState.isScrollInProgress)
+          currentSection = SavedHikesScreen.values()[pagerState.currentPage]
+    }
+
     Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-      Column(modifier = Modifier.weight(1f).testTag(TEST_TAG_SAVED_HIKES_SECTION_CONTAINER)) {
-        when (currentSection) {
-          SavedHikesScreen.Planned -> PlannedHikes(savedHikes)
-          SavedHikesScreen.Saved -> SavedHikes(savedHikes)
+      // Navigation items between nearby hikes, planned hikes, and saved hikes
+      SavedHikesTabsMenu(
+          selectedIndex = currentSection.ordinal, onSelectedChange = { currentSection = it })
+
+      HorizontalPager(
+          state = pagerState,
+          modifier = Modifier.fillMaxWidth().weight(1f),
+      ) { pageIndex ->
+        Column(modifier = Modifier.weight(1f).testTag(TEST_TAG_SAVED_HIKES_SECTION_CONTAINER)) {
+          SavedHikesScreen.values()[pageIndex].let {
+            when (it) {
+              SavedHikesScreen.Planned -> PlannedHikes(savedHikes)
+              SavedHikesScreen.Saved -> SavedHikes(savedHikes)
+            }
+          }
         }
       }
-
-      // Navigation items between nearby hikes, planned hikes, and saved hikes
-      SavedHikesBottomMenu(currentSection) { currentSection = it }
     }
   }
 }
@@ -160,20 +180,19 @@ private fun SavedHikes(hikes: List<SavedHike>?) {
 }
 
 @Composable
-private fun SavedHikesBottomMenu(
-    selected: SavedHikesScreen,
-    onSelectedChange: (SavedHikesScreen) -> Unit
-) {
-  NavigationBar(modifier = Modifier.testTag(TEST_TAG_SAVED_HIKES_BOTTOM_MENU)) {
-    SavedHikesScreen.values().forEach { screen ->
-      NavigationBarItem(
-          icon = { Icon(painter = painterResource(screen.icon), contentDescription = null) },
-          label = { Text(screen.label) },
-          selected = selected == screen,
-          onClick = { onSelectedChange(screen) },
-          modifier = Modifier.testTag(TEST_TAG_SAVED_HIKES_BOTTOM_MENU_ITEM_PREFIX + screen.name))
-    }
-  }
+private fun SavedHikesTabsMenu(selectedIndex: Int, onSelectedChange: (SavedHikesScreen) -> Unit) {
+  TabRow(
+      selectedTabIndex = selectedIndex,
+      modifier = Modifier.testTag(TEST_TAG_SAVED_HIKES_TABS_MENU)) {
+        SavedHikesScreen.values().forEachIndexed { index, screen ->
+          Tab(
+              text = { Text(screen.label) },
+              icon = { Icon(painter = painterResource(screen.icon), contentDescription = null) },
+              selected = selectedIndex == index,
+              onClick = { onSelectedChange(screen) },
+              modifier = Modifier.testTag(TEST_TAG_SAVED_HIKES_TABS_MENU_ITEM_PREFIX + screen.name))
+        }
+      }
 }
 
 /**
