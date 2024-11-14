@@ -1,6 +1,7 @@
 package ch.hikemate.app.ui.saved
 
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -14,6 +15,7 @@ import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.TEST_TAG_SIDEBAR_BUTTON
 import com.google.firebase.Timestamp
 import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
+import io.mockk.verify
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
@@ -21,6 +23,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
 
 class SavedHikesScreenTest : TestCase() {
   private lateinit var savedHikesRepository: SavedHikesRepository
@@ -171,5 +175,24 @@ class SavedHikesScreenTest : TestCase() {
         composeTestRule
             .onAllNodesWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_HIKE_CARD)
             .assertCountEquals(2)
+      }
+
+  @Test
+  fun errorIsDisplayedIfOneOccurs() =
+      runTest(timeout = 5.seconds) {
+        `when`(savedHikesRepository.loadSavedHikes()).thenThrow(RuntimeException("Error"))
+
+        composeTestRule.setContent { SavedHikesScreen(savedHikesViewModel, navigationActions) }
+
+        composeTestRule
+            .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_ERROR_MESSAGE)
+            .assertIsDisplayed()
+        composeTestRule
+            .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_REFRESH_BUTTON)
+            .assertIsDisplayed()
+            .assertHasClickAction()
+            .performClick()
+
+        verify(savedHikesRepository, times(2)).loadSavedHikes()
       }
 }
