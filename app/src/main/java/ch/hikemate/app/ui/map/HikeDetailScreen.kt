@@ -1,5 +1,6 @@
 package ch.hikemate.app.ui.map
 
+import android.annotation.SuppressLint
 import android.app.DatePickerDialog
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
@@ -30,6 +31,7 @@ import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,6 +48,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import ch.hikemate.app.R
 import ch.hikemate.app.model.route.DetailedHikeRoute
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
+import ch.hikemate.app.model.route.saved.SavedHikesViewModel
 import ch.hikemate.app.ui.components.BackButton
 import ch.hikemate.app.ui.components.ElevationGraph
 import ch.hikemate.app.ui.components.ElevationGraphStyleProperties
@@ -63,7 +66,7 @@ import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.utils.MapUtils
 import ch.hikemate.app.utils.from
-import ch.hikemate.app.utils.humanReadablePlannedLabel
+import ch.hikemate.app.utils.toFormattedString
 import com.google.firebase.Timestamp
 import java.util.Calendar
 import java.util.Locale
@@ -89,6 +92,7 @@ object HikeDetailScreen {
 @Composable
 fun HikeDetailScreen(
     listOfHikeRoutesViewModel: ListOfHikeRoutesViewModel,
+    savedHikesViewModel: SavedHikesViewModel,
     navigationActions: NavigationActions
 ) {
 
@@ -104,6 +108,9 @@ fun HikeDetailScreen(
 
   // Only do the configuration on the first composition, not on every recomposition
   LaunchedEffect(Unit) {
+    savedHikesViewModel.loadSavedHikes()
+    savedHikesViewModel.updateHikeDetailState(route)
+
     Configuration.getInstance().apply {
       // Set user-agent to avoid rejected requests
       userAgentValue = context.packageName
@@ -168,13 +175,25 @@ fun HikeDetailScreen(
                 .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
 
     // Hike Details bottom sheet
-    HikeDetails(detailedRoute, true, null)
+    HikeDetails(detailedRoute, savedHikesViewModel)
   }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HikeDetails(detailedRoute: DetailedHikeRoute, isSaved: Boolean, date: Timestamp?) {
+fun HikeDetails(detailedRoute: DetailedHikeRoute, savedHikesViewModel: SavedHikesViewModel) {
+  val hikeDetailState by savedHikesViewModel.hikeDetailState.collectAsState(null)
+
+  // Handle save/unsave actions
+  val isSaved = hikeDetailState?.isSaved ?: false
+  val toggleSaveState = { savedHikesViewModel.toggleSaveState() }
+
+  // Handle planned date updates
+  val plannedDate = hikeDetailState?.plannedDate
+  val updatePlannedDate = { timestamp: Timestamp? ->
+    savedHikesViewModel.updatePlannedDate(timestamp)
+  }
+
   val scaffoldState = rememberBottomSheetScaffoldState()
 
   BottomSheetScaffold(
@@ -199,16 +218,16 @@ fun HikeDetails(detailedRoute: DetailedHikeRoute, isSaved: Boolean, date: Timest
               AppropriatenessMessage(isSuitable = true)
             }
 
-            // Bookmark icon that is filled if the hike is Saved
-            val bookmark =
-                if (isSaved) R.drawable.bookmark_filled_blue else R.drawable.bookmark_no_fill
             Image(
-                painter = painterResource(bookmark),
+                painter = painterResource(hikeDetailState?.bookmark ?: R.drawable.bookmark_no_fill),
                 contentDescription =
-                    if (isSaved)
+                    if (hikeDetailState?.isSaved == true)
                         stringResource(R.string.hike_detail_screen_bookmark_hint_on_isSaved_true)
                     else stringResource(R.string.hike_detail_screen_bookmark_hint_on_isSaved_false),
-                modifier = Modifier.size(60.dp, 80.dp).testTag(TEST_TAG_BOOKMARK_ICON),
+                modifier =
+                    Modifier.size(60.dp, 80.dp).testTag(TEST_TAG_BOOKMARK_ICON).clickable {
+                      toggleSaveState()
+                    },
                 contentScale = ContentScale.FillBounds,
             )
           }
@@ -248,21 +267,25 @@ fun HikeDetails(detailedRoute: DetailedHikeRoute, isSaved: Boolean, date: Timest
               label = stringResource(R.string.hike_detail_screen_label_difficulty),
               value = detailedRoute.difficulty,
               valueColor = Color.Green)
-
-          DateDetailRow(isSaved, date)
+          DateDetailRow(isSaved, plannedDate, updatePlannedDate)
         }
       },
       sheetPeekHeight = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT) {}
 }
 
+@SuppressLint("StateFlowValueCalledInComposition")
 @Composable
-fun DateDetailRow(isSaved: Boolean, date: Timestamp?) {
+fun DateDetailRow(
+    isSaved: Boolean,
+    plannedDate: Timestamp?,
+    updatePlannedDate: (Timestamp?) -> Unit
+) {
   // Row to display and change the date
 
   val context = LocalContext.current
 
   // Needed for the pop-up that allows the user to show the date
-  fun showDatePickerDialog(onDateSelected: (String) -> Unit) {
+  fun showDatePickerDialog() {
     val calendar = Calendar.getInstance()
     val year = calendar[Calendar.YEAR]
     val month = calendar[Calendar.MONTH]
@@ -271,18 +294,16 @@ fun DateDetailRow(isSaved: Boolean, date: Timestamp?) {
     DatePickerDialog(
             context,
             { _, selectedYear, selectedMonth, selectedDay ->
-              val timestamp = Timestamp.from(selectedYear, selectedMonth, selectedDay)
-              val formattedDate = timestamp.humanReadablePlannedLabel(context)
-              onDateSelected(formattedDate)
+              val timestamp = Timestamp.from(selectedYear, selectedMonth + 1, selectedDay)
+              updatePlannedDate(timestamp)
             },
             year,
             month,
             day)
         .show()
   }
-
   if (isSaved) {
-    if (date == null) {
+    if (plannedDate == null) {
       DetailRow(
           label = stringResource(R.string.hike_detail_screen_label_status),
           value = stringResource(R.string.hike_detail_screen_value_saved),
@@ -294,13 +315,8 @@ fun DateDetailRow(isSaved: Boolean, date: Timestamp?) {
         Text(
             text = stringResource(R.string.hike_detail_screen_label_planned_for),
             style = MaterialTheme.typography.bodyLarge,
-            modifier =
-                Modifier.clickable {
-                      showDatePickerDialog {
-                        // TODO Do something with the selected date
-                      }
-                    }
-                    .testTag(TEST_TAG_DETAIL_ROW_TAG))
+            modifier = Modifier.testTag(TEST_TAG_DETAIL_ROW_TAG))
+
         Button(
             modifier = Modifier.width(90.dp).height(25.dp).testTag(TEST_TAG_ADD_DATE_BUTTON),
             contentPadding = PaddingValues(0.dp),
@@ -308,11 +324,7 @@ fun DateDetailRow(isSaved: Boolean, date: Timestamp?) {
                 ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF4285F4), // Blue color to match the image
                     contentColor = Color.White),
-            onClick = {
-              showDatePickerDialog {
-                // TODO Do something with the selected date
-              }
-            },
+            onClick = { showDatePickerDialog() },
         ) {
           Text(
               text = stringResource(R.string.hike_detail_screen_add_a_date_button_text),
@@ -333,19 +345,17 @@ fun DateDetailRow(isSaved: Boolean, date: Timestamp?) {
         Text(
             text = stringResource(R.string.hike_detail_screen_label_planned_for),
             style = MaterialTheme.typography.bodyLarge,
-            modifier =
-                Modifier.clickable { showDatePickerDialog { TODO() } }
-                    .testTag(TEST_TAG_DETAIL_ROW_TAG))
+            modifier = Modifier.testTag(TEST_TAG_DETAIL_ROW_TAG))
         Box(
             modifier =
                 Modifier.border(BorderStroke(1.dp, Color.Black), shape = RoundedCornerShape(4.dp))
                     .padding(horizontal = 8.dp, vertical = 4.dp)) {
               Text(
-                  text = "dd/mm/yy", // Here, the date should be displayed once the vM can show the
+                  text = plannedDate.toFormattedString(),
                   // saved Date
                   style = MaterialTheme.typography.bodySmall,
                   modifier =
-                      Modifier.clickable { showDatePickerDialog {} }
+                      Modifier.clickable { showDatePickerDialog() }
                           .testTag(TEST_TAG_PLANNED_DATE_TEXT_BOX))
             }
       }
