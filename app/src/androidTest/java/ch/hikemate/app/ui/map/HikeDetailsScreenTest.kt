@@ -100,7 +100,8 @@ class HikeDetailScreenTest {
     listOfHikeRoutesViewModel.selectRoute(route)
 
     composeTestRule.setContent {
-      HikeDetails(detailedRoute = detailedRoute, savedHikesViewModel = savedHikesViewModel)
+      HikeDetails(
+          detailedRoute = detailedRoute, savedHikesViewModel = savedHikesViewModel, emptyList())
     }
 
     composeTestRule.onNodeWithTag(TEST_TAG_HIKE_NAME).assertTextEquals(route.name!!)
@@ -112,7 +113,8 @@ class HikeDetailScreenTest {
     listOfHikeRoutesViewModel.selectRoute(route)
 
     composeTestRule.setContent {
-      HikeDetails(detailedRoute = detailedRoute, savedHikesViewModel = savedHikesViewModel)
+      HikeDetails(
+          detailedRoute = detailedRoute, savedHikesViewModel = savedHikesViewModel, emptyList())
     }
 
     composeTestRule.onNodeWithTag(TEST_TAG_ELEVATION_GRAPH).assertIsDisplayed()
@@ -136,7 +138,8 @@ class HikeDetailScreenTest {
     savedHikesViewModel.updatePlannedDate(plannedDate)
 
     composeTestRule.setContent {
-      HikeDetails(detailedRoute = detailedRoute, savedHikesViewModel = savedHikesViewModel)
+      HikeDetails(
+          detailedRoute = detailedRoute, savedHikesViewModel = savedHikesViewModel, emptyList())
     }
 
     composeTestRule.onNodeWithTag(TEST_TAG_PLANNED_DATE_TEXT_BOX).assertIsDisplayed()
@@ -147,7 +150,8 @@ class HikeDetailScreenTest {
     listOfHikeRoutesViewModel.selectRoute(route)
 
     composeTestRule.setContent {
-      HikeDetails(detailedRoute = detailedRoute, savedHikesViewModel = savedHikesViewModel)
+      HikeDetails(
+          detailedRoute = detailedRoute, savedHikesViewModel = savedHikesViewModel, emptyList())
     }
 
     composeTestRule.onAllNodesWithTag(TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(5)
@@ -168,7 +172,8 @@ class HikeDetailScreenTest {
     savedHikesViewModel.toggleSaveState()
 
     composeTestRule.setContent {
-      HikeDetails(detailedRoute = detailedRoute, savedHikesViewModel = savedHikesViewModel)
+      HikeDetails(
+          detailedRoute = detailedRoute, savedHikesViewModel = savedHikesViewModel, emptyList())
     }
 
     composeTestRule.onAllNodesWithTag(TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(6)
@@ -194,7 +199,8 @@ class HikeDetailScreenTest {
     savedHikesViewModel.updatePlannedDate(plannedDate)
 
     composeTestRule.setContent {
-      HikeDetails(detailedRoute = detailedRoute, savedHikesViewModel = savedHikesViewModel)
+      HikeDetails(
+          detailedRoute = detailedRoute, savedHikesViewModel = savedHikesViewModel, emptyList())
     }
 
     composeTestRule.onAllNodesWithTag(TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(6)
@@ -233,7 +239,8 @@ class HikeDetailScreenTest {
     savedHikesViewModel.toggleSaveState()
 
     composeTestRule.setContent {
-      HikeDetails(detailedRoute = detailedRoute, savedHikesViewModel = savedHikesViewModel)
+      HikeDetails(
+          detailedRoute = detailedRoute, savedHikesViewModel = savedHikesViewModel, emptyList())
     }
 
     composeTestRule.onNodeWithTag(TEST_TAG_ADD_DATE_BUTTON).assertHasClickAction().performClick()
@@ -242,7 +249,8 @@ class HikeDetailScreenTest {
   @Test
   fun hikeDetails_showsCorrectDetailedHikesValues() {
     composeTestRule.setContent {
-      HikeDetails(detailedRoute = detailedRoute, savedHikesViewModel = savedHikesViewModel)
+      HikeDetails(
+          detailedRoute = detailedRoute, savedHikesViewModel = savedHikesViewModel, emptyList())
     }
 
     val distanceString = String.format(Locale.ENGLISH, "%.2f", detailedRoute.totalDistance)

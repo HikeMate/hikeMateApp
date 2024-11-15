@@ -104,12 +104,19 @@ fun HikeDetailScreen(
   }
 
   val route = listOfHikeRoutesViewModel.selectedHikeRoute.collectAsState().value!!
+  val elevationData = remember { mutableListOf<Double>() }
   val detailedRoute = DetailedHikeRoute.create(route)
 
   // Only do the configuration on the first composition, not on every recomposition
   LaunchedEffect(Unit) {
     savedHikesViewModel.loadSavedHikes()
     savedHikesViewModel.updateHikeDetailState(route)
+    listOfHikeRoutesViewModel.getRoutesElevation(
+        route,
+        {
+          elevationData.clear()
+          elevationData.addAll(it)
+        })
 
     Configuration.getInstance().apply {
       // Set user-agent to avoid rejected requests
@@ -175,13 +182,17 @@ fun HikeDetailScreen(
                 .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
 
     // Hike Details bottom sheet
-    HikeDetails(detailedRoute, savedHikesViewModel)
+    HikeDetails(detailedRoute, savedHikesViewModel, elevationData)
   }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HikeDetails(detailedRoute: DetailedHikeRoute, savedHikesViewModel: SavedHikesViewModel) {
+fun HikeDetails(
+    detailedRoute: DetailedHikeRoute,
+    savedHikesViewModel: SavedHikesViewModel,
+    elevationData: List<Double>
+) {
   val hikeDetailState by savedHikesViewModel.hikeDetailState.collectAsState(null)
 
   // Handle save/unsave actions
@@ -215,7 +226,7 @@ fun HikeDetails(detailedRoute: DetailedHikeRoute, savedHikesViewModel: SavedHike
                   style = MaterialTheme.typography.titleLarge,
                   textAlign = TextAlign.Left,
                   modifier = Modifier.testTag(TEST_TAG_HIKE_NAME))
-              AppropriatenessMessage(isSuitable = true)
+              // AppropriatenessMessage(isSuitable = true)
             }
 
             Image(
@@ -233,16 +244,16 @@ fun HikeDetails(detailedRoute: DetailedHikeRoute, savedHikesViewModel: SavedHike
           }
 
           ElevationGraph(
-              elevations = listOf(150.0, 175.5, 200.3, 225.8, 210.0),
+              elevations = elevationData,
               modifier =
                   Modifier.fillMaxWidth()
-                      .height(30.dp)
+                      .height(60.dp)
                       .padding(4.dp)
                       .testTag(TEST_TAG_ELEVATION_GRAPH),
               styleProperties =
                   ElevationGraphStyleProperties(
-                      strokeColor = MaterialTheme.colorScheme.onSurface,
-                      fillColor = MaterialTheme.colorScheme.surface))
+                      strokeColor = MaterialTheme.colorScheme.primary,
+                      fillColor = (MaterialTheme.colorScheme.primary).copy(0.1f)))
 
           val distanceString =
               String.format(Locale.getDefault(), "%.2f", detailedRoute.totalDistance)
