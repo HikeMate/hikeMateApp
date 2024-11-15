@@ -80,7 +80,7 @@ class SavedHikesViewModel(
 
         // If current is already saved, we unsave it
         if (current.isSaved) {
-          val savedHikeInfos = savedHike.value.find { it.id == current.hike.id }
+          val savedHikeInfos = savedHike.value?.find { it.id == current.hike.id }
           if (savedHikeInfos != null) {
             // This will mark the current hike as not saved and update the saved hikes list
             removeSavedHikeAsync(savedHikeInfos)
@@ -117,7 +117,7 @@ class SavedHikesViewModel(
 
         // If the hike is already saved, we unsave it to save the new instance of it instead
         if (current.isSaved) {
-          savedHike.value.find { it.id == current.hike.id }?.let { removeSavedHikeAsync(it) }
+          savedHike.value?.find { it.id == current.hike.id }?.let { removeSavedHikeAsync(it) }
         }
 
         // We save the hike with its new planned date
@@ -136,7 +136,7 @@ class SavedHikesViewModel(
    * The list of saved hikes for the user as a state flow. Observe this to get updates when the
    * saved hikes change.
    */
-  val savedHike: StateFlow<List<SavedHike>> = _savedHikes.asStateFlow()
+  val savedHike: StateFlow<List<SavedHike>?> = _savedHikes.asStateFlow()
 
   private val _errorMessage = MutableStateFlow<Int?>(null)
   /**
@@ -156,7 +156,7 @@ class SavedHikesViewModel(
    * @return The saved hike with the provided ID, or null if no such hike is found.
    */
   fun isHikeSaved(id: String): SavedHike? {
-    return savedHike.value.find { id == it.id }
+    return savedHike.value?.find { id == it.id }
   }
 
   /**
@@ -216,6 +216,19 @@ class SavedHikesViewModel(
         _loadingSavedHikes.value = true
         _savedHikes.value = repository.loadSavedHikes()
         _errorMessage.value = null
+
+        // If the current hike state is not null, update its saved state and planned date
+        val current = _hikeDetailState.value
+        if (current != null) {
+          val savedHike = isHikeSaved(current.hike.id)
+          _hikeDetailState.value =
+              current.copy(
+                  isSaved = savedHike != null,
+                  bookmark =
+                      if (savedHike != null) R.drawable.bookmark_filled_blue
+                      else R.drawable.bookmark_no_fill,
+                  plannedDate = savedHike?.date)
+        }
       } catch (e: Exception) {
         Log.e(LOG_TAG, "Error loading saved hikes", e)
         _errorMessage.value = R.string.saved_hikes_screen_generic_error

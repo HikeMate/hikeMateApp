@@ -108,6 +108,7 @@ fun HikeDetailScreen(
 
   // Only do the configuration on the first composition, not on every recomposition
   LaunchedEffect(Unit) {
+    savedHikesViewModel.loadSavedHikes()
     savedHikesViewModel.updateHikeDetailState(route)
 
     Configuration.getInstance().apply {
