@@ -68,11 +68,9 @@ fun HikeCard(
     onClick: () -> Unit,
     messageContent: String? = null,
     styleProperties: HikeCardStyleProperties = HikeCardStyleProperties(),
+    showGraph: Boolean = true,
 ) {
-  val displayMessage =
-      messageContent != null &&
-          styleProperties.messageIcon != null &&
-          styleProperties.messageColor != null
+  val displayMessage = false
   val altitudeDifference =
       if (elevationData.isNullOrEmpty()) null else elevationData.max() - elevationData.min()
 
@@ -93,37 +91,40 @@ fun HikeCard(
               modifier = Modifier.testTag(HikeCard.TEST_TAG_HIKE_CARD_TITLE))
           Spacer(modifier = Modifier.height(8.dp))
 
-          Row(
-              verticalAlignment = Alignment.CenterVertically,
-              modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-                ElevationGraph(
-                    elevations = elevationData,
-                    modifier = Modifier.weight(1f).fillMaxHeight(),
-                    styleProperties =
-                        ElevationGraphStyleProperties(
-                            strokeColor =
-                                styleProperties.graphColor ?: MaterialTheme.colorScheme.primary,
-                            fillColor =
-                                (styleProperties.graphColor ?: MaterialTheme.colorScheme.primary)
-                                    .copy(0.1f)))
+          if (showGraph)
+              Row(
+                  verticalAlignment = Alignment.CenterVertically,
+                  modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+                    ElevationGraph(
+                        elevations = elevationData,
+                        modifier = Modifier.weight(1f).fillMaxHeight(),
+                        styleProperties =
+                            ElevationGraphStyleProperties(
+                                strokeColor =
+                                    styleProperties.graphColor ?: MaterialTheme.colorScheme.primary,
+                                fillColor =
+                                    (styleProperties.graphColor
+                                            ?: MaterialTheme.colorScheme.primary)
+                                        .copy(0.1f)))
 
-                Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
 
-                Column {
-                  Text(
-                      text = stringResource(R.string.hike_card_altitude_label),
-                      style = MaterialTheme.typography.bodySmall)
-                  Text(
-                      text =
-                          if (altitudeDifference == null)
-                              stringResource(R.string.hike_card_no_data_label)
-                          else
-                              stringResource(
-                                  R.string.hike_card_altitude_value_template, altitudeDifference),
-                      style = MaterialTheme.typography.bodyLarge,
-                      fontWeight = FontWeight.Bold)
-                }
-              }
+                    Column {
+                      Text(
+                          text = stringResource(R.string.hike_card_altitude_label),
+                          style = MaterialTheme.typography.bodySmall)
+                      Text(
+                          text =
+                              if (altitudeDifference == null)
+                                  stringResource(R.string.hike_card_no_data_label)
+                              else
+                                  stringResource(
+                                      R.string.hike_card_altitude_value_template,
+                                      altitudeDifference),
+                          style = MaterialTheme.typography.bodyLarge,
+                          fontWeight = FontWeight.Bold)
+                    }
+                  }
 
           if (displayMessage) {
             Spacer(modifier = Modifier.height(4.dp))
