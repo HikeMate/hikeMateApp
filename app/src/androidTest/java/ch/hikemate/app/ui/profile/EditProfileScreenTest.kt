@@ -2,6 +2,7 @@ package ch.hikemate.app.ui.profile
 
 import android.content.Context
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextContains
@@ -29,6 +30,7 @@ import org.junit.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.verify
 
 class EditProfileScreenTest : TestCase() {
@@ -39,6 +41,14 @@ class EditProfileScreenTest : TestCase() {
 
   @get:Rule val composeTestRule = createComposeRule()
 
+  private val profile =
+      Profile(
+          id = "1",
+          name = "John Doe",
+          email = "john-doe@gmail.com",
+          hikingLevel = HikingLevel.INTERMEDIATE,
+          joinedDate = Timestamp.now())
+
   @Before
   fun setUp() {
     context = ApplicationProvider.getApplicationContext()
@@ -47,13 +57,22 @@ class EditProfileScreenTest : TestCase() {
     profileRepository = mock(ProfileRepository::class.java)
     profileViewModel = ProfileViewModel(profileRepository)
 
-    composeTestRule.setContent {
-      EditProfileScreen(profileViewModel = profileViewModel, navigationActions = navigationActions)
+    `when`(profileRepository.init(any())).thenAnswer {
+      val onSuccess = it.getArgument<() -> Unit>(0)
+      onSuccess()
     }
+    `when`(profileRepository.getProfileById(eq(profile.id), any(), any())).thenAnswer {
+      val onSuccess = it.getArgument<(Profile) -> Unit>(1)
+      onSuccess(profile)
+    }
+    profileViewModel.getProfileById(profile.id)
   }
 
   @Test
   fun isEverythingDisplayed() {
+    composeTestRule.setContent {
+      EditProfileScreen(profileViewModel = profileViewModel, navigationActions = navigationActions)
+    }
     composeTestRule.onNodeWithTag(BackButton.BACK_BUTTON_TEST_TAG).assertIsDisplayed()
     composeTestRule.onNodeWithTag(EditProfileScreen.TEST_TAG_TITLE).assertIsDisplayed()
     composeTestRule.onNodeWithTag(EditProfileScreen.TEST_TAG_NAME_INPUT).assertIsDisplayed()
@@ -68,17 +87,16 @@ class EditProfileScreenTest : TestCase() {
         .onNodeWithTag(EditProfileScreen.TEST_TAG_HIKING_LEVEL_CHOICE_EXPERT)
         .assertIsDisplayed()
     composeTestRule.onNodeWithTag(EditProfileScreen.TEST_TAG_SAVE_BUTTON).assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_MESSAGE)
+        .assertIsNotDisplayed()
   }
 
   @Test
   fun checkCorrectProfileInfo() {
-    val profile =
-        Profile(
-            id = "1",
-            name = "John Doe",
-            email = "john.doe@gmail.com",
-            hikingLevel = HikingLevel.INTERMEDIATE,
-            joinedDate = Timestamp.now())
+    composeTestRule.setContent {
+      EditProfileScreen(profileViewModel = profileViewModel, navigationActions = navigationActions)
+    }
     `when`(profileRepository.getProfileById(any(), any(), any())).thenAnswer {
       val onSuccess = it.getArgument<(Profile) -> Unit>(1)
       onSuccess(profile)
@@ -98,16 +116,28 @@ class EditProfileScreenTest : TestCase() {
     composeTestRule
         .onNodeWithTag(EditProfileScreen.TEST_TAG_HIKING_LEVEL_CHOICE_EXPERT)
         .assertIsNotSelected()
+    composeTestRule
+        .onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_MESSAGE)
+        .assertIsNotDisplayed()
   }
 
   @Test
   fun checkCanGoBack() {
+    composeTestRule.setContent {
+      EditProfileScreen(profileViewModel = profileViewModel, navigationActions = navigationActions)
+    }
     composeTestRule.onNodeWithTag(BackButton.BACK_BUTTON_TEST_TAG).performClick()
+    composeTestRule
+        .onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_MESSAGE)
+        .assertIsNotDisplayed()
     verify(navigationActions).goBack()
   }
 
   @Test
   fun checkInputsAreEditable() {
+    composeTestRule.setContent {
+      EditProfileScreen(profileViewModel = profileViewModel, navigationActions = navigationActions)
+    }
     composeTestRule.onNodeWithTag(EditProfileScreen.TEST_TAG_NAME_INPUT).performClick()
     composeTestRule.onNodeWithTag(EditProfileScreen.TEST_TAG_NAME_INPUT).performTextClearance()
     composeTestRule
@@ -155,6 +185,9 @@ class EditProfileScreenTest : TestCase() {
     composeTestRule
         .onNodeWithTag(EditProfileScreen.TEST_TAG_HIKING_LEVEL_CHOICE_EXPERT)
         .assertIsNotSelected()
+    composeTestRule
+        .onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_MESSAGE)
+        .assertIsNotDisplayed()
   }
 
   @Test
@@ -164,10 +197,16 @@ class EditProfileScreenTest : TestCase() {
       onError(Exception("No profile found"))
     }
 
+    profileViewModel.getProfileById(profile.id)
+
+    composeTestRule.setContent {
+      EditProfileScreen(profileViewModel = profileViewModel, navigationActions = navigationActions)
+    }
+
     composeTestRule
         .onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_MESSAGE)
         .assertIsDisplayed()
-        .assertTextEquals(context.getString(R.string.error_loading_profile))
+        .assertTextEquals(context.getString(R.string.an_error_occurred_while_fetching_the_profile))
     composeTestRule.onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_BUTTON).performClick()
 
     verify(navigationActions).navigateTo(Route.MAP)

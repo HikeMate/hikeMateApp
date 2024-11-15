@@ -1,6 +1,7 @@
 package ch.hikemate.app.ui.profile
 
 import android.icu.text.DateFormat
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -13,6 +14,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -26,6 +28,7 @@ import ch.hikemate.app.model.profile.ProfileViewModel
 import ch.hikemate.app.ui.components.BigButton
 import ch.hikemate.app.ui.components.ButtonType
 import ch.hikemate.app.ui.components.CenteredErrorAction
+import ch.hikemate.app.ui.components.CenteredLoadingAnimation
 import ch.hikemate.app.ui.navigation.BottomBarNavigation
 import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
 import ch.hikemate.app.ui.navigation.NavigationActions
@@ -71,12 +74,19 @@ fun ProfileScreen(
 ) {
   val context = LocalContext.current
 
-  LaunchedEffect(Unit) { profileViewModel.reloadProfile() }
+  LaunchedEffect(Unit) {
+    if (authViewModel.currentUser.value == null) {
+      Log.e("ProfileScreen", "User is not signed in")
+      return@LaunchedEffect
+    }
+    profileViewModel.getProfileById(authViewModel.currentUser.value!!.uid)
+  }
 
   val errorMessageIdState = profileViewModel.errorMessageId.collectAsState()
   val profileState = profileViewModel.profile.collectAsState()
 
   if (errorMessageIdState.value != null) {
+    Log.e("ProfileScreen", "Error message: ${stringResource(errorMessageIdState.value!!)}")
     // Display an error message if an error occurred
     return CenteredErrorAction(
         errorMessageId = errorMessageIdState.value!!,
@@ -86,12 +96,8 @@ fun ProfileScreen(
   }
 
   if (profileState.value == null) {
-    // Display an error message if an error occurred
-    return CenteredErrorAction(
-        errorMessageId = R.string.error_loading_profile,
-        actionIcon = Icons.Outlined.Home,
-        actionContentDescriptionStringId = R.string.go_back,
-        onAction = { navigationActions.navigateTo(Route.MAP) })
+    Log.e("ProfileScreen", "Profile is null")
+    return CenteredLoadingAnimation()
   }
 
   // profileState.value is not null, we checked it before

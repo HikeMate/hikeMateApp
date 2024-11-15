@@ -2,6 +2,7 @@ package ch.hikemate.app.ui.profile
 
 import android.content.Context
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -17,17 +18,20 @@ import ch.hikemate.app.model.profile.ProfileRepository
 import ch.hikemate.app.model.profile.ProfileViewModel
 import ch.hikemate.app.ui.components.CenteredErrorAction
 import ch.hikemate.app.ui.navigation.NavigationActions
+import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.navigation.TEST_TAG_BOTTOM_BAR
 import com.google.firebase.Timestamp
 import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
-import java.time.LocalDate
+import java.text.SimpleDateFormat
+import java.util.Calendar
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 
@@ -42,6 +46,14 @@ class ProfileScreenTest : TestCase() {
 
   @get:Rule val composeTestRule = createComposeRule()
 
+  private val profile =
+      Profile(
+          id = "1",
+          name = "John Doe",
+          email = "john-doe@gmail.com",
+          hikingLevel = HikingLevel.INTERMEDIATE,
+          joinedDate = Timestamp.now())
+
   @Before
   fun setUp() {
     context = ApplicationProvider.getApplicationContext()
@@ -52,16 +64,25 @@ class ProfileScreenTest : TestCase() {
     authViewModel = AuthViewModel(authRepository, profileRepository)
     profileViewModel = ProfileViewModel(profileRepository)
 
+    `when`(profileRepository.init(any())).thenAnswer {
+      val onSuccess = it.getArgument<() -> Unit>(0)
+      onSuccess()
+    }
+    `when`(profileRepository.getProfileById(eq(profile.id), any(), any())).thenAnswer {
+      val onSuccess = it.getArgument<(Profile) -> Unit>(1)
+      onSuccess(profile)
+    }
+    profileViewModel.getProfileById(profile.id)
+  }
+
+  @Test
+  fun isEverythingDisplayed() {
     composeTestRule.setContent {
       ProfileScreen(
           profileViewModel = profileViewModel,
           navigationActions = navigationActions,
           authViewModel = authViewModel)
     }
-  }
-
-  @Test
-  fun isEverythingDisplayed() {
     composeTestRule.onNodeWithTag(TEST_TAG_BOTTOM_BAR).assertIsDisplayed()
     composeTestRule.onNodeWithTag(ProfileScreen.TEST_TAG_TITLE).assertIsDisplayed()
     composeTestRule.onNodeWithTag(ProfileScreen.TEST_TAG_NAME).assertIsDisplayed()
@@ -70,10 +91,19 @@ class ProfileScreenTest : TestCase() {
     composeTestRule.onNodeWithTag(ProfileScreen.TEST_TAG_JOIN_DATE).assertIsDisplayed()
     composeTestRule.onNodeWithTag(ProfileScreen.TEST_TAG_EDIT_PROFILE_BUTTON).assertIsDisplayed()
     composeTestRule.onNodeWithTag(ProfileScreen.TEST_TAG_SIGN_OUT_BUTTON).assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_MESSAGE)
+        .assertIsNotDisplayed()
   }
 
   @Test
   fun checkCorrectProfileInfo() {
+    composeTestRule.setContent {
+      ProfileScreen(
+          profileViewModel = profileViewModel,
+          navigationActions = navigationActions,
+          authViewModel = authViewModel)
+    }
     val profile =
         Profile(
             id = "1",
@@ -101,20 +131,29 @@ class ProfileScreenTest : TestCase() {
                   context.getString(R.string.profile_screen_hiking_level_info_expert)
             }))
 
-    val current = LocalDate.now()
-    val currentDateDayOfMonth = current.dayOfMonth
-    val currentDateMonthText = current.month.toString().lowercase()
+    val current = Calendar.getInstance().time
+    val currentDateDayOfMonthText = SimpleDateFormat("d").format(current).toString()
+    val currentDateMonthText = SimpleDateFormat("MMMM").format(current).lowercase()
 
     composeTestRule
         .onNodeWithTag(ProfileScreen.TEST_TAG_JOIN_DATE)
-        .assertTextContains(currentDateDayOfMonth.toString(), substring = true, ignoreCase = true)
+        .assertTextContains(currentDateDayOfMonthText, substring = true, ignoreCase = true)
     composeTestRule
         .onNodeWithTag(ProfileScreen.TEST_TAG_JOIN_DATE)
         .assertTextContains(currentDateMonthText, substring = true, ignoreCase = true)
+    composeTestRule
+        .onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_MESSAGE)
+        .assertIsNotDisplayed()
   }
 
   @Test
   fun checkExpertHikingLevel() {
+    composeTestRule.setContent {
+      ProfileScreen(
+          profileViewModel = profileViewModel,
+          navigationActions = navigationActions,
+          authViewModel = authViewModel)
+    }
     val profile =
         Profile(
             id = "1",
@@ -140,10 +179,19 @@ class ProfileScreenTest : TestCase() {
               HikingLevel.EXPERT ->
                   context.getString(R.string.profile_screen_hiking_level_info_expert)
             }))
+    composeTestRule
+        .onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_MESSAGE)
+        .assertIsNotDisplayed()
   }
 
   @Test
   fun checkBeginnerHikingLevel() {
+    composeTestRule.setContent {
+      ProfileScreen(
+          profileViewModel = profileViewModel,
+          navigationActions = navigationActions,
+          authViewModel = authViewModel)
+    }
     val profile =
         Profile(
             id = "1",
@@ -168,17 +216,38 @@ class ProfileScreenTest : TestCase() {
               HikingLevel.EXPERT ->
                   context.getString(R.string.profile_screen_hiking_level_info_expert)
             }))
+    composeTestRule
+        .onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_MESSAGE)
+        .assertIsNotDisplayed()
   }
 
   @Test
   fun checkEditProfileButton() {
+    composeTestRule.setContent {
+      ProfileScreen(
+          profileViewModel = profileViewModel,
+          navigationActions = navigationActions,
+          authViewModel = authViewModel)
+    }
     composeTestRule.onNodeWithTag(ProfileScreen.TEST_TAG_EDIT_PROFILE_BUTTON).performClick()
+    composeTestRule
+        .onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_MESSAGE)
+        .assertIsNotDisplayed()
     verify(navigationActions).navigateTo(Screen.EDIT_PROFILE)
   }
 
   @Test
   fun checkSignOutButton() {
+    composeTestRule.setContent {
+      ProfileScreen(
+          profileViewModel = profileViewModel,
+          navigationActions = navigationActions,
+          authViewModel = authViewModel)
+    }
     composeTestRule.onNodeWithTag(ProfileScreen.TEST_TAG_SIGN_OUT_BUTTON).performClick()
+    composeTestRule
+        .onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_MESSAGE)
+        .assertIsNotDisplayed()
     verify(authRepository, times(1)).signOut(any())
   }
 
@@ -189,15 +258,24 @@ class ProfileScreenTest : TestCase() {
       onError(Exception("Profile not found"))
     }
 
+    profileViewModel.getProfileById(profile.id)
+
+    composeTestRule.setContent {
+      ProfileScreen(
+          profileViewModel = profileViewModel,
+          navigationActions = navigationActions,
+          authViewModel = authViewModel)
+    }
+
     composeTestRule
         .onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_MESSAGE)
         .assertIsDisplayed()
-        .assertTextEquals(context.getString(R.string.error_loading_profile))
+        .assertTextEquals(context.getString(R.string.an_error_occurred_while_fetching_the_profile))
     composeTestRule
         .onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_BUTTON)
         .assertIsDisplayed()
 
     composeTestRule.onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_BUTTON).performClick()
-    verify(navigationActions).navigateTo(Screen.MAP)
+    verify(navigationActions).navigateTo(Route.MAP)
   }
 }

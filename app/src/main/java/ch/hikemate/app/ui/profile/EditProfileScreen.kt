@@ -1,5 +1,6 @@
 package ch.hikemate.app.ui.profile
 
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -80,12 +81,8 @@ fun EditProfileScreen(
   }
 
   if (profileState.value == null) {
-    // Display an error message if an error occurred
-    return CenteredErrorAction(
-        errorMessageId = R.string.error_loading_profile,
-        actionIcon = Icons.Outlined.Home,
-        actionContentDescriptionStringId = R.string.go_back,
-        onAction = { navigationActions.navigateTo(Route.MAP) })
+    Log.e("ProfileScreen", "Profile is null")
+    return CenteredLoadingAnimation()
   }
 
   // profileState.value is not null, we checked it before
