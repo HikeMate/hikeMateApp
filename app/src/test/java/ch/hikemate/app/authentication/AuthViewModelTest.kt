@@ -338,6 +338,8 @@ class AuthViewModelTest {
   fun signOut_calls_repository_signOut_and_updates_currentUser_to_null() = runTest {
     setupSignedInUser()
 
+    val mockOnSuccess: (() -> Unit) = mock()
+
     // Simulate a successful sign-out by invoking the onSuccess callback
     doAnswer { arguments ->
           val onSuccess = arguments.getArgument<() -> Unit>(0)
@@ -350,11 +352,13 @@ class AuthViewModelTest {
     // Verify that currentUser is initially mockFirebaseUser
     assertEquals(mockFirebaseUser, viewModel.currentUser.first())
 
-    viewModel.signOut()
+    viewModel.signOut { mockOnSuccess() }
 
     // Verify that the repository's signOut was called
     verify(mockRepository).signOut(any())
     // Verify that currentUser is updated to null
     assertEquals(null, viewModel.currentUser.value)
+    // Verify that the onSuccess callback was called
+    verify(mockOnSuccess).invoke()
   }
 }
