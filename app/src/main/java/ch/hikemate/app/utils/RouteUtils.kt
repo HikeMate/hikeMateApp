@@ -1,6 +1,7 @@
 package ch.hikemate.app.utils
 
 import ch.hikemate.app.model.elevation.ElevationServiceRepository
+import ch.hikemate.app.model.route.HikeDifficulty
 import ch.hikemate.app.model.route.LatLong
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
@@ -90,11 +91,11 @@ object RouteUtils {
    * @return A `String` representing the difficulty level: "Easy", "Moderate", or "Difficult".
    * @link https://www.parks.ca.gov/?page_id=24055
    */
-  fun determineDifficulty(distance: Double, elevationGain: Double): String {
+  fun determineDifficulty(distance: Double, elevationGain: Double): HikeDifficulty {
     return when {
-      distance < 3 && elevationGain < 250 -> "Easy"
-      distance in 0.0..6.0 && elevationGain in 0.0..500.0 -> "Moderate"
-      else -> "Difficult"
+      distance < 3 && elevationGain < 250 -> HikeDifficulty.EASY
+      distance in 0.0..6.0 && elevationGain in 0.0..500.0 -> HikeDifficulty.MODERATE
+      else -> HikeDifficulty.DIFFICULT
     }
   }
 }

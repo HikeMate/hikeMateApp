@@ -63,6 +63,11 @@
     <string name="hike_detail_screen_value_planned">Planned</string>
     <string name="hike_detail_screen_add_a_date_button_text">Add a date</string>
 
+    <!-- Hike Difficulty Levels -->
+    <string name="hike_difficulty_easy">Easy</string>
+    <string name="hike_difficulty_moderate">Moderate</string>
+    <string name="hike_difficulty_difficult">Difficult</string>
+
 
     <!-- Saved Hikes Screen -->
     <string name="saved_hikes_screen_generic_error">

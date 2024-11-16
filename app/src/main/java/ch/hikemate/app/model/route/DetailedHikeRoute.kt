@@ -23,7 +23,7 @@ data class DetailedHikeRoute(
     val totalDistance: Double,
     val estimatedTime: Double,
     val elevationGain: Double,
-    val difficulty: String
+    val difficulty: HikeDifficulty
 ) {
 
   /**

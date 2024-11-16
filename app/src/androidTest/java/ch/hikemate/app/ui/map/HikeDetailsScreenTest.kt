@@ -1,11 +1,14 @@
 package ch.hikemate.app.ui.map
 
+import android.content.Context
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.hikemate.app.model.elevation.ElevationService
 import ch.hikemate.app.model.route.Bounds
 import ch.hikemate.app.model.route.DetailedHikeRoute
+import ch.hikemate.app.model.route.HikeDifficulty
 import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.HikeRoutesRepository
 import ch.hikemate.app.model.route.LatLong
@@ -63,8 +66,7 @@ class HikeDetailScreenTest {
           totalDistance = 13.543077559212616,
           elevationGain = 68.0,
           estimatedTime = 169.3169307105514,
-          difficulty = "Difficult",
-      )
+          difficulty = HikeDifficulty.DIFFICULT)
 
   @OptIn(ExperimentalCoroutinesApi::class)
   @Before
@@ -271,6 +273,9 @@ class HikeDetailScreenTest {
         .assertAny(hasText("${hourString}:${minuteString}"))
     composeTestRule
         .onAllNodesWithTag(TEST_TAG_DETAIL_ROW_VALUE)
-        .assertAny(hasText(detailedRoute.difficulty))
+        .assertAny(
+            hasText(
+                ApplicationProvider.getApplicationContext<Context>()
+                    .getString(detailedRoute.difficulty.nameResourceId)))
   }
 }
