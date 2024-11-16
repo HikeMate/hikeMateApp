@@ -23,7 +23,7 @@ data class DetailedHikeRoute(
     val totalDistance: Double,
     val estimatedTime: Double,
     val elevationGain: Double,
-    val difficulty: String
+    val difficulty: HikeDifficulty
 ) {
 
   /**
@@ -133,10 +133,10 @@ private fun estimateTime(distance: Double, elevationGain: Double): Double {
  * @return A `String` representing the difficulty level: "Easy", "Moderate", or "Difficult".
  * @link https://www.parks.ca.gov/?page_id=24055
  */
-private fun determineDifficulty(distance: Double, elevationGain: Double): String {
+private fun determineDifficulty(distance: Double, elevationGain: Double): HikeDifficulty {
   return when {
-    distance < 3 && elevationGain < 250 -> "Easy"
-    distance in 0.0..6.0 && elevationGain in 0.0..500.0 -> "Moderate"
-    else -> "Difficult"
+    distance < 3 && elevationGain < 250 -> HikeDifficulty.EASY
+    distance in 0.0..6.0 && elevationGain in 0.0..500.0 -> HikeDifficulty.MODERATE
+    else -> HikeDifficulty.DIFFICULT
   }
 }
