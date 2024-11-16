@@ -277,7 +277,7 @@ fun HikeDetails(
               value = "${hourString}:${minuteString}")
           DetailRow(
               label = stringResource(R.string.hike_detail_screen_label_difficulty),
-              value = detailedRoute.difficulty,
+              value = stringResource(detailedRoute.difficulty.nameResourceId),
               valueColor = Color.Green)
           DateDetailRow(isSaved, plannedDate, updatePlannedDate)
         }

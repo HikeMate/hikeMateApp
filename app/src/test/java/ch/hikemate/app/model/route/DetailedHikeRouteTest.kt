@@ -1,6 +1,7 @@
 import ch.hikemate.app.model.elevation.ElevationServiceRepository
 import ch.hikemate.app.model.route.Bounds
 import ch.hikemate.app.model.route.DetailedHikeRoute
+import ch.hikemate.app.model.route.HikeDifficulty
 import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.LatLong
 import io.mockk.coEvery
@@ -51,7 +52,7 @@ class DetailedHikeRouteTest {
     assertEquals(314.4, detailedHikeRoute.totalDistance, 1.0)
     assertEquals(0.0, detailedHikeRoute.elevationGain, 0.0001)
     assertEquals(3772.0, detailedHikeRoute.estimatedTime, 1.0)
-    assertEquals("Difficult", detailedHikeRoute.difficulty)
+    assertEquals(HikeDifficulty.DIFFICULT, detailedHikeRoute.difficulty)
   }
 
   @Test
@@ -74,7 +75,7 @@ class DetailedHikeRouteTest {
     assertEquals(1.322, detailedHikeRoute.totalDistance, 1.0)
     assertEquals(0.0, detailedHikeRoute.elevationGain, 0.0001)
     assertEquals(18.0, detailedHikeRoute.estimatedTime, 1.0)
-    assertEquals("Easy", detailedHikeRoute.difficulty)
+    assertEquals(HikeDifficulty.EASY, detailedHikeRoute.difficulty)
   }
 
   @Test
@@ -97,7 +98,7 @@ class DetailedHikeRouteTest {
     assertEquals(5.56, detailedHikeRoute.totalDistance, 1.0)
     assertEquals(0.0, detailedHikeRoute.elevationGain, 0.0001)
     assertEquals(66.0, detailedHikeRoute.estimatedTime, 1.0)
-    assertEquals("Moderate", detailedHikeRoute.difficulty)
+    assertEquals(HikeDifficulty.MODERATE, detailedHikeRoute.difficulty)
   }
 
   @Test
@@ -120,7 +121,7 @@ class DetailedHikeRouteTest {
     assertEquals(11.12, detailedHikeRoute.totalDistance, 1.0)
     assertEquals(0.0, detailedHikeRoute.elevationGain, 0.0001)
     assertEquals(133.0, detailedHikeRoute.estimatedTime, 1.0)
-    assertEquals("Difficult", detailedHikeRoute.difficulty)
+    assertEquals(HikeDifficulty.DIFFICULT, detailedHikeRoute.difficulty)
   }
 
   @Test
@@ -148,7 +149,7 @@ class DetailedHikeRouteTest {
         assertEquals(12.75, detailedHikeRoute.totalDistance, 1.0)
         assertEquals(200.0, detailedHikeRoute.elevationGain, 0.0001)
         assertEquals(173.0, detailedHikeRoute.estimatedTime, 1.0)
-        assertEquals("Difficult", detailedHikeRoute.difficulty)
+        assertEquals(HikeDifficulty.DIFFICULT, detailedHikeRoute.difficulty)
       }
 
   @Test
@@ -204,6 +205,6 @@ class DetailedHikeRouteTest {
     assertEquals(207.59, detailedHikeRoute.totalDistance, 0.1)
     assertEquals(400.0, detailedHikeRoute.elevationGain, 0.0001)
     assertEquals(2531.0, detailedHikeRoute.estimatedTime, 1.0)
-    assertEquals("Difficult", detailedHikeRoute.difficulty)
+    assertEquals(HikeDifficulty.DIFFICULT, detailedHikeRoute.difficulty)
   }
 }
