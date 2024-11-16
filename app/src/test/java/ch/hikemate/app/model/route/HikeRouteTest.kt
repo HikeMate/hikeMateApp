@@ -50,4 +50,24 @@ class HikeRouteTest {
     assertEquals(111194.93, distance24, HikeRouteTest.DELTA_LATLONG)
     assertEquals(111177.99, distance34, HikeRouteTest.DELTA_LATLONG)
   }
+
+  @Test
+  fun getColorsIsDeterministic() {
+    val bounds = Bounds(0.0, 0.0, 0.0, 0.0)
+    val hikes =
+        listOf(
+            HikeRoute("1", bounds, emptyList(), "name", "desc"),
+            HikeRoute("2", bounds, emptyList(), "name", "desc"),
+            HikeRoute("3", bounds, emptyList(), "name", "desc"),
+            HikeRoute("4", bounds, emptyList(), "name", "desc"),
+            HikeRoute("5", bounds, emptyList(), "name", "desc"),
+        )
+
+    for (hike in hikes) {
+      for (i in 0..100) {
+        val color = hike.getColor()
+        assertEquals(color, hike.getColor())
+      }
+    }
+  }
 }
