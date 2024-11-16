@@ -40,7 +40,7 @@ object RouteUtils {
    * @param hikeId the hikes id, needed for the elevation API request
    * @return The total elevation gain in meters as a `Double`.
    */
-  fun computeElevationGain(
+  fun getElevationGain(
       ways: List<LatLong>,
       hikeId: String,
       elevationService: ElevationServiceRepository
