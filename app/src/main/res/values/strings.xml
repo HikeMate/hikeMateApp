@@ -6,8 +6,8 @@
     <string name="default_web_client_id">154591189513-eilbr2jtms0av2ses4tsvo62009q5t7n.apps.googleusercontent.com</string>
 
     <!-- Hike Card -->
-    <string name="hike_card_altitude_label">Altitude difference</string>
-    <string name="hike_card_altitude_value_template">%sm</string>
+    <string name="hike_card_altitude_label">Elevation gain</string>
+    <string name="hike_card_altitude_value_template">%.0fm</string>
     <string name="hike_card_no_data_label">No data</string>
 
     <!-- Map Screen -->
