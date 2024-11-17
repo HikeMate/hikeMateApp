@@ -25,7 +25,8 @@ object RouteUtils {
   }
 
   /**
-   * Helper function to compute the total distance in km of a hike based on a list of waypoints.
+   * Helper function to compute the total distance in km of a hike based on a list of waypoints. The
+   * distance calculation accounts for Earth's curvature through use of the Haversine formula
    *
    * @param ways A list of `LatLong` objects representing the waypoints of the hike.
    * @return The total distance of the hike in kilometers as a `Double`.
