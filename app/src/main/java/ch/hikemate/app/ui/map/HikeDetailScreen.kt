@@ -158,7 +158,7 @@ fun HikeDetailScreen(
 
   // Show the selected hike on the map
   // OnLineClick does nothing, the line should not be clickable
-  val hikeLineColor = getRandomColor()
+  val hikeLineColor = route.getColor()
   MapUtils.showHikeOnMap(mapView = mapView, hike = route, color = hikeLineColor, onLineClick = {})
 
   Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {
@@ -204,6 +204,8 @@ fun HikeDetails(
   val updatePlannedDate = { timestamp: Timestamp? ->
     savedHikesViewModel.updatePlannedDate(timestamp)
   }
+
+  val hikeColor = Color(detailedRoute.route.getColor())
 
   val scaffoldState = rememberBottomSheetScaffoldState()
 
@@ -252,8 +254,7 @@ fun HikeDetails(
                       .testTag(TEST_TAG_ELEVATION_GRAPH),
               styleProperties =
                   ElevationGraphStyleProperties(
-                      strokeColor = MaterialTheme.colorScheme.primary,
-                      fillColor = (MaterialTheme.colorScheme.primary).copy(0.1f)))
+                      strokeColor = hikeColor, fillColor = hikeColor.copy(0.1f)))
 
           val distanceString =
               String.format(Locale.getDefault(), "%.2f", detailedRoute.totalDistance)
