@@ -12,6 +12,8 @@ import org.junit.Test
 
 class RouteUtilsTest {
 
+  // --- calculateElevationGain tests ---
+
   @Test
   fun test_calculateElevationGain_returns_correct_elevation_gain() {
     val elevations = listOf(100.0, 150.0, 140.0, 200.0, 190.0)
@@ -25,6 +27,8 @@ class RouteUtilsTest {
     val elevationGain = RouteUtils.calculateElevationGain(elevations)
     assertEquals(0.0, elevationGain, 0.01)
   }
+
+  // --- computeTotalDistance tests ---
 
   @Test
   fun test_computeTotalDistance_returns_correct_distance() {
@@ -74,14 +78,16 @@ class RouteUtilsTest {
   }
 
   @Test
-  fun computeTotalDistance_returns_zero_for_empty_list() {
+  fun test_computeTotalDistance_returns_zero_for_empty_list() {
     val points = emptyList<LatLong>()
     val totalDistance = RouteUtils.computeTotalDistance(points)
     assertEquals(0.0, totalDistance, 0.1)
   }
 
+  // --- getElevationGain tests ---
+
   @Test
-  fun getElevationGain_returns_correct_elevation_gain_from_service() =
+  fun test_getElevationGain_returns_correct_elevation_gain_from_service() =
       runTest(timeout = 10.seconds) {
         // mock elevationService
         val mockElevationService = mockk<ElevationServiceRepository>()
@@ -99,18 +105,57 @@ class RouteUtilsTest {
         assertEquals(110.0, elevationGain, 0.01)
       }
 
+  // --- determineDifficulty tests ---
+
   @Test
   fun test_determineDifficulty_easy() {
-    assertEquals(HikeDifficulty.EASY, RouteUtils.determineDifficulty(1.0, 0.0))
+    assertEquals(HikeDifficulty.EASY, RouteUtils.determineDifficulty(0.0, 0.0))
   }
 
   @Test
-  fun test_determineDifficulty_moderate() {
-    assertEquals(HikeDifficulty.MODERATE, RouteUtils.determineDifficulty(5.0, 400.0))
+  fun test_determineDifficulty_easy_upperBoundary() {
+    assertEquals(HikeDifficulty.EASY, RouteUtils.determineDifficulty(2.99, 249.9))
   }
 
   @Test
-  fun test_determineDifficulty_difficult() {
-    assertEquals(HikeDifficulty.DIFFICULT, RouteUtils.determineDifficulty(11.12, 113.0))
+  fun test_determineDifficulty_moderate_lowerBoundaryDistance() {
+    // Exactly on the boundary for distance but within elevation gain for MODERATE
+    assertEquals(HikeDifficulty.MODERATE, RouteUtils.determineDifficulty(3.0, 100.0))
+  }
+
+  @Test
+  fun test_determineDifficulty_moderate_upperBoundaryDistance() {
+    // Test for upper limit of distance in MODERATE range
+    assertEquals(HikeDifficulty.MODERATE, RouteUtils.determineDifficulty(6.0, 250.0))
+  }
+
+  @Test
+  fun test_determineDifficulty_moderate_upperBoundaryElevation() {
+    // Exactly on the upper limit of elevation gain within MODERATE
+    assertEquals(HikeDifficulty.MODERATE, RouteUtils.determineDifficulty(4.0, 500.0))
+  }
+
+  @Test
+  fun test_determineDifficulty_moderate_upperBoundaryBoth() {
+    // Test exactly on the upper boundary for both distance and elevation gain
+    assertEquals(HikeDifficulty.MODERATE, RouteUtils.determineDifficulty(6.0, 500.0))
+  }
+
+  @Test
+  fun test_determineDifficulty_difficult_beyondModerateDistance() {
+    // Distance just beyond MODERATE range
+    assertEquals(HikeDifficulty.DIFFICULT, RouteUtils.determineDifficulty(6.01, 400.0))
+  }
+
+  @Test
+  fun test_determineDifficulty_difficult_beyondModerateElevation() {
+    // Elevation just beyond MODERATE range
+    assertEquals(HikeDifficulty.DIFFICULT, RouteUtils.determineDifficulty(4.0, 500.1))
+  }
+
+  @Test
+  fun test_determineDifficulty_difficult_beyondModerateBoth() {
+    // Both distance and elevation gain beyond MODERATE range
+    assertEquals(HikeDifficulty.DIFFICULT, RouteUtils.determineDifficulty(7.0, 600.0))
   }
 }
