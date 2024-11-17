@@ -45,6 +45,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
 import ch.hikemate.app.R
 import ch.hikemate.app.model.route.DetailedHikeRoute
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
@@ -278,7 +279,11 @@ fun HikeDetails(
           DetailRow(
               label = stringResource(R.string.hike_detail_screen_label_difficulty),
               value = stringResource(detailedRoute.difficulty.nameResourceId),
-              valueColor = Color.Green)
+              valueColor =
+                  Color(
+                      ContextCompat.getColor(
+                          LocalContext.current, detailedRoute.difficulty.colorResourceId)),
+          )
           DateDetailRow(isSaved, plannedDate, updatePlannedDate)
         }
       },
