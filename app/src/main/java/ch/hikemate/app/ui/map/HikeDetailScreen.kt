@@ -274,7 +274,7 @@ fun HikeDetails(
               value = "${elevationGainString}m")
           DetailRow(
               label = stringResource(R.string.hike_detail_screen_label_estimated_time),
-              value = "${hourString}:${minuteString}")
+              value = "${hourString}h${minuteString}")
           DetailRow(
               label = stringResource(R.string.hike_detail_screen_label_difficulty),
               value = stringResource(detailedRoute.difficulty.nameResourceId),
