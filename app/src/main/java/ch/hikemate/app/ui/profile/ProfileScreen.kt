@@ -9,6 +9,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -26,11 +27,11 @@ import ch.hikemate.app.model.profile.Profile
 import ch.hikemate.app.model.profile.ProfileViewModel
 import ch.hikemate.app.ui.components.BigButton
 import ch.hikemate.app.ui.components.ButtonType
+import ch.hikemate.app.ui.navigation.BottomBarNavigation
 import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
-import ch.hikemate.app.ui.navigation.SideBarNavigation
 import com.google.firebase.Timestamp
 
 object ProfileScreen {
@@ -46,7 +47,6 @@ object ProfileScreen {
       Profile(
           "custom-id", "John Doe", "john.doe@gmail.com", HikingLevel.INTERMEDIATE, Timestamp.now())
 }
-
 /**
  * A composable to display an information of the profile.
  *
@@ -78,25 +78,28 @@ fun ProfileScreen(
   val context = LocalContext.current
 
   // TODO: show an error if the profile is null. For now display it for test purposes
+
+  LaunchedEffect(Unit) { profileViewModel.reloadProfile() }
+
   val profileState = profileViewModel.profile.collectAsState()
 
   val profile: Profile = profileState.value ?: ProfileScreen.DEFAULT_PROFILE
 
-  SideBarNavigation(
+  BottomBarNavigation(
       onTabSelect = { navigationActions.navigateTo(it) },
       tabList = LIST_TOP_LEVEL_DESTINATIONS,
-      selectedItem = Route.PROFILE) { p ->
+      selectedItem = Route.PROFILE) { _ ->
         Column(
             modifier =
                 Modifier.testTag(Screen.PROFILE)
-                    .padding(p)
                     .padding(
-                        // Here we have 2 calls to padding. The first one is for the sidebar padding
+                        // Here we have 2 calls to padding. The first one is for the status bar
+                        // padding
                         // and the second one is for the content padding. 2 padding will add up.
                         // There is another way to do but we decided that this version was cleaner.
                         start = 16.dp,
                         end = 16.dp,
-                        top = 16.dp,
+                        top = 40.dp,
                     ),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
               Text(
@@ -138,8 +141,7 @@ fun ProfileScreen(
                   buttonType = ButtonType.SECONDARY,
                   label = context.getString(R.string.profile_screen_sign_out_button_text),
                   onClick = {
-                    authViewModel.signOut()
-                    navigationActions.navigateTo(Screen.AUTH)
+                    authViewModel.signOut({ navigationActions.navigateTo(Screen.AUTH) })
                   },
                   Modifier.testTag(ProfileScreen.TEST_TAG_SIGN_OUT_BUTTON))
 

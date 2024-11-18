@@ -246,6 +246,173 @@ class HikeRoutesRepositoryOverpassTest {
           .request(mock())
           .build()
 
+  private val doubleResponse =
+      Response.Builder()
+          .code(200)
+          .message("OK")
+          .body(
+              """
+        {
+    "version": 0.6,
+    "generator": "Overpass API 0.7.62.1 084b4234",
+    "osm3s": {
+        "timestamp_osm_base": "2024-10-10T19:14:42Z",
+        "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+    },
+    "elements": [
+        {
+            "type": "relation",
+            "id": 124582,
+            "bounds": {
+                "minlat": 45.8689061,
+                "minlon": 6.4395807,
+                "maxlat": 46.8283926,
+                "maxlon": 7.2109599
+            },
+            "members": [
+                {
+                    "type": "way",
+                    "ref": 936770892,
+                    "role": "",
+                    "geometry": [
+                        {
+                            "lat": 46.8240018,
+                            "lon": 6.4395807
+                        },
+                        {
+                            "lat": 46.823965,
+                            "lon": 6.4396698
+                        }
+                    ]
+                },
+                {
+                    "type": "way",
+                    "ref": 24956166,
+                    "role": "",
+                    "geometry": [
+                        {
+                            "lat": 46.823965,
+                            "lon": 6.4396698
+                        },
+                        {
+                            "lat": 46.8235322,
+                            "lon": 6.4401168
+                        },
+                        {
+                            "lat": 46.8234367,
+                            "lon": 6.4401715
+                        }
+                    ]
+                },
+                {
+                    "type": "node",
+                    "ref": 1107816214,
+                    "role": "",
+                    "lat": 46.8232651,
+                    "lon": 6.4402355
+                }
+            ],
+            "tags": {
+                "distance": "31",
+                "from": "Lausanne",
+                "int_name": "Camino de Santiago",
+                "name": "ViaJacobi",
+                "network": "nwn",
+                "operator": "Wanderland Schweiz",
+                "osmc:symbol": "green:green::4:white",
+                "pilgrimage": "Camino de Santiago",
+                "ref": "4",
+                "religion": "christian",
+                "route": "hiking",
+                "stage": "17",
+                "symbol": "weisse 4 auf grünem Rechteck und in südwestlicher Richtung Jakobsmuschel",
+                "to": "Roll",
+                "type": "route",
+                "url": "https://www.schweizmobil.ch/fr/wanderland/etappe4.17"
+            }
+        },
+        {
+            "type": "relation",
+            "id": 124583,
+            "bounds": {
+                "minlat": 45.8689061,
+                "minlon": 6.4395807,
+                "maxlat": 46.8283926,
+                "maxlon": 7.2109599
+            },
+            "members": [
+                {
+                    "type": "way",
+                    "ref": 936770892,
+                    "role": "",
+                    "geometry": [
+                        {
+                            "lat": 46.8240018,
+                            "lon": 6.4395807
+                        },
+                        {
+                            "lat": 46.823965,
+                            "lon": 6.4396698
+                        }
+                    ]
+                },
+                {
+                    "type": "way",
+                    "ref": 24956166,
+                    "role": "",
+                    "geometry": [
+                        {
+                            "lat": 46.823965,
+                            "lon": 6.4396698
+                        },
+                        {
+                            "lat": 46.8235322,
+                            "lon": 6.4401168
+                        },
+                        {
+                            "lat": 46.8234367,
+                            "lon": 6.4401715
+                        }
+                    ]
+                },
+                {
+                    "type": "node",
+                    "ref": 1107816214,
+                    "role": "",
+                    "lat": 46.8232651,
+                    "lon": 6.4402355
+                }
+            ],
+            "tags": {
+                "distance": "31",
+                "from": "Lausanne",
+                "int_name": "Camino de Santiago",
+                "name": "ViaJacobi",
+                "network": "nwn",
+                "operator": "Wanderland Schweiz",
+                "osmc:symbol": "green:green::4:white",
+                "pilgrimage": "Camino de Santiago",
+                "ref": "4",
+                "religion": "christian",
+                "route": "hiking",
+                "stage": "17",
+                "symbol": "weisse 4 auf grünem Rechteck und in südwestlicher Richtung Jakobsmuschel",
+                "to": "Roll",
+                "type": "route",
+                "url": "https://www.schweizmobil.ch/fr/wanderland/etappe4.17"
+            }
+        }
+    ]
+}
+                  """
+                  .trimIndent()
+                  .replace("\n", "")
+                  .toResponseBody())
+          .protocol(Protocol.HTTP_1_1)
+          .header("Content-Type", "application/json")
+          .request(mock())
+          .build()
+
   private val failedResponse =
       Response.Builder()
           .code(419)
@@ -519,10 +686,169 @@ class HikeRoutesRepositoryOverpassTest {
           .request(mock())
           .build()
 
+  private val responseWithIncorrectNames =
+      Response.Builder()
+          .code(200)
+          .message("OK")
+          .body(
+              """
+{
+    "version": 0.6,
+    "generator": "Overpass API 0.7.62.1 084b4234",
+    "osm3s": {
+        "timestamp_osm_base": "2024-10-10T19:14:42Z",
+        "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+    },
+    "elements": [
+        {
+            "type": "relation",
+            "id": 124582,
+            "bounds": {
+                "minlat": 45.8689061,
+                "minlon": 6.4395807,
+                "maxlat": 46.8283926,
+                "maxlon": 7.2109599
+            },
+            "members": [
+                {
+                    "type": "way",
+                    "ref": 936770892,
+                    "role": "",
+                    "geometry": [
+                        {
+                            "lat": 46.8240018,
+                            "lon": 6.4395807
+                        }
+                    ]
+                }
+            ],
+            "tags": {
+              "name": "Dézaley - Lavaux Vinorama? - fixme"
+            }
+        },
+        {
+            "type": "relation",
+            "id": 124583,
+            "bounds": {
+                "minlat": 45.8689061,
+                "minlon": 6.4395807,
+                "maxlat": 46.8283926,
+                "maxlon": 7.2109599
+            },
+            "members": [
+                {
+                    "type": "way",
+                    "ref": 936770892,
+                    "role": "",
+                    "geometry": [
+                        {
+                            "lat": 46.8240018,
+                            "lon": 6.4395807
+                        }
+                    ]
+                }
+            ],
+            "tags": {
+              "name": "Dézaley - Lyvaux Vinorama?"
+            }
+        },
+        {
+            "type": "relation",
+            "id": 124584,
+            "bounds": {
+                "minlat": 45.8689061,
+                "minlon": 6.4395807,
+                "maxlat": 46.8283926,
+                "maxlon": 7.2109599
+            },
+            "members": [
+                {
+                    "type": "way",
+                    "ref": 936770892,
+                    "role": "",
+                    "geometry": [
+                        {
+                            "lat": 46.8240018,
+                            "lon": 6.4395807
+                        }
+                    ]
+                }
+            ],
+            "tags": {
+              "name": "Dézaley - Lovaux Vinorama fixme"
+            }
+        },
+        {
+            "type": "relation",
+            "id": 124585,
+            "bounds": {
+                "minlat": 45.8689061,
+                "minlon": 6.4395807,
+                "maxlat": 46.8283926,
+                "maxlon": 7.2109599
+            },
+            "members": [
+                {
+                    "type": "way",
+                    "ref": 936770892,
+                    "role": "",
+                    "geometry": [
+                        {
+                            "lat": 46.8240018,
+                            "lon": 6.4395807
+                        }
+                    ]
+                }
+            ],
+            "tags": {
+              "name": "Dézaley - Luvaux Vinorama - fixme"
+            }
+        }
+    ]
+}
+"""
+                  .trimIndent()
+                  .replace("\n", "")
+                  .toResponseBody())
+          .protocol(Protocol.HTTP_1_1)
+          .header("Content-Type", "application/json")
+          .request(mock())
+          .build()
+
+  private val sanitizedNameSet =
+      setOf(
+          "Dézaley - Lavaux Vinorama",
+          "Dézaley - Lyvaux Vinorama",
+          "Dézaley - Lovaux Vinorama",
+          "Dézaley - Luvaux Vinorama")
+
   private val simpleRoutes: List<HikeRoute> =
       listOf(
           HikeRoute(
               "124582",
+              Bounds(45.8689061, 6.4395807, 46.8283926, 7.2109599),
+              listOf(
+                  LatLong(46.8240018, 6.4395807),
+                  LatLong(46.8239650, 6.4396698),
+                  LatLong(46.8235322, 6.4401168),
+                  LatLong(46.8234367, 6.4401715)),
+              "Camino de Santiago",
+              "Lausanne - Roll"))
+
+  private val doubleRoutes: List<HikeRoute> =
+      listOf(
+          HikeRoute(
+              "124582",
+              Bounds(45.8689061, 6.4395807, 46.8283926, 7.2109599),
+              listOf(
+                  LatLong(46.8240018, 6.4395807),
+                  LatLong(46.8239650, 6.4396698),
+                  LatLong(46.8235322, 6.4401168),
+                  LatLong(46.8234367, 6.4401715)),
+              "Camino de Santiago",
+              "Lausanne - Roll"),
+          HikeRoute(
+              "124583",
               Bounds(45.8689061, 6.4395807, 46.8283926, 7.2109599),
               listOf(
                   LatLong(46.8240018, 6.4395807),
@@ -774,5 +1100,206 @@ class HikeRoutesRepositoryOverpassTest {
     hikingRouteProviderRepositoryOverpass.getRoutes(bounds, { assertEquals(0, it.size) }) {
       fail("Should not have failed routes")
     }
+  }
+
+  @Test
+  fun getRouteById_failsOnEmptyResponse() {
+    val mockCall = mock(Call::class.java)
+    `when`(mockClient.newCall(any())).thenReturn(mockCall)
+
+    val callbackCapture = argumentCaptor<okhttp3.Callback>()
+
+    `when`(mockCall.enqueue(callbackCapture.capture())).then {
+      callbackCapture.firstValue.onResponse(mockCall, emptyResponse)
+    }
+
+    var failCalled = false
+
+    hikingRouteProviderRepositoryOverpass.getRouteById(
+        simpleRoutes.first().id,
+        { fail("onSuccess shouldn't have been called") },
+        { failCalled = true })
+
+    assert(failCalled)
+  }
+
+  @Test
+  fun getRouteById_failsOnSeveralRoutesFound() {
+    val mockCall = mock(Call::class.java)
+    `when`(mockClient.newCall(any())).thenReturn(mockCall)
+
+    val callbackCapture = argumentCaptor<okhttp3.Callback>()
+
+    `when`(mockCall.enqueue(callbackCapture.capture())).then {
+      callbackCapture.firstValue.onResponse(mockCall, doubleResponse)
+    }
+
+    var failCalled = false
+
+    hikingRouteProviderRepositoryOverpass.getRouteById(
+        simpleRoutes.first().id,
+        { fail("onSuccess shouldn't have been called") },
+        { failCalled = true })
+
+    assert(failCalled)
+  }
+
+  @Test
+  fun getRouteById_failsOnFailedResponse() {
+    val mockCall = mock(Call::class.java)
+    `when`(mockClient.newCall(any())).thenReturn(mockCall)
+
+    val callbackCapture = argumentCaptor<okhttp3.Callback>()
+
+    `when`(mockCall.enqueue(callbackCapture.capture())).then {
+      callbackCapture.firstValue.onResponse(mockCall, failedResponse)
+    }
+
+    var failCalled = false
+
+    hikingRouteProviderRepositoryOverpass.getRouteById(
+        simpleRoutes.first().id,
+        { fail("onSuccess shouldn't have been called") },
+        { failCalled = true })
+
+    assert(failCalled)
+  }
+
+  @Test
+  fun getRouteById_succeedsOnSingleRoute() {
+    val mockCall = mock(Call::class.java)
+    `when`(mockClient.newCall(any())).thenReturn(mockCall)
+
+    val callbackCapture = argumentCaptor<okhttp3.Callback>()
+
+    `when`(mockCall.enqueue(callbackCapture.capture())).then {
+      callbackCapture.firstValue.onResponse(mockCall, simpleResponse)
+    }
+
+    var onSuccessCalled = false
+
+    hikingRouteProviderRepositoryOverpass.getRouteById(
+        simpleRoutes.first().id,
+        {
+          assertEquals(simpleRoutes.first(), it)
+          onSuccessCalled = true
+        },
+        { fail("onFailure shouldn't have been called") })
+
+    assert(onSuccessCalled)
+  }
+
+  @Test
+  fun getRoutesByIds_hasEmptyListOnEmptyResponse() {
+    val mockCall = mock(Call::class.java)
+    `when`(mockClient.newCall(any())).thenReturn(mockCall)
+
+    val callbackCapture = argumentCaptor<okhttp3.Callback>()
+
+    `when`(mockCall.enqueue(callbackCapture.capture())).then {
+      callbackCapture.firstValue.onResponse(mockCall, emptyResponse)
+    }
+
+    var onSuccessCalled = false
+
+    hikingRouteProviderRepositoryOverpass.getRoutesByIds(
+        listOf(simpleRoutes.first().id),
+        {
+          assertEquals(emptyList<HikeRoute>(), it)
+          onSuccessCalled = true
+        },
+        { fail("onFailure shouldn't have been called") })
+
+    assert(onSuccessCalled)
+  }
+
+  @Test
+  fun getRoutesByIds_failsOnFailedResponse() {
+    val mockCall = mock(Call::class.java)
+    `when`(mockClient.newCall(any())).thenReturn(mockCall)
+
+    val callbackCapture = argumentCaptor<okhttp3.Callback>()
+
+    `when`(mockCall.enqueue(callbackCapture.capture())).then {
+      callbackCapture.firstValue.onResponse(mockCall, failedResponse)
+    }
+
+    var failCalled = false
+
+    hikingRouteProviderRepositoryOverpass.getRoutesByIds(
+        listOf(simpleRoutes.first().id),
+        { fail("onSuccess shouldn't have been called") },
+        { failCalled = true })
+
+    assert(failCalled)
+  }
+
+  @Test
+  fun getRoutesByIds_succeedsOnSingleRoute() {
+    val mockCall = mock(Call::class.java)
+    `when`(mockClient.newCall(any())).thenReturn(mockCall)
+
+    val callbackCapture = argumentCaptor<okhttp3.Callback>()
+
+    `when`(mockCall.enqueue(callbackCapture.capture())).then {
+      callbackCapture.firstValue.onResponse(mockCall, simpleResponse)
+    }
+
+    var successCalled = false
+
+    hikingRouteProviderRepositoryOverpass.getRoutesByIds(
+        listOf(simpleRoutes.first().id),
+        { successCalled = true },
+        { fail("onFailure shouldn't have been called") })
+
+    assert(successCalled)
+  }
+
+  @Test
+  fun namesAreCorrectlySanitized() {
+    val mockCall = mock(Call::class.java)
+    `when`(mockClient.newCall(any())).thenReturn(mockCall)
+
+    val callbackCapture = argumentCaptor<okhttp3.Callback>()
+
+    `when`(mockCall.enqueue(callbackCapture.capture())).then {
+      callbackCapture.firstValue.onResponse(mockCall, responseWithIncorrectNames)
+    }
+
+    var onSuccessCalled = false
+    hikingRouteProviderRepositoryOverpass.getRoutes(
+        bounds,
+        { routes ->
+          assertEquals(sanitizedNameSet, routes.map { it.name }.toSet())
+          onSuccessCalled = true
+        }) {
+          fail("Failed to fetch routes from Overpass API")
+        }
+
+    assert(onSuccessCalled)
+  }
+
+  @Test
+  fun getRoutesByIds_succeedsOnMultipleRoutes() {
+    val mockCall = mock(Call::class.java)
+    `when`(mockClient.newCall(any())).thenReturn(mockCall)
+
+    val callbackCapture = argumentCaptor<okhttp3.Callback>()
+
+    `when`(mockCall.enqueue(callbackCapture.capture())).then {
+      callbackCapture.firstValue.onResponse(mockCall, doubleResponse)
+    }
+
+    var onSuccessCalled = false
+
+    hikingRouteProviderRepositoryOverpass.getRoutesByIds(
+        listOf(doubleRoutes[0].id, doubleRoutes[1].id),
+        {
+          assertEquals(doubleRoutes, it)
+          onSuccessCalled = true
+        },
+        { fail("onFailure shouldn't have been called") })
+
+    assert(onSuccessCalled)
   }
 }

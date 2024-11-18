@@ -23,7 +23,7 @@ private const val MAX_DISTANCE_BETWEEN_OPENED_PATH = 10 // meters
  *
  * @see <a href="https://dev.overpass-api.de/overpass-doc/">Overpass API documentation</a>
  */
-class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesRepository {
+class HikeRoutesRepositoryOverpass(private val client: OkHttpClient) : HikeRoutesRepository {
   private val cachedHikeRoutes = mutableMapOf<Bounds, List<HikeRoute>>()
 
   /** @return The size of the cache. */
@@ -68,6 +68,49 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
         .enqueue(OverpassResponseHandler(bounds, onSuccess, onFailure))
   }
 
+  override fun getRouteById(
+      routeId: String,
+      onSuccess: (HikeRoute) -> Unit,
+      onFailure: (Exception) -> Unit
+  ) {
+    // Query the Overpass API for this specific route
+    val overpassRequestData =
+        """
+        ${JSON_OVERPASS_FORMAT_TAG};
+        relation($routeId);
+        out geom;
+      """
+            .trimIndent()
+
+    val requestBuilder = Request.Builder().url("$OVERPASS_API_URL?data=$overpassRequestData").get()
+
+    setRequestHeaders(requestBuilder)
+
+    client.newCall(requestBuilder.build()).enqueue(OverpassSingleRouteHandler(onSuccess, onFailure))
+  }
+
+  override fun getRoutesByIds(
+      routeIds: List<String>,
+      onSuccess: (List<HikeRoute>) -> Unit,
+      onFailure: (Exception) -> Unit
+  ) {
+    val overpassRequestDataBuilder = StringBuilder()
+    overpassRequestDataBuilder.append(JSON_OVERPASS_FORMAT_TAG)
+    overpassRequestDataBuilder.append("\n(\n")
+    routeIds.forEach { routeId -> overpassRequestDataBuilder.append("relation($routeId);\n") }
+    overpassRequestDataBuilder.append(");\nout geom;\n")
+
+    val overpassRequestData = overpassRequestDataBuilder.toString()
+
+    val requestBuilder = Request.Builder().url("$OVERPASS_API_URL?data=$overpassRequestData").get()
+
+    setRequestHeaders(requestBuilder)
+
+    client
+        .newCall(requestBuilder.build())
+        .enqueue(OverpassResponseHandler(null, onSuccess, onFailure))
+  }
+
   /**
    * Sets the headers for the request. Especially the user-agent.
    *
@@ -80,11 +123,12 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
   /**
    * The response handler for the Overpass API request.
    *
+   * @param requestedBounds The bounds that were requested. If null, the cache is not updated.
    * @param onSuccess The callback to be called when the routes are successfully fetched.
    * @param onFailure The callback to be called when the routes could not be fetched.
    */
-  private inner class OverpassResponseHandler(
-      val requestedBounds: Bounds,
+  private open inner class OverpassResponseHandler(
+      val requestedBounds: Bounds?,
       val onSuccess: (List<HikeRoute>) -> Unit,
       val onFailure: (Exception) -> Unit
   ) : okhttp3.Callback {
@@ -102,7 +146,9 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
       val responseBody = response.body?.charStream() ?: throw Exception("Response body is null")
       val routes = parseRoutes(responseBody)
 
-      cachedHikeRoutes[requestedBounds] = routes
+      if (requestedBounds != null) {
+        cachedHikeRoutes[requestedBounds] = routes
+      }
 
       onSuccess(routes)
     }
@@ -319,9 +365,7 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
           // int_name has priority over name
           "name" -> if (name == null) name = tagsReader.nextString() else tagsReader.skipValue()
           "name:en" -> nameEn = tagsReader.nextString()
-          "osmc:name",
-          "operator",
-          "symbol" ->
+          "osmc:name" ->
               if (otherName == null) otherName = tagsReader.nextString() else tagsReader.skipValue()
           "from" -> from = tagsReader.nextString()
           "to" -> to = tagsReader.nextString()
@@ -330,7 +374,7 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
         }
       }
 
-      val finalName =
+      val selectedName =
           when {
             name != null -> name
             nameEn != null -> nameEn
@@ -343,9 +387,13 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
 
       // If the description is not set, we'll set it to the from - to, if available
       // We also assert that the name is not the same as the description
-      if (description == null && from != null && to != null && finalName != "$from - $to") {
+      if (description == null && from != null && to != null && selectedName != "$from - $to") {
         description = "$from - $to"
       }
+
+      // Remove fix me from the name
+      val finalName =
+          selectedName?.replace(Regex("""(\? - fixme|fixme - | - fixme| fixme|fixme |[?])"""), "")
 
       if (finalName == null) {
         Log.w(this.javaClass::class.simpleName, "No name found for route")
@@ -422,4 +470,25 @@ class HikeRoutesRepositoryOverpass(val client: OkHttpClient) : HikeRoutesReposit
       return LatLong(lat, lon)
     }
   }
+
+  /**
+   * The response handler for the Overpass API request.
+   *
+   * @param onHike To be called if a single route is found.
+   * @param noSingleHike To be called if no or multiple routes are found.
+   */
+  private inner class OverpassSingleRouteHandler(
+      val onHike: (HikeRoute) -> Unit,
+      val noSingleHike: (Exception) -> Unit,
+  ) :
+      OverpassResponseHandler(
+          requestedBounds = null,
+          onSuccess = { routes ->
+            when {
+              routes.isEmpty() -> noSingleHike(Exception("No route found"))
+              routes.size != 1 -> noSingleHike(Exception("Multiple routes found"))
+              else -> onHike(routes.first())
+            }
+          },
+          onFailure = { e -> noSingleHike(e) })
 }

@@ -77,8 +77,7 @@ class SignInScreenTest : TestCase() {
 
   @Test
   fun whenUserIsSignedIn_navigatesToMap() {
-    val mockUser = mockk<FirebaseUser>(relaxed = true)
-    mockUserStateFlow.value = mockUser
+    every { mockAuthViewModel.isUserLoggedIn() } returns true
 
     setupSignInScreen()
 

@@ -3,6 +3,7 @@ package ch.hikemate.app.utils
 import android.content.Context
 import ch.hikemate.app.R
 import com.google.firebase.Timestamp
+import java.text.SimpleDateFormat
 import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -82,4 +83,9 @@ fun Timestamp.humanReadablePlannedLabel(
     // Later than next year, for example "Planned on 18th of October 2026"
     else -> context.getString(R.string.datetime_utils_planned_on_date, formattedDate)
   }
+}
+
+fun Timestamp.toFormattedString(): String {
+  val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+  return dateFormat.format(this.toDate())
 }

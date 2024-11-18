@@ -5,12 +5,10 @@
     <!--Google APi-->
     <string name="default_web_client_id">154591189513-eilbr2jtms0av2ses4tsvo62009q5t7n.apps.googleusercontent.com</string>
 
-    <!-- Sidebar -->
-    <string name="sidebar_button_content_description">Open sidebar menu</string>
-
     <!-- Hike Card -->
-    <string name="hike_card_altitude_label">Altitude difference</string>
-    <string name="hike_card_altitude_value_template">%sm</string>
+    <string name="hike_card_elevation_gain_label">Elevation gain</string>
+    <string name="hike_card_elevation_gain_value_template">%.0fm</string>
+    <string name="hike_card_no_data_label">No data</string>
 
     <!-- Map Screen -->
     <string name="map_screen_menu_button_content_description">Menu</string>
@@ -31,8 +29,44 @@
         Too many hikes to display on the map. Only %d hikes are shown.
     </string>
     <string name="map_screen_hike_title_default">Unnamed Hike</string>
+    <string name="map_screen_location_features_failed">Failed to enable location features</string>
+    <string name="map_screen_center_on_pos_content_description">Center map on my position</string>
+    <string name="map_screen_location_rationale_title">Permission Required</string>
+    <string name="map_screen_location_rationale_simple">Please grant HikeMate access to your location to center the map there.</string>
+    <string name="map_screen_location_rationale">
+        HikeMate needs access to your localization to
+        \n\n
+        1. Show your location on the screen and
+        \n\n
+        2. Center the map on your position at the click of a button
+        \n\n
+        If you do not grant the permission, the app will function normally, but the location features won\'t be available.
+    </string>
+    <string name="map_screen_location_rationale_cancel_button">No thanks</string>
+    <string name="map_screen_location_rationale_grant_button">Grant permission</string>
+    <string name="map_screen_location_not_available">Please enable location in settings</string>
     <string name="zoom_in">Zoom in</string>
     <string name="zoom_out">Zoom out</string>
+    <string name="map_search_for_hikes">Searching for hikes…</string>
+
+    <!-- Hike Details Screen -->
+    <string name="hike_detail_screen_bookmark_hint_on_isSaved_true">Unsave hike</string>
+    <string name="hike_detail_screen_bookmark_hint_on_isSaved_false">Save hike</string>
+    <string name="hike_detail_screen_label_distance">Distance</string>
+    <string name="hike_detail_screen_label_elevation_gain">Elevation Gain</string>
+    <string name="hike_detail_screen_label_estimated_time">Estimated time</string>
+    <string name="hike_detail_screen_label_difficulty">Difficulty</string>
+    <string name="hike_detail_screen_label_status">Status</string>
+    <string name="hike_detail_screen_label_planned_for">Planned for</string>
+    <string name="hike_detail_screen_value_saved">Saved</string>
+    <string name="hike_detail_screen_value_not_saved">Not saved</string>
+    <string name="hike_detail_screen_value_planned">Planned</string>
+    <string name="hike_detail_screen_add_a_date_button_text">Add a date</string>
+
+    <!-- Hike Difficulty Levels -->
+    <string name="hike_difficulty_easy">Easy</string>
+    <string name="hike_difficulty_moderate">Moderate</string>
+    <string name="hike_difficulty_difficult">Difficult</string>
 
 
     <!-- Saved Hikes Screen -->
@@ -40,6 +74,7 @@
         An error occurred while loading saved hikes.
         Please check your Internet connection and try again.
     </string>
+    <string name="saved_hikes_screen_refresh_button_action">Refresh</string>
     <string name="saved_hikes_screen_saved_section_title">Saved hikes</string>
     <string name="saved_hikes_screen_saved_section_empty_message">No saved hikes to display</string>
     <string name="saved_hikes_screen_planned_section_title">Planned hikes</string>
@@ -97,6 +132,13 @@
     <string name="create_account_password_mismatch_error">Passwords do not match</string>
     <string name="create_account_email_format_error">Invalid email format</string>
     <string name="create_account_fields_must_be_filled_error">All fields must be filled</string>
+
+    <!-- Default profile -->
+    <string name="default_display_name">Unnamed hiker</string>
+    <string name="default_email">unnamedhiker@example.com</string>
+
+    <!-- Elevation graph -->
+    <string name="elevation_graph_loading_label">Loading graph…</string>
 
     <!-- Delete Account -->
     <string name="delete_account_title">Delete my account</string>

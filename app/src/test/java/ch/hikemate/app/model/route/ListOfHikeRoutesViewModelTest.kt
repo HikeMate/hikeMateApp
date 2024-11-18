@@ -1,5 +1,6 @@
 package ch.hikemate.app.model.route
 
+import ch.hikemate.app.model.elevation.ElevationService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -18,6 +19,7 @@ import org.osmdroid.util.BoundingBox
 /** Testing the ListOfRoutesViewModel class */
 class ListOfHikeRoutesViewModelTest {
   private lateinit var hikesRepository: HikeRoutesRepository
+  private lateinit var elevationService: ElevationService
   private lateinit var listOfHikeRoutesViewModel: ListOfHikeRoutesViewModel
 
   @OptIn(ExperimentalCoroutinesApi::class)
@@ -26,8 +28,9 @@ class ListOfHikeRoutesViewModelTest {
     Dispatchers.setMain(UnconfinedTestDispatcher())
 
     hikesRepository = mock(HikeRoutesRepository::class.java)
+    elevationService = mock(ElevationService::class.java)
     listOfHikeRoutesViewModel =
-        ListOfHikeRoutesViewModel(hikesRepository, UnconfinedTestDispatcher())
+        ListOfHikeRoutesViewModel(hikesRepository, elevationService, UnconfinedTestDispatcher())
   }
 
   @Test
@@ -78,6 +81,51 @@ class ListOfHikeRoutesViewModelTest {
   }
 
   @Test
+  fun getRouteElevationCallsElevationService() {
+    val route = HikeRoute("Route 1", Bounds(0.0, 0.0, 0.0, 0.0), emptyList())
+    listOfHikeRoutesViewModel.getRoutesElevation(route)
+    verify(elevationService, times(1)).getElevation(any(), any(), any(), any())
+  }
+
+  @Test
+  fun getRouteElevationReturnsCorrectElevation() {
+    val route = HikeRoute("Route 1", Bounds(0.0, 0.0, 0.0, 0.0), emptyList())
+    `when`(elevationService.getElevation(any(), any(), any(), any())).thenAnswer {
+      val onSuccess = it.getArgument<(List<Double>) -> Unit>(2)
+      onSuccess(listOf(1.0, 2.0, 3.0))
+    }
+
+    listOfHikeRoutesViewModel.getRoutesElevation(
+        route,
+        {
+          val elevationData = it
+          assertEquals(3, elevationData.size)
+          assertEquals(1.0, elevationData[0], 0.0)
+          assertEquals(2.0, elevationData[1], 0.0)
+          assertEquals(3.0, elevationData[2], 0.0)
+        },
+        { fail("Should not have failed") })
+  }
+
+  @Test
+  fun getRouteElevationCallsOnFailure() {
+    val route = HikeRoute("Route 1", Bounds(0.0, 0.0, 0.0, 0.0), emptyList())
+    `when`(elevationService.getElevation(any(), any(), any(), any())).thenAnswer {
+      val onFailure = it.getArgument<(Exception) -> Unit>(3)
+      onFailure(Exception("Test exception"))
+    }
+
+    listOfHikeRoutesViewModel.getRoutesElevation(
+        route,
+        { fail("Should not have succeeded") },
+        { // Should be called
+        })
+
+    // Verify that the onFailure function was called
+    verify(elevationService, times(1)).getElevation(any(), any(), any(), any())
+  }
+
+  @Test
   fun canSelectRoute() {
     listOfHikeRoutesViewModel.selectRoute(
         HikeRoute("Route 1", Bounds(0.0, 0.0, 0.0, 0.0), emptyList()))
@@ -95,5 +143,84 @@ class ListOfHikeRoutesViewModelTest {
     listOfHikeRoutesViewModel.setArea(BoundingBox(0.0, 0.0, 0.0, 0.0))
 
     verify(hikesRepository, times(1)).getRoutes(eq(Bounds(0.0, 0.0, 0.0, 0.0)), any(), any())
+  }
+
+  @Test
+  fun selectRouteByIdCallsRepoAndSelectsHike() {
+    // Given
+    val hike =
+        HikeRoute(
+            id = "Route 1",
+            bounds = Bounds(0.0, 0.0, 0.0, 0.0),
+            ways = emptyList(),
+            name = "Name of Route 1",
+            description = "Description of Route 1")
+
+    `when`(hikesRepository.getRouteById(eq(hike.id), any(), any())).thenAnswer {
+      val onSuccess = it.getArgument<(HikeRoute) -> Unit>(1)
+      onSuccess(hike)
+    }
+
+    // When
+    // Since we use UnconfinedTestDispatcher, we don't need to wait for the coroutine to finish
+    listOfHikeRoutesViewModel.selectRouteById(hike.id)
+
+    // Then
+    verify(hikesRepository, times(1)).getRouteById(eq(hike.id), any(), any())
+    assertEquals(hike, listOfHikeRoutesViewModel.selectedHikeRoute.value)
+  }
+
+  @Test
+  fun getRoutesByIdsCallsRepo() {
+    val hikesIds = listOf("Route 1", "Route 2")
+
+    // Since we use UnconfinedTestDispatcher, we don't need to wait for the coroutine to finish
+    listOfHikeRoutesViewModel.getRoutesByIds(hikesIds)
+
+    verify(hikesRepository, times(1)).getRoutesByIds(eq(hikesIds), any(), any())
+  }
+
+  @Test
+  fun getRoutesByIdsUpdatesHikeRoutes() {
+    val hikes =
+        listOf(
+            HikeRoute("Route 1", Bounds(0.0, 0.0, 0.0, 0.0), emptyList()),
+            HikeRoute("Route 2", Bounds(0.0, 0.0, 0.0, 0.0), emptyList()))
+
+    val hikesIds = hikes.map { it.id }
+
+    `when`(hikesRepository.getRoutesByIds(eq(hikesIds), any(), any())).thenAnswer {
+      val onSuccess = it.getArgument<(List<HikeRoute>) -> Unit>(1)
+      onSuccess(hikes)
+    }
+
+    // Since we use UnconfinedTestDispatcher, we don't need to wait for the coroutine to finish
+    listOfHikeRoutesViewModel.getRoutesByIds(hikesIds)
+
+    assertEquals(2, listOfHikeRoutesViewModel.hikeRoutes.value.size)
+  }
+
+  @Test
+  fun getRoutesByIdsCallsOnFailure() {
+    val hikesIds = listOf("Route 1", "Route 2")
+
+    `when`(hikesRepository.getRoutesByIds(eq(hikesIds), any(), any())).thenAnswer {
+      val onFailure = it.getArgument<(Exception) -> Unit>(2)
+      onFailure(Exception("Test exception"))
+    }
+
+    var onFailedCalled = false
+    // Since we use UnconfinedTestDispatcher, we don't need to wait for the coroutine to finish
+    listOfHikeRoutesViewModel.getRoutesByIds(
+        hikesIds,
+        { fail("Should not have succeeded") },
+        {
+          // Should be called
+          onFailedCalled = true
+        })
+
+    assertTrue(onFailedCalled)
+    // Verify that the onFailure function was called
+    verify(hikesRepository, times(1)).getRoutesByIds(eq(hikesIds), any(), any())
   }
 }

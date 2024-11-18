@@ -11,14 +11,20 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.platform.app.InstrumentationRegistry
 import ch.hikemate.app.R
+import ch.hikemate.app.model.elevation.ElevationService
 import ch.hikemate.app.model.route.Bounds
 import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.HikeRoutesRepository
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
 import ch.hikemate.app.ui.components.HikeCard
 import ch.hikemate.app.ui.navigation.NavigationActions
-import ch.hikemate.app.ui.navigation.TEST_TAG_SIDEBAR_BUTTON
+import ch.hikemate.app.ui.navigation.TEST_TAG_BOTTOM_BAR
+import ch.hikemate.app.utils.LocationUtils
+import ch.hikemate.app.utils.MapUtils
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
+import io.mockk.every
+import io.mockk.mockkObject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -34,6 +40,7 @@ import org.osmdroid.util.BoundingBox
 
 class MapScreenTest : TestCase() {
   private lateinit var hikesRepository: HikeRoutesRepository
+  private lateinit var elevationService: ElevationService
   private lateinit var listOfHikeRoutesViewModel: ListOfHikeRoutesViewModel
   private lateinit var navigationActions: NavigationActions
 
@@ -64,8 +71,9 @@ class MapScreenTest : TestCase() {
 
     navigationActions = mock(NavigationActions::class.java)
     hikesRepository = mock(HikeRoutesRepository::class.java)
+    elevationService = mock(ElevationService::class.java)
     listOfHikeRoutesViewModel =
-        ListOfHikeRoutesViewModel(hikesRepository, UnconfinedTestDispatcher())
+        ListOfHikeRoutesViewModel(hikesRepository, elevationService, UnconfinedTestDispatcher())
   }
 
   @Test
@@ -81,9 +89,9 @@ class MapScreenTest : TestCase() {
   }
 
   @Test
-  fun menuButtonIsDisplayed() {
+  fun menuIsDisplayed() {
     setUpMap()
-    composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(TEST_TAG_BOTTOM_BAR).assertIsDisplayed()
   }
 
   @Test
@@ -237,7 +245,6 @@ class MapScreenTest : TestCase() {
     verify(hikesRepository, times(1)).getRoutes(any(), any(), any())
   }
 
-  @OptIn(ExperimentalCoroutinesApi::class)
   @Test
   fun searchingHikesTakesAMinimalTime() = runTest {
     setUpMap()
@@ -260,5 +267,45 @@ class MapScreenTest : TestCase() {
     // Check that the search took at most twice the minimal time (only because we mocked it, so it
     // should return quickly)
     assert(endTime - startTime < 2 * MapScreen.MINIMAL_SEARCH_TIME_IN_MS)
+  }
+
+  @OptIn(ExperimentalPermissionsApi::class)
+  @Test
+  fun clickingOnCenterButtonWithPermissionCentersMapOnLocation() {
+    // Given
+    setUpMap()
+    mockkObject(LocationUtils)
+    every { LocationUtils.hasLocationPermission(any()) } returns true
+    mockkObject(MapUtils)
+    every { MapUtils.centerMapOnUserLocation(any(), any(), any()) } returns Unit
+
+    // When
+    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_CENTER_MAP_BUTTON).performClick()
+
+    // Then
+    io.mockk.verify { MapUtils.centerMapOnUserLocation(any(), any(), any()) }
+  }
+
+  @OptIn(ExperimentalPermissionsApi::class)
+  @Test
+  fun clickingOnCenterButtonWithoutPermissionsAsksForThem() {
+    // Given the user did not grant location permission to the app
+    setUpMap()
+    mockkObject(LocationUtils)
+    every { LocationUtils.hasLocationPermission(any()) } returns false
+
+    // When the user clicks on the "Center map on me" button
+    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_CENTER_MAP_BUTTON).performClick()
+
+    // Then an alert will be shown to ask for the permission
+    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_LOCATION_PERMISSION_ALERT).assertIsDisplayed()
+
+    // When the user clicks on the "No thanks" button
+    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_NO_THANKS_ALERT_BUTTON).performClick()
+
+    // Then the alert disappears
+    composeTestRule
+        .onNodeWithTag(MapScreen.TEST_TAG_LOCATION_PERMISSION_ALERT)
+        .assertIsNotDisplayed()
   }
 }

@@ -17,8 +17,7 @@ import ch.hikemate.app.model.profile.ProfileRepository
 import ch.hikemate.app.model.profile.ProfileViewModel
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Screen
-import ch.hikemate.app.ui.navigation.TEST_TAG_DRAWER_CONTENT
-import ch.hikemate.app.ui.navigation.TEST_TAG_SIDEBAR_BUTTON
+import ch.hikemate.app.ui.navigation.TEST_TAG_BOTTOM_BAR
 import com.google.firebase.Timestamp
 import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
 import java.time.LocalDate
@@ -49,7 +48,7 @@ class ProfileScreenTest : TestCase() {
     navigationActions = mock(NavigationActions::class.java)
     authRepository = mock(AuthRepository::class.java)
     profileRepository = mock(ProfileRepository::class.java)
-    authViewModel = AuthViewModel(authRepository)
+    authViewModel = AuthViewModel(authRepository, profileRepository)
     profileViewModel = ProfileViewModel(profileRepository)
 
     composeTestRule.setContent {
@@ -62,7 +61,7 @@ class ProfileScreenTest : TestCase() {
 
   @Test
   fun isEverythingDisplayed() {
-    composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(TEST_TAG_BOTTOM_BAR).assertIsDisplayed()
     composeTestRule.onNodeWithTag(ProfileScreen.TEST_TAG_TITLE).assertIsDisplayed()
     composeTestRule.onNodeWithTag(ProfileScreen.TEST_TAG_NAME).assertIsDisplayed()
     composeTestRule.onNodeWithTag(ProfileScreen.TEST_TAG_EMAIL).assertIsDisplayed()
@@ -168,12 +167,6 @@ class ProfileScreenTest : TestCase() {
               HikingLevel.EXPERT ->
                   context.getString(R.string.profile_screen_hiking_level_info_expert)
             }))
-  }
-
-  @Test
-  fun checkSidebarCanOpen() {
-    composeTestRule.onNodeWithTag(TEST_TAG_SIDEBAR_BUTTON).performClick()
-    composeTestRule.onNodeWithTag(TEST_TAG_DRAWER_CONTENT).assertIsDisplayed()
   }
 
   @Test

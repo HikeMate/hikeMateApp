@@ -19,6 +19,7 @@ interface SavedHikesRepository {
    *
    * @return The list of saved hikes.
    * @throws Exception If an error occurred while loading the hikes.
+   * @throws IllegalStateException If the user is not authenticated.
    */
   suspend fun loadSavedHikes(): List<SavedHike>
 
@@ -27,6 +28,7 @@ interface SavedHikesRepository {
    *
    * @param hike The hike to add to the saved hikes list.
    * @throws Exception If an error occurred while adding the hike.
+   * @throws IllegalStateException If the user is not authenticated.
    */
   suspend fun addSavedHike(hike: SavedHike)
 
@@ -35,6 +37,24 @@ interface SavedHikesRepository {
    *
    * @param hike The hike to remove from the saved hikes list.
    * @throws Exception If an error occurred while removing the hike.
+   * @throws IllegalStateException If the user is not authenticated.
    */
   suspend fun removeSavedHike(hike: SavedHike)
+
+  /**
+   * Get the saved hike with the provided ID.
+   *
+   * @param id The ID of the saved hike to get.
+   * @return The saved hike with the provided ID, or null if it does not exist.
+   * @throws IllegalStateException If the user is not authenticated.
+   */
+  suspend fun getSavedHike(id: String): SavedHike?
+
+  /**
+   * Check if the hike with the provided ID exists in the saved hikes list.
+   *
+   * @param id The ID of the hike to check.
+   * @throws IllegalStateException If the user is not authenticated.
+   */
+  suspend fun isHikeSaved(id: String): Boolean
 }
