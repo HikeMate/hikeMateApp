@@ -13,7 +13,7 @@ import ch.hikemate.app.R
  * @param colorResourceId The color resource ID of the color associated with the difficulty level
  */
 enum class HikeDifficulty(@StringRes val nameResourceId: Int, @ColorRes val colorResourceId: Int) {
-  EASY(R.string.hike_difficulty_easy, 0),
-  MODERATE(R.string.hike_difficulty_moderate, 0),
-  DIFFICULT(R.string.hike_difficulty_difficult, 0)
+  EASY(R.string.hike_difficulty_easy, R.color.hike_difficulty_easy),
+  MODERATE(R.string.hike_difficulty_moderate, R.color.hike_difficulty_moderate),
+  DIFFICULT(R.string.hike_difficulty_difficult, R.color.hike_difficulty_difficult)
 }
