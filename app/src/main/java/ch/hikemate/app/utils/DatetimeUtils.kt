@@ -32,14 +32,9 @@ fun Timestamp.Companion.from(year: Int, month: Int, day: Int): Timestamp {
   return Timestamp(instant.epochSecond, instant.nano)
 }
 
-fun Timestamp.toLocalDate(locale: Locale? = null): LocalDate {
-
-  // attempts to find the zone for a given locale, useful for injecting locales for test
-  val zone =
-      locale?.country?.takeIf { it.isNotEmpty() }?.let { ZoneId.of("GMT") }
-          ?: ZoneId.systemDefault()
-
-  return this.toDate().toInstant().atZone(zone).toLocalDate()
+fun Timestamp.toLocalDate(zoneId: ZoneId?): LocalDate {
+  return this.toInstant().atZone(zoneId).toLocalDate()
+}
 }
 
 fun Timestamp.humanReadableFormat(locale: Locale = Locale.getDefault()): String {
