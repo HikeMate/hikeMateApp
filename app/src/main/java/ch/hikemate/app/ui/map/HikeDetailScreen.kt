@@ -54,7 +54,6 @@ import ch.hikemate.app.ui.components.BackButton
 import ch.hikemate.app.ui.components.ElevationGraph
 import ch.hikemate.app.ui.components.ElevationGraphStyleProperties
 import ch.hikemate.app.ui.map.HikeDetailScreen.MAP_MAX_ZOOM
-import ch.hikemate.app.ui.map.HikeDetailScreen.MAP_MIN_ZOOM
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_ADD_DATE_BUTTON
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_BOOKMARK_ICON
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DETAIL_ROW_TAG
@@ -71,14 +70,18 @@ import ch.hikemate.app.utils.toFormattedString
 import com.google.firebase.Timestamp
 import java.util.Calendar
 import java.util.Locale
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.roundToInt
 import org.osmdroid.config.Configuration
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 
 object HikeDetailScreen {
-  const val MAP_MIN_ZOOM = 3.0
   const val MAP_MAX_ZOOM = 18.0
+  const val MAP_MAX_LONGITUDE = 180.0
+  const val MAP_MIN_LONGITUDE = -180.0
+  const val MAP_BOUNDS_MARGIN: Int = 100
 
   const val TEST_TAG_MAP = "map"
   const val TEST_TAG_HIKE_NAME = "hikeName"
@@ -107,6 +110,7 @@ fun HikeDetailScreen(
   val route = listOfHikeRoutesViewModel.selectedHikeRoute.collectAsState().value!!
   val elevationData = remember { mutableListOf<Double>() }
   val detailedRoute = DetailedHikeRoute.create(route)
+  val routeZoomLevel = MapUtils.calculateBestZoomLevel(route.bounds).toDouble()
 
   // Only do the configuration on the first composition, not on every recomposition
   LaunchedEffect(Unit) {
@@ -138,10 +142,10 @@ fun HikeDetailScreen(
   val mapView = remember {
     MapView(context).apply {
       // Set map's initial state
-      controller.setZoom(MapUtils.calculateBestZoomLevel(route.bounds).toDouble())
+      controller.setZoom(routeZoomLevel)
       controller.setCenter(MapUtils.getGeographicalCenter(route.bounds))
       // Limit the zoom to avoid the user zooming out or out too much
-      minZoomLevel = MAP_MIN_ZOOM
+      minZoomLevel = routeZoomLevel
       maxZoomLevel = MAP_MAX_ZOOM
       // Avoid repeating the map when the user reaches the edge or zooms out
       // We keep the horizontal repetition enabled to allow the user to scroll the map
@@ -152,8 +156,22 @@ fun HikeDetailScreen(
       zoomController.setVisibility(CustomZoomButtonsController.Visibility.NEVER)
       // Enable touch-controls such as pinch to zoom
       setMultiTouchControls(true)
-      // Limit the vertical scrollable area to avoid the user scrolling too far
-      setScrollableAreaLimitLatitude(MapScreen.MAP_MAX_LATITUDE, MapScreen.MAP_MIN_LATITUDE, 0)
+    }
+  }
+
+  // When the map is ready, it will have computed its bounding box
+  mapView.addOnFirstLayoutListener { _, _, _, _, _ ->
+    // Limit the vertical scrollable area to avoid the user scrolling too far from the hike
+    mapView.setScrollableAreaLimitLatitude(
+        min(MapScreen.MAP_MAX_LATITUDE, mapView.boundingBox.latNorth),
+        max(MapScreen.MAP_MIN_LATITUDE, mapView.boundingBox.latSouth),
+        HikeDetailScreen.MAP_BOUNDS_MARGIN)
+    if (route.bounds.maxLon < HikeDetailScreen.MAP_MAX_LONGITUDE ||
+        route.bounds.minLon > HikeDetailScreen.MAP_MIN_LONGITUDE) {
+      mapView.setScrollableAreaLimitLongitude(
+          max(HikeDetailScreen.MAP_MIN_LONGITUDE, mapView.boundingBox.lonWest),
+          min(HikeDetailScreen.MAP_MAX_LONGITUDE, mapView.boundingBox.lonEast),
+          HikeDetailScreen.MAP_BOUNDS_MARGIN)
     }
   }
 
