@@ -111,7 +111,7 @@ fun HikeCard(
 
                     Column {
                       Text(
-                          text = stringResource(R.string.elevation_graph_loading_label),
+                          text = stringResource(R.string.hike_card_elevation_gain_label),
                           style = MaterialTheme.typography.bodySmall)
                       Text(
                           text =
