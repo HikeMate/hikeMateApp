@@ -111,15 +111,16 @@ fun HikeCard(
 
                     Column {
                       Text(
-                          text = stringResource(R.string.hike_card_altitude_label),
+                          text = stringResource(R.string.hike_card_elevation_gain_label),
                           style = MaterialTheme.typography.bodySmall)
                       Text(
                           text =
-                              if (elevationGain == 0.0)
+                              if (elevationData == null)
                                   stringResource(R.string.hike_card_no_data_label)
                               else
                                   stringResource(
-                                      R.string.hike_card_altitude_value_template, elevationGain),
+                                      R.string.hike_card_elevation_gain_value_template,
+                                      elevationGain),
                           style = MaterialTheme.typography.bodyLarge,
                           fontWeight = FontWeight.Bold)
                     }
