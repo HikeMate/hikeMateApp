@@ -30,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import ch.hikemate.app.R
 import ch.hikemate.app.ui.map.MapScreen
+import ch.hikemate.app.utils.RouteUtils
 
 object HikeCard {
   const val TEST_TAG_HIKE_CARD_TITLE = "HikeCardTitle"
@@ -110,7 +111,7 @@ fun HikeCard(
 
                     Column {
                       Text(
-                          text = stringResource(R.string.hike_card_altitude_label),
+                          text = stringResource(R.string.elevation_graph_loading_label),
                           style = MaterialTheme.typography.bodySmall)
                       Text(
                           text =
