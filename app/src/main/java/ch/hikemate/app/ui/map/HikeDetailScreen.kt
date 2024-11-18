@@ -78,8 +78,8 @@ import org.osmdroid.views.MapView
 
 object HikeDetailScreen {
   const val MAP_MAX_ZOOM = 18.0
-  const val MAP_MAX_LONGITUDE = 175.0
-  const val MAP_MIN_LONGITUDE = -175.0
+  const val MAP_MAX_LONGITUDE = 180.0
+  const val MAP_MIN_LONGITUDE = -180.0
   const val MAP_BOUNDS_MARGIN: Int = 100
 
   const val TEST_TAG_MAP = "map"
