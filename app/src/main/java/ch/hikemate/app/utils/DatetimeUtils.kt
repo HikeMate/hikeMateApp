@@ -32,8 +32,8 @@ fun Timestamp.Companion.from(year: Int, month: Int, day: Int): Timestamp {
   return Timestamp(instant.epochSecond, instant.nano)
 }
 
-fun Timestamp.toLocalDate(): LocalDate {
-  return this.toDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
+fun Timestamp.toLocalDate(zoneId: ZoneId = ZoneId.systemDefault()): LocalDate {
+  return this.toInstant().atZone(zoneId).toLocalDate()
 }
 
 fun Timestamp.humanReadableFormat(locale: Locale = Locale.getDefault()): String {
@@ -68,7 +68,7 @@ fun Timestamp.humanReadablePlannedLabel(
     daysDifference <= daysUntilNextSunday ->
         context.getString(
             R.string.datetime_utils_planned_on_weekday,
-            plannedDate.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault()),
+            plannedDate.dayOfWeek.getDisplayName(TextStyle.FULL, locale),
             formattedDate)
     // Date before the Sunday after that, meaning next week, for example "Planned next week (25th of
     // October 2024)"
@@ -85,7 +85,7 @@ fun Timestamp.humanReadablePlannedLabel(
   }
 }
 
-fun Timestamp.toFormattedString(): String {
-  val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+fun Timestamp.toFormattedString(locale: Locale = Locale.getDefault()): String {
+  val dateFormat = SimpleDateFormat("dd/MM/yyyy", locale)
   return dateFormat.format(this.toDate())
 }

@@ -242,7 +242,9 @@ class DatetimeUtilsTest {
       }
 
       // When
-      val formattedDate = Timestamp.from(test.year, test.month, test.day).humanReadableFormat()
+      val formattedDate =
+          Timestamp.from(test.year, test.month, test.day)
+              .humanReadableFormat(locale = Locale.ENGLISH)
 
       // Then
       assertEquals(test.expectedFormattedDate, formattedDate)
