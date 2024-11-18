@@ -264,7 +264,7 @@ class DatetimeUtilsTest {
 
       // Given
       var message = "Test failed for ${test.year}-${test.month}-${test.day}.\n\n"
-      val today = Timestamp.from(2020, 3, 13).toLocalDate(Locale.ENGLISH)
+      val today = Timestamp.from(2020, 3, 13).toLocalDate()
       val prefix = "Planned "
       val context: Context = mock()
       `when`(context.getString(any(), any())).thenAnswer {

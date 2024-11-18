@@ -32,9 +32,8 @@ fun Timestamp.Companion.from(year: Int, month: Int, day: Int): Timestamp {
   return Timestamp(instant.epochSecond, instant.nano)
 }
 
-fun Timestamp.toLocalDate(zoneId: ZoneId?): LocalDate {
+fun Timestamp.toLocalDate(zoneId: ZoneId = ZoneId.systemDefault()): LocalDate {
   return this.toInstant().atZone(zoneId).toLocalDate()
-}
 }
 
 fun Timestamp.humanReadableFormat(locale: Locale = Locale.getDefault()): String {
@@ -48,7 +47,7 @@ fun Timestamp.humanReadablePlannedLabel(
     locale: Locale = Locale.getDefault(),
     currentDate: LocalDate = LocalDate.now()
 ): String {
-  val plannedDate = this.toLocalDate(locale = locale)
+  val plannedDate = this.toLocalDate()
   val daysDifference =
       Duration.between(currentDate.atStartOfDay(), plannedDate.atStartOfDay()).toDays()
 
