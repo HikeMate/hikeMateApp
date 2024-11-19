@@ -270,7 +270,7 @@ class HikeDetailScreenTest {
         .assertAny(hasText("${elevationGainString}m"))
     composeTestRule
         .onAllNodesWithTag(TEST_TAG_DETAIL_ROW_VALUE)
-        .assertAny(hasText("${hourString}:${minuteString}"))
+        .assertAny(hasText("${hourString}h${minuteString}"))
     composeTestRule
         .onAllNodesWithTag(TEST_TAG_DETAIL_ROW_VALUE)
         .assertAny(
