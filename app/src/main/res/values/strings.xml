@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">HikeMate</string>
     <string name="title_activity_main">HikeMate</string>
+    <string name="app_icon_description">App Icon</string>
 
     <!--Google APi-->
     <string name="default_web_client_id">154591189513-eilbr2jtms0av2ses4tsvo62009q5t7n.apps.googleusercontent.com</string>

@@ -14,7 +14,7 @@
     <string name="guide_content_difficulty_levels">Understanding trail difficulty is key to a safe and enjoyable hiking experience. HikeMate uses three main difficulty levels:\n\n🟢 Beginner Trails\n• Distance: Less than 3km\n• Elevation gain: Under 250m\n• Usually well-maintained paths\n• Clear markers and signage\n\n🟡 Intermediate Trails\n• Distance: 3-6km\n• Elevation gain: 250-500m\n• Some challenging sections\n• Basic navigation skills needed\n\n🔴 Expert Trails\n• Distance: Over 6km\n• Elevation gain: Over 500m\n• Challenging terrain\n• Advanced navigation required\n\nRemember: Start with easier trails and gradually work your way up as you gain experience. HikeMate will help you track your progress!</string>
 
     <string name="guide_topic_track_location">📍 Location Features</string>
-    <string name="guide_content_track_location">Find hike routes near you and navigate through your adventures with HikeMate\'s location features:\n\n1. Getting Started\n• When first using HikeMate, tap the location button ⊕ at the bottom of the map\n• You\'ll be asked to grant location permissions - this helps find hikes near you\n• Once accepted, your position will appear as a blue dot on the map\n\n2. Using Location Features\n• Tap the location button anytime to center the map on your position\n• Your location updates in real-time as you move\n• Use this feature to track your progress while following a hike route\n\nThis feature helps you both discover nearby hikes and stay on track during your adventures!</string>
+    <string name="guide_content_track_location">Find hike routes near you and navigate through your adventures with HikeMate\'s location features:\n\n1. Getting Started\n• When first using HikeMate, tap the location button ⊕ at the bottom of the map\n• You\'ll be asked to grant location permissions this helps find hikes near you\n• Once accepted, your position will appear as a blue dot on the map\n\n2. Using Location Features\n• Tap the location button anytime to center the map on your position\n• Your location updates in real-time as you move\n• Use this feature to track your progress while following a hike route\n\nThis feature helps you both discover nearby hikes and stay on track during your adventures!</string>
 
     <string name="guide_topic_profile">👤 Your HikeMate Profile</string>
     <string name="guide_content_profile">Personalize your hiking experience with your HikeMate profile:\n\n1. Hiking Level\n• Choose your hiking level: Beginner, Intermediate, or Expert\n• HikeMate uses this to recommend appropriate hike routes\n• Green checkmark indicates a hike suitable for your level\n• Yellow warning shows when a hike might be challenging\n\n2. Adjusting Your Level\n• Tap the Edit Profile button to change your hiking level\n• Update it as you gain more experience\n• Feel free to change it anytime to match your current abilities\n\nPro Tip: 🎯 Start with a comfortable level and gradually increase it as you complete more challenging hikes!</string>
@@ -45,16 +45,9 @@
     <string name="guide_section_elevation">📈 Managing Elevation</string>
     <string name="guide_content_elevation">Handle elevation changes effectively and safely:\n\n1. Going Uphill\n• Take smaller steps\n• Maintain steady breathing\n• Lean slightly forward\n• Use switchbacks - don\'t cut corners\n\n2. Going Downhill\n• Keep your weight back\n• Use your knees as shock absorbers\n• Watch your footing\n• Don\'t rush or jump\n\n3. Using HikeMate\'s Elevation Profile\n• Check the elevation graph before starting\n• Plan rest stops at major changes\n• Pace yourself on steep sections\n\nPro Tip: ⛰️ Take elevation gains gradually - it\'s not a race!</string>
 
-    <!-- Button Labels -->
-    <string name="guide_button_close">Close Guide</string>
-    <string name="guide_button_next">Next</string>
-    <string name="guide_button_finish">Finish</string>
-    <string name="guide_button_skip">Skip Guide</string>
-    <string name="guide_button_start">Start Interactive Guide</string>
-    <string name="app_icon_description">App Icon</string>
+    <!-- Other labels -->
     <string name="collapse_topic">Collapse topic</string>
     <string name="expand_topic">Expand topic</string>
     <string name="guide_button_navigation">Go to %s screen</string>
-    <string name="guide_button_interactive">Interactive Guide</string>
 
 </resources>
