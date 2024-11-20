@@ -1,5 +1,6 @@
 package ch.hikemate.app.authentication
 
+import android.app.Activity
 import android.content.Context
 import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.model.authentication.FirebaseAuthRepository
@@ -360,5 +361,51 @@ class AuthViewModelTest {
     assertEquals(null, viewModel.currentUser.value)
     // Verify that the onSuccess callback was called
     verify(mockOnSuccess).invoke()
+  }
+
+  @Test
+  fun deleteAccount_calls_repository_deleteAccount_and_updates_currentUser_to_null() = runTest {
+    setupSignedInUser()
+
+    val mockOnSuccess: (() -> Unit) = mock()
+
+    // Simulate a successful account deletion by invoking the onSuccess callback
+    doAnswer { arguments ->
+          val onSuccess = arguments.getArgument<() -> Unit>(2)
+          onSuccess()
+          null
+        }
+        .`when`(mockRepository)
+        .deleteAccount(any(), any(), any(), any())
+
+    // Verify that currentUser is initially mockFirebaseUser
+    assertEquals(mockFirebaseUser, viewModel.currentUser.first())
+
+    val activity = mock(Activity::class.java)
+    viewModel.deleteAccount(
+        "password",
+        activity = activity,
+        onSuccess = mockOnSuccess,
+        onErrorAction = { fail("Error callback should not be called") })
+
+    // Verify that the repository's deleteAccount was called
+    verify(mockRepository).deleteAccount(any(), any(), any(), any())
+    // Verify that currentUser is updated to null
+    assertEquals(null, viewModel.currentUser.value)
+    // Verify that the onSuccess callback was called
+    verify(mockOnSuccess).invoke()
+  }
+
+  @Test
+  fun isEmailProvider_calls_repository_isEmailProvider() = runTest {
+    setupSignedInUser()
+
+    // Simulate a successful call to isEmailProvider
+    `when`(mockRepository.isEmailProvider(any())).thenReturn(true)
+
+    viewModel.isEmailProvider()
+
+    // Verify that the repository's isEmailProvider was called
+    verify(mockRepository).isEmailProvider(any())
   }
 }

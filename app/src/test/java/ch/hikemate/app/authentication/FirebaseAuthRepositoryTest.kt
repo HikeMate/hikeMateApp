@@ -1,5 +1,6 @@
 package ch.hikemate.app.authentication
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import androidx.activity.compose.ManagedActivityResultLauncher
@@ -18,10 +19,14 @@ import com.google.android.gms.tasks.Task
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.AuthResult
+import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.CollectionReference
+import com.google.firebase.firestore.DocumentReference
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
 import io.mockk.*
 import kotlin.time.Duration.Companion.seconds
@@ -51,8 +56,13 @@ class FirebaseAuthRepositoryTest {
   private lateinit var mockCredential: Credential
   private lateinit var mockCredentialResponse: GetCredentialResponse
   private lateinit var mockTask: Task<AuthResult>
+  private lateinit var mockVoidTask: Task<Void>
   private lateinit var mockOnSuccess: (FirebaseUser?) -> Unit
   private lateinit var mockOnError: (Throwable) -> Unit
+
+  private lateinit var mockFirebaseFirestore: FirebaseFirestore
+  private lateinit var mockCollection: CollectionReference
+  private lateinit var mockDocument: DocumentReference
 
   @Before
   fun setUp() {
@@ -67,9 +77,14 @@ class FirebaseAuthRepositoryTest {
     mockCredential = mockk(relaxed = true)
     mockCredentialResponse = mockk(relaxed = true)
     mockTask = mockk(relaxed = true)
+    mockVoidTask = mockk(relaxed = true)
 
     mockOnSuccess = mockk(relaxed = true)
     mockOnError = mockk(relaxed = true)
+
+    mockFirebaseFirestore = mockk(relaxed = true)
+    mockCollection = mockk(relaxed = true)
+    mockDocument = mockk(relaxed = true)
 
     // Mock FirebaseApp initialization
     mockkStatic(FirebaseApp::class)
@@ -85,6 +100,8 @@ class FirebaseAuthRepositoryTest {
     every { GoogleAuthProvider.getCredential(any(), null) } returns mockAuthCredential
 
     // Mock behavior for the CredentialManager
+    mockkStatic(EmailAuthProvider::class)
+    every { EmailAuthProvider.getCredential(any(), any()) } returns mockAuthCredential
     every { mockCredentialResponse.credential } returns mockCredential
     coEvery { mockCredentialManager.getCredential(any(), any<GetCredentialRequest>()) } returns
         mockCredentialResponse
@@ -99,6 +116,21 @@ class FirebaseAuthRepositoryTest {
           listener.onComplete(mockTask)
           mockTask
         }
+
+    every { mockFirebaseUser.delete() } returns mockVoidTask
+    every { mockFirebaseUser.reauthenticate(any()) } returns mockVoidTask
+    every { mockVoidTask.addOnCompleteListener(any()) } answers
+        {
+          val listener = firstArg<OnCompleteListener<Void>>()
+          listener.onComplete(mockVoidTask)
+          mockVoidTask
+        }
+
+    // Firebase firestore
+    mockkStatic(FirebaseFirestore::class)
+    every { FirebaseFirestore.getInstance() } returns mockFirebaseFirestore
+    every { mockFirebaseFirestore.collection(any()) } returns mockCollection
+    every { mockCollection.document(any()) } returns mockDocument
 
     // Initialize the Firebase and the repository
     FirebaseApp.initializeApp(context)
@@ -304,4 +336,48 @@ class FirebaseAuthRepositoryTest {
         verify { mockFirebaseAuth.signOut() }
         verify { onSuccess() }
       }
+
+  @Test
+  fun testDeleteAccount_successful() {
+    runTest(timeout = 5.seconds) {
+      every { mockVoidTask.isSuccessful } returns true
+      every { mockFirebaseAuth.currentUser } returns mockFirebaseUser
+      every { mockFirebaseUser.providerData } returns
+          listOf(mockk { every { providerId } returns EmailAuthProvider.PROVIDER_ID })
+      every { mockDocument.delete() } returns mockVoidTask
+
+      val onSuccess: () -> Unit = mockk(relaxed = true)
+      val mockActivity: Activity = mockk(relaxed = true)
+
+      repository.deleteAccount("password", mockActivity, onSuccess, mockOnError)
+
+      verify { mockFirebaseUser.delete() }
+      verify(exactly = 2) { mockDocument.delete() }
+      verify { onSuccess() }
+    }
+  }
+
+  @Test
+  fun testIsEmailProvider_email() {
+    runTest(timeout = 5.seconds) {
+      every { mockFirebaseUser.providerData } returns
+          listOf(mockk { every { providerId } returns EmailAuthProvider.PROVIDER_ID })
+
+      val isEmailProvider = repository.isEmailProvider(mockFirebaseUser)
+
+      assert(isEmailProvider)
+    }
+  }
+
+  @Test
+  fun testIsEmailProvider_google() {
+    runTest(timeout = 5.seconds) {
+      every { mockFirebaseUser.providerData } returns
+          listOf(mockk { every { providerId } returns GoogleAuthProvider.PROVIDER_ID })
+
+      val isEmailProvider = repository.isEmailProvider(mockFirebaseUser)
+
+      assert(!isEmailProvider)
+    }
+  }
 }

@@ -42,6 +42,7 @@ object ProfileScreen {
   const val TEST_TAG_JOIN_DATE = "profileScreenJoinDateInfo"
   const val TEST_TAG_EDIT_PROFILE_BUTTON = "profileScreenEditProfileButton"
   const val TEST_TAG_SIGN_OUT_BUTTON = "profileScreenSignOutButton"
+  const val TEST_TAG_DELETE_ACCOUNT_BUTTON = "profileScreenDeleteAccountButton"
 
   val DEFAULT_PROFILE =
       Profile(
@@ -146,7 +147,8 @@ fun ProfileScreen(
                   Modifier.testTag(ProfileScreen.TEST_TAG_SIGN_OUT_BUTTON))
 
               TextButton(
-                  modifier = Modifier.fillMaxWidth(),
+                  modifier =
+                      Modifier.fillMaxWidth().testTag(ProfileScreen.TEST_TAG_DELETE_ACCOUNT_BUTTON),
                   onClick = { navigationActions.navigateTo(Screen.DELETE_ACCOUNT) }) {
                     Text(
                         "Delete Account",

@@ -69,6 +69,7 @@ class ProfileScreenTest : TestCase() {
     composeTestRule.onNodeWithTag(ProfileScreen.TEST_TAG_JOIN_DATE).assertIsDisplayed()
     composeTestRule.onNodeWithTag(ProfileScreen.TEST_TAG_EDIT_PROFILE_BUTTON).assertIsDisplayed()
     composeTestRule.onNodeWithTag(ProfileScreen.TEST_TAG_SIGN_OUT_BUTTON).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(ProfileScreen.TEST_TAG_DELETE_ACCOUNT_BUTTON).assertIsDisplayed()
   }
 
   @Test

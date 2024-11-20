@@ -173,9 +173,7 @@ class AuthViewModel(
         onErrorAction = onErrorAction)
   }
 
-  /**
-   * Returns whether the current user is connect with an email provider.
-   */
+  /** Returns whether the current user is connect with an email provider. */
   fun isEmailProvider(): Boolean {
     return if (_currentUser.value == null) {
       false

@@ -91,13 +91,14 @@ fun DeleteAccountScreen(navigationActions: NavigationActions, authViewModel: Aut
             modifier = Modifier.testTag(DeleteAccountScreen.TEST_TAG_INFO_TEXT))
 
         if (authViewModel.isEmailProvider())
-          OutlinedTextField(
-              modifier = Modifier.fillMaxWidth().testTag(DeleteAccountScreen.TEST_TAG_PASSWORD_INPUT),
-              visualTransformation = PasswordVisualTransformation(),
-              colors = inputColors,
-              value = password,
-              onValueChange = { password = it },
-              label = { Text(stringResource(R.string.delete_account_password_label)) })
+            OutlinedTextField(
+                modifier =
+                    Modifier.fillMaxWidth().testTag(DeleteAccountScreen.TEST_TAG_PASSWORD_INPUT),
+                visualTransformation = PasswordVisualTransformation(),
+                colors = inputColors,
+                value = password,
+                onValueChange = { password = it },
+                label = { Text(stringResource(R.string.delete_account_password_label)) })
 
         BigButton(
             modifier =
