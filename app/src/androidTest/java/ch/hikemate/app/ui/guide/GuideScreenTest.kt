@@ -90,49 +90,36 @@ class GuideScreenTest {
 
     verify(mockNavigationActions).navigateTo(testAppTopics[0].actionRoute!!)
   }
-    @Test
-    fun topicHeader_containsCorrectElements() {
-        val topicCard = "${GuideScreen.TOPIC_HEADER}_${testAppTopics[0].titleResId}"
 
-        composeTestRule
-            .onNodeWithTag(topicCard)
-            .assertExists()
-            .assertIsDisplayed()
-    }
+  @Test
+  fun topicHeader_containsCorrectElements() {
+    val topicCard = "${GuideScreen.TOPIC_HEADER}_${testAppTopics[0].titleResId}"
 
-    @Test
-    fun expandableContent_animatesCorrectly() {
-        val topicCard = "${GuideScreen.TOPIC_CARD}_${testAppTopics[0].titleResId}"
-        val topicContent = "${GuideScreen.TOPIC_CONTENT}_${testAppTopics[0].titleResId}"
+    composeTestRule.onNodeWithTag(topicCard).assertExists().assertIsDisplayed()
+  }
 
-        // Initial state - content should not exist
-        composeTestRule
-            .onNodeWithTag(topicContent, useUnmergedTree = true)
-            .assertDoesNotExist()
+  @Test
+  fun expandableContent_animatesCorrectly() {
+    val topicCard = "${GuideScreen.TOPIC_CARD}_${testAppTopics[0].titleResId}"
+    val topicContent = "${GuideScreen.TOPIC_CONTENT}_${testAppTopics[0].titleResId}"
 
-        // Expand card
-        composeTestRule
-            .onNodeWithTag(topicCard)
-            .onChildren()[0]
-            .performClick()
+    // Initial state - content should not exist
+    composeTestRule.onNodeWithTag(topicContent, useUnmergedTree = true).assertDoesNotExist()
 
-        // After animation, content should exist
-        composeTestRule.waitForIdle()
-        composeTestRule
-            .onNodeWithTag(topicContent, useUnmergedTree = true)
-            .assertExists()
-    }
+    // Expand card
+    composeTestRule.onNodeWithTag(topicCard).onChildren()[0].performClick()
 
+    // After animation, content should exist
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithTag(topicContent, useUnmergedTree = true).assertExists()
+  }
 
-    @Test
-    fun guideScreen_hasCorrectPadding() {
-        composeTestRule
-            .onNodeWithTag(GuideScreen.GUIDE_SCREEN)
-            .assertExists()
-            .assertHasNoClickAction()
-    }
+  @Test
+  fun guideScreen_hasCorrectPadding() {
+    composeTestRule.onNodeWithTag(GuideScreen.GUIDE_SCREEN).assertExists().assertHasNoClickAction()
+  }
 
-    private fun setupGuideScreen() {
+  private fun setupGuideScreen() {
     composeTestRule.setContent {
       GuideScreen(
           navigationActions = mockNavigationActions,
