@@ -1,5 +1,6 @@
 package ch.hikemate.app.ui.profile
 
+import android.app.Activity
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -89,13 +90,14 @@ fun DeleteAccountScreen(navigationActions: NavigationActions, authViewModel: Aut
             style = TextStyle(fontSize = 16.sp),
             modifier = Modifier.testTag(DeleteAccountScreen.TEST_TAG_INFO_TEXT))
 
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().testTag(DeleteAccountScreen.TEST_TAG_PASSWORD_INPUT),
-            visualTransformation = PasswordVisualTransformation(),
-            colors = inputColors,
-            value = password,
-            onValueChange = { password = it },
-            label = { Text(stringResource(R.string.delete_account_password_label)) })
+        if (authViewModel.isEmailProvider())
+          OutlinedTextField(
+              modifier = Modifier.fillMaxWidth().testTag(DeleteAccountScreen.TEST_TAG_PASSWORD_INPUT),
+              visualTransformation = PasswordVisualTransformation(),
+              colors = inputColors,
+              value = password,
+              onValueChange = { password = it },
+              label = { Text(stringResource(R.string.delete_account_password_label)) })
 
         BigButton(
             modifier =
@@ -103,11 +105,12 @@ fun DeleteAccountScreen(navigationActions: NavigationActions, authViewModel: Aut
             buttonType = ButtonType.PRIMARY,
             label = stringResource(R.string.delete_account_delete_button),
             onClick = {
-              if (password.isEmpty()) {
+              if (authViewModel.isEmailProvider() && password.isEmpty()) {
                 Toast.makeText(context, passwordMustNotBeEmptyError, Toast.LENGTH_SHORT).show()
               } else {
                 authViewModel.deleteAccount(
                     password,
+                    context as Activity,
                     { navigationActions.navigateTo(Route.AUTH) },
                     { Toast.makeText(context, it.message, Toast.LENGTH_SHORT).show() })
               }

@@ -142,7 +142,7 @@
 
     <!-- Delete Account -->
     <string name="delete_account_title">Delete my account</string>
-    <string name="delete_account_info">For security, please enter your password before deleting your account to confirm your identity.</string>
+    <string name="delete_account_info">For security, you have to authenticate again before deleting your account.</string>
     <string name="delete_account_password_label">Password</string>
     <string name="delete_account_delete_button">Delete account</string>
     <string name="delete_account_password_must_be_filled_error">You should provide a password</string>

@@ -101,7 +101,9 @@ fun HikeMateApp() {
           composable(Screen.CREATE_ACCOUNT) {
             CreateAccountScreen(navigationActions, authViewModel)
           }
-          composable(Screen.DELETE_ACCOUNT) { DeleteAccountScreen(navigationActions, authViewModel) }
+          composable(Screen.DELETE_ACCOUNT) {
+            DeleteAccountScreen(navigationActions, authViewModel)
+          }
         }
 
         navigation(

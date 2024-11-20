@@ -1,5 +1,6 @@
 package ch.hikemate.app.model.authentication
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import androidx.activity.compose.ManagedActivityResultLauncher
@@ -156,13 +157,30 @@ class AuthViewModel(
    * @param onSuccess The action to be executed on successful account deletion.
    * @param onErrorAction The action to be executed on error.
    */
-  fun deleteAccount(password: String, onSuccess: () -> Unit, onErrorAction: (Exception) -> Unit) {
+  fun deleteAccount(
+      password: String,
+      activity: Activity,
+      onSuccess: () -> Unit,
+      onErrorAction: (Exception) -> Unit
+  ) {
     repository.deleteAccount(
         password = password,
+        activity = activity,
         onSuccess = {
           _currentUser.value = null
           onSuccess()
         },
         onErrorAction = onErrorAction)
+  }
+
+  /**
+   * Returns whether the current user is connect with an email provider.
+   */
+  fun isEmailProvider(): Boolean {
+    return if (_currentUser.value == null) {
+      false
+    } else {
+      repository.isEmailProvider(_currentUser.value!!)
+    }
   }
 }
