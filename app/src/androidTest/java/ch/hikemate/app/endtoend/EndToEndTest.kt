@@ -50,7 +50,25 @@ class EndToEndTest : TestCase() {
     val context = ApplicationProvider.getApplicationContext<Context>()
     FirebaseApp.initializeApp(context)
 
+    var signedOut = false
+
+    // Wait for sign out to complete
+    FirebaseAuth.getInstance().addAuthStateListener {
+      if (it.currentUser == null) {
+        signedOut = true
+      }
+    }
+
     auth.signOut()
+
+    val timeout = System.currentTimeMillis() + 10000 // 10 seconds
+    while (!signedOut && System.currentTimeMillis() < timeout) {
+      Thread.sleep(100)
+    }
+
+    if (!signedOut) {
+      throw Exception("Failed to sign out")
+    }
   }
 
   @After

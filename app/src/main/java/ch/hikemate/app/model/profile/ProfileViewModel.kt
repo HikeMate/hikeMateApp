@@ -4,7 +4,6 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import ch.hikemate.app.R
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,12 +27,6 @@ open class ProfileViewModel(private val repository: ProfileRepository) : ViewMod
    * appropriate error message will be set in this state flow.
    */
   val errorMessageId: StateFlow<Int?> = _errorMessageId.asStateFlow()
-
-  init {
-    FirebaseAuth.getInstance().addAuthStateListener { auth ->
-      auth.currentUser?.uid?.let { userId -> getProfileById(userId) }
-    }
-  }
 
   // Factory for creating instances of ProfileViewModel
   companion object {
@@ -89,10 +82,5 @@ open class ProfileViewModel(private val repository: ProfileRepository) : ViewMod
           Log.e("ProfileViewModel", "Error deleting profile", it)
           _errorMessageId.value = R.string.an_error_occurred_while_deleting_the_profile
         })
-  }
-
-  /** Reload the profile. */
-  fun reloadProfile() {
-    profile_.value?.let { getProfileById(it.id) }
   }
 }

@@ -4,10 +4,8 @@ import android.content.Context
 import android.util.Log
 import ch.hikemate.app.R
 import com.google.android.gms.tasks.Task
-import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.auth.auth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -23,16 +21,6 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
 
   override fun getNewUid(): String {
     return db.collection(collectionPath).document().id
-  }
-
-  override fun init(onSuccess: () -> Unit) {
-    // Check if the user is logged in
-    // If the user is logged in, call onSuccess
-    Firebase.auth.addAuthStateListener {
-      if (it.currentUser != null) {
-        onSuccess()
-      }
-    }
   }
 
   override fun createProfile(
@@ -168,6 +156,7 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
       val hikingLevel = HikingLevel.values().find { it.name == hikingLevelString }
       val joinedDate = document.getTimestamp("joinedDate")
       if (name == null || email == null || hikingLevel == null || joinedDate == null) {
+        Log.e("ProfileRepositoryFirestore", "Error converting document to Profile: missing fields")
         return null
       }
       Profile(uid, name, email, hikingLevel, joinedDate)

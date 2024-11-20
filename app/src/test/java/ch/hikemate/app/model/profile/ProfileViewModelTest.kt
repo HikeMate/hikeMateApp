@@ -57,11 +57,6 @@ class ProfileViewModelTest {
       null
     }
 
-    `when`(repository.init(any())).thenAnswer {
-      val initAction = it.getArgument<() -> Unit>(0)
-      initAction()
-    }
-
     profileViewModel = ProfileViewModel(repository)
   }
 

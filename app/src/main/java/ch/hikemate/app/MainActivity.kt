@@ -93,12 +93,14 @@ fun HikeMateApp() {
             startDestination = Screen.AUTH,
             route = Route.AUTH,
         ) {
-          composable(Screen.AUTH) { SignInScreen(navigationActions, authViewModel) }
+          composable(Screen.AUTH) {
+            SignInScreen(navigationActions, authViewModel, profileViewModel)
+          }
           composable(Screen.SIGN_IN_WITH_EMAIL) {
-            SignInWithEmailScreen(navigationActions, authViewModel)
+            SignInWithEmailScreen(navigationActions, authViewModel, profileViewModel)
           }
           composable(Screen.CREATE_ACCOUNT) {
-            CreateAccountScreen(navigationActions, authViewModel)
+            CreateAccountScreen(navigationActions, authViewModel, profileViewModel)
           }
         }
 
