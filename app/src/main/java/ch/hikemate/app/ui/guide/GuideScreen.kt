@@ -66,17 +66,17 @@ object GuideScreen {
   const val ICON_SIZE_DP = 40
   const val CORNER_RADIUS_DP = 8
   const val HORIZONTAL_PADDING_DP = 16
+
   // Test Tags
   const val GUIDE_SCREEN = "guide_screen"
   const val GUIDE_HEADER = "guide_header"
-  const val APP_GUIDE_SECTION = "app_guide_section"
-  const val HIKING_GUIDE_SECTION = "hiking_guide_section"
   const val TOPIC_CARD = "topic_card"
   const val TOPIC_HEADER = "topic_header"
   const val TOPIC_CONTENT = "topic_content"
   const val NAVIGATION_BUTTON = "navigation_button"
 }
 
+/** AnimationConfig object which determines how the animation when opening a card is performed */
 object AnimationConfig {
   val enterTransition =
       expandVertically(
@@ -91,6 +91,14 @@ object AnimationConfig {
           fadeOut(animationSpec = tween(GuideScreen.EXIT_DURATION_MS))
 }
 
+/**
+ * The main Guide Screen
+ *
+ * @param navigationActions The navigation actions for the Guide Screen
+ * @param modifier
+ * @param appTopics The topics for the app guide
+ * @param hikingTopics The topics for the hiking guide
+ */
 @Composable
 fun GuideScreen(
     navigationActions: NavigationActions,
@@ -98,6 +106,7 @@ fun GuideScreen(
     appTopics: List<GuideTopic> = APP_GUIDE_TOPICS,
     hikingTopics: List<GuideTopic> = HIKING_GUIDE_TOPICS
 ) {
+
   BottomBarNavigation(
       onTabSelect = navigationActions::navigateTo,
       tabList = LIST_TOP_LEVEL_DESTINATIONS,
@@ -126,11 +135,12 @@ private fun GuideContent(
                 .fillMaxSize()
                 .padding(padding)
                 .padding(horizontal = GuideScreen.HORIZONTAL_PADDING_DP.dp)) {
+          // The header which says HikeMate Guide with the logo
           item {
             Spacer(modifier = Modifier.height(GuideScreen.HEADER_SPACING_DP.dp))
             GuideHeader()
           }
-
+          // The app's related topics
           items(appTopics) { topic ->
             ExpandableTopicCard(
                 topic = topic,
@@ -138,8 +148,10 @@ private fun GuideContent(
             )
           }
 
+          // Separator between the app's topics and the hiking's topics
           item { HikingGuideSection() }
 
+          // Hiking in general related topics
           items(hikingTopics) { topic ->
             ExpandableTopicCard(
                 topic = topic,
@@ -159,6 +171,7 @@ private fun GuideHeader() {
       modifier =
           Modifier.padding(vertical = GuideScreen.CONTENT_PADDING_DP.dp)
               .testTag(GuideScreen.GUIDE_HEADER)) {
+        // HikeMate's logo
         Image(
             painter = painterResource(id = R.drawable.app_icon),
             contentDescription = stringResource(R.string.app_icon_description),
@@ -179,6 +192,12 @@ private fun HikingGuideSection() {
   Spacer(modifier = Modifier.height(GuideScreen.HEADER_SPACING_DP.dp))
 }
 
+/**
+ * The composable function for a single topic card
+ *
+ * @param topic the topic which will be described
+ * @param navigationActions
+ */
 @Composable
 private fun ExpandableTopicCard(
     topic: GuideTopic,
@@ -208,29 +227,28 @@ private fun TopicCardContent(
     onExpandToggle: () -> Unit,
     navigationActions: NavigationActions
 ) {
-  Column(
-      modifier =
-          Modifier.clickable(onClick = onExpandToggle)
-              .testTag("${GuideScreen.TOPIC_HEADER}_${topic.titleResId}")) {
-        TopicHeader(topic = topic, isExpanded = isExpanded)
-        ExpandableContent(
-            topic = topic, isExpanded = isExpanded, navigationActions = navigationActions)
-      }
-}
-
-@Composable
-private fun TopicHeader(topic: GuideTopic, isExpanded: Boolean) {
-  Row(
-      modifier = Modifier.fillMaxWidth().padding(GuideScreen.CONTENT_PADDING_DP.dp),
-      horizontalArrangement = Arrangement.SpaceBetween,
-      verticalAlignment = Alignment.CenterVertically) {
-        Text(text = stringResource(topic.titleResId), style = MaterialTheme.typography.titleMedium)
-        Icon(
-            imageVector =
-                if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-            contentDescription =
-                stringResource(if (isExpanded) R.string.collapse_topic else R.string.expand_topic))
-      }
+  Column {
+    // Move clickable to just the header
+    Row(
+        modifier =
+            Modifier.fillMaxWidth()
+                .clickable(onClick = onExpandToggle)
+                .testTag("${GuideScreen.TOPIC_HEADER}_${topic.titleResId}")
+                .padding(GuideScreen.CONTENT_PADDING_DP.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically) {
+          Text(
+              text = stringResource(topic.titleResId), style = MaterialTheme.typography.titleMedium)
+          Icon(
+              imageVector =
+                  if (isExpanded) Icons.Default.KeyboardArrowUp
+                  else Icons.Default.KeyboardArrowDown,
+              contentDescription =
+                  stringResource(
+                      if (isExpanded) R.string.collapse_topic else R.string.expand_topic))
+        }
+    ExpandableContent(topic = topic, isExpanded = isExpanded, navigationActions = navigationActions)
+  }
 }
 
 @Composable
@@ -257,6 +275,7 @@ private fun ExpandableContent(
       }
 }
 
+/** The button for the topic cards which redirect the user to another screen. */
 @Composable
 private fun NavigationButton(route: String, onClick: () -> Unit) {
   Button(
