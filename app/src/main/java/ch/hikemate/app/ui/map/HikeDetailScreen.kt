@@ -279,8 +279,7 @@ fun HikeDetails(
               String.format(Locale.getDefault(), "%.2f", detailedRoute.totalDistance)
           val elevationGainString = detailedRoute.elevationGain.roundToInt().toString()
           val hourString =
-              String.format(
-                  Locale.getDefault(), "%02d", (detailedRoute.estimatedTime / 60).roundToInt())
+              String.format(Locale.getDefault(), "%02d", (detailedRoute.estimatedTime / 60).toInt())
           val minuteString =
               String.format(
                   Locale.getDefault(), "%02d", (detailedRoute.estimatedTime % 60).roundToInt())
@@ -293,7 +292,9 @@ fun HikeDetails(
               value = "${elevationGainString}m")
           DetailRow(
               label = stringResource(R.string.hike_detail_screen_label_estimated_time),
-              value = "${hourString}h${minuteString}")
+              value =
+                  if (detailedRoute.estimatedTime / 60 < 1) "${minuteString}min"
+                  else "${hourString}h${minuteString}")
           DetailRow(
               label = stringResource(R.string.hike_detail_screen_label_difficulty),
               value = stringResource(detailedRoute.difficulty.nameResourceId),
