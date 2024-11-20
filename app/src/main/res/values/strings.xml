@@ -108,7 +108,6 @@
     <string name="an_error_occurred_while_fetching_the_profile">An error occurred while fetching the profile.</string>
     <string name="an_error_occurred_while_updating_the_profile">An error occurred while updating the profile.</string>
     <string name="an_error_occurred_while_deleting_the_profile">An error occurred while deleting the profile</string>
-    <string name="error_loading_profile">Error loading profile, please try again later</string>
 
 
     <!-- Edit Profile Screen -->
