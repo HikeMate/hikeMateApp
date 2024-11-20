@@ -258,7 +258,7 @@ class HikeDetailScreenTest {
     val distanceString = String.format(Locale.ENGLISH, "%.2f", detailedRoute.totalDistance)
     val elevationGainString = detailedRoute.elevationGain.roundToInt().toString()
     val hourString =
-        String.format(Locale.getDefault(), "%02d", (detailedRoute.estimatedTime / 60).roundToInt())
+        String.format(Locale.getDefault(), "%02d", (detailedRoute.estimatedTime / 60).toInt())
     val minuteString =
         String.format(Locale.getDefault(), "%02d", (detailedRoute.estimatedTime % 60).roundToInt())
 
