@@ -258,7 +258,7 @@ class HikeDetailScreenTest {
     val distanceString = String.format(Locale.ENGLISH, "%.2f", detailedRoute.totalDistance)
     val elevationGainString = detailedRoute.elevationGain.roundToInt().toString()
     val hourString =
-        String.format(Locale.getDefault(), "%02d", (detailedRoute.estimatedTime / 60).roundToInt())
+        String.format(Locale.getDefault(), "%02d", (detailedRoute.estimatedTime / 60).toInt())
     val minuteString =
         String.format(Locale.getDefault(), "%02d", (detailedRoute.estimatedTime % 60).roundToInt())
 
@@ -270,12 +270,29 @@ class HikeDetailScreenTest {
         .assertAny(hasText("${elevationGainString}m"))
     composeTestRule
         .onAllNodesWithTag(TEST_TAG_DETAIL_ROW_VALUE)
-        .assertAny(hasText("${hourString}:${minuteString}"))
+        .assertAny(hasText("${hourString}h${minuteString}"))
     composeTestRule
         .onAllNodesWithTag(TEST_TAG_DETAIL_ROW_VALUE)
         .assertAny(
             hasText(
                 ApplicationProvider.getApplicationContext<Context>()
                     .getString(detailedRoute.difficulty.nameResourceId)))
+  }
+
+  @Test
+  fun hikeDetails_showsCorrectDetailedHikesValues_whenTimeIsLessThan60Min() {
+    val detailedRoute = detailedRoute.copy(estimatedTime = 45.0) // test hike that takes just 45 min
+
+    composeTestRule.setContent {
+      HikeDetails(
+          detailedRoute = detailedRoute, savedHikesViewModel = savedHikesViewModel, emptyList())
+    }
+
+    val minuteString =
+        String.format(Locale.getDefault(), "%02d", (detailedRoute.estimatedTime % 60).roundToInt())
+
+    composeTestRule
+        .onAllNodesWithTag(TEST_TAG_DETAIL_ROW_VALUE)
+        .assertAny(hasText("${minuteString}min"))
   }
 }
