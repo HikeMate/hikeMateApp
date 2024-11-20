@@ -399,7 +399,7 @@ fun DateDetailRow(
     DetailRow(
         label = stringResource(R.string.hike_detail_screen_label_status),
         value = stringResource(R.string.hike_detail_screen_value_not_saved),
-        valueColor = Color.Black)
+        valueColor = MaterialTheme.colorScheme.onSurface)
   }
 }
 
