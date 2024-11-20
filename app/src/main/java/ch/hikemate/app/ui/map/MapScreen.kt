@@ -38,7 +38,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -147,13 +146,6 @@ object MapScreen {
   const val MAP_MAX_LATITUDE = 85.0
   const val MAP_MIN_LATITUDE = -85.0
 
-  const val MIN_HUE = 0
-  const val MAX_HUE = 360
-  const val MIN_SATURATION = 42
-  const val MAX_SATURATION = 98
-  const val MIN_LIGHTNESS = 40
-  const val MAX_LIGHTNESS = 90
-
   const val LOG_TAG = "MapScreen"
 
   const val TEST_TAG_MAP = "map"
@@ -203,29 +195,6 @@ object MapScreen {
           }
         })
   }
-}
-
-/**
- * Generates a random color in the HSL color space. The function uses HSL to generate a color
- * instead of ARGB because it makes it easier to have a range of colors that we know will render
- * well on the map.
- *
- * @return The generated color as an [Int].
- */
-fun getRandomColor(): Int {
-  fun randomInt(min: Int, max: Int): Int {
-    return (min..max).random()
-  }
-
-  val h = randomInt(MapScreen.MIN_HUE, MapScreen.MAX_HUE).toFloat() // All colors
-  val s =
-      randomInt(MapScreen.MIN_SATURATION, MapScreen.MAX_SATURATION) /
-          100.0f // Saturation between 42% and 98%
-  val l =
-      randomInt(MapScreen.MIN_LIGHTNESS, MapScreen.MAX_LIGHTNESS) /
-          100.0f // Lightness between 40% and 90%
-
-  return Color.hsl(h, s, l).toArgb()
 }
 
 /**
@@ -341,7 +310,7 @@ fun MapScreen(
         MapUtils.showHikeOnMap(
             mapView,
             it,
-            getRandomColor(),
+            it.getColor(),
             onLineClick = {
               hikingRoutesViewModel.selectRoute(it)
               navigationActions.navigateTo(Screen.HIKE_DETAILS)
@@ -353,7 +322,7 @@ fun MapScreen(
         MapUtils.showHikeOnMap(
             mapView,
             it,
-            getRandomColor(),
+            it.getColor(),
             onLineClick = {
               hikingRoutesViewModel.selectRoute(it)
               navigationActions.navigateTo(Screen.HIKE_DETAILS)
@@ -651,5 +620,7 @@ fun HikeCardFor(
       messageContent = suitableLabelText,
       styleProperties =
           HikeCardStyleProperties(
-              messageIcon = painterResource(suitableLabelIcon), messageColor = suitableLabelColor))
+              messageIcon = painterResource(suitableLabelIcon),
+              messageColor = suitableLabelColor,
+              graphColor = Color(route.getColor())))
 }

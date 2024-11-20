@@ -159,8 +159,7 @@ fun ProfileScreen(
                   buttonType = ButtonType.SECONDARY,
                   label = context.getString(R.string.profile_screen_sign_out_button_text),
                   onClick = {
-                    authViewModel.signOut()
-                    navigationActions.navigateTo(Screen.AUTH)
+                    authViewModel.signOut({ navigationActions.navigateTo(Screen.AUTH) })
                   },
                   Modifier.testTag(ProfileScreen.TEST_TAG_SIGN_OUT_BUTTON))
             }

@@ -140,9 +140,12 @@ class AuthViewModel(
   }
 
   /** Signs out the current user. On successful sign-out, the _currentUser is set to null. */
-  fun signOut() {
+  fun signOut(onSuccess: () -> Unit) {
     repository.signOut(
-        onSuccess = { _currentUser.value = null },
+        onSuccess = {
+          _currentUser.value = null
+          onSuccess()
+        },
     )
   }
 }

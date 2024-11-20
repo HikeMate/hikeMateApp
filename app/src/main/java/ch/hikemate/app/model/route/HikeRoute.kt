@@ -1,5 +1,7 @@
 package ch.hikemate.app.model.route
 
+import ch.hikemate.app.ui.theme.hikeColors
+import kotlin.math.abs
 import kotlin.math.asin
 import kotlin.math.cos
 import kotlin.math.sin
@@ -130,6 +132,11 @@ data class HikeRoute(
     val ways: List<LatLong>,
     val name: String? = null,
     val description: String? = null
-)
+) {
+  /** Get the color of the route from its id. The color should be the same for the same route id. */
+  fun getColor(): Int {
+    return hikeColors[abs(id.hashCode()) % hikeColors.size]
+  }
+}
 
 typealias HikeWay = List<LatLong>

@@ -153,6 +153,7 @@ private fun PlannedHikes(hikes: List<SavedHike>?) {
             // This generates a random list of elevation data for the hike
             // with a random number of points and altitude between 0 and 1000
             elevationData = (0..(0..1000).random()).map { it.toDouble() }.shuffled(),
+            showGraph = false,
             onClick = {
               Toast.makeText(
                       context,
@@ -206,6 +207,7 @@ private fun SavedHikes(hikes: List<SavedHike>?) {
             // This generates a random list of elevation data for the hike
             // with a random number of points and altitude between 0 and 1000
             elevationData = (0..(0..1000).random()).map { it.toDouble() }.shuffled(),
+            showGraph = false,
             modifier = Modifier.testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_HIKE_CARD))
       }
     }

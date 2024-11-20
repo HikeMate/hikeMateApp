@@ -6,8 +6,8 @@
     <string name="default_web_client_id">154591189513-eilbr2jtms0av2ses4tsvo62009q5t7n.apps.googleusercontent.com</string>
 
     <!-- Hike Card -->
-    <string name="hike_card_altitude_label">Altitude difference</string>
-    <string name="hike_card_altitude_value_template">%sm</string>
+    <string name="hike_card_elevation_gain_label">Elevation gain</string>
+    <string name="hike_card_elevation_gain_value_template">%.0fm</string>
     <string name="hike_card_no_data_label">No data</string>
 
     <!-- Map Screen -->
@@ -62,6 +62,11 @@
     <string name="hike_detail_screen_value_not_saved">Not saved</string>
     <string name="hike_detail_screen_value_planned">Planned</string>
     <string name="hike_detail_screen_add_a_date_button_text">Add a date</string>
+
+    <!-- Hike Difficulty Levels -->
+    <string name="hike_difficulty_easy">Easy</string>
+    <string name="hike_difficulty_moderate">Moderate</string>
+    <string name="hike_difficulty_difficult">Difficult</string>
 
 
     <!-- Saved Hikes Screen -->
