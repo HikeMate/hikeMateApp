@@ -1,7 +1,6 @@
 package ch.hikemate.app
 
 import android.annotation.SuppressLint
-
 import android.content.pm.ActivityInfo
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -12,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -152,10 +150,7 @@ fun HikeMateApp() {
             EditProfileScreen(
                 navigationActions = navigationActions, profileViewModel = profileViewModel)
           }
-            composable(Route.TUTORIAL) {
-                GuideScreen(navigationActions = navigationActions)
-            }
-
+          composable(Route.TUTORIAL) { GuideScreen(navigationActions = navigationActions) }
         }
       }
 }

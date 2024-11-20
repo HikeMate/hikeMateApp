@@ -1,322 +1,267 @@
 package ch.hikemate.app.ui.guide
 
-import androidx.compose.animation.*
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import ch.hikemate.app.R
-import ch.hikemate.app.model.guide.Guide
-import ch.hikemate.app.ui.navigation.*
+import ch.hikemate.app.model.guide.Guide.APP_GUIDE_TOPICS
+import ch.hikemate.app.model.guide.Guide.HIKING_GUIDE_TOPICS
+import ch.hikemate.app.model.guide.GuideTopic
+import ch.hikemate.app.ui.navigation.BottomBarNavigation
+import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
+import ch.hikemate.app.ui.navigation.NavigationActions
+import ch.hikemate.app.ui.navigation.Route
 
+object GuideScreen {
+  // Animation Constants
+  const val ENTER_DURATION_MS = 200
+  const val EXIT_DURATION_MS = 150
+
+  // UI Dimensions
+  const val HEADER_SPACING_DP = 16
+  const val SECTION_SPACING_DP = 24
+  const val CARD_SPACING_DP = 4
+  const val CONTENT_PADDING_DP = 16
+  const val ICON_SIZE_DP = 40
+  const val CORNER_RADIUS_DP = 8
+  const val HORIZONTAL_PADDING_DP = 16
+  // Test Tags
+  const val GUIDE_SCREEN = "guide_screen"
+  const val GUIDE_HEADER = "guide_header"
+  const val APP_GUIDE_SECTION = "app_guide_section"
+  const val HIKING_GUIDE_SECTION = "hiking_guide_section"
+  const val TOPIC_CARD = "topic_card"
+  const val TOPIC_HEADER = "topic_header"
+  const val TOPIC_CONTENT = "topic_content"
+  const val NAVIGATION_BUTTON = "navigation_button"
+}
+
+object AnimationConfig {
+  val enterTransition =
+      expandVertically(
+          animationSpec =
+              tween(durationMillis = GuideScreen.ENTER_DURATION_MS, easing = FastOutSlowInEasing)) +
+          fadeIn(animationSpec = tween(GuideScreen.ENTER_DURATION_MS))
+
+  val exitTransition =
+      shrinkVertically(
+          animationSpec =
+              tween(durationMillis = GuideScreen.EXIT_DURATION_MS, easing = FastOutSlowInEasing)) +
+          fadeOut(animationSpec = tween(GuideScreen.EXIT_DURATION_MS))
+}
 
 @Composable
 fun GuideScreen(
     navigationActions: NavigationActions,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    appTopics: List<GuideTopic> = APP_GUIDE_TOPICS,
+    hikingTopics: List<GuideTopic> = HIKING_GUIDE_TOPICS
 ) {
-    var activeGuide by remember { mutableStateOf<List<Guide.GuideStep>?>(null) }
-    var currentStepIndex by remember { mutableStateOf(0) }
-
-    BottomBarNavigation(
-        onTabSelect = { navigationActions.navigateTo(it) },
-        tabList = LIST_TOP_LEVEL_DESTINATIONS,
-        selectedItem = Route.TUTORIAL
-    ) { padding ->
-        Box(modifier = Modifier.fillMaxSize()) {
-            LazyColumn(
-                modifier = modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(horizontal = 16.dp)
-            ) {
-                // Title with App Logo
-                item {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    GuideHeader()
-                }
-
-                // App Guide Topics
-                items(appGuideTopics) { topic ->
-                    ExpandableTopicCard(
-                        topic = topic,
-                        navigationActions = navigationActions,
-                        onStartGuide = { steps ->
-                            activeGuide = steps
-                            currentStepIndex = 0
-                        }
-                    )
-                }
-
-                // Hiking Guide Section
-                item {
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Text(
-                        text = stringResource(R.string.guide_hiking_section_title),
-                        style = MaterialTheme.typography.headlineMedium
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                }
-
-                // Hiking Topics
-                items(hikingTopics) { topic ->
-                    ExpandableTopicCard(
-                        topic = topic,
-                        navigationActions = navigationActions,
-                        onStartGuide = { steps ->
-                            activeGuide = steps
-                            currentStepIndex = 0
-                        }
-                    )
-                }
-
-                item {
-                    Spacer(modifier = Modifier.height(16.dp))
-                }
-            }
-
-            // Interactive Guide Overlay
-            activeGuide?.let { guide ->
-                if (currentStepIndex < guide.size) {
-                    GuideOverlay(
-                        navigationActions = navigationActions,
-                        step = guide[currentStepIndex],
-                        onNext = {
-                            if (currentStepIndex < guide.size - 1) {
-                                currentStepIndex++
-                            } else {
-                                activeGuide = null
-                                currentStepIndex = 0
-                            }
-                        },
-                        onClose = {
-                            activeGuide = null
-                            currentStepIndex = 0
-                        }
-                    )
-                }
-            }
-        }
-    }
+  BottomBarNavigation(
+      onTabSelect = navigationActions::navigateTo,
+      tabList = LIST_TOP_LEVEL_DESTINATIONS,
+      selectedItem = Route.TUTORIAL) { padding ->
+        GuideContent(
+            modifier = modifier,
+            padding = padding,
+            appTopics = appTopics,
+            hikingTopics = hikingTopics,
+            navigationActions = navigationActions)
+      }
 }
 
 @Composable
-private fun GuideOverlay(
-    navigationActions: NavigationActions,
-    step: Guide.GuideStep,
-    onNext: () -> Unit,
-    onClose: () -> Unit
+private fun GuideContent(
+    modifier: Modifier,
+    padding: PaddingValues,
+    appTopics: List<GuideTopic>,
+    hikingTopics: List<GuideTopic>,
+    navigationActions: NavigationActions
 ) {
-    Dialog(onDismissRequest = onClose) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            shape = RoundedCornerShape(8.dp)
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
-                Text(
-                    text = stringResource(step.title),
-                    style = MaterialTheme.typography.titleLarge
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = stringResource(step.description),
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    TextButton(onClick = onClose) {
-                        Text("Close")
-                    }
-                    Button(onClick = {
-                        step.action?.invoke(navigationActions)
-                        onNext()
-                    }) {
-                        Text("Next")
-                    }
-                }
-            }
+  Box(modifier = Modifier.fillMaxSize().testTag(GuideScreen.GUIDE_SCREEN)) {
+    LazyColumn(
+        modifier =
+            modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(horizontal = GuideScreen.HORIZONTAL_PADDING_DP.dp)) {
+          item {
+            Spacer(modifier = Modifier.height(GuideScreen.HEADER_SPACING_DP.dp))
+            GuideHeader()
+          }
+
+          items(appTopics) { topic ->
+            ExpandableTopicCard(
+                topic = topic,
+                navigationActions = navigationActions,
+            )
+          }
+
+          item { HikingGuideSection() }
+
+          items(hikingTopics) { topic ->
+            ExpandableTopicCard(
+                topic = topic,
+                navigationActions = navigationActions,
+            )
+          }
+
+          item { Spacer(modifier = Modifier.height(GuideScreen.HEADER_SPACING_DP.dp)) }
         }
-    }
+  }
 }
 
 @Composable
 private fun GuideHeader() {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(vertical = 16.dp)
-    ) {
+  Row(
+      verticalAlignment = Alignment.CenterVertically,
+      modifier =
+          Modifier.padding(vertical = GuideScreen.CONTENT_PADDING_DP.dp)
+              .testTag(GuideScreen.GUIDE_HEADER)) {
         Image(
             painter = painterResource(id = R.drawable.app_icon),
-            contentDescription = null,
-            modifier = Modifier.size(40.dp)
-        )
-        Spacer(modifier = Modifier.width(12.dp))
+            contentDescription = stringResource(R.string.app_icon_description),
+            modifier = Modifier.size(GuideScreen.ICON_SIZE_DP.dp))
+        Spacer(modifier = Modifier.width(GuideScreen.HEADER_SPACING_DP.dp))
         Text(
             text = stringResource(R.string.guide_title),
-            style = MaterialTheme.typography.headlineMedium
-        )
-    }
+            style = MaterialTheme.typography.headlineMedium)
+      }
+}
+
+@Composable
+private fun HikingGuideSection() {
+  Spacer(modifier = Modifier.height(GuideScreen.SECTION_SPACING_DP.dp))
+  Text(
+      text = stringResource(R.string.guide_hiking_section_title),
+      style = MaterialTheme.typography.headlineMedium)
+  Spacer(modifier = Modifier.height(GuideScreen.HEADER_SPACING_DP.dp))
 }
 
 @Composable
 private fun ExpandableTopicCard(
-    topic: Guide.GuideTopic,
+    topic: GuideTopic,
     navigationActions: NavigationActions,
-    onStartGuide: (List<Guide.GuideStep>) -> Unit // Can be removed if not needed anymore
 ) {
-    var isExpanded by remember { mutableStateOf(false) }
+  var isExpanded by remember { mutableStateOf(false) }
 
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp)
-            .animateContentSize(),
-        shape = RoundedCornerShape(8.dp)
-    ) {
-        Column(modifier = Modifier.clickable { isExpanded = !isExpanded }) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    topic.iconResId?.let { iconResId ->
-                        Image(
-                            painter = painterResource(id = iconResId),
-                            contentDescription = null,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                    }
-                    Text(
-                        text = stringResource(topic.titleResId),
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                }
-                Icon(
-                    imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp
-                    else Icons.Default.KeyboardArrowDown,
-                    contentDescription = null
-                )
-            }
-
-            AnimatedVisibility(
-                visible = isExpanded,
-                enter = expandVertically(
-                    animationSpec = tween(
-                        durationMillis = 200,
-                        easing = FastOutSlowInEasing
-                    )
-                ) + fadeIn(
-                    animationSpec = tween(200)
-                ),
-                exit = shrinkVertically(
-                    animationSpec = tween(
-                        durationMillis = 150,
-                        easing = FastOutSlowInEasing
-                    )
-                ) + fadeOut(
-                    animationSpec = tween(150)
-                )
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = stringResource(topic.contentResId),
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    topic.actionRoute?.let { route ->
-                        Button(
-                            onClick = { navigationActions.navigateTo(route) },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(stringResource(R.string.guide_button_try_now))
-                        }
-                    }
-                }
-            }
-        }
-    }
+  Card(
+      modifier =
+          Modifier.fillMaxWidth()
+              .padding(vertical = GuideScreen.CARD_SPACING_DP.dp)
+              .animateContentSize()
+              .testTag("${GuideScreen.TOPIC_CARD}_${topic.titleResId}"),
+      shape = RoundedCornerShape(GuideScreen.CORNER_RADIUS_DP.dp)) {
+        TopicCardContent(
+            topic = topic,
+            isExpanded = isExpanded,
+            onExpandToggle = { isExpanded = !isExpanded },
+            navigationActions = navigationActions)
+      }
 }
-private val appGuideTopics = listOf(
-    Guide.GuideTopic(
-        titleResId = R.string.guide_topic_find_trails,
-        contentResId = R.string.guide_content_find_trails,
-        actionRoute = Route.MAP,
-    ),
-    Guide.GuideTopic(
-        titleResId = R.string.guide_topic_save_trails,
-        contentResId = R.string.guide_content_save_trails,
-        actionRoute = Route.SAVED_HIKES,
-    ),
-    Guide.GuideTopic(
-        titleResId = R.string.guide_section_planning_features,
-        contentResId = R.string.guide_content_choosing_trail,
-        actionRoute = Route.SAVED_HIKES
-    ),
-    Guide.GuideTopic(
-        titleResId = R.string.guide_section_difficulty_levels,
-        contentResId = R.string.guide_content_difficulty_levels
-    ),
-    Guide.GuideTopic(
-        titleResId = R.string.guide_topic_track_location,
-        contentResId = R.string.guide_content_choosing_trail
-    )
-)
-private val hikingTopics = listOf(
-    Guide.GuideTopic(
-        titleResId = R.string.guide_section_basic_gear,
-        contentResId = R.string.guide_content_basic_gear
-    ),
-    Guide.GuideTopic(
-        titleResId = R.string.guide_section_weather,
-        contentResId = R.string.guide_content_weather
-    ),
-    Guide.GuideTopic(
-        titleResId = R.string.guide_section_safety_basics,
-        contentResId = R.string.guide_content_difficulty_levels
-    ),
-    Guide.GuideTopic(
-        titleResId = R.string.guide_section_navigation,
-        contentResId = R.string.guide_content_choosing_trail
-    ),
-    Guide.GuideTopic(
-        titleResId = R.string.guide_section_hiking_form,
-        contentResId = R.string.guide_content_basic_gear
-    ),
-    Guide.GuideTopic(
-        titleResId = R.string.guide_section_elevation,
-        contentResId = R.string.guide_content_weather
-    )
-)
+
+@Composable
+private fun TopicCardContent(
+    topic: GuideTopic,
+    isExpanded: Boolean,
+    onExpandToggle: () -> Unit,
+    navigationActions: NavigationActions
+) {
+  Column(
+      modifier =
+          Modifier.clickable(onClick = onExpandToggle)
+              .testTag("${GuideScreen.TOPIC_HEADER}_${topic.titleResId}")) {
+        TopicHeader(topic = topic, isExpanded = isExpanded)
+        ExpandableContent(
+            topic = topic, isExpanded = isExpanded, navigationActions = navigationActions)
+      }
+}
+
+@Composable
+private fun TopicHeader(topic: GuideTopic, isExpanded: Boolean) {
+  Row(
+      modifier = Modifier.fillMaxWidth().padding(GuideScreen.CONTENT_PADDING_DP.dp),
+      horizontalArrangement = Arrangement.SpaceBetween,
+      verticalAlignment = Alignment.CenterVertically) {
+        Text(text = stringResource(topic.titleResId), style = MaterialTheme.typography.titleMedium)
+        Icon(
+            imageVector =
+                if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+            contentDescription =
+                stringResource(if (isExpanded) R.string.collapse_topic else R.string.expand_topic))
+      }
+}
+
+@Composable
+private fun ExpandableContent(
+    topic: GuideTopic,
+    isExpanded: Boolean,
+    navigationActions: NavigationActions
+) {
+  AnimatedVisibility(
+      modifier = Modifier.testTag("${GuideScreen.TOPIC_CONTENT}_${topic.titleResId}"),
+      visible = isExpanded,
+      enter = AnimationConfig.enterTransition,
+      exit = AnimationConfig.exitTransition) {
+        Column(modifier = Modifier.padding(GuideScreen.CONTENT_PADDING_DP.dp)) {
+          Text(
+              text = stringResource(topic.contentResId), style = MaterialTheme.typography.bodyLarge)
+
+          Spacer(modifier = Modifier.height(GuideScreen.HEADER_SPACING_DP.dp))
+
+          topic.actionRoute?.let { route ->
+            NavigationButton(route = route, onClick = { navigationActions.navigateTo(route) })
+          }
+        }
+      }
+}
+
+@Composable
+private fun NavigationButton(route: String, onClick: () -> Unit) {
+  Button(
+      onClick = onClick,
+      modifier = Modifier.fillMaxWidth().testTag("${GuideScreen.NAVIGATION_BUTTON}_$route")) {
+        Text(stringResource(R.string.guide_button_navigation, route))
+      }
+}

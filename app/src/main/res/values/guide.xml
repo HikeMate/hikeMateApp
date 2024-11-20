@@ -4,16 +4,20 @@
     <string name="guide_title">HikeMate Guide</string>
 
     <!-- App Topics -->
-    <string name="guide_topic_find_trails">🔍 Finding Hikes</string>
-    <string name="guide_content_find_trails">Discover hiking trails near you with HikeMate\'s powerful search features:\n\n1. Using the Map\n• Open the map view to see trails in your area\n• Pan and zoom to explore different regions\n• Use the search button to find trails in the visible area\n\n2. Understanding Trail Cards\n• View distance, elevation gain, and difficulty\n• See elevation profiles for each trail\n• Check estimated completion times\n\n3. Smart Features\n• Filter trails by difficulty level\n• See which trails match your hiking level\n• Get terrain and trail condition information\n\nPro Tip: Use the location button to find trails near your current position!</string>
+    <string name="guide_topic_find_hikes">🔍 Finding Hike Routes</string>
+    <string name="guide_content_find_hikes">Discover hike routes near you with HikeMate\'s powerful search features:\n\n1. Using the Map\n• Open the map view to see hike routes in your area\n• Pan and zoom to explore different regions\n• Use the search button to find hike routes in the visible area\n\n2. Understanding Hike Details\n• Tap on any colored route on the map to view its details\n• View distance, elevation gain, and difficulty level\n• See elevation profiles and estimated completion time\n\n📍 Pro Tip: Use the location button to find hike routes near your current position!</string>
 
-    <string name="guide_topic_save_trails">🔖 Saving Hikes</string>
-    <string name="guide_content_save_trails">Keep track of your favorite trails and plan future hikes:\n\n1. Saving Trails\n• Tap the bookmark icon on any trail to save it\n• Access all saved trails from the Saved tab\n• Organize trails by planned dates\n\n2. Planning Features\n• Add planned dates to saved trails\n• Set reminders for upcoming hikes\n• View your hiking calendar\n\n3. Managing Saved Trails\n• View saved trails offline\n• Remove trails you\'ve completed\n• Track your hiking history\n\nPro Tip: Use the planning feature to organize multiple hikes and create a hiking schedule!</string>
+    <string name="guide_topic_save_hikes">🔖 Saving Hike Routes</string>
+    <string name="guide_content_save_hikes">Keep track of your favorite hike routes and plan future adventures:\n\n1. Saving Hike Routes\n• Tap on any hike route to enter the Hike Details screen\n• Use the bookmark icon at the top to save the hike route\n• Tap the bookmark again to remove it from your saved hikes\n\n2. Planning Your Hikes\n• After saving a hike route, you can set a planned date\n• Tap \"Add a date\" to choose when you want to do this hike\n• Find all your saved hikes in the Saved tab\n• Planned hikes will appear separately in the Planned section</string>
 
     <string name="guide_section_difficulty_levels">📊 Understanding Difficulty Levels</string>
     <string name="guide_content_difficulty_levels">Understanding trail difficulty is key to a safe and enjoyable hiking experience. HikeMate uses three main difficulty levels:\n\n🟢 Beginner Trails\n• Distance: Less than 3km\n• Elevation gain: Under 250m\n• Usually well-maintained paths\n• Clear markers and signage\n\n🟡 Intermediate Trails\n• Distance: 3-6km\n• Elevation gain: 250-500m\n• Some challenging sections\n• Basic navigation skills needed\n\n🔴 Expert Trails\n• Distance: Over 6km\n• Elevation gain: Over 500m\n• Challenging terrain\n• Advanced navigation required\n\nRemember: Start with easier trails and gradually work your way up as you gain experience. HikeMate will help you track your progress!</string>
 
-    <string name="guide_topic_track_location">📍 Location Tracking</string>
+    <string name="guide_topic_track_location">📍 Location Features</string>
+    <string name="guide_content_track_location">Find hike routes near you and navigate through your adventures with HikeMate\'s location features:\n\n1. Getting Started\n• When first using HikeMate, tap the location button ⊕ at the bottom of the map\n• You\'ll be asked to grant location permissions - this helps find hikes near you\n• Once accepted, your position will appear as a blue dot on the map\n\n2. Using Location Features\n• Tap the location button anytime to center the map on your position\n• Your location updates in real-time as you move\n• Use this feature to track your progress while following a hike route\n\nThis feature helps you both discover nearby hikes and stay on track during your adventures!</string>
+
+    <string name="guide_topic_profile">👤 Your HikeMate Profile</string>
+    <string name="guide_content_profile">Personalize your hiking experience with your HikeMate profile:\n\n1. Hiking Level\n• Choose your hiking level: Beginner, Intermediate, or Expert\n• HikeMate uses this to recommend appropriate hike routes\n• Green checkmark indicates a hike suitable for your level\n• Yellow warning shows when a hike might be challenging\n\n2. Adjusting Your Level\n• Tap the Edit Profile button to change your hiking level\n• Update it as you gain more experience\n• Feel free to change it anytime to match your current abilities\n\nPro Tip: 🎯 Start with a comfortable level and gradually increase it as you complete more challenging hikes!</string>
 
     <!-- Hiking Guide Section -->
     <string name="guide_hiking_section_title">🥾 Hiking Guide</string>
@@ -25,15 +29,21 @@
     <string name="guide_section_weather">🌤️ Weather Preparation</string>
     <string name="guide_content_weather">Proper weather preparation is essential:\n\n1. Before Your Hike:\n• Check the forecast\n• Review trail conditions\n• Pack appropriate gear\n\n2. During Different Weather:\n• Hot weather: Stay hydrated, sun protection\n• Cold weather: Layer clothing, extra warmth\n• Rain: Waterproof gear, good footwear\n\n3. Safety Tips:\n• Start early to avoid storms\n• Know when to turn back\n• Stay updated with HikeMate</string>
 
-    <!-- Safety and Skills -->
-    <string name="guide_section_safety_basics">🛡️ Trail Safety</string>
-    <string name="guide_section_navigation">🧭 Navigation Skills</string>
-    <string name="guide_section_hiking_form">👣 Basic Hiking Form</string>
-    <string name="guide_section_elevation">📈 Managing Elevation</string>
+    <!-- Safety Basics -->
+    <string name="guide_section_safety_basics">🛡️ Hiking Safety</string>
+    <string name="guide_content_safety_basics">Stay safe on your hiking adventures with these essential guidelines:\n\n1. Before You Go\n• Check weather conditions\n• Share your hike plan with someone\n• Pack essential safety items\n• Ensure your phone is fully charged\n\n2. Essential Safety Items\n• First aid kit\n• Extra water and snacks\n• Emergency whistle\n• Flashlight or headlamp\n• Power bank for your phone\n\n3. During Your Hike\n• Stay on marked paths\n• Keep track of time and daylight\n• Monitor the weather\n• Stay within your skill level\n\n4. Emergency Guidelines\n• Turn back if conditions worsen\n• Keep HikeMate\'s location tracking on\n• Know emergency numbers\n• If lost, stay where you are</string>
 
-    <!-- Features -->
-    <string name="guide_section_planning_features">📱 Planning Features</string>
-    <string name="guide_content_choosing_trail">Learn to use HikeMate\'s planning features:\n\n1. Trail Selection\n• Filter by difficulty level\n• Check trail conditions\n• View elevation profiles\n\n2. Planning Tools\n• Save favorite trails\n• Set hiking dates\n• Get weather alerts\n\n3. Navigation Features\n• Download offline maps\n• Track your location\n• Follow trail markers</string>
+    <!-- Navigation Skills -->
+    <string name="guide_section_navigation">🧭 Navigation Skills</string>
+    <string name="guide_content_navigation">Learn to navigate effectively using HikeMate and basic orientation skills:\n\n1. Using HikeMate\n• Follow the colored route on the map\n• Use your location (blue dot) to track progress\n• Check elevation profile to anticipate terrain\n\n2. Basic Navigation\n• Watch for trail markers and signs\n• Note major landmarks\n• Pay attention to trail junctions\n\n3. Staying On Track\n• Regularly check your position\n• Return the same way if unsure\n• Use the center location button to reorient\n\nPro Tip: 📱 Download the area map before your hike in case of poor signal!</string>
+
+    <!-- Hiking Form -->
+    <string name="guide_section_hiking_form">👣 Basic Hiking Form</string>
+    <string name="guide_content_hiking_form">Good hiking form helps prevent fatigue and injury:\n\n1. Posture\n• Keep your back straight\n• Look ahead, not at your feet\n• Relax your shoulders\n• Let your arms swing naturally\n\n2. Stepping Technique\n• Roll through your step (heel to toe)\n• Take shorter steps on steep terrain\n• Bend knees slightly for stability\n• Keep your weight centered\n\n3. Pacing\n• Maintain a steady rhythm\n• Breathe regularly and deeply\n• Take breaks before you\'re tired\n• Stay hydrated throughout\n\nPro Tip: 🚶‍♂️ Start slow and find a comfortable pace you can maintain!</string>
+
+    <!-- Managing Elevation -->
+    <string name="guide_section_elevation">📈 Managing Elevation</string>
+    <string name="guide_content_elevation">Handle elevation changes effectively and safely:\n\n1. Going Uphill\n• Take smaller steps\n• Maintain steady breathing\n• Lean slightly forward\n• Use switchbacks - don\'t cut corners\n\n2. Going Downhill\n• Keep your weight back\n• Use your knees as shock absorbers\n• Watch your footing\n• Don\'t rush or jump\n\n3. Using HikeMate\'s Elevation Profile\n• Check the elevation graph before starting\n• Plan rest stops at major changes\n• Pace yourself on steep sections\n\nPro Tip: ⛰️ Take elevation gains gradually - it\'s not a race!</string>
 
     <!-- Button Labels -->
     <string name="guide_button_close">Close Guide</string>
@@ -41,26 +51,10 @@
     <string name="guide_button_finish">Finish</string>
     <string name="guide_button_skip">Skip Guide</string>
     <string name="guide_button_start">Start Interactive Guide</string>
-    <string name="guide_button_try_now">Try it now!</string>
+    <string name="app_icon_description">App Icon</string>
+    <string name="collapse_topic">Collapse topic</string>
+    <string name="expand_topic">Expand topic</string>
+    <string name="guide_button_navigation">Go to %s screen</string>
     <string name="guide_button_interactive">Interactive Guide</string>
 
-    <!-- Find Hikes Guide Steps -->
-    <string name="guide_find_step1_title">Open the Map</string>
-    <string name="guide_find_step1_desc">Start by opening the map view where you can explore hike routes in your area</string>
-
-    <string name="guide_find_step2_title">Search Area</string>
-    <string name="guide_find_step2_desc">Use the search button to find routes in the visible map area</string>
-
-    <string name="guide_find_step3_title">View Hike Details</string>
-    <string name="guide_find_step3_desc">Click on any hike to see its details including distance, elevation, and difficulty</string>
-
-    <!-- Save Hikes Guide Steps -->
-    <string name="guide_save_step1_title">Bookmark Hike</string>
-    <string name="guide_save_step1_desc">When viewing a hike, tap the bookmark icon to save it for later</string>
-
-    <string name="guide_save_step2_title">View Saved Hikes</string>
-    <string name="guide_save_step2_desc">Access your saved hikes from the Saved tab</string>
-
-    <string name="guide_save_step3_title">Plan Your Hike</string>
-    <string name="guide_save_step3_desc">Add a planned date to any saved hike to organize your hiking schedule</string>
 </resources>
