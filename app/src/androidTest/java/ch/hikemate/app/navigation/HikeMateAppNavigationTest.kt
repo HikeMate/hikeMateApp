@@ -10,10 +10,7 @@ import ch.hikemate.app.ui.auth.SignInScreen
 import ch.hikemate.app.ui.auth.SignInWithEmailScreen
 import ch.hikemate.app.ui.components.BackButton
 import ch.hikemate.app.ui.navigation.Screen
-import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
-import java.util.UUID
-import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -24,23 +21,10 @@ class HikeMateAppNavigationTest {
   // Set up the Compose test rule
   @get:Rule val composeTestRule = createComposeRule()
   private val auth = FirebaseAuth.getInstance()
-  private val myUuid = UUID.randomUUID()
-  private val myUuidAsString = myUuid.toString()
-  private val email = "$myUuidAsString@gmail.com"
-  private val password = "password"
 
   @Before
   fun setUp() {
     composeTestRule.setContent { HikeMateApp() }
-    auth.signOut()
-  }
-
-  @After
-  fun deleteUser() {
-    // Sign out after deleting for sanity check and un-reliability
-    val credential = EmailAuthProvider.getCredential(email, password)
-    auth.currentUser?.reauthenticate(credential)
-    auth.currentUser?.delete()
     auth.signOut()
   }
 
