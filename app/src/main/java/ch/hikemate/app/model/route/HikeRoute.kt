@@ -36,6 +36,14 @@ data class Bounds(val minLat: Double, val minLon: Double, val maxLat: Double, va
         maxLon >= other.maxLon
   }
 
+  fun containsCoordinate(lat: Double, lon: Double): Boolean {
+    return (lat in minLat..maxLat) && (lon in minLon..maxLon)
+  }
+
+  fun toStringForOverpassAPI(): String {
+    return "$minLat,$minLon,$maxLat,$maxLon"
+  }
+
   init {
     require(!(minLat > maxLat || minLon > maxLon)) {
       "Invalid bounds: minLat=$minLat, maxLat=$maxLat, minLon=$minLon, maxLong=$maxLon"
