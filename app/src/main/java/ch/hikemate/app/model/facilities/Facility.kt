@@ -1,5 +1,9 @@
 package ch.hikemate.app.model.facilities
 
+import org.osmdroid.util.GeoPoint
+
+data class Facility(val type: FacilityType, val coordinates: GeoPoint)
+
 enum class FacilityType(val type: String) {
   TOILETS("toilets"),
   PARKING("parking"),

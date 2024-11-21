@@ -12,8 +12,6 @@ import okhttp3.Request
 import okhttp3.Response
 import org.osmdroid.util.GeoPoint
 
-data class Facility(val type: FacilityType, val coordinates: GeoPoint)
-
 class FacilitiesRepository(private val client: OkHttpClient) {
 
   private fun setRequestHeaders(request: Request.Builder) {
