@@ -1,10 +1,10 @@
 package ch.hikemate.app.model.facilities
 
-import android.util.JsonReader
 import android.util.Log
 import ch.hikemate.app.model.route.Bounds
+import com.google.gson.Gson
+import com.google.gson.JsonObject
 import java.io.IOException
-import java.io.Reader
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.OkHttpClient
@@ -83,81 +83,54 @@ class FacilitiesRepository(private val client: OkHttpClient) {
 
     setRequestHeaders(requestBuilder)
 
-    val response =
-        client
-            .newCall(requestBuilder.build())
-            .enqueue(
-                object : Callback {
-                  override fun onFailure(call: Call, e: IOException) {
-                    onFailure(e)
-                  }
+    client
+        .newCall(requestBuilder.build())
+        .enqueue(
+            object : Callback {
+              override fun onFailure(call: Call, e: IOException) {
+                onFailure(e)
+              }
 
-                  override fun onResponse(call: Call, response: Response) {
-                    try {
-                      if (response.isSuccessful) {
-                        response.body?.let { body ->
-                          val facilities = filterAmenities(body.charStream())
-                          Log.d("FacilitiesRepository", "Got ${facilities.size} facilities")
-                          onSuccess(facilities)
-                        } ?: throw Exception("Empty response body") // TODO: Handle this better
-                      } else {
-                        throw Exception("Request failed with code: ${response.code}")
-                      }
-                    } catch (e: Exception) {
-                      onFailure(e)
-                    }
+              override fun onResponse(call: Call, response: Response) {
+                try {
+                  if (response.isSuccessful) {
+                    val responseJsonString =
+                        response.body?.string() ?: throw Exception("Response body is null")
+                    val facilities = filterAmenities(responseJsonString)
+                    Log.d("FacilitiesRepository", "Got ${facilities.size} facilities")
+                    onSuccess(facilities)
+                  } else {
+                    throw Exception("Request failed with code: ${response.code}")
                   }
-                })
+                } catch (e: Exception) {
+                  onFailure(e)
+                }
+              }
+            })
   }
 
-  // Function to filter all amenities from the Overpass API response
-  private fun filterAmenities(responseJson: Reader): List<Facility> {
-    val reader = JsonReader(responseJson)
+  fun filterAmenities(jsonString: String): MutableList<Facility> {
+    val gson = Gson()
     val facilities = mutableListOf<Facility>()
 
-    reader.beginObject() // We're in the root object
-    while (reader.hasNext()) {
-      when (reader.nextName()) {
-        "elements" -> { // Start reading the elements array
-          reader.beginArray()
-          while (reader.hasNext()) {
-            reader.beginObject() // Begin a new element
-            var lat: Double? = null
-            var lon: Double? = null
-            var amenity: FacilityType? = null
+    // Parse the root JSON object
+    val rootObject = gson.fromJson(jsonString, JsonObject::class.java)
+    val elements = rootObject.getAsJsonArray("elements") ?: return facilities
 
-            // Read the object
-            while (reader.hasNext()) {
-              when (reader.nextName()) {
-                "lat" -> lat = reader.nextDouble()
-                "lon" -> lon = reader.nextDouble()
-                "tags" -> {
-                  reader.beginObject() // Read tags object
-                  while (reader.hasNext()) {
-                    val tagName = reader.nextName()
-                    if (tagName == "amenity") {
-                      amenity = FacilityType.fromString(reader.nextString())
-                    } else {
-                      reader.skipValue() // Skip other tag values
-                    }
-                  }
-                  reader.endObject() // End tags object
-                }
-                else -> reader.skipValue() // Skip all other keys
-              }
-            }
+    // Process each element in the "elements" array
+    elements.forEach { element ->
+      val obj = element.asJsonObject
+      val lat = obj["lat"]?.asDouble
+      val lon = obj["lon"]?.asDouble
 
-            if (amenity != null && lat != null && lon != null) {
-              facilities.add(Facility(amenity, GeoPoint(lat, lon)))
-            } // else skip the facility and move on to the next one
+      val tags = obj.getAsJsonObject("tags")
+      val amenity = tags?.get("amenity")?.asString?.let { FacilityType.fromString(it) }
 
-            reader.endObject()
-          }
-          reader.endArray()
-        }
-        else -> reader.skipValue() // Skip unknown fields
+      if (lat != null && lon != null && amenity != null) {
+        facilities.add(Facility(amenity, GeoPoint(lat, lon)))
       }
     }
+
     return facilities
   }
 }
