@@ -1,6 +1,7 @@
 package ch.hikemate.app.model.route
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import ch.hikemate.app.model.elevation.ElevationService
 import ch.hikemate.app.model.route.saved.SavedHikesRepository
 import com.google.firebase.Timestamp
@@ -9,6 +10,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
 import org.osmdroid.util.BoundingBox
 
 /**
@@ -27,6 +30,14 @@ class HikesViewModel(
     private val elevationRepo: ElevationService,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : ViewModel() {
+  companion object {
+    private const val LOG_TAG = "HikesViewModel"
+  }
+
+  private val _hikesMutex = Mutex()
+
+  private val _savedHikesMap = mutableMapOf<String, Timestamp?>()
+
   private val _hikeFlowsMap = mutableMapOf<String, MutableStateFlow<Hike>>()
 
   private val _loading = MutableStateFlow<Boolean>(false)
@@ -37,6 +48,7 @@ class HikesViewModel(
     _hikeFlowsList.value = _hikeFlowsMap.values.toList()
   }
 
+  private var _selectedHikeId: String? = null
   private val _selectedHike = MutableStateFlow<Hike?>(null)
 
   /**
@@ -88,9 +100,8 @@ class HikesViewModel(
    * @param onFailure Callback for when the operation fails, mostly the provided ID does not
    *   correspond to any loaded hike.
    */
-  fun selectHike(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) {
-    // TODO : Implement HikesViewModel.selectHike
-  }
+  fun selectHike(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) =
+    viewModelScope.launch { selectHikeAsync(hikeId, onSuccess, onFailure) }
 
   /**
    * Sets [selectedHike] to null.
@@ -98,9 +109,8 @@ class HikesViewModel(
    * Note: the currently selected hike will NOT be removed from [hikeFlows], only [selectedHike]
    * will be impacted.
    */
-  fun unselectHike() {
-    // TODO : Implement HikesViewModel.unselectHike
-  }
+  fun unselectHike() =
+    viewModelScope.launch { unselectHikeAsync() }
 
   /**
    * Loads the current user's saved hikes and replaces [hikeFlows] with those.
@@ -111,9 +121,8 @@ class HikesViewModel(
    * @param onSuccess To be called when the saved hikes have been loaded successfully.
    * @param onFailure Will be called if an error is encountered.
    */
-  fun loadSavedHikes(onSuccess: () -> Unit, onFailure: () -> Unit) {
-    // TODO : Implement HikesViewModel.loadSavedHikes
-  }
+  fun loadSavedHikes(onSuccess: () -> Unit, onFailure: () -> Unit) =
+    viewModelScope.launch { loadSavedHikesAsync(onSuccess, onFailure) }
 
   /**
    * Marks a hike as saved by the current user.
@@ -126,9 +135,8 @@ class HikesViewModel(
    * @param onSuccess To be called if the hike is successfully marked as saved.
    * @param onFailure To be called if a problem is encountered and the hike cannot be saved.
    */
-  fun saveHike(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) {
-    // TODO : Implement HikesViewModel.saveHike
-  }
+  fun saveHike(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) =
+    viewModelScope.launch { saveHikeAsync(hikeId, onSuccess, onFailure) }
 
   /**
    * Unmarks a hike as saved by the current user.
@@ -141,9 +149,8 @@ class HikesViewModel(
    * @param onSuccess To be called if the hike is successfully unsaved.
    * @param onFailure To be called if a problem is encountered and the hike cannot be unsaved.
    */
-  fun unsaveHike(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) {
-    // TODO : Implement HikesViewModel.unsaveHike
-  }
+  fun unsaveHike(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) =
+    viewModelScope.launch { unsaveHikeAsync(hikeId, onSuccess, onFailure) }
 
   /**
    * Replaces the current hikes in [hikeFlows] with hikes loaded from OSM in the provided bounds.
@@ -155,9 +162,8 @@ class HikesViewModel(
    * @param onSuccess To be called when hikes have been successfully loaded.
    * @param onFailure Will be called if an error is encountered.
    */
-  fun loadHikesInBounds(bounds: BoundingBox, onSuccess: () -> Unit, onFailure: () -> Unit) {
-    // TODO : Implement HikesViewModel.loadHikesInBounds
-  }
+  fun loadHikesInBounds(bounds: BoundingBox, onSuccess: () -> Unit, onFailure: () -> Unit) =
+    viewModelScope.launch { loadHikesInBoundsAsync(bounds, onSuccess, onFailure) }
 
   /**
    * Retrieves the bounding box and way points of the currently loaded hikes.
@@ -177,9 +183,8 @@ class HikesViewModel(
    * @param onFailure To be called if a problem is encountered, preventing the success of the
    *   operation.
    */
-  fun retrieveLoadedHikesOsmData(onSuccess: () -> Unit, onFailure: () -> Unit) {
-    // TODO : Implement HikesViewModel.retrieveLoadedHikesOsmData
-  }
+  fun retrieveLoadedHikesOsmData(onSuccess: () -> Unit, onFailure: () -> Unit) =
+    viewModelScope.launch { retrieveLoadedHikesOsmDataAsync(onSuccess, onFailure) }
 
   /**
    * Retrieves the elevation data for a hike.
@@ -197,9 +202,8 @@ class HikesViewModel(
    * @param onFailure To be called if a problem is encountered and prevents the elevation from being
    *   retrieved.
    */
-  fun retrieveElevationDataFor(hike: Hike, onSuccess: () -> Unit, onFailure: () -> Unit) {
-    // TODO : Implement HikesViewModel.retrieveElevationDataFor
-  }
+  fun retrieveElevationDataFor(hike: Hike, onSuccess: () -> Unit, onFailure: () -> Unit) =
+    viewModelScope.launch { retrieveElevationDataForAsync(hike, onSuccess, onFailure) }
 
   /**
    * Sets the planned date of a hike.
@@ -221,7 +225,42 @@ class HikesViewModel(
       date: Timestamp?,
       onSuccess: () -> Unit,
       onFailure: () -> Unit
-  ) {
-    // TODO : Implement HikesViewModel.setPlannedDate
+  ) =
+    viewModelScope.launch { setPlannedDateAsync(hikeId, date, onSuccess, onFailure) }
+
+  private suspend fun selectHikeAsync(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) {
+    // TODO : Implement HikesViewModel.selectHikeAsync
+  }
+
+  private suspend fun unselectHikeAsync() {
+    // TODO : Implement HikesViewModel.unselectHikeAsync
+  }
+
+  private suspend fun loadSavedHikesAsync(onSuccess: () -> Unit, onFailure: () -> Unit) {
+    // TODO : Implement HikesViewModel.loadSavedHikesAsync
+  }
+
+  private suspend fun saveHikeAsync(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) {
+    // TODO : Implement HikesViewModel.saveHikeAsync
+  }
+
+  private suspend fun unsaveHikeAsync(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) {
+    // TODO : Implement HikesViewModel.unsaveHikeAsync
+  }
+
+  private suspend fun loadHikesInBoundsAsync(boundingBox: BoundingBox, onSuccess: () -> Unit, onFailure: () -> Unit) {
+    // TODO : Implement HikesViewModel.loadHikesInBoundsAsync
+  }
+
+  private suspend fun retrieveLoadedHikesOsmDataAsync(onSuccess: () -> Unit, onFailure: () -> Unit) {
+    // TODO : Implement HikesViewModel.retrieveLoadedHikesOsmDataAsync
+  }
+
+  private suspend fun retrieveElevationDataForAsync(hike: Hike, onSuccess: () -> Unit, onFailure: () -> Unit) {
+    // TODO : Implement HikesViewModel.retrieveElevationDataForAsync
+  }
+
+  private suspend fun setPlannedDateAsync(hikeId: String, date: Timestamp?, onSuccess: () -> Unit, onFailure: () -> Unit) {
+    // TODO : Implement HikesViewModel.setPlannedDateAsync
   }
 }
