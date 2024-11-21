@@ -105,6 +105,10 @@
     <string name="profile_screen_join_date_label">Joined HikeMate on</string>
     <string name="profile_screen_edit_profile_button_text">Edit profile</string>
     <string name="profile_screen_sign_out_button_text">Sign out</string>
+    <string name="an_error_occurred_while_fetching_the_profile">An error occurred while fetching the profile.</string>
+    <string name="an_error_occurred_while_updating_the_profile">An error occurred while updating the profile.</string>
+    <string name="an_error_occurred_while_deleting_the_profile">An error occurred while deleting the profile</string>
+
 
     <!-- Edit Profile Screen -->
     <string name="edit_profile_screen_title">Edit your profile</string>
@@ -139,4 +143,5 @@
 
     <!-- Elevation graph -->
     <string name="elevation_graph_loading_label">Loading graph…</string>
+    <string name="go_back">Go back</string>
 </resources>

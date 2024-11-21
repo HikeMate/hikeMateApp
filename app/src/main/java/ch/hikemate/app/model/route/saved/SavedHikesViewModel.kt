@@ -48,6 +48,24 @@ class SavedHikesViewModel(
   private val _hikeDetailState = MutableStateFlow<HikeDetailState?>(null)
   val hikeDetailState: StateFlow<HikeDetailState?> = _hikeDetailState.asStateFlow()
 
+  private val _savedHikes = MutableStateFlow<List<SavedHike>>(emptyList())
+  /**
+   * The list of saved hikes for the user as a state flow. Observe this to get updates when the
+   * saved hikes change.
+   */
+  val savedHike: StateFlow<List<SavedHike>?> = _savedHikes.asStateFlow()
+
+  private val _errorMessageId = MutableStateFlow<Int?>(null)
+  /**
+   * If an error occurs while performing an operation related to saved hikes, the resource ID of an
+   * appropriate error message will be set in this state flow.
+   */
+  val errorMessageId: StateFlow<Int?> = _errorMessageId.asStateFlow()
+
+  private val _loadingSavedHikes = MutableStateFlow<Boolean>(false)
+  /** Whether the saved hikes list is currently being loaded or reloaded. */
+  val loadingSavedHikes: StateFlow<Boolean> = _loadingSavedHikes.asStateFlow()
+
   /**
    * Set the provided route as the "selected" hike for this view model.
    *
@@ -131,24 +149,6 @@ class SavedHikesViewModel(
     return _hikeDetailState.value?.isSaved ?: false
   }
 
-  private val _savedHikes = MutableStateFlow<List<SavedHike>>(emptyList())
-  /**
-   * The list of saved hikes for the user as a state flow. Observe this to get updates when the
-   * saved hikes change.
-   */
-  val savedHike: StateFlow<List<SavedHike>?> = _savedHikes.asStateFlow()
-
-  private val _errorMessage = MutableStateFlow<Int?>(null)
-  /**
-   * If an error occurs while performing an operation related to saved hikes, the resource ID of an
-   * appropriate error message will be set in this state flow.
-   */
-  val errorMessage: StateFlow<Int?> = _errorMessage.asStateFlow()
-
-  private val _loadingSavedHikes = MutableStateFlow<Boolean>(false)
-  /** Whether the saved hikes list is currently being loaded or reloaded. */
-  val loadingSavedHikes: StateFlow<Boolean> = _loadingSavedHikes.asStateFlow()
-
   /**
    * Get the saved hike with the provided ID.
    *
@@ -176,7 +176,7 @@ class SavedHikesViewModel(
           // loading hikes again
         } catch (e: Exception) {
           Log.e(LOG_TAG, "Error adding saved hike", e)
-          _errorMessage.value = R.string.saved_hikes_screen_generic_error
+          _errorMessageId.value = R.string.saved_hikes_screen_generic_error
           return@withContext
         }
         // As a side-effect, this call will reset the error message if no error occurs
@@ -200,7 +200,7 @@ class SavedHikesViewModel(
           // loading hikes again
         } catch (e: Exception) {
           Log.e(LOG_TAG, "Error removing saved hike", e)
-          _errorMessage.value = R.string.saved_hikes_screen_generic_error
+          _errorMessageId.value = R.string.saved_hikes_screen_generic_error
           return@withContext
         }
         // As a side-effect, this call will reset the error message if no error occurs
@@ -215,7 +215,7 @@ class SavedHikesViewModel(
       try {
         _loadingSavedHikes.value = true
         _savedHikes.value = repository.loadSavedHikes()
-        _errorMessage.value = null
+        _errorMessageId.value = null
 
         // If the current hike state is not null, update its saved state and planned date
         val current = _hikeDetailState.value
@@ -231,7 +231,7 @@ class SavedHikesViewModel(
         }
       } catch (e: Exception) {
         Log.e(LOG_TAG, "Error loading saved hikes", e)
-        _errorMessage.value = R.string.saved_hikes_screen_generic_error
+        _errorMessageId.value = R.string.saved_hikes_screen_generic_error
       }
       _loadingSavedHikes.value = false
     }
