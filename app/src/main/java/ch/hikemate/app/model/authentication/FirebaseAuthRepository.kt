@@ -13,7 +13,6 @@ import androidx.credentials.exceptions.NoCredentialException
 import ch.hikemate.app.R
 import ch.hikemate.app.model.profile.ProfileRepositoryFirestore
 import ch.hikemate.app.model.route.saved.SavedHikesRepositoryFirestore
-import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.firebase.auth.AuthCredential
@@ -170,7 +169,7 @@ class FirebaseAuthRepository : AuthRepository {
                     .delete()
 
             Tasks.whenAll(deleteProfileTask, deleteSavedHikesTask).addOnCompleteListener {
-                deleteDataTask: Task<Void?> ->
+                deleteDataTask ->
               if (deleteDataTask.isSuccessful) {
                 // Both deletions were successful
                 // Delete the user account
