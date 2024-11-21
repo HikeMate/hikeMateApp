@@ -15,6 +15,16 @@ class FacilitiesViewModel(
 
   private val _cache = mutableMapOf<Bounds, List<Facility>>()
 
+  /**
+   * Asynchronously fetches facilities within specified bounds, utilizing cache when possible. If
+   * the requested bounds are contained within previously cached bounds, returns facilities from
+   * cache instead of making a new API request.
+   *
+   * @param bounds Geographical bounds within which to search for facilities
+   * @param onSuccess Callback to handle the resulting list of facilities when the operation
+   *   succeeds
+   * @param onFailure Callback invoked when the operation fails
+   */
   private suspend fun getFacilitiesAsync(
       bounds: Bounds,
       onSuccess: (List<Facility>) -> Unit,
@@ -25,8 +35,8 @@ class FacilitiesViewModel(
       // Check cache. If the bounds are already contained in the cache, fetch facilities from cache
       // instead of the API
       for (cacheItem in _cache) {
-        if (cacheItem.key.containsBounds(
-            bounds)) { // If the bounds are contained by the cached bounds
+        if (cacheItem.key.containsBounds(bounds)) {
+          // Filters out facilities that are not within the requested bounds
           val filteredFacilities =
               cacheItem.value.filter { facility ->
                 bounds.containsCoordinate(
@@ -37,6 +47,7 @@ class FacilitiesViewModel(
         }
       }
 
+      // If not in cache, fetch from repository
       facilitiesRepository.getFacilities(
           bounds = bounds,
           onSuccess = { facilities ->
@@ -47,6 +58,14 @@ class FacilitiesViewModel(
     }
   }
 
+  /**
+   * Public interface for fetching facilities. Launches a coroutine to perform the async operation.
+   *
+   * @param bounds Geographical bounds within which to search for facilities
+   * @param onSuccess Callback to handle the resulting list of facilities when the operation
+   *   succeeds
+   * @param onFailure Callback invoked with the exception when the operation fails
+   */
   fun getFacilities(
       bounds: Bounds,
       onSuccess: (List<Facility>) -> Unit,

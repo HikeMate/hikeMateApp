@@ -14,17 +14,32 @@ import org.osmdroid.util.GeoPoint
 
 class FacilitiesRepository(private val client: OkHttpClient) {
 
+  /**
+   * Sets a standard header for API requests.
+   *
+   * @param request Request builder instance to which headers will be added
+   */
   private fun setRequestHeaders(request: Request.Builder) {
     request.header("User-Agent", "Hikemate/1.0")
   }
 
+  /**
+   * Asynchronously fetches facilities within the bounds. Makes a request to the Overpass API to
+   * retrieve amenities like toilets, parking areas, and waste baskets. These can be specified in
+   * the FacilityType enum.
+   *
+   * @param bounds Geographical bounds within which to search for facilities
+   * @param onSuccess Callback to handle the resulting list of facilities when the operation
+   *   succeeds
+   * @param onFailure Callback invoked when the operation fails
+   */
   fun getFacilities(
       bounds: Bounds,
       onSuccess: (List<Facility>) -> Unit,
       onFailure: (Exception) -> Unit
   ) {
 
-    // looks like: "toilets|parking|waste_basket...
+    // Generate pipe-separated list of amenities (e.g., "toilets|parking|waste_basket...")
     val listOfAmenities = FacilityType.listOfAmenitiesForOverpassRequest()
 
     val requestData =
@@ -35,7 +50,6 @@ class FacilitiesRepository(private val client: OkHttpClient) {
         );
         out geom;
     """
-            .trimIndent()
 
     val requestBuilder =
         Request.Builder().url("https://overpass-api.de/api/interpreter?data=$requestData").get()
@@ -68,7 +82,14 @@ class FacilitiesRepository(private val client: OkHttpClient) {
             })
   }
 
-  fun filterAmenities(jsonString: String): MutableList<Facility> {
+  /**
+   * Parses and filters JSON response from Overpass API into a list of Facility objects. Filters out
+   * amenities that have an invalid latitude, longitude or facility type.
+   *
+   * @param jsonString JSON response string from Overpass API
+   * @return List of parsed Facility objects
+   */
+  fun filterAmenities(jsonString: String): List<Facility> {
     val gson = Gson()
     val facilities = mutableListOf<Facility>()
 
@@ -81,7 +102,6 @@ class FacilitiesRepository(private val client: OkHttpClient) {
       val obj = element.asJsonObject
       val lat = obj["lat"]?.asDouble
       val lon = obj["lon"]?.asDouble
-
       val tags = obj.getAsJsonObject("tags")
       val amenity = tags?.get("amenity")?.asString?.let { FacilityType.fromString(it) }
 
