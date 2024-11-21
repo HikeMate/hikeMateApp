@@ -26,6 +26,8 @@ data class Hike(
     val id: String,
     val name: String,
     val description: String,
+    val name: String?,
+    val description: String?,
     val bounds: DeferredData<Bounds>,
     val waypoints: DeferredData<List<LatLong>>,
     val elevation: DeferredData<List<Double>>,
