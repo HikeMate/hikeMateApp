@@ -4,10 +4,8 @@ import android.content.Context
 import android.util.Log
 import ch.hikemate.app.R
 import com.google.android.gms.tasks.Task
-import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.auth.auth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -19,20 +17,8 @@ import com.google.firebase.firestore.FirebaseFirestore
 @Suppress("UNCHECKED_CAST")
 class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRepository {
 
-  private val collectionPath = "profiles"
-
   override fun getNewUid(): String {
-    return db.collection(collectionPath).document().id
-  }
-
-  override fun init(onSuccess: () -> Unit) {
-    // Check if the user is logged in
-    // If the user is logged in, call onSuccess
-    Firebase.auth.addAuthStateListener {
-      if (it.currentUser != null) {
-        onSuccess()
-      }
-    }
+    return db.collection(PROFILES_COLLECTION).document().id
   }
 
   override fun createProfile(
@@ -55,7 +41,7 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
           if (exists) {
             getProfileById(fireUser.uid, onSuccess, onFailure)
           } else {
-            val task = db.collection(collectionPath).document(profile.id).set(profile)
+            val task = db.collection(PROFILES_COLLECTION).document(profile.id).set(profile)
 
             performFirestoreOperation(task as Task<Unit>, { onSuccess(profile) }, onFailure)
           }
@@ -74,7 +60,7 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
       onSuccess: (Boolean) -> Unit,
       onFailure: (Exception) -> Unit
   ) {
-    db.collection(collectionPath).document(id).get().addOnCompleteListener { task ->
+    db.collection(PROFILES_COLLECTION).document(id).get().addOnCompleteListener { task ->
       if (task.isSuccessful) {
         task.result?.let { onSuccess(it.exists()) }
       } else {
@@ -92,7 +78,7 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
       onFailure: (Exception) -> Unit
   ) {
 
-    db.collection(collectionPath).document(id).get().addOnCompleteListener { task ->
+    db.collection(PROFILES_COLLECTION).document(id).get().addOnCompleteListener { task ->
       if (task.isSuccessful) {
         val profile = task.result?.let { documentToProfile(it) }
         if (profile != null) onSuccess(profile)
@@ -112,7 +98,7 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
       onFailure: (Exception) -> Unit
   ) {
 
-    val task = db.collection(collectionPath).document(profile.id).set(profile)
+    val task = db.collection(PROFILES_COLLECTION).document(profile.id).set(profile)
 
     performFirestoreOperation(task as Task<Unit>, onSuccess, onFailure)
   }
@@ -122,7 +108,7 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
       onSuccess: () -> Unit,
       onFailure: (Exception) -> Unit
   ) {
-    val task = db.collection(collectionPath).document(id).delete()
+    val task = db.collection(PROFILES_COLLECTION).document(id).delete()
 
     performFirestoreOperation(task as Task<Unit>, onSuccess, onFailure)
   }
@@ -162,16 +148,23 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
 
     return try {
       val uid = document.id
-      val name = document.getString("name") ?: "Invalid name"
-      val email = document.getString("email") ?: "Invalid email"
-      val hikingLevelString = document.getString("hikingLevel") ?: HikingLevel.BEGINNER
-      val hikingLevel =
-          HikingLevel.values().find { it.name == hikingLevelString } ?: HikingLevel.BEGINNER
-      val joinedDate = document.getTimestamp("joinedDate") ?: Timestamp.now()
+      val name = document.getString("name")
+      val email = document.getString("email")
+      val hikingLevelString = document.getString("hikingLevel")
+      val hikingLevel = HikingLevel.values().find { it.name == hikingLevelString }
+      val joinedDate = document.getTimestamp("joinedDate")
+      if (name == null || email == null || hikingLevel == null || joinedDate == null) {
+        Log.e("ProfileRepositoryFirestore", "Error converting document to Profile: missing fields")
+        return null
+      }
       Profile(uid, name, email, hikingLevel, joinedDate)
     } catch (e: Exception) {
       Log.e("ProfileRepositoryFirestore", "Error converting document to Profile", e)
       null
     }
+  }
+
+  companion object {
+    const val PROFILES_COLLECTION = "profiles"
   }
 }

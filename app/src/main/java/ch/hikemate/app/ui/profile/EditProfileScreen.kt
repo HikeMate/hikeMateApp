@@ -1,10 +1,13 @@
 package ch.hikemate.app.ui.profile
 
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.selection.TextSelectionColors
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SegmentedButton
@@ -34,7 +37,10 @@ import ch.hikemate.app.model.profile.ProfileViewModel
 import ch.hikemate.app.ui.components.BackButton
 import ch.hikemate.app.ui.components.BigButton
 import ch.hikemate.app.ui.components.ButtonType
+import ch.hikemate.app.ui.components.CenteredErrorAction
+import ch.hikemate.app.ui.components.CenteredLoadingAnimation
 import ch.hikemate.app.ui.navigation.NavigationActions
+import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.theme.primaryColor
 
@@ -62,14 +68,45 @@ fun EditProfileScreen(
 ) {
   val context = LocalContext.current
 
-  // TODO: show an error if the profile is null. For now display it for test purposes
+  val errorMessageIdState = profileViewModel.errorMessageId.collectAsState()
   val profileState = profileViewModel.profile.collectAsState()
 
-  val profile: Profile = profileState.value ?: ProfileScreen.DEFAULT_PROFILE
+  if (errorMessageIdState.value != null) {
+    // Display an error message if an error occurred
+    return CenteredErrorAction(
+        errorMessageId = errorMessageIdState.value!!,
+        actionIcon = Icons.Outlined.Home,
+        actionContentDescriptionStringId = R.string.go_back,
+        onAction = { navigationActions.navigateTo(Route.MAP) })
+  }
+
+  if (profileState.value == null) {
+    Log.e("ProfileScreen", "Profile is null")
+    return CenteredLoadingAnimation()
+  }
+
+  // profileState.value is not null, we checked it before
+  val profile: Profile = profileState.value!!
 
   var name by remember { mutableStateOf(profile.name) }
   var hikingLevel by remember {
     mutableIntStateOf(HikingLevel.values().indexOf(profile.hikingLevel))
+  }
+
+  var savedProfile by remember { mutableStateOf<Profile?>(null) }
+
+  var isLoading by remember { mutableStateOf(false) }
+
+  if (savedProfile == profile) {
+    isLoading = false
+    savedProfile = null
+    navigationActions.goBack()
+    return
+  }
+
+  if (isLoading) {
+    // Display a loading animation while the profile is being saved
+    CenteredLoadingAnimation()
   }
 
   Column(
@@ -157,15 +194,15 @@ fun EditProfileScreen(
             buttonType = ButtonType.PRIMARY,
             label = context.getString(R.string.edit_profile_screen_save_button_text),
             onClick = {
-              val savedProfile =
+              savedProfile =
                   Profile(
                       profile.id,
                       name,
                       profile.email,
                       HikingLevel.values()[hikingLevel],
                       profile.joinedDate)
-              profileViewModel.updateProfile(profile = savedProfile)
-              navigationActions.goBack()
+              profileViewModel.updateProfile(profile = savedProfile!!)
+              isLoading = true
             })
       }
 }

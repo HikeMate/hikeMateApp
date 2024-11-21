@@ -45,6 +45,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
 import ch.hikemate.app.R
 import ch.hikemate.app.model.route.DetailedHikeRoute
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
@@ -278,8 +279,7 @@ fun HikeDetails(
               String.format(Locale.getDefault(), "%.2f", detailedRoute.totalDistance)
           val elevationGainString = detailedRoute.elevationGain.roundToInt().toString()
           val hourString =
-              String.format(
-                  Locale.getDefault(), "%02d", (detailedRoute.estimatedTime / 60).roundToInt())
+              String.format(Locale.getDefault(), "%02d", (detailedRoute.estimatedTime / 60).toInt())
           val minuteString =
               String.format(
                   Locale.getDefault(), "%02d", (detailedRoute.estimatedTime % 60).roundToInt())
@@ -292,11 +292,17 @@ fun HikeDetails(
               value = "${elevationGainString}m")
           DetailRow(
               label = stringResource(R.string.hike_detail_screen_label_estimated_time),
-              value = "${hourString}:${minuteString}")
+              value =
+                  if (detailedRoute.estimatedTime / 60 < 1) "${minuteString}min"
+                  else "${hourString}h${minuteString}")
           DetailRow(
               label = stringResource(R.string.hike_detail_screen_label_difficulty),
               value = stringResource(detailedRoute.difficulty.nameResourceId),
-              valueColor = Color.Green)
+              valueColor =
+                  Color(
+                      ContextCompat.getColor(
+                          LocalContext.current, detailedRoute.difficulty.colorResourceId)),
+          )
           DateDetailRow(isSaved, plannedDate, updatePlannedDate)
         }
       },
@@ -394,7 +400,7 @@ fun DateDetailRow(
     DetailRow(
         label = stringResource(R.string.hike_detail_screen_label_status),
         value = stringResource(R.string.hike_detail_screen_value_not_saved),
-        valueColor = Color.Black)
+        valueColor = MaterialTheme.colorScheme.onSurface)
   }
 }
 

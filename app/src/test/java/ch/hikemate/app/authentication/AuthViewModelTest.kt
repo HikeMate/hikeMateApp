@@ -1,5 +1,6 @@
 package ch.hikemate.app.authentication
 
+import android.app.Activity
 import android.content.Context
 import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.model.authentication.FirebaseAuthRepository
@@ -12,7 +13,6 @@ import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.UserProfileChangeRequest
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -117,7 +117,7 @@ class AuthViewModelTest {
         .createProfile(any(), any(), any(), any())
 
     // Verify that `currentUser` is initially null
-    assertNull(viewModel.currentUser.first())
+    assertNull(viewModel.currentUser.value)
 
     // Call the function being tested
     viewModel.signInWithGoogle(this, mockContext, null)
@@ -125,7 +125,7 @@ class AuthViewModelTest {
     // Verify interactions with the repository and profile repository
     verify(mockRepository).signInWithGoogle(any(), any(), any(), any(), any(), anyOrNull())
     verify(mockProfile).createProfile(any(), any(), any(), any())
-    val currentUser = viewModel.currentUser.first() // Get the first (current) value of the flow
+    val currentUser = viewModel.currentUser.value // Get the first (current) value of the flow
 
     // Confirm that currentUser is now logged in
     assertEquals(mockFirebaseUser, currentUser)
@@ -145,11 +145,11 @@ class AuthViewModelTest {
         .signInWithGoogle(any(), any(), any(), any(), any(), anyOrNull())
 
     // Verify that currentUser is initially null
-    assertNull(viewModel.currentUser.first())
+    assertNull(viewModel.currentUser.value)
 
     viewModel.signInWithGoogle(this, mockContext, null)
 
-    val currentUser = viewModel.currentUser.first()
+    val currentUser = viewModel.currentUser.value
 
     // Verify call to the repository
     verify(mockRepository).signInWithGoogle(any(), any(), any(), any(), any(), anyOrNull())
@@ -172,12 +172,12 @@ class AuthViewModelTest {
         .signInWithEmailAndPassword(any(), any(), any(), any())
 
     // Verify that currentUser is initially null
-    assertNull(viewModel.currentUser.first())
+    assertNull(viewModel.currentUser.value)
 
     viewModel.signInWithEmailAndPassword(
         "mock@example.com", "password", {}, { fail("Error callback should not be called") })
 
-    val currentUser = viewModel.currentUser.first() // Get the first (current) value of the flow
+    val currentUser = viewModel.currentUser.value // Get the first (current) value of the flow
 
     // Verify call to the repository
     verify(mockRepository).signInWithEmailAndPassword(any(), any(), any(), any())
@@ -200,12 +200,12 @@ class AuthViewModelTest {
             .signInWithEmailAndPassword(any(), any(), any(), any())
 
         // Verify that currentUser is initially null
-        assertNull(viewModel.currentUser.first())
+        assertNull(viewModel.currentUser.value)
 
         viewModel.signInWithEmailAndPassword(
             "mock@example.com", "password", { fail("Success callback should not be called") }, {})
 
-        val currentUser = viewModel.currentUser.first()
+        val currentUser = viewModel.currentUser.value
 
         // Verify call to the repository
         verify(mockRepository).signInWithEmailAndPassword(any(), any(), any(), any())
@@ -315,7 +315,7 @@ class AuthViewModelTest {
             .createAccountWithEmailAndPassword(any(), any(), any(), any())
 
         // Verify that currentUser is initially null
-        assertNull(viewModel.currentUser.first())
+        assertNull(viewModel.currentUser.value)
 
         viewModel.createAccountWithEmailAndPassword(
             "",
@@ -325,7 +325,7 @@ class AuthViewModelTest {
             {},
             context = mockContext)
 
-        val currentUser = viewModel.currentUser.first()
+        val currentUser = viewModel.currentUser.value
 
         // Verify call to the repository
         verify(mockRepository).createAccountWithEmailAndPassword(any(), any(), any(), any())
@@ -350,7 +350,7 @@ class AuthViewModelTest {
         .signOut(any())
 
     // Verify that currentUser is initially mockFirebaseUser
-    assertEquals(mockFirebaseUser, viewModel.currentUser.first())
+    assertEquals(mockFirebaseUser, viewModel.currentUser.value)
 
     viewModel.signOut { mockOnSuccess() }
 
@@ -360,5 +360,86 @@ class AuthViewModelTest {
     assertEquals(null, viewModel.currentUser.value)
     // Verify that the onSuccess callback was called
     verify(mockOnSuccess).invoke()
+  }
+
+  @Test
+  fun deleteAccount_calls_repository_deleteAccount_and_updates_currentUser_to_null() = runTest {
+    setupSignedInUser()
+
+    val mockOnSuccess: (() -> Unit) = mock()
+
+    // Simulate a successful account deletion by invoking the onSuccess callback
+    doAnswer { arguments ->
+          val onSuccess = arguments.getArgument<() -> Unit>(2)
+          onSuccess()
+          null
+        }
+        .`when`(mockRepository)
+        .deleteAccount(any(), any(), any(), any())
+
+    // Verify that currentUser is initially mockFirebaseUser
+    assertEquals(mockFirebaseUser, viewModel.currentUser.value)
+
+    val activity = mock(Activity::class.java)
+    viewModel.deleteAccount(
+        "password",
+        activity = activity,
+        onSuccess = mockOnSuccess,
+        onErrorAction = { fail("Error callback should not be called") })
+
+    // Verify that the repository's deleteAccount was called
+    verify(mockRepository).deleteAccount(any(), any(), any(), any())
+    // Verify that currentUser is updated to null
+    assertEquals(null, viewModel.currentUser.value)
+    // Verify that the onSuccess callback was called
+    verify(mockOnSuccess).invoke()
+  }
+
+  @Test
+  fun deleteAccount_calls_repository_deleteAccount_and_does_not_update_currentUser_on_error() {
+    runTest {
+      setupSignedInUser()
+
+      val mockOnError: ((Exception) -> Unit) = mock()
+
+      // Simulate an unsuccessful account deletion by invoking the onError callback
+      doAnswer { arguments ->
+            val onError = arguments.getArgument<(Exception) -> Unit>(3)
+            onError(Exception("Error"))
+            null
+          }
+          .`when`(mockRepository)
+          .deleteAccount(any(), any(), any(), any())
+
+      // Verify that currentUser is initially mockFirebaseUser
+      assertEquals(mockFirebaseUser, viewModel.currentUser.value)
+
+      val activity = mock(Activity::class.java)
+      viewModel.deleteAccount(
+          "password",
+          activity = activity,
+          onSuccess = { fail("Success callback should not be called") },
+          onErrorAction = mockOnError)
+
+      // Verify that the repository's deleteAccount was called
+      verify(mockRepository).deleteAccount(any(), any(), any(), any())
+      // Verify that currentUser is still mockFirebaseUser
+      assertEquals(mockFirebaseUser, viewModel.currentUser.value)
+      // Verify that the onError callback was called
+      verify(mockOnError).invoke(any())
+    }
+  }
+
+  @Test
+  fun isEmailProvider_calls_repository_isEmailProvider() = runTest {
+    setupSignedInUser()
+
+    // Simulate a successful call to isEmailProvider
+    `when`(mockRepository.isEmailProvider(any())).thenReturn(true)
+
+    viewModel.isEmailProvider()
+
+    // Verify that the repository's isEmailProvider was called
+    verify(mockRepository).isEmailProvider(any())
   }
 }

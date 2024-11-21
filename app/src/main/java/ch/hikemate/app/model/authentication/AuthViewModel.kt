@@ -1,5 +1,6 @@
 package ch.hikemate.app.model.authentication
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import androidx.activity.compose.ManagedActivityResultLauncher
@@ -147,5 +148,40 @@ class AuthViewModel(
           onSuccess()
         },
     )
+  }
+
+  /**
+   * Deletes the current user's account. On successful deletion, the _currentUser is set to null.
+   *
+   * @param password The password of the user.
+   * @param onSuccess The action to be executed on successful account deletion.
+   * @param onErrorAction The action to be executed on error.
+   */
+  fun deleteAccount(
+      password: String,
+      activity: Activity,
+      onSuccess: () -> Unit,
+      onErrorAction: (Exception) -> Unit
+  ) {
+    repository.deleteAccount(
+        password = password,
+        activity = activity,
+        onSuccess = {
+          _currentUser.value = null
+          onSuccess()
+        },
+        onErrorAction = onErrorAction)
+  }
+
+  /**
+   * Returns whether the current user is connect with an email provider which is the email and
+   * password way of signing in to Firebase.
+   */
+  fun isEmailProvider(): Boolean {
+    return if (_currentUser.value == null) {
+      false
+    } else {
+      repository.isEmailProvider(_currentUser.value!!)
+    }
   }
 }
