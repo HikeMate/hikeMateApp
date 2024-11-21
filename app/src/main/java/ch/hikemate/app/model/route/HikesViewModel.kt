@@ -1,8 +1,10 @@
 package ch.hikemate.app.model.route
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import ch.hikemate.app.model.elevation.ElevationService
+import ch.hikemate.app.model.route.saved.SavedHike
 import ch.hikemate.app.model.route.saved.SavedHikesRepository
 import com.google.firebase.Timestamp
 import kotlinx.coroutines.CoroutineDispatcher
@@ -262,13 +264,91 @@ class HikesViewModel(
     // TODO : Implement HikesViewModel.loadSavedHikesAsync
   }
 
-  private suspend fun saveHikeAsync(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) {
-    // TODO : Implement HikesViewModel.saveHikeAsync
-  }
+  private suspend fun saveHikeAsync(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) =
+    withContext(dispatcher) {
+      var successful = false
+      _hikesMutex.withLock {
+        // Retrieve the hike to save from the loaded hikes
+        val hikeFlow = _hikeFlowsMap[hikeId] ?: return@withLock
+        val hike = hikeFlow.value
 
-  private suspend fun unsaveHikeAsync(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) {
-    // TODO : Implement HikesViewModel.unsaveHikeAsync
-  }
+        // Avoid updating the hike if it is already saved
+        if (hike.isSaved) {
+          successful = true
+          return@withLock
+        }
+
+        // Save the hike using the repository
+        try {
+          savedHikesRepo.addSavedHike(SavedHike(hike.id, hike.name ?: "", hike.plannedDate))
+        }
+        catch (e: Exception) {
+          Log.e(LOG_TAG, "Error encountered while saving hike", e)
+          successful = false
+          return@withLock
+        }
+
+        // Update the saved hikes map
+        _savedHikesMap[hikeId] = hike.plannedDate
+
+        // Update the hike's state flow
+        val newHikeState = hikeFlow.value.copy(isSaved = true)
+        hikeFlow.value = newHikeState
+
+        successful = true
+      }
+
+      // Perform the callback without the lock, to avoid deadlocks and improve performance
+      if (successful) {
+        onSuccess()
+      }
+      else {
+        onFailure()
+      }
+    }
+
+  private suspend fun unsaveHikeAsync(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) =
+    withContext(dispatcher) {
+      var successful = false
+      _hikesMutex.withLock {
+        // Retrieve the hike to unsave from the loaded hikes
+        val hikeFlow = _hikeFlowsMap[hikeId] ?: return@withLock
+        val hike = hikeFlow.value
+
+        // Avoid updating the hike if it is not saved
+        if (!hike.isSaved) {
+          successful = true
+          return@withLock
+        }
+
+        // Unsave the hike using the repository
+        try {
+          savedHikesRepo.removeSavedHike(SavedHike(hike.id, hike.name ?: "", hike.plannedDate))
+        }
+        catch (e: Exception) {
+          Log.e(LOG_TAG, "Error encountered while unsaving hike", e)
+          successful = false
+          return@withLock
+        }
+
+        // Update the saved hikes map
+        _savedHikesMap.remove(hikeId)
+
+        // Update the hike's state flow
+        val newHikeState = hikeFlow.value.copy(isSaved = false)
+        hikeFlow.value = newHikeState
+
+        successful = true
+      }
+
+      // Perform the callback without the lock, to avoid deadlocks and improve performance
+      if (successful) {
+        onSuccess()
+      }
+      else {
+        onFailure()
+      }
+    }
 
   private suspend fun loadHikesInBoundsAsync(boundingBox: BoundingBox, onSuccess: () -> Unit, onFailure: () -> Unit) {
     // TODO : Implement HikesViewModel.loadHikesInBoundsAsync
