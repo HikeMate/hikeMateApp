@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import org.osmdroid.util.BoundingBox
 
 /**
@@ -25,10 +27,10 @@ import org.osmdroid.util.BoundingBox
  * @param dispatcher The dispatcher to be used to launch coroutines.
  */
 class HikesViewModel(
-    private val savedHikesRepo: SavedHikesRepository,
-    private val osmHikesRepo: HikeRoutesRepository,
-    private val elevationRepo: ElevationService,
-    private val dispatcher: CoroutineDispatcher = Dispatchers.IO
+  private val savedHikesRepo: SavedHikesRepository,
+  private val osmHikesRepo: HikeRoutesRepository,
+  private val elevationRepo: ElevationService,
+  private val dispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : ViewModel() {
   companion object {
     private const val LOG_TAG = "HikesViewModel"
@@ -228,13 +230,33 @@ class HikesViewModel(
   ) =
     viewModelScope.launch { setPlannedDateAsync(hikeId, date, onSuccess, onFailure) }
 
-  private suspend fun selectHikeAsync(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) {
-    // TODO : Implement HikesViewModel.selectHikeAsync
-  }
+  private suspend fun selectHikeAsync(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) =
+    withContext(dispatcher) {
+      var successful = false
+      _hikesMutex.withLock {
+        // Retrieve the hike to select from the loaded hikes
+        val hike = _hikeFlowsMap[hikeId] ?: return@withLock
 
-  private suspend fun unselectHikeAsync() {
-    // TODO : Implement HikesViewModel.unselectHikeAsync
-  }
+        // Mark the hike as selected
+        _selectedHikeId = hikeId
+        _selectedHike.value = hike.value
+        successful = true
+      }
+
+      // Perform the callback without the lock, to avoid deadlocks and improve performance
+      if (successful) {
+        onSuccess()
+      }
+      else {
+        onFailure()
+      }
+    }
+
+  private suspend fun unselectHikeAsync() =
+    _hikesMutex.withLock {
+      _selectedHikeId = null
+      _selectedHike.value = null
+    }
 
   private suspend fun loadSavedHikesAsync(onSuccess: () -> Unit, onFailure: () -> Unit) {
     // TODO : Implement HikesViewModel.loadSavedHikesAsync
