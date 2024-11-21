@@ -2,6 +2,7 @@ package ch.hikemate.app.ui.map
 
 import android.annotation.SuppressLint
 import android.app.DatePickerDialog
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -20,6 +21,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -46,11 +49,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.hikemate.app.R
+import ch.hikemate.app.model.authentication.AuthViewModel
+import ch.hikemate.app.model.profile.HikingLevel
+import ch.hikemate.app.model.profile.ProfileViewModel
 import ch.hikemate.app.model.route.DetailedHikeRoute
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
 import ch.hikemate.app.model.route.saved.SavedHikesViewModel
 import ch.hikemate.app.ui.components.BackButton
+import ch.hikemate.app.ui.components.CenteredErrorAction
+import ch.hikemate.app.ui.components.CenteredLoadingAnimation
 import ch.hikemate.app.ui.components.ElevationGraph
 import ch.hikemate.app.ui.components.ElevationGraphStyleProperties
 import ch.hikemate.app.ui.map.HikeDetailScreen.MAP_MAX_ZOOM
@@ -63,6 +72,7 @@ import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_HIKE_NAME
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_MAP
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_PLANNED_DATE_TEXT_BOX
 import ch.hikemate.app.ui.navigation.NavigationActions
+import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.utils.MapUtils
 import ch.hikemate.app.utils.from
@@ -97,6 +107,8 @@ object HikeDetailScreen {
 fun HikeDetailScreen(
     listOfHikeRoutesViewModel: ListOfHikeRoutesViewModel,
     savedHikesViewModel: SavedHikesViewModel,
+    profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory),
+    authViewModel: AuthViewModel,
     navigationActions: NavigationActions
 ) {
 
@@ -180,28 +192,58 @@ fun HikeDetailScreen(
   val hikeLineColor = route.getColor()
   MapUtils.showHikeOnMap(mapView = mapView, hike = route, color = hikeLineColor, onLineClick = {})
 
-  Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {
-    // Map
-    AndroidView(
-        factory = { mapView },
-        modifier =
-            Modifier.fillMaxWidth()
-                .padding(bottom = 300.dp) // Reserve space for the scaffold at the bottom
-                .testTag(TEST_TAG_MAP))
-    // Back Button at the top of the screen
-    BackButton(
-        navigationActions = navigationActions,
-        modifier = Modifier.padding(top = 40.dp, start = 16.dp, end = 16.dp))
-    // Zoom buttons at the bottom right of the screen
-    ZoomMapButton(
-        onZoomIn = { mapView.controller.zoomIn() },
-        onZoomOut = { mapView.controller.zoomOut() },
-        modifier =
-            Modifier.align(Alignment.BottomEnd)
-                .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
+  LaunchedEffect(Unit) {
+    if (authViewModel.currentUser.value == null) {
+      Log.e("MapScreen", "User is not signed in")
+      return@LaunchedEffect
+    }
+    profileViewModel.getProfileById(authViewModel.currentUser.value!!.uid)
+  }
 
-    // Hike Details bottom sheet
-    HikeDetails(detailedRoute, savedHikesViewModel, elevationData)
+  val errorMessageIdState = profileViewModel.errorMessageId.collectAsState()
+  val profileState = profileViewModel.profile.collectAsState()
+
+  when {
+    errorMessageIdState.value != null -> {
+      Log.e("MapScreen", "Error message: ${stringResource(errorMessageIdState.value!!)}")
+      // Display an error message if an error occurred
+      CenteredErrorAction(
+          errorMessageId = errorMessageIdState.value!!,
+          actionIcon = Icons.Outlined.Home,
+          actionContentDescriptionStringId = R.string.go_back,
+          onAction = { navigationActions.navigateTo(Route.MAP) })
+    }
+    profileState.value == null -> {
+      Log.e("MapScreen", "Profile is null")
+      CenteredLoadingAnimation()
+    }
+    else -> {
+      val profile = profileState.value!!
+
+      Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {
+        // Map
+        AndroidView(
+            factory = { mapView },
+            modifier =
+                Modifier.fillMaxWidth()
+                    .padding(bottom = 300.dp) // Reserve space for the scaffold at the bottom
+                    .testTag(TEST_TAG_MAP))
+        // Back Button at the top of the screen
+        BackButton(
+            navigationActions = navigationActions,
+            modifier = Modifier.padding(top = 40.dp, start = 16.dp, end = 16.dp))
+        // Zoom buttons at the bottom right of the screen
+        ZoomMapButton(
+            onZoomIn = { mapView.controller.zoomIn() },
+            onZoomOut = { mapView.controller.zoomOut() },
+            modifier =
+                Modifier.align(Alignment.BottomEnd)
+                    .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
+
+        // Hike Details bottom sheet
+        HikeDetails(detailedRoute, savedHikesViewModel, elevationData, profile.hikingLevel)
+      }
+    }
   }
 }
 
@@ -210,7 +252,8 @@ fun HikeDetailScreen(
 fun HikeDetails(
     detailedRoute: DetailedHikeRoute,
     savedHikesViewModel: SavedHikesViewModel,
-    elevationData: List<Double>
+    elevationData: List<Double>,
+    userHikingLevel: HikingLevel
 ) {
   val hikeDetailState by savedHikesViewModel.hikeDetailState.collectAsState(null)
 
@@ -227,6 +270,8 @@ fun HikeDetails(
   val hikeColor = Color(detailedRoute.route.getColor())
 
   val scaffoldState = rememberBottomSheetScaffoldState()
+
+  val isSuitable = detailedRoute.difficulty.ordinal <= userHikingLevel.ordinal
 
   BottomSheetScaffold(
       scaffoldState = scaffoldState,
@@ -247,7 +292,7 @@ fun HikeDetails(
                   style = MaterialTheme.typography.titleLarge,
                   textAlign = TextAlign.Left,
                   modifier = Modifier.testTag(TEST_TAG_HIKE_NAME))
-              // AppropriatenessMessage(isSuitable = true)
+              AppropriatenessMessage(isSuitable)
             }
 
             Image(
