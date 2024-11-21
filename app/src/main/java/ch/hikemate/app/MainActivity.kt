@@ -4,8 +4,17 @@ import android.annotation.SuppressLint
 import android.content.pm.ActivityInfo
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -13,11 +22,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navigation
 import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.model.authentication.FirebaseAuthRepository
-import ch.hikemate.app.model.facilities.FacilitiesRepository
-import ch.hikemate.app.model.facilities.FacilitiesViewModel
 import ch.hikemate.app.model.profile.ProfileRepositoryFirestore
 import ch.hikemate.app.model.profile.ProfileViewModel
-import ch.hikemate.app.model.route.Bounds
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
 import ch.hikemate.app.model.route.saved.SavedHikesViewModel
 import ch.hikemate.app.ui.auth.CreateAccountScreen
@@ -32,12 +38,9 @@ import ch.hikemate.app.ui.navigation.TopLevelDestinations
 import ch.hikemate.app.ui.profile.EditProfileScreen
 import ch.hikemate.app.ui.profile.ProfileScreen
 import ch.hikemate.app.ui.saved.SavedHikesScreen
+import ch.hikemate.app.ui.theme.HikeMateTheme
 import com.google.firebase.FirebaseApp
 import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import okhttp3.OkHttpClient
 
 class MainActivity : ComponentActivity() {
   @SuppressLint("SourceLockedOrientationActivity")
@@ -46,7 +49,7 @@ class MainActivity : ComponentActivity() {
     FirebaseApp.initializeApp(this) // Initialize Firebase
     requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 
-    /*setContent {
+    setContent {
       HikeMateTheme {
         val systemBarStyle by remember {
           val defaultSystemBarColor = android.graphics.Color.TRANSPARENT
@@ -58,20 +61,6 @@ class MainActivity : ComponentActivity() {
           enableEdgeToEdge(statusBarStyle = systemBarStyle, navigationBarStyle = systemBarStyle)
         }
         Surface(modifier = Modifier.fillMaxSize()) { HikeMateApp() }
-      }
-    }*/
-
-    val facilitiesRepository = FacilitiesRepository(OkHttpClient())
-    val facilitiesViewModel = FacilitiesViewModel(facilitiesRepository)
-
-    GlobalScope.launch(Dispatchers.IO) {
-      try {
-        facilitiesViewModel.getFacilities(
-            Bounds(46.5000, 6.6000, 46.5400, 6.6600), onSuccess = {}, onFailure = {})
-        facilitiesViewModel.getFacilities(
-            Bounds(46.5000, 6.6000, 46.5400, 6.6600), onSuccess = {}, onFailure = {})
-      } catch (e: Exception) {
-        println("Exception during fetch: ${e.message}")
       }
     }
   }

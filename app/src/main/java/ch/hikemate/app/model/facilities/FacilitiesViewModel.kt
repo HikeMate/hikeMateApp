@@ -24,15 +24,16 @@ class FacilitiesViewModel(
 
       // Check cache. If the bounds are already contained in the cache, fetch facilities from cache
       // instead of the API
-      _cache.forEach {
-        if (it.key.containsBounds(bounds)) { // If the bounds are contained by the cached bounds
+      for (cacheItem in _cache) {
+        if (cacheItem.key.containsBounds(
+            bounds)) { // If the bounds are contained by the cached bounds
           val filteredFacilities =
-              it.value.filter { facility ->
+              cacheItem.value.filter { facility ->
                 bounds.containsCoordinate(
                     facility.coordinates.latitude, facility.coordinates.longitude)
               }
           onSuccess(filteredFacilities)
-          return@forEach
+          return@withContext
         }
       }
 
