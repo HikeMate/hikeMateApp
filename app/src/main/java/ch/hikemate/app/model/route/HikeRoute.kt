@@ -36,10 +36,25 @@ data class Bounds(val minLat: Double, val minLon: Double, val maxLat: Double, va
         maxLon >= other.maxLon
   }
 
+  /**
+   * Checks if a given coordinate point falls within these bounds. Uses inclusive range checks for
+   * both latitude and longitude.
+   *
+   * @param lat The latitude to check, in decimal degrees
+   * @param lon The longitude to check, in decimal degrees
+   * @return true if the coordinate is within the bounds, false otherwise
+   */
   fun containsCoordinate(lat: Double, lon: Double): Boolean {
     return (lat in minLat..maxLat) && (lon in minLon..maxLon)
   }
 
+  /**
+   * Formats the bounds as a comma-separated string for use in Overpass API queries. Returns
+   * coordinates in the format required by Overpass API: "south,west,north,east"
+   * (minLat,minLon,maxLat,maxLon)
+   *
+   * @return String representation of the bounds in Overpass API format
+   */
   fun toStringForOverpassAPI(): String {
     return "$minLat,$minLon,$maxLat,$maxLon"
   }
