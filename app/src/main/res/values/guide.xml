@@ -49,5 +49,6 @@
     <string name="collapse_topic">Collapse topic</string>
     <string name="expand_topic">Expand topic</string>
     <string name="guide_button_navigation">Go to %s screen</string>
+    <string name="guide_app_logo">App logo</string>
 
 </resources>

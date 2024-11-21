@@ -5,12 +5,12 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import ch.hikemate.app.R
 import ch.hikemate.app.model.guide.GuideTopic
 import ch.hikemate.app.ui.navigation.NavigationActions
+import ch.hikemate.app.ui.navigation.Route
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.Mock
 import org.mockito.Mockito.mock
-import org.mockito.kotlin.verify
 
 class GuideScreenTest {
   @get:Rule val composeTestRule = createComposeRule()
@@ -22,7 +22,7 @@ class GuideScreenTest {
           GuideTopic(
               titleResId = R.string.guide_section_navigation,
               contentResId = R.string.guide_content_navigation,
-              actionRoute = "test_route"))
+              actionRoute = Route.MAP))
 
   private val testHikingTopics =
       listOf(
@@ -67,28 +67,6 @@ class GuideScreenTest {
 
     // The parameter useUnmergedTree is necessary because of the animation.
     composeTestRule.onNodeWithTag(topicContent, useUnmergedTree = true).assertExists()
-  }
-
-  // @Test
-  fun navigationButton_triggersNavigation() {
-    val topicCard = "${GuideScreen.TOPIC_CARD}_${testAppTopics[0].titleResId}"
-    val navigationButton = "${GuideScreen.NAVIGATION_BUTTON}_${testAppTopics[0].actionRoute}"
-
-    composeTestRule.waitForIdle()
-    // Click to expand the card
-    composeTestRule.onNodeWithTag(topicCard, useUnmergedTree = true).onChildren()[0].performClick()
-
-    // Wait for animation to complete
-    composeTestRule.waitForIdle()
-
-    // Use useUnmergedTree when finding and interacting with the button
-
-    composeTestRule
-        .onNodeWithTag(navigationButton, useUnmergedTree = true)
-        .assertIsEnabled()
-        .performClick()
-
-    verify(mockNavigationActions).navigateTo(testAppTopics[0].actionRoute!!)
   }
 
   @Test
