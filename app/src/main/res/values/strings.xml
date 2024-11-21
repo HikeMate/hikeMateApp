@@ -133,6 +133,14 @@
     <string name="create_account_email_format_error">Invalid email format</string>
     <string name="create_account_fields_must_be_filled_error">All fields must be filled</string>
 
+    <!-- Authentication Errors -->
+    <string name="authentication_error_empty_email">Email cannot be empty.</string>
+    <string name="authentication_error_empty_password">Password cannot be empty.</string>
+    <string name="authentication_error_invalid_user">User does not exist.</string>
+    <string name="authentication_error_invalid_credentials">Invalid credentials.</string>
+    <string name="authentication_error_user_already_exists">Email already in use.</string>
+    <string name="authentication_error_unknown">An unknown error occurred, please try again later.</string>
+
     <!-- Default profile -->
     <string name="default_display_name">Unnamed hiker</string>
     <string name="default_email">unnamedhiker@example.com</string>

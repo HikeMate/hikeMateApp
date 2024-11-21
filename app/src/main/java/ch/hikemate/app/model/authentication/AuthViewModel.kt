@@ -2,6 +2,7 @@ package ch.hikemate.app.model.authentication
 
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.result.ActivityResult
 import androidx.lifecycle.ViewModel
@@ -14,7 +15,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 class AuthViewModel(
-    private val repository: AuthRepository,
+    private val authRepository: AuthRepository,
     // Auth view model takes the ProfileRepository for the creation of a Profile.
     private val profileRepository: ProfileRepository
 ) : ViewModel() {
@@ -46,7 +47,7 @@ class AuthViewModel(
       startAddAccountIntentLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>?,
   ) {
 
-    repository.signInWithGoogle(
+    authRepository.signInWithGoogle(
         onSuccess = { user: FirebaseUser? ->
           profileRepository.createProfile(
               // TODO handle errors
@@ -82,7 +83,7 @@ class AuthViewModel(
       return
     }
 
-    repository.createAccountWithEmailAndPassword(
+    authRepository.createAccountWithEmailAndPassword(
         onSuccess = { user: FirebaseUser? ->
           // This should never happen. Since the createProfile function checks whether
           // the user is null or not. So if the user is null the callback will not be called.
@@ -121,19 +122,25 @@ class AuthViewModel(
       email: String,
       password: String,
       onSuccess: () -> Unit,
-      onErrorAction: (Exception) -> Unit
+      onErrorAction: (AuthenticationError) -> Unit
   ) {
-    if (email.isEmpty() || password.isEmpty()) {
-      onErrorAction(Exception("Email and password must not be empty"))
+    if (email.isEmpty()) {
+      onErrorAction(AuthenticationError.EMPTY_EMAIL)
+      return
+    } else if (password.isEmpty()) {
+      onErrorAction(AuthenticationError.EMPTY_PASSWORD)
       return
     }
 
-    repository.signInWithEmailAndPassword(
+    authRepository.signInWithEmailAndPassword(
         onSuccess = { user: FirebaseUser? ->
           _currentUser.value = user
           onSuccess()
         },
-        onErrorAction = onErrorAction,
+        onErrorAction = {
+          Log.e("AuthViewModel", "Error signing in", it)
+          onErrorAction(AuthenticationError.fromFirebaseError(it))
+        },
         email = email,
         password = password,
     )
@@ -141,7 +148,7 @@ class AuthViewModel(
 
   /** Signs out the current user. On successful sign-out, the _currentUser is set to null. */
   fun signOut(onSuccess: () -> Unit) {
-    repository.signOut(
+    authRepository.signOut(
         onSuccess = {
           _currentUser.value = null
           onSuccess()

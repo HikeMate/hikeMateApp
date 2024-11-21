@@ -1,6 +1,5 @@
 package ch.hikemate.app.ui.auth
 
-import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.TextSelectionColors
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -20,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -31,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ch.hikemate.app.R
 import ch.hikemate.app.model.authentication.AuthViewModel
+import ch.hikemate.app.model.authentication.AuthenticationError
 import ch.hikemate.app.ui.components.BackButton
 import ch.hikemate.app.ui.components.BigButton
 import ch.hikemate.app.ui.components.ButtonType
@@ -74,6 +76,10 @@ fun SignInWithEmailScreen(navigationActions: NavigationActions, authViewModel: A
   var email by remember { mutableStateOf("") }
   var password by remember { mutableStateOf("") }
 
+  // Define the email and password error states
+  var emailError by remember { mutableStateOf<Int?>(null) }
+  var passwordError by remember { mutableStateOf<Int?>(null) }
+
   Column(
       modifier =
           Modifier.testTag(Screen.SIGN_IN_WITH_EMAIL)
@@ -98,6 +104,14 @@ fun SignInWithEmailScreen(navigationActions: NavigationActions, authViewModel: A
             onValueChange = { email = it },
             label = { Text(stringResource(R.string.sign_in_with_email_email_label)) })
 
+        val emailErrorSnapshot = emailError
+        if (emailErrorSnapshot != null) {
+          Text(
+              text = stringResource(emailErrorSnapshot),
+              color = Color.Red,
+              style = MaterialTheme.typography.bodySmall)
+        }
+
         OutlinedTextField(
             modifier =
                 Modifier.fillMaxWidth().testTag(SignInWithEmailScreen.TEST_TAG_PASSWORD_INPUT),
@@ -106,6 +120,14 @@ fun SignInWithEmailScreen(navigationActions: NavigationActions, authViewModel: A
             value = password,
             onValueChange = { password = it },
             label = { Text(stringResource(R.string.sign_in_with_email_password_label)) })
+
+        val passwordErrorSnapshot = passwordError
+        if (passwordErrorSnapshot != null) {
+          Text(
+              text = stringResource(passwordErrorSnapshot),
+              color = Color.Red,
+              style = MaterialTheme.typography.bodySmall)
+        }
 
         BigButton(
             modifier =
@@ -121,8 +143,26 @@ fun SignInWithEmailScreen(navigationActions: NavigationActions, authViewModel: A
                     navigationActions.navigateTo(Route.MAP)
                   },
                   onErrorAction = {
-                    // Show an error message in a toast
-                    Toast.makeText(context, it.message, Toast.LENGTH_SHORT).show()
+                    // Show a message depending on the error
+                    emailError = null
+                    passwordError = null
+                    when (it) {
+                      AuthenticationError.EMPTY_EMAIL -> {
+                        emailError = R.string.authentication_error_empty_email
+                      }
+                      AuthenticationError.EMPTY_PASSWORD -> {
+                        passwordError = R.string.authentication_error_empty_password
+                      }
+                      AuthenticationError.INVALID_USER,
+                      AuthenticationError.INVALID_CREDENTIALS -> {
+                        emailError = it.messageResourceId
+                        passwordError = it.messageResourceId
+                      }
+                      else -> {
+                        emailError = R.string.authentication_error_unknown
+                        passwordError = R.string.authentication_error_unknown
+                      }
+                    }
                   })
             })
 
