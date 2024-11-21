@@ -150,7 +150,9 @@ fun HikeMateApp() {
             EditProfileScreen(
                 navigationActions = navigationActions, profileViewModel = profileViewModel)
           }
-          composable(Screen.TUTORIAL) { GuideScreen(navigationActions = navigationActions) }
+        }
+        navigation(startDestination = Screen.TUTORIAL, route = Route.TUTORIAL) {
+          composable(Screen.TUTORIAL) { GuideScreen(navigationActions) }
         }
       }
 }
