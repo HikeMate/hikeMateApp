@@ -5,7 +5,7 @@ on:
   push:
     branches:
       - main
-      - "*"
+      - "**"
 
   pull_request:
     types:
@@ -131,9 +131,16 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: ./gradlew sonar --parallel --build-cache
 
+      - name: Upload Code Coverage Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Code-coverage-report
+          path: ${{ github.workspace }}/app/build/reports/jacoco/jacocoTestReport/
+
       - name: Jacoco Report to PR
         id: jacoco
         uses: madrapps/jacoco-report@v1.7.1
+        if: ${{ startsWith(github.event_name, 'pull_request') }}
         with:
           paths: ${{ github.workspace }}/app/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -142,14 +149,9 @@ jobs:
           title: Code Coverage
           update-comment: true
 
-      - name: Upload Code Coverage Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: Code-coverage-report
-          path: ${{ github.workspace }}/app/build/reports/jacoco/jacocoTestReport/
 
       - name: Fail PR if overall coverage is less than 80%
-        if: ${{ steps.jacoco.outputs.coverage-overall < 80.0 }}
+        if: ${{ startsWith(github.event_name, 'pull_request') && steps.jacoco.outputs.coverage-overall < 80.0 }}
         uses: actions/github-script@v6
         with:
           script: |
