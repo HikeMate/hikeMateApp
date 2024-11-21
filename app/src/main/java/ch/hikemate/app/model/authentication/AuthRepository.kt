@@ -74,9 +74,9 @@ interface AuthRepository {
   fun signOut(onSuccess: () -> Unit = {})
 
   /**
-   * Deletes the current user's account and invokes the success callback. Takes the user's email and
-   * password as parameters for account deletion as we need to re-authenticate the user before
-   * deleting the account.
+   * Deletes the current user's account and invokes the success callback. Takes the user's password
+   * as parameters for account deletion as we need to re-authenticate the user before deleting the
+   * account.
    *
    * @param password The password of the user.
    * @param activity The Android Activity, used for launching the re-authentication dialog.
@@ -87,12 +87,13 @@ interface AuthRepository {
   fun deleteAccount(
       password: String,
       activity: Activity,
-      onSuccess: () -> Unit = {},
+      onSuccess: () -> Unit,
       onErrorAction: (Exception) -> Unit
   )
 
   /**
-   * Return true if the user is signed in with an email provider.
+   * Return true if the user is signed in with an email provider which is the email and password way
+   * of signing in to Firebase.
    *
    * @param user The FirebaseUser object.
    */

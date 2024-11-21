@@ -173,7 +173,10 @@ class AuthViewModel(
         onErrorAction = onErrorAction)
   }
 
-  /** Returns whether the current user is connect with an email provider. */
+  /**
+   * Returns whether the current user is connect with an email provider which is the email and
+   * password way of signing in to Firebase.
+   */
   fun isEmailProvider(): Boolean {
     return if (_currentUser.value == null) {
       false

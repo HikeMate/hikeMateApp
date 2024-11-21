@@ -13,6 +13,8 @@ import androidx.credentials.exceptions.NoCredentialException
 import ch.hikemate.app.R
 import ch.hikemate.app.model.profile.ProfileRepositoryFirestore
 import ch.hikemate.app.model.route.saved.SavedHikesRepositoryFirestore
+import com.google.android.gms.tasks.Task
+import com.google.android.gms.tasks.Tasks
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.EmailAuthProvider
@@ -155,24 +157,33 @@ class FirebaseAuthRepository : AuthRepository {
             Log.d("DeleteAccount", "User re-authenticated")
 
             // Delete the user profile and saved hikes
-            FirebaseFirestore.getInstance()
-                .collection(ProfileRepositoryFirestore.PROFILES_COLLECTION)
-                .document(user.uid)
-                .delete()
-            FirebaseFirestore.getInstance()
-                .collection(SavedHikesRepositoryFirestore.SAVED_HIKES_COLLECTION)
-                .document(user.uid)
-                .delete()
+            val deleteProfileTask =
+                FirebaseFirestore.getInstance()
+                    .collection(ProfileRepositoryFirestore.PROFILES_COLLECTION)
+                    .document(user.uid)
+                    .delete()
 
-            Log.d("DeleteAccount", "Profile deleted")
+            val deleteSavedHikesTask =
+                FirebaseFirestore.getInstance()
+                    .collection(SavedHikesRepositoryFirestore.SAVED_HIKES_COLLECTION)
+                    .document(user.uid)
+                    .delete()
 
-            // Delete the user account
-            user.delete().addOnCompleteListener { task ->
-              if (task.isSuccessful) {
-                Log.d("DeleteAccount", "User account deleted")
-                onSuccess()
+            Tasks.whenAll(deleteProfileTask, deleteSavedHikesTask).addOnCompleteListener {
+                deleteDataTask: Task<Void?> ->
+              if (deleteDataTask.isSuccessful) {
+                // Both deletions were successful
+                // Delete the user account
+                user.delete().addOnCompleteListener { task ->
+                  if (task.isSuccessful) {
+                    Log.d("DeleteAccount", "User account deleted")
+                    onSuccess()
+                  } else {
+                    onErrorAction(task.exception ?: Exception())
+                  }
+                }
               } else {
-                onErrorAction(task.exception ?: Exception())
+                onErrorAction(deleteDataTask.exception ?: Exception("Unknown error"))
               }
             }
           },
@@ -183,8 +194,7 @@ class FirebaseAuthRepository : AuthRepository {
   }
 
   override fun isEmailProvider(user: FirebaseUser): Boolean {
-    val providers = user.providerData.map { it.providerId }
-    return providers.contains(EmailAuthProvider.PROVIDER_ID)
+    return user.providerData.any { it.providerId == EmailAuthProvider.PROVIDER_ID }
   }
 
   private fun reauthenticate(

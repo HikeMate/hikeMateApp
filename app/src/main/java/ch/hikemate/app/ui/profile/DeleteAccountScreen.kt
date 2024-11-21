@@ -71,7 +71,7 @@ fun DeleteAccountScreen(navigationActions: NavigationActions, authViewModel: Aut
 
   Column(
       modifier =
-          Modifier.testTag(Screen.SIGN_IN_WITH_EMAIL)
+          Modifier.testTag(Screen.DELETE_ACCOUNT)
               .padding(
                   // Add padding to the sidebar padding
                   start = 16.dp,

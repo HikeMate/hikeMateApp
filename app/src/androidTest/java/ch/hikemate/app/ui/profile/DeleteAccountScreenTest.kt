@@ -75,16 +75,19 @@ class DeleteAccountScreenTest : TestCase() {
   fun checkCanDeleteAccount() {
     setUpActivityEmailProvider()
 
+    val password = "password"
+
     composeTestRule
         .onNodeWithTag(DeleteAccountScreen.TEST_TAG_PASSWORD_INPUT)
-        .performTextInput("password")
+        .performTextInput(password)
     composeTestRule.onNodeWithTag(DeleteAccountScreen.TEST_TAG_DELETE_ACCOUNT_BUTTON).performClick()
 
-    verify(exactly = 1) { authViewModel.deleteAccount(any(), any(), any(), any()) }
+    verify(exactly = 1) { authViewModel.deleteAccount(eq(password), any(), any(), any()) }
+    verify(exactly = 0) { authViewModel.deleteAccount(neq(password), any(), any(), any()) }
   }
 
   @Test
-  fun checkCanDeleteAccountWithoutPassword() {
+  fun checkCannotDeleteAccountWithoutEnteringPassword() {
     setUpActivityEmailProvider()
 
     composeTestRule.onNodeWithTag(DeleteAccountScreen.TEST_TAG_DELETE_ACCOUNT_BUTTON).performClick()

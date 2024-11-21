@@ -16,6 +16,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.hikemate.app.model.authentication.FirebaseAuthRepository
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.android.gms.tasks.Task
+import com.google.android.gms.tasks.Tasks
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.AuthResult
@@ -116,6 +117,9 @@ class FirebaseAuthRepositoryTest {
           listener.onComplete(mockTask)
           mockTask
         }
+
+    mockkStatic(Tasks::class)
+    every { Tasks.whenAll(any(), any()) } returns mockVoidTask
 
     every { mockFirebaseUser.delete() } returns mockVoidTask
     every { mockFirebaseUser.reauthenticate(any()) } returns mockVoidTask
@@ -354,6 +358,25 @@ class FirebaseAuthRepositoryTest {
       verify { mockFirebaseUser.delete() }
       verify(exactly = 2) { mockDocument.delete() }
       verify { onSuccess() }
+    }
+  }
+
+  @Test
+  fun testDeleteAccount_unsuccessful() {
+    runTest(timeout = 5.seconds) {
+      every { mockVoidTask.isSuccessful } returns false
+      every { mockVoidTask.exception } returns Exception("Test Error")
+      every { mockFirebaseAuth.currentUser } returns mockFirebaseUser
+      every { mockFirebaseUser.providerData } returns
+          listOf(mockk { every { providerId } returns EmailAuthProvider.PROVIDER_ID })
+      every { mockDocument.delete() } returns mockVoidTask
+
+      val onSuccess: () -> Unit = mockk(relaxed = true)
+      val mockActivity: Activity = mockk(relaxed = true)
+
+      repository.deleteAccount("password", mockActivity, onSuccess, mockOnError)
+
+      verify { mockOnError(any()) }
     }
   }
 
