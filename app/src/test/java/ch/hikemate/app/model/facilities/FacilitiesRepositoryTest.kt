@@ -24,6 +24,41 @@ import org.mockito.kotlin.verify
 
 class FacilitiesRepositoryTest {
 
+  companion object {
+
+    // Valid JSON Header in JSON Format. Only Valid when the response is closed by
+    // VALID_RESPONSE_HEADER_CLOSER
+    private const val VALID_RESPONSE_HEADER =
+        """
+      {
+        "version": 0.6,
+        "generator": "Overpass API 0.7.62.1 084b4234",
+        "osm3s": {
+          "timestamp_osm_base": "2024-11-21T17:01:26Z",
+          "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+        },
+        "elements": ["""
+
+    // Valid JSON Footer in JSON Format. Only Valid when the response is opened by
+    // VALID_RESPONSE_HEADER
+    private const val VALID_RESPONSE_FOOTER = """
+      ]
+      }"""
+
+    // Single, valid amenity element in JSON format
+    private const val VALID_RESPONSE_ELEMENT =
+        """
+      {
+        "type": "node",
+        "id": 3138275148,
+        "lat": 51.0341166,
+        "lon": 7.0464572,
+        "tags": {
+          "amenity": "toilets"
+        }
+      }"""
+  }
+
   private lateinit var mockClient: OkHttpClient
   private lateinit var mockCall: Call
   private lateinit var facilitiesRepository: FacilitiesRepository
@@ -46,6 +81,12 @@ class FacilitiesRepositoryTest {
   private fun setupMockResponse(response: Response) {
     `when`(mockCall.enqueue(callbackCaptor.capture())).then {
       callbackCaptor.firstValue.onResponse(mockCall, response)
+    }
+  }
+
+  private fun setupNetworkFailure() {
+    `when`(mockCall.enqueue(callbackCaptor.capture())).then {
+      callbackCaptor.firstValue.onFailure(mockCall, IOException("Network failure"))
     }
   }
 
@@ -77,38 +118,7 @@ class FacilitiesRepositoryTest {
   fun testGetFacilities_andFilterAmenitiesWithNormalInput() {
 
     val response =
-        Response.Builder()
-            .code(200)
-            .message("OK")
-            .body(
-                """{
-  "version": 0.6,
-  "generator": "Overpass API 0.7.62.1 084b4234",
-  "osm3s": {
-    "timestamp_osm_base": "2024-11-20T15:14:50Z",
-    "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
-  },
-  "elements": [
-
-{
-  "type": "node",
-  "id": 269580058,
-  "lat": 46.5091848,
-  "lon": 6.6194478,
-  "tags": {
-    "amenity": "toilets",
-    "fee": "no",
-    "unisex": "yes",
-    "wheelchair": "yes"
-  }
-}
-  ]
-}"""
-                    .toResponseBody())
-            .protocol(Protocol.HTTP_1_1)
-            .header("Content-Type", "application/json")
-            .request(mock())
-            .build()
+        buildResponse(VALID_RESPONSE_HEADER + VALID_RESPONSE_ELEMENT + VALID_RESPONSE_FOOTER)
 
     val callbackCaptor = argumentCaptor<okhttp3.Callback>()
     val latch = CountDownLatch(1)
@@ -135,42 +145,17 @@ class FacilitiesRepositoryTest {
   @Test
   fun testGetFacilitiesWithTruncatedResponse() {
     val response =
-        Response.Builder()
-            .code(200)
-            .message("OK")
-            .body(
+        buildResponse(
+            VALID_RESPONSE_HEADER +
+                VALID_RESPONSE_ELEMENT +
                 """
-          {
-  "version": 0.6,
-  "generator": "Overpass API 0.7.62.1 084b4234",
-  "osm3s": {
-    "timestamp_osm_base": "2024-11-20T17:56:17Z",
-    "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
-  },
-  "elements": [
-
-{
-  "type": "node",
-  "id": 269580058,
-  "lat": 46.5091848,
-  "lon": 6.6194478,
-  "tags": {
-    "amenity": "toilets",
-    "fee": "no",
-    "unisex": "yes",
-    "wheelchair": "yes"
-  }
-},
-{
-  "type": "node",
-  "id": 992442027,
-  "lat": 46.5098337,
-"""
-                    .toResponseBody())
-            .protocol(Protocol.HTTP_1_1)
-            .header("Content-Type", "application/json")
-            .request(mock())
-            .build()
+            {
+            "type": "node",
+            "id": 992442027,
+            "lat": 46.5098337,
+            """ // This node is truncated
+                +
+                VALID_RESPONSE_FOOTER)
 
     setupMockResponse(response)
 
@@ -178,11 +163,11 @@ class FacilitiesRepositoryTest {
 
     facilitiesRepository.getFacilities(
         bounds = testBoundsNormal,
-        onSuccess = { _ ->
-          fail("getFacilities call with empty response succeeded, but it should fail")
-        },
+        onSuccess = { _ -> fail("Should fail") },
         onFailure = { _ ->
-          Log.d("FacilitiesRepositoryTest", "getFacilities with empty response failed as expected")
+          Log.d(
+              "FacilitiesRepositoryTest",
+              "getFacilities with truncated response failed as expected")
           failureCounter.incrementAndGet()
         })
 
@@ -193,25 +178,9 @@ class FacilitiesRepositoryTest {
   @Test
   fun testGetFacilitiesWithEmptyResponse() {
     val response =
-        Response.Builder()
-            .code(200)
-            .message("OK")
-            .body(
-                """
-          {
-  "version": 0.6,
-  "generator": "Overpass API 0.7.62.1 084b4234",
-  "osm3s": {
-    "timestamp_osm_base": "2024-11-20T17:56:17Z",
-    "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
-  },
-  "elements": []
-  }"""
-                    .toResponseBody())
-            .protocol(Protocol.HTTP_1_1)
-            .header("Content-Type", "application/json")
-            .request(mock())
-            .build()
+        buildResponse(
+            VALID_RESPONSE_HEADER +
+                VALID_RESPONSE_FOOTER) // There are no nodes returned in this response
 
     setupMockResponse(response)
 
@@ -227,10 +196,7 @@ class FacilitiesRepositoryTest {
   fun testGetFacilitiesNoServerResponse() {
     val failureCounter = AtomicInteger(0)
 
-    `when`(mockCall.enqueue(callbackCaptor.capture())).then {
-      callbackCaptor.firstValue.onFailure(
-          mockCall, IOException("Failed to fetch routes from Overpass API"))
-    }
+    setupNetworkFailure()
 
     facilitiesRepository.getFacilities(
         bounds = testBoundsNormal,
@@ -246,40 +212,22 @@ class FacilitiesRepositoryTest {
   fun testAmenityFilter_faultyAmenity_faultyValueInAmenityElement() {
     val response =
         buildResponse(
-            """{
-  "version": 0.6,
-  "generator": "Overpass API 0.7.62.1 084b4234",
-  "osm3s": {
-    "timestamp_osm_base": "2024-11-20T15:14:50Z",
-    "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
-  },
-  "elements": [
-
-{
-  "type": "node",
-  "id": 269580058,
-  "lat": 46.5091848,
-  "lon": 6.6194478,
-  "tags": {
-    "amenity": "toilets",
-    "fee": "no",
-    "unisex": "yes",
-    "wheelchair": "yes"
-  }
-},
-{
-  "type": "node",
-  "id": 992442066,
-  "lat": one,
-  "lon": 6.6196272,
-  "tags": {
-    "amenity": "bench",
-    "backrest": "yes",
-    "check_date": "2021-05-25",
-    "source": "survey"
-  }
-  ]
-}""")
+            VALID_RESPONSE_HEADER +
+                VALID_RESPONSE_ELEMENT +
+                """"
+            {
+            "type": "node",
+            "id": 992442066,
+            "lat": one,
+            "lon": 6.6196272,
+            "tags": {
+              "amenity": "bench",
+              "backrest": "yes",
+              "check_date": "2021-05-25",
+              "source": "survey"
+            },
+            """ +
+                VALID_RESPONSE_FOOTER) // lat is "one", instead of a number
     setupMockResponse(response)
 
     val failureCounter = AtomicInteger(0)
@@ -299,26 +247,9 @@ class FacilitiesRepositoryTest {
   fun testAmenityFilter_faultyAmenity_missingValueFromAmenityElement() {
     val response =
         buildResponse(
-            """{
-    "version": 0.6,
-    "generator": "Overpass API 0.7.62.1 084b4234",
-    "osm3s": {
-        "timestamp_osm_base": "2024-11-20T15:14:50Z",
-        "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
-    },
-    "elements": [
-        {
-            "type": "node",
-            "id": 269580058,
-            "lat": 46.5091848,
-            "lon": 6.6194478,
-            "tags": {
-                "amenity": "toilets",
-                "fee": "no",
-                "unisex": "yes",
-                "wheelchair": "yes"
-            }
-        },
+            VALID_RESPONSE_HEADER +
+                VALID_RESPONSE_ELEMENT +
+                """
         {
             "type": "node",
             "id": 992442066,
@@ -329,9 +260,8 @@ class FacilitiesRepositoryTest {
                 "check_date": "2021-05-25",
                 "source": "survey"
             }
-        }
-    ]
-})""")
+        },""" +
+                VALID_RESPONSE_FOOTER) // lon is missing
 
     setupMockResponse(response)
 
@@ -352,52 +282,33 @@ class FacilitiesRepositoryTest {
   fun testAmenityFilter_faultyAmenity_invalidAmenityType() {
     val response =
         buildResponse(
-            """{
-  "version": 0.6,
-  "generator": "Overpass API 0.7.62.1 084b4234",
-  "osm3s": {
-    "timestamp_osm_base": "2024-11-20T15:14:50Z",
-    "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
-  },
-  "elements": [
-
-{
-  "type": "node",
-  "id": 269580058,
-  "lat": 46.5091848,
-  "lon": 6.6194478,
-  "tags": {
-    "amenity": "bar",
-    "fee": "no",
-    "unisex": "yes",
-    "wheelchair": "yes"
-  }
-},
-{
-  "type": "node",
-  "id": 992442066,
-  "lat": 6.6196272,
-  "lon": 6.6196272,
-  "tags": {
-    "amenity": "bench",
-    "backrest": "yes",
-    "check_date": "2021-05-25",
-    "source": "survey"
-  }
-  ]
-}""")
+            VALID_RESPONSE_HEADER +
+                """
+            {
+              "type": "node",
+              "id": 269580058,
+              "lat": 46.5091848,
+              "lon": 6.6194478,
+              "tags": {
+                "amenity": "bar",
+                "fee": "no",
+                "unisex": "yes",
+                "wheelchair": "yes"
+              }
+            },""" +
+                VALID_RESPONSE_ELEMENT +
+                VALID_RESPONSE_FOOTER) // Includes an element with amenity type "bar", which is not
+    // a valid facility type
     setupMockResponse(response)
-
-    val failureCounter = AtomicInteger(0)
 
     facilitiesRepository.getFacilities(
         bounds = testBoundsNormal,
-        onSuccess = { _ ->
-          fail("getFacilities call with broken response succeeded, but it should fail")
+        onSuccess = { facilities ->
+          assertEquals(facilities.size, 1)
+          assertEquals(facilities[0].type, FacilityType.TOILETS)
         },
-        onFailure = { _ -> failureCounter.incrementAndGet() })
+        onFailure = { fail("Should not fail") })
 
     verify(mockCall).enqueue(callbackCaptor.capture())
-    assertEquals(1, failureCounter.get())
   }
 }
