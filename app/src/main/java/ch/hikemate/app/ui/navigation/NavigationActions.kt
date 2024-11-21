@@ -23,6 +23,7 @@ object Screen {
   const val AUTH = "Auth Screen"
   const val SIGN_IN_WITH_EMAIL = "Sign-in-with-email Screen"
   const val CREATE_ACCOUNT = "Create-account Screen"
+  const val DELETE_ACCOUNT = "Delete-account Screen"
   const val SAVED_HIKES = "SavedHikes Screen"
   const val MAP = "Map Screen"
   const val PROFILE = "Profile Screen"

@@ -4,10 +4,13 @@ import android.icu.text.DateFormat
 import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -17,6 +20,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -43,6 +47,7 @@ object ProfileScreen {
   const val TEST_TAG_JOIN_DATE = "profileScreenJoinDateInfo"
   const val TEST_TAG_EDIT_PROFILE_BUTTON = "profileScreenEditProfileButton"
   const val TEST_TAG_SIGN_OUT_BUTTON = "profileScreenSignOutButton"
+  const val TEST_TAG_DELETE_ACCOUNT_BUTTON = "profileScreenDeleteAccountButton"
 }
 /**
  * A composable to display an information of the profile.
@@ -162,6 +167,21 @@ fun ProfileScreen(
                     authViewModel.signOut({ navigationActions.navigateTo(Screen.AUTH) })
                   },
                   Modifier.testTag(ProfileScreen.TEST_TAG_SIGN_OUT_BUTTON))
+
+              TextButton(
+                  modifier =
+                      Modifier.fillMaxWidth().testTag(ProfileScreen.TEST_TAG_DELETE_ACCOUNT_BUTTON),
+                  onClick = { navigationActions.navigateTo(Screen.DELETE_ACCOUNT) }) {
+                    Text(
+                        "Delete Account",
+                        style =
+                            TextStyle(
+                                textAlign = TextAlign.Center,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 20.sp,
+                                color = MaterialTheme.colorScheme.error),
+                    )
+                  }
             }
       }
 }

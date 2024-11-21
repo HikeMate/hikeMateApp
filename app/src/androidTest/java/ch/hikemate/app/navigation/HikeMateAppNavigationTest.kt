@@ -24,8 +24,8 @@ class HikeMateAppNavigationTest {
 
   @Before
   fun setUp() {
-    composeTestRule.setContent { HikeMateApp() }
     auth.signOut()
+    composeTestRule.setContent { HikeMateApp() }
   }
 
   @Test

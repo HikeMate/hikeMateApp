@@ -1,5 +1,6 @@
 package ch.hikemate.app.model.authentication
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.provider.Settings
@@ -10,11 +11,18 @@ import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.NoCredentialException
 import ch.hikemate.app.R
+import ch.hikemate.app.model.profile.ProfileRepositoryFirestore
+import ch.hikemate.app.model.route.saved.SavedHikesRepositoryFirestore
+import com.google.android.gms.tasks.Tasks
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.firebase.auth.AuthCredential
+import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.auth.OAuthProvider
 import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -126,5 +134,100 @@ class FirebaseAuthRepository : AuthRepository {
   override fun signOut(onSuccess: () -> Unit) {
     Firebase.auth.signOut()
     onSuccess()
+  }
+
+  override fun deleteAccount(
+      password: String,
+      activity: Activity,
+      onSuccess: () -> Unit,
+      onErrorAction: (Exception) -> Unit
+  ) {
+    val user = FirebaseAuth.getInstance().currentUser
+    if (user != null) {
+      val email = user.email ?: throw Exception("User email is null")
+      Log.d("DeleteAccount", "User email: '$email', password: '$password'")
+
+      // Re-authenticate the user
+      reauthenticate(
+          user,
+          password,
+          activity,
+          {
+            Log.d("DeleteAccount", "User re-authenticated")
+
+            // Delete the user profile and saved hikes
+            val deleteProfileTask =
+                FirebaseFirestore.getInstance()
+                    .collection(ProfileRepositoryFirestore.PROFILES_COLLECTION)
+                    .document(user.uid)
+                    .delete()
+
+            val deleteSavedHikesTask =
+                FirebaseFirestore.getInstance()
+                    .collection(SavedHikesRepositoryFirestore.SAVED_HIKES_COLLECTION)
+                    .document(user.uid)
+                    .delete()
+
+            Tasks.whenAll(deleteProfileTask, deleteSavedHikesTask).addOnCompleteListener {
+                deleteDataTask ->
+              if (deleteDataTask.isSuccessful) {
+                // Both deletions were successful
+                // Delete the user account
+                user.delete().addOnCompleteListener { task ->
+                  if (task.isSuccessful) {
+                    Log.d("DeleteAccount", "User account deleted")
+                    onSuccess()
+                  } else {
+                    onErrorAction(task.exception ?: Exception())
+                  }
+                }
+              } else {
+                onErrorAction(deleteDataTask.exception ?: Exception("Unknown error"))
+              }
+            }
+          },
+          { onErrorAction(Exception("Error re-authenticating user")) })
+    } else {
+      onErrorAction(Exception("No user is currently signed in"))
+    }
+  }
+
+  override fun isEmailProvider(user: FirebaseUser): Boolean {
+    return user.providerData.any { it.providerId == EmailAuthProvider.PROVIDER_ID }
+  }
+
+  private fun reauthenticate(
+      user: FirebaseUser,
+      password: String,
+      activity: Activity,
+      onSuccess: () -> Unit,
+      onFailure: () -> Unit
+  ) {
+    val isEmail = isEmailProvider(user)
+
+    if (isEmail) {
+      val email = user.email ?: throw Exception("User email is null")
+      val credential: AuthCredential = EmailAuthProvider.getCredential(email, password)
+      user.reauthenticate(credential).addOnCompleteListener { task ->
+        if (task.isSuccessful) {
+          Log.d("DeleteAccount", "User re-authenticated")
+          onSuccess()
+        } else {
+          onFailure()
+        }
+      }
+    } else {
+      val googleProvider = OAuthProvider.newBuilder(GoogleAuthProvider.PROVIDER_ID)
+      user
+          .startActivityForReauthenticateWithProvider(activity, googleProvider.build())
+          .addOnFailureListener { e ->
+            Log.e("DeleteAccount", "Re-authentication failed: ${e.message}")
+            onFailure()
+          }
+          .addOnSuccessListener { result ->
+            Log.d("DeleteAccount", "Re-authentication successful: $result")
+            onSuccess()
+          }
+    }
   }
 }

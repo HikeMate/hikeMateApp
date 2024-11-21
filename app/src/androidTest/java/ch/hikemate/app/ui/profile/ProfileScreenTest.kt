@@ -90,6 +90,7 @@ class ProfileScreenTest : TestCase() {
     composeTestRule
         .onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_MESSAGE)
         .assertIsNotDisplayed()
+    composeTestRule.onNodeWithTag(ProfileScreen.TEST_TAG_DELETE_ACCOUNT_BUTTON).assertIsDisplayed()
   }
 
   @Test
