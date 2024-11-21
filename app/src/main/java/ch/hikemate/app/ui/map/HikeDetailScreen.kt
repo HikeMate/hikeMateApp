@@ -194,7 +194,7 @@ fun HikeDetailScreen(
 
   LaunchedEffect(Unit) {
     if (authViewModel.currentUser.value == null) {
-      Log.e("MapScreen", "User is not signed in")
+      Log.e("HikeDetailScreen", "User is not signed in")
       return@LaunchedEffect
     }
     profileViewModel.getProfileById(authViewModel.currentUser.value!!.uid)
@@ -205,7 +205,7 @@ fun HikeDetailScreen(
 
   when {
     errorMessageIdState.value != null -> {
-      Log.e("MapScreen", "Error message: ${stringResource(errorMessageIdState.value!!)}")
+      Log.e("HikeDetailScreen", "Error message: ${stringResource(errorMessageIdState.value!!)}")
       // Display an error message if an error occurred
       CenteredErrorAction(
           errorMessageId = errorMessageIdState.value!!,
@@ -214,7 +214,7 @@ fun HikeDetailScreen(
           onAction = { navigationActions.navigateTo(Route.MAP) })
     }
     profileState.value == null -> {
-      Log.e("MapScreen", "Profile is null")
+      Log.e("HikeDetailScreen", "Profile is null")
       CenteredLoadingAnimation()
     }
     else -> {
