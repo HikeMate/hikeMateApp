@@ -1,5 +1,7 @@
 package ch.hikemate.app.model.route
 
+import com.google.firebase.Timestamp
+
 /**
  * Represents a hike route with associated information.
  *
@@ -8,6 +10,9 @@ package ch.hikemate.app.model.route
  * [DeferredData] for more information about how this works.
  *
  * @param id The unique ID of the hike.
+ * @param isSaved Whether the hike has been saved by the user.
+ * @param plannedDate The date at which the user plans to go on the hike. Null if the user did not
+ * save the date or saved it without a specific date.
  * @param name Human-readable name of the hike.
  * @param description Human-readable description of the hike.
  * @param bounds Minimum and maximum latitude/longitude of the hike on a map.
@@ -24,8 +29,8 @@ package ch.hikemate.app.model.route
  */
 data class Hike(
     val id: String,
-    val name: String,
-    val description: String,
+    val isSaved: Boolean,
+    val plannedDate: Timestamp?,
     val name: String?,
     val description: String?,
     val bounds: DeferredData<Bounds>,
