@@ -36,6 +36,7 @@ import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.navigation.TopLevelDestinations
+import ch.hikemate.app.ui.profile.DeleteAccountScreen
 import ch.hikemate.app.ui.profile.EditProfileScreen
 import ch.hikemate.app.ui.profile.ProfileScreen
 import ch.hikemate.app.ui.saved.SavedHikesScreen
@@ -75,10 +76,10 @@ class MainActivity : ComponentActivity() {
 fun HikeMateApp() {
   val navController = rememberNavController()
   val navigationActions = NavigationActions(navController)
-  val firestore = FirebaseFirestore.getInstance()
-  val profileRepository = ProfileRepositoryFirestore(firestore)
-  val profileViewModel = ProfileViewModel(profileRepository)
-  val authViewModel = AuthViewModel(FirebaseAuthRepository(), profileRepository)
+  val profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory)
+  val authViewModel =
+      AuthViewModel(
+          FirebaseAuthRepository(), ProfileRepositoryFirestore(FirebaseFirestore.getInstance()))
 
   val isUserLoggedIn = authViewModel.isUserLoggedIn()
 
@@ -94,12 +95,17 @@ fun HikeMateApp() {
             startDestination = Screen.AUTH,
             route = Route.AUTH,
         ) {
-          composable(Screen.AUTH) { SignInScreen(navigationActions, authViewModel) }
+          composable(Screen.AUTH) {
+            SignInScreen(navigationActions, authViewModel, profileViewModel)
+          }
           composable(Screen.SIGN_IN_WITH_EMAIL) {
-            SignInWithEmailScreen(navigationActions, authViewModel)
+            SignInWithEmailScreen(navigationActions, authViewModel, profileViewModel)
           }
           composable(Screen.CREATE_ACCOUNT) {
-            CreateAccountScreen(navigationActions, authViewModel)
+            CreateAccountScreen(navigationActions, authViewModel, profileViewModel)
+          }
+          composable(Screen.DELETE_ACCOUNT) {
+            DeleteAccountScreen(navigationActions, authViewModel)
           }
         }
 

@@ -25,24 +25,24 @@ object CenteredErrorAction {
  * Displays an error message that takes the whole parent size and an action button.
  *
  * For an action button to be displayed, the [actionIcon] parameter and the
- * [actionContentDescription] parameter must both not be null.
+ * [actionContentDescriptionStringId] parameter must both not be null.
  *
  * Provides two test tags, [CenteredErrorAction.TEST_TAG_CENTERED_ERROR_MESSAGE] for the text
  * component, and [CenteredErrorAction.TEST_TAG_CENTERED_ERROR_BUTTON] for the action button.
  *
- * @param errorMessage The string resource ID of the error message to display.
+ * @param errorMessageId The string resource ID of the error message to display.
  * @param actionIcon The icon to display on the action button. If null, no action button will be
  *   displayed.
- * @param actionContentDescription The string resource ID of the content description for the action
- *   button. If null, no action button will be displayed.
+ * @param actionContentDescriptionStringId The string resource ID of the content description for the
+ *   action button. If null, no action button will be displayed.
  * @param onAction The action to perform when the action button is clicked. If null, an empty
  *   callback will be used instead.
  */
 @Composable
 fun CenteredErrorAction(
-    errorMessage: Int,
+    errorMessageId: Int,
     actionIcon: ImageVector? = null,
-    actionContentDescription: Int? = null,
+    actionContentDescriptionStringId: Int? = null,
     onAction: (() -> Unit)? = null
 ) {
 
@@ -53,19 +53,19 @@ fun CenteredErrorAction(
     // each other
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
       Text(
-          text = stringResource(errorMessage),
+          text = stringResource(errorMessageId),
           style = MaterialTheme.typography.bodyLarge,
           modifier =
               Modifier.padding(16.dp).testTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_MESSAGE))
 
       // Only display the action button if both an icon and a content description are provided
-      if (actionIcon != null && actionContentDescription != null) {
+      if (actionIcon != null && actionContentDescriptionStringId != null) {
         IconButton(
             onClick = onAction ?: {},
             modifier = Modifier.testTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_BUTTON)) {
               Icon(
                   imageVector = actionIcon,
-                  contentDescription = stringResource(actionContentDescription))
+                  contentDescription = stringResource(actionContentDescriptionStringId))
             }
       }
     }
