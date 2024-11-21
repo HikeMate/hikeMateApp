@@ -26,13 +26,6 @@ interface ProfileRepository {
   fun getNewUid(): String
 
   /**
-   * Initializes the profile repository.
-   *
-   * @param onSuccess The callback to be called when the repository is successfully initialized.
-   */
-  fun init(onSuccess: () -> Unit)
-
-  /**
    * Returns the profile with the given ID.
    *
    * @param id The ID of the profile to fetch.

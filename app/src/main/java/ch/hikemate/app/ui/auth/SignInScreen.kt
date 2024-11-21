@@ -42,8 +42,10 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.hikemate.app.R
 import ch.hikemate.app.model.authentication.AuthViewModel
+import ch.hikemate.app.model.profile.ProfileViewModel
 import ch.hikemate.app.ui.components.AppIcon
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Screen
@@ -65,6 +67,7 @@ private const val CONNECTED_ACCOUNT_MESSAGE =
 fun SignInScreen(
     navigationActions: NavigationActions,
     authViewModel: AuthViewModel,
+    profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory)
 ) {
 
   val context = LocalContext.current
@@ -87,6 +90,10 @@ fun SignInScreen(
   LaunchedEffect(authViewModel.currentUser.collectAsState().value) {
     if (authViewModel.isUserLoggedIn()) {
       navigationActions.navigateTo(TopLevelDestinations.MAP)
+
+      if (authViewModel.currentUser.value != null)
+          profileViewModel.getProfileById(authViewModel.currentUser.value!!.uid)
+      else Log.e("SignInScreen", "User is logged in but currentUser is null")
     }
   }
 

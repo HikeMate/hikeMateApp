@@ -1,10 +1,13 @@
 package ch.hikemate.app.ui.profile
 
 import android.icu.text.DateFormat
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -14,6 +17,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -27,12 +31,13 @@ import ch.hikemate.app.model.profile.Profile
 import ch.hikemate.app.model.profile.ProfileViewModel
 import ch.hikemate.app.ui.components.BigButton
 import ch.hikemate.app.ui.components.ButtonType
+import ch.hikemate.app.ui.components.CenteredErrorAction
+import ch.hikemate.app.ui.components.CenteredLoadingAnimation
 import ch.hikemate.app.ui.navigation.BottomBarNavigation
 import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
-import com.google.firebase.Timestamp
 
 object ProfileScreen {
   const val TEST_TAG_TITLE = "profileScreenTitle"
@@ -43,10 +48,6 @@ object ProfileScreen {
   const val TEST_TAG_EDIT_PROFILE_BUTTON = "profileScreenEditProfileButton"
   const val TEST_TAG_SIGN_OUT_BUTTON = "profileScreenSignOutButton"
   const val TEST_TAG_DELETE_ACCOUNT_BUTTON = "profileScreenDeleteAccountButton"
-
-  val DEFAULT_PROFILE =
-      Profile(
-          "custom-id", "John Doe", "john.doe@gmail.com", HikingLevel.INTERMEDIATE, Timestamp.now())
 }
 /**
  * A composable to display an information of the profile.
@@ -78,13 +79,34 @@ fun ProfileScreen(
 ) {
   val context = LocalContext.current
 
-  // TODO: show an error if the profile is null. For now display it for test purposes
+  LaunchedEffect(Unit) {
+    if (authViewModel.currentUser.value == null) {
+      Log.e("ProfileScreen", "User is not signed in")
+      return@LaunchedEffect
+    }
+    profileViewModel.getProfileById(authViewModel.currentUser.value!!.uid)
+  }
 
-  LaunchedEffect(Unit) { profileViewModel.reloadProfile() }
-
+  val errorMessageIdState = profileViewModel.errorMessageId.collectAsState()
   val profileState = profileViewModel.profile.collectAsState()
 
-  val profile: Profile = profileState.value ?: ProfileScreen.DEFAULT_PROFILE
+  if (errorMessageIdState.value != null) {
+    Log.e("ProfileScreen", "Error message: ${stringResource(errorMessageIdState.value!!)}")
+    // Display an error message if an error occurred
+    return CenteredErrorAction(
+        errorMessageId = errorMessageIdState.value!!,
+        actionIcon = Icons.Outlined.Home,
+        actionContentDescriptionStringId = R.string.go_back,
+        onAction = { navigationActions.navigateTo(Route.MAP) })
+  }
+
+  if (profileState.value == null) {
+    Log.e("ProfileScreen", "Profile is null")
+    return CenteredLoadingAnimation()
+  }
+
+  // profileState.value is not null, we checked it before
+  val profile: Profile = profileState.value!!
 
   BottomBarNavigation(
       onTabSelect = { navigationActions.navigateTo(it) },

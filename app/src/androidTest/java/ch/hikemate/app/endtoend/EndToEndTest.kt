@@ -1,9 +1,11 @@
 package ch.hikemate.app.endtoend
 
 import android.content.Context
+import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -11,8 +13,10 @@ import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.hikemate.app.MainActivity
+import ch.hikemate.app.ui.auth.CreateAccountScreen
 import ch.hikemate.app.ui.auth.SignInScreen
 import ch.hikemate.app.ui.auth.SignInWithEmailScreen
+import ch.hikemate.app.ui.components.CenteredLoadingAnimation
 import ch.hikemate.app.ui.map.MapScreen.TEST_TAG_MAP
 import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
 import ch.hikemate.app.ui.navigation.Screen
@@ -46,8 +50,25 @@ class EndToEndTest : TestCase() {
     val context = ApplicationProvider.getApplicationContext<Context>()
     FirebaseApp.initializeApp(context)
 
-    auth.createUserWithEmailAndPassword(email, password)
+    var signedOut = false
+
+    // Wait for sign out to complete
+    FirebaseAuth.getInstance().addAuthStateListener {
+      if (it.currentUser == null) {
+        signedOut = true
+      }
+    }
+
     auth.signOut()
+
+    val timeout = System.currentTimeMillis() + 10000 // 10 seconds
+    while (!signedOut && System.currentTimeMillis() < timeout) {
+      Thread.sleep(100)
+    }
+
+    if (!signedOut) {
+      throw Exception("Failed to sign out")
+    }
   }
 
   @After
@@ -59,6 +80,7 @@ class EndToEndTest : TestCase() {
     auth.signOut()
   }
 
+  @OptIn(ExperimentalTestApi::class)
   @Test
   fun test() {
     composeTestRule.waitForIdle()
@@ -70,15 +92,24 @@ class EndToEndTest : TestCase() {
     composeTestRule.onNodeWithTag(SignInScreen.TEST_TAG_SIGN_IN_WITH_EMAIL).performClick()
     composeTestRule.onNodeWithTag(Screen.SIGN_IN_WITH_EMAIL).assertIsDisplayed()
     composeTestRule
-        .onNodeWithTag(SignInWithEmailScreen.TEST_TAG_EMAIL_INPUT)
-        .performTextInput(email)
+        .onNodeWithTag(SignInWithEmailScreen.TEST_TAG_GO_TO_SIGN_UP_BUTTON)
+        .performClick()
+    composeTestRule.onNodeWithTag(Screen.CREATE_ACCOUNT).assertIsDisplayed()
+
     composeTestRule
-        .onNodeWithTag(SignInWithEmailScreen.TEST_TAG_PASSWORD_INPUT)
+        .onNodeWithTag(CreateAccountScreen.TEST_TAG_NAME_INPUT)
+        .performTextInput(myUuidAsString)
+    composeTestRule.onNodeWithTag(CreateAccountScreen.TEST_TAG_EMAIL_INPUT).performTextInput(email)
+    composeTestRule
+        .onNodeWithTag(CreateAccountScreen.TEST_TAG_PASSWORD_INPUT)
         .performTextInput(password)
-    composeTestRule.onNodeWithTag(SignInWithEmailScreen.TEST_TAG_SIGN_IN_BUTTON).performClick()
+    composeTestRule
+        .onNodeWithTag(CreateAccountScreen.TEST_TAG_CONFIRM_PASSWORD_INPUT)
+        .performTextInput(password)
+    composeTestRule.onNodeWithTag(CreateAccountScreen.TEST_TAG_SIGN_UP_BUTTON).performClick()
 
     // Wait for the map to load
-    Thread.sleep(1000)
+    composeTestRule.waitUntilExactlyOneExists(hasTestTag(TEST_TAG_MAP), timeoutMillis = 10000)
 
     // Check that we are on the map
     composeTestRule.onNodeWithTag(TEST_TAG_MAP).assertIsDisplayed()
@@ -120,6 +151,11 @@ class EndToEndTest : TestCase() {
         .onNodeWithTag(TEST_TAG_MENU_ITEM_PREFIX + TopLevelDestinations.PROFILE.route)
         .performClick()
     composeTestRule.onNodeWithTag(TEST_TAG_MAP).assertIsNotDisplayed()
+
+    composeTestRule.waitUntilDoesNotExist(
+        hasTestTag(CenteredLoadingAnimation.TEST_TAG_CENTERED_LOADING_ANIMATION),
+        timeoutMillis = 10000)
+
     composeTestRule.onNodeWithTag(PROFILE).assertIsDisplayed()
 
     // Check that we can go back to the map
