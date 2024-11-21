@@ -6,6 +6,8 @@ import java.io.IOException
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.test.runTest
 import okhttp3.Call
 import okhttp3.OkHttpClient
 import okhttp3.Protocol
@@ -20,6 +22,8 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.timeout
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 
 class FacilitiesRepositoryTest {
@@ -59,7 +63,7 @@ class FacilitiesRepositoryTest {
       }"""
   }
 
-  private lateinit var mockClient: OkHttpClient
+  private lateinit var client: OkHttpClient
   private lateinit var mockCall: Call
   private lateinit var facilitiesRepository: FacilitiesRepository
 
@@ -92,17 +96,33 @@ class FacilitiesRepositoryTest {
 
   @Before
   fun setUp() {
-    mockClient = mock()
+    client = mock()
     mockCall = mock()
 
-    facilitiesRepository = FacilitiesRepository(mockClient)
+    facilitiesRepository = FacilitiesRepository(client)
 
-    `when`(mockClient.newCall(any())).thenReturn(mockCall)
+    `when`(client.newCall(any())).thenReturn(mockCall)
   }
 
   @Test
-  fun getRoutes_callsClient() {
-    `when`(mockClient.newCall(any())).thenReturn(mock())
+  fun testGetFacilities_integrationTest() =
+      runTest(timeout = 5.seconds) {
+
+        // Calls the real API, not a mocked one
+        val realFacilitiesRepository = FacilitiesRepository(OkHttpClient())
+        realFacilitiesRepository.getFacilities(
+            testBoundsNormal,
+            { routes ->
+              assertNotEquals(routes.size, 0)
+              print(routes)
+            }) {
+              fail("Should not fail")
+            }
+      }
+
+  @Test
+  fun testGetFacilities_callsClient() {
+    `when`(client.newCall(any())).thenReturn(mock())
     facilitiesRepository.getFacilities(
         testBoundsNormal,
         { routes ->
@@ -111,7 +131,7 @@ class FacilitiesRepositoryTest {
         }) {
           fail("Failed to fetch from Overpass API")
         }
-    verify(mockClient).newCall(any())
+    verify(client).newCall(any())
   }
 
   @Test
