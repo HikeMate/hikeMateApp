@@ -174,7 +174,7 @@ private fun GuideHeader() {
         // HikeMate's logo
         Image(
             painter = painterResource(id = R.drawable.app_icon),
-            contentDescription = stringResource(R.string.app_icon_description),
+            contentDescription = "",
             modifier = Modifier.size(GuideScreen.ICON_SIZE_DP.dp))
         Spacer(modifier = Modifier.width(GuideScreen.HEADER_SPACING_DP.dp))
         Text(
