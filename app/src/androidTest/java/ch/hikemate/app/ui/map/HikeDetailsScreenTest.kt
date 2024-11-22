@@ -224,6 +224,10 @@ class HikeDetailScreenTest {
     doNothing().`when`(mockNavigationActions).goBack()
 
     composeTestRule.onNodeWithTag(BACK_BUTTON_TEST_TAG).performClick()
+
+    composeTestRule.waitForIdle()
+
+    assert(listOfHikeRoutesViewModel.selectedHikeRoute.value == null)
     verify(mockNavigationActions).goBack()
   }
 
