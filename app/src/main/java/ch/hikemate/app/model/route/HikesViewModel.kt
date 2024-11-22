@@ -523,9 +523,66 @@ class HikesViewModel(
       }
     }
 
-  private suspend fun setPlannedDateAsync(hikeId: String, date: Timestamp?, onSuccess: () -> Unit, onFailure: () -> Unit) {
-    // TODO : Implement HikesViewModel.setPlannedDateAsync
-  }
+  private suspend fun setPlannedDateAsync(hikeId: String, date: Timestamp?, onSuccess: () -> Unit, onFailure: () -> Unit) =
+    withContext(dispatcher) {
+      var successful: Boolean = false
+      _hikesMutex.withLock {
+        // Retrieve the hike to update from the loaded hikes
+        val hikeFlow = _hikeFlowsMap[hikeId] ?: return@withLock
+        val hike = hikeFlow.value
+
+        // If the hike is already saved with the provided date, don't do anything
+        if (hike.isSaved && hike.plannedDate == date) {
+          successful = true
+          return@withLock
+        }
+
+        // If the hike is not saved but the hike date is null, the operation is useless
+        if (!hike.isSaved && date == null) {
+          successful = true
+          return@withLock
+        }
+
+        // If the hike is already saved, unsave it temporarily
+        val savedHike = _savedHikesMap[hikeId]
+        if (savedHike != null) {
+          try {
+            savedHikesRepo.removeSavedHike(savedHike)
+          }
+          catch (e: Exception) {
+            Log.e(LOG_TAG, "Error encountered while unsaving hike temporarily", e)
+            successful = false
+            return@withLock
+          }
+        }
+
+        // Set the hike's planned date to the right one
+        val newSavedHike = SavedHike(id = hikeId, name = hike.name ?: "", date = date)
+        try {
+          savedHikesRepo.addSavedHike(newSavedHike)
+        }
+        catch (e: Exception) {
+          Log.e(LOG_TAG, "Error encountered while re-saving hike", e)
+          successful = false
+          return@withLock
+        }
+
+        // Update the hike in the saved hikes map
+        _savedHikesMap[hikeId] = newSavedHike
+
+        // Update the hike's state flow
+        hikeFlow.value = hike.copy(isSaved = true, plannedDate = date)
+
+        successful = true
+      }
+
+      if (successful) {
+        onSuccess()
+      }
+      else {
+        onFailure()
+      }
+    }
 
   private suspend fun loadHikesInBoundsAsync(boundingBox: BoundingBox, onSuccess: () -> Unit, onFailure: () -> Unit) =
     withContext(dispatcher) {
