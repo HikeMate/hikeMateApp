@@ -59,6 +59,28 @@ class HikesViewModel(
   private val _selectedHike = MutableStateFlow<Hike?>(null)
 
   /**
+   * Internal type used to store where the hikes in [_hikeFlowsMap] come from.
+   */
+  private enum class LoadedHikes {
+    /**
+     * No hikes have been loaded yet.
+     */
+    None,
+
+    /**
+     * The hikes loaded in [_hikeFlowsMap] are the saved hikes.
+     */
+    FromSaved,
+
+    /**
+     * The hikes loaded in [_hikeFlowsMap] were fetched from within a geographical rectangle.
+     */
+    FromBounds
+  }
+
+  private var _loadedHikesType: LoadedHikes = LoadedHikes.None
+
+  /**
    * Whether a new list of hikes is currently being retrieved.
    *
    * Set to true when the view model is performing an update of the whole list. For example, this
@@ -311,6 +333,32 @@ class HikesViewModel(
         savedHikes.forEach { savedHike ->
           _savedHikesMap[savedHike.id] = savedHike
         }
+
+        // Update the map of hikes to reflect the changes
+        val toRemove: MutableSet<String> = mutableSetOf()
+        _hikeFlowsMap.values.forEach { hikeFlow ->
+          val hike = hikeFlow.value
+          val savedHike = _savedHikesMap[hike.id]
+          // If the list currently only contains saved hikes and this hike was unsaved, remove it
+          if (_loadedHikesType == LoadedHikes.FromSaved && savedHike == null) {
+            toRemove.add(hike.id)
+          }
+          // Otherwise, check if a change actually happened to avoid unnecessary updates
+          else {
+            val (changeNeeded, updated) = hikeNeedsSavedStatusUpdate(hike, savedHike)
+            if (changeNeeded) {
+              hikeFlow.value = updated
+            }
+          }
+        }
+
+        // Remove the hikes that need to be removed
+        for (hikeId in toRemove) {
+          _hikeFlowsMap.remove(hikeId)
+        }
+
+        // Update the exposed list of hikes based on the map of hikes
+        updateHikeFlowsList()
       }
 
       onSuccess()
@@ -322,36 +370,21 @@ class HikesViewModel(
       // Indicate the view model is currently loading, for the UI to tell the user in some way
       _loading.value = true
 
-      // Update the local cache of saved hikes before adding them to _hikeFlows
+      // Remember that the loaded hikes list will now only hold saved hikes
+      _loadedHikesType = LoadedHikes.FromSaved
+
+      // Update the local cache of saved hikes and add them to _hikeFlows
       val success = refreshSavedHikesCacheAsync()
 
-      // Avoid making saved hikes list that is empty or not up-to-date
-      if (!success) {
-        _loading.value = false
+      // Indicate the view model has finished the heavy loading operation
+      _loading.value = false
+
+      if (success) {
+        onSuccess()
+      }
+      else {
         onFailure()
-        return@withContext
       }
-
-      // Wait for the lock to avoid concurrent modifications
-      _hikesMutex.withLock {
-
-        // Update the map of hikes to reflect the changes
-        _hikeFlowsMap.values.forEach { hikeFlow ->
-          val hike = hikeFlow.value
-          val savedHike = _savedHikesMap[hike.id]
-          // Check if a change actually happened to avoid unnecessary updates
-          val (changeNeeded, updated) = hikeNeedsSavedStatusUpdate(hike, savedHike)
-          if (changeNeeded) {
-            hikeFlow.value = updated
-          }
-        }
-
-        // Update the exposed list of hikes based on the map of hikes
-        updateHikeFlowsList()
-      }
-
-      // Perform the callback without the lock, to avoid deadlocks and improve performance
-      onSuccess()
     }
 
   /**
