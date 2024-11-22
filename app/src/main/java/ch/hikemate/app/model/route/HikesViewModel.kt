@@ -200,6 +200,29 @@ class HikesViewModel(
     viewModelScope.launch { unsaveHikeAsync(hikeId, onSuccess, onFailure) }
 
   /**
+   * Sets the planned date of a hike.
+   *
+   * If the hike is not saved yet and the provided date is not null (i.e. the user wants to save the
+   * hike), the hike will be saved with the provided date.
+   *
+   * If the hike is already saved, the hike will be updated with the new date.
+   *
+   * Setting a null date on an unsaved hike will have no effect.
+   *
+   * @param hikeId The ID of the hike to set the planned date of.
+   * @param date The planned date for the hike.
+   * @param onSuccess To be called if the hike's date is successfully updated.
+   * @param onFailure To be called if a problem prevents the operation's success.
+   */
+  fun setPlannedDate(
+    hikeId: String,
+    date: Timestamp?,
+    onSuccess: () -> Unit,
+    onFailure: () -> Unit
+  ) =
+    viewModelScope.launch { setPlannedDateAsync(hikeId, date, onSuccess, onFailure) }
+
+  /**
    * Replaces the current hikes in [hikeFlows] with hikes loaded from OSM in the provided bounds.
    *
    * Calling this function only launches a request asynchronously, the function will return before
@@ -251,29 +274,6 @@ class HikesViewModel(
    */
   fun retrieveElevationDataFor(hike: Hike, onSuccess: () -> Unit, onFailure: () -> Unit) =
     viewModelScope.launch { retrieveElevationDataForAsync(hike, onSuccess, onFailure) }
-
-  /**
-   * Sets the planned date of a hike.
-   *
-   * If the hike is not saved yet and the provided date is not null (i.e. the user wants to save the
-   * hike), the hike will be saved with the provided date.
-   *
-   * If the hike is already saved, the hike will be updated with the new date.
-   *
-   * Setting a null date on an unsaved hike will have no effect.
-   *
-   * @param hikeId The ID of the hike to set the planned date of.
-   * @param date The planned date for the hike.
-   * @param onSuccess To be called if the hike's date is successfully updated.
-   * @param onFailure To be called if a problem prevents the operation's success.
-   */
-  fun setPlannedDate(
-      hikeId: String,
-      date: Timestamp?,
-      onSuccess: () -> Unit,
-      onFailure: () -> Unit
-  ) =
-    viewModelScope.launch { setPlannedDateAsync(hikeId, date, onSuccess, onFailure) }
 
   private suspend fun selectHikeAsync(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) =
     withContext(dispatcher) {
