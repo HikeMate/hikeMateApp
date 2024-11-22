@@ -488,9 +488,16 @@ class HikesViewModel(
         // Update the saved hikes map
         _savedHikesMap.remove(hikeId)
 
-        // Update the hike's state flow
-        val newHikeState = hikeFlow.value.copy(isSaved = false, plannedDate = null)
-        hikeFlow.value = newHikeState
+        if (_loadedHikesType == LoadedHikes.FromSaved) {
+          // Only saved hikes may stay in the list, delete the unsaved hike from the list
+          _hikeFlowsMap.remove(hikeId)
+          updateHikeFlowsList()
+        }
+        else {
+          // The hike can stay even if it is not saved, so update it
+          val newHikeState = hikeFlow.value.copy(isSaved = false, plannedDate = null)
+          hikeFlow.value = newHikeState
+        }
 
         successful = true
       }
