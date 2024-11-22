@@ -14,8 +14,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
@@ -51,12 +49,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.hikemate.app.R
 import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.model.profile.HikingLevel
-import ch.hikemate.app.model.profile.Profile
 import ch.hikemate.app.model.profile.ProfileViewModel
 import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
-import ch.hikemate.app.ui.components.CenteredErrorAction
-import ch.hikemate.app.ui.components.CenteredLoadingAnimation
+import ch.hikemate.app.ui.components.GenericErrorHandler
 import ch.hikemate.app.ui.components.HikeCard
 import ch.hikemate.app.ui.components.HikeCardStyleProperties
 import ch.hikemate.app.ui.navigation.BottomBarNavigation
@@ -396,87 +392,76 @@ fun MapScreen(
   val errorMessageIdState = profileViewModel.errorMessageId.collectAsState()
   val profileState = profileViewModel.profile.collectAsState()
 
-  when {
-    errorMessageIdState.value != null -> {
-      Log.e("MapScreen", "Error message: ${stringResource(errorMessageIdState.value!!)}")
-      // Display an error message if an error occurred
-      CenteredErrorAction(
-          errorMessageId = errorMessageIdState.value!!,
-          actionIcon = Icons.Outlined.Home,
-          actionContentDescriptionStringId = R.string.go_back,
-          onAction = { navigationActions.navigateTo(Route.MAP) })
-    }
-    profileState.value == null -> {
-      Log.e("MapScreen", "Profile is null")
-      CenteredLoadingAnimation()
-    }
-    else -> {
-      // profileState.value is not null, we checked it before
-      val profile: Profile = profileState.value!!
+  GenericErrorHandler(
+      errorMessageIdState = errorMessageIdState,
+      actionContentDescriptionStringId = R.string.go_back,
+      actionOnErrorAction = { navigationActions.navigateTo(Route.MAP) },
+      valueState = profileState) { profile ->
+        BottomBarNavigation(
+            onTabSelect = { navigationActions.navigateTo(it) },
+            tabList = LIST_TOP_LEVEL_DESTINATIONS,
+            selectedItem = Route.MAP) {
+              Box(modifier = Modifier.fillMaxSize().testTag(Screen.MAP)) {
+                // Jetpack Compose is a relatively recent framework for implementing Android UIs.
+                // OSMDroid
+                // is
+                // an older library that uses Activities, the previous way of doing. The composable
+                // AndroidView
+                // allows us to use OSMDroid's legacy MapView in a Jetpack Compose layout.
+                AndroidView(
+                    factory = { mapView },
+                    modifier =
+                        Modifier.fillMaxSize()
+                            .testTag(MapScreen.TEST_TAG_MAP)
+                            .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT))
 
-      BottomBarNavigation(
-          onTabSelect = { navigationActions.navigateTo(it) },
-          tabList = LIST_TOP_LEVEL_DESTINATIONS,
-          selectedItem = Route.MAP) {
-            Box(modifier = Modifier.fillMaxSize().testTag(Screen.MAP)) {
-              // Jetpack Compose is a relatively recent framework for implementing Android UIs.
-              // OSMDroid
-              // is
-              // an older library that uses Activities, the previous way of doing. The composable
-              // AndroidView
-              // allows us to use OSMDroid's legacy MapView in a Jetpack Compose layout.
-              AndroidView(
-                  factory = { mapView },
-                  modifier =
-                      Modifier.fillMaxSize()
-                          .testTag(MapScreen.TEST_TAG_MAP)
-                          .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT))
-
-              // Button to center the map on the user's location
-              MapMyLocationButton(
-                  onClick = {
-                    val hasLocationPermission =
-                        LocationUtils.hasLocationPermission(locationPermissionState)
-                    // If the user has granted at least one of the two permissions, center the map
-                    // on
-                    // the user's location
-                    if (hasLocationPermission) {
-                      MapUtils.centerMapOnUserLocation(context, mapView, userLocationMarker)
-                    }
-                    // If the user yet needs to grant the permission, show a custom educational
-                    // alert
-                    else {
-                      showLocationPermissionDialog = true
-                    }
-                  },
-                  modifier =
-                      Modifier.align(Alignment.BottomStart)
-                          .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
-                          .testTag(MapScreen.TEST_TAG_CENTER_MAP_BUTTON))
-              // Search button to request OSM for hikes in the displayed area
-              if (!isSearching.value) {
-                MapSearchButton(
+                // Button to center the map on the user's location
+                MapMyLocationButton(
                     onClick = {
-                      MapScreen.launchSearch(isSearching, hikingRoutesViewModel, mapView, context)
+                      val hasLocationPermission =
+                          LocationUtils.hasLocationPermission(locationPermissionState)
+                      // If the user has granted at least one of the two permissions, center the map
+                      // on
+                      // the user's location
+                      if (hasLocationPermission) {
+                        MapUtils.centerMapOnUserLocation(context, mapView, userLocationMarker)
+                      }
+                      // If the user yet needs to grant the permission, show a custom educational
+                      // alert
+                      else {
+                        showLocationPermissionDialog = true
+                      }
                     },
                     modifier =
-                        Modifier.align(Alignment.BottomCenter)
+                        Modifier.align(Alignment.BottomStart)
+                            .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
+                            .testTag(MapScreen.TEST_TAG_CENTER_MAP_BUTTON))
+                // Search button to request OSM for hikes in the displayed area
+                if (!isSearching.value) {
+                  MapSearchButton(
+                      onClick = {
+                        MapScreen.launchSearch(isSearching, hikingRoutesViewModel, mapView, context)
+                      },
+                      modifier =
+                          Modifier.align(Alignment.BottomCenter)
+                              .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
+                }
+                // The zoom buttons are displayed on the bottom left of the screen
+                ZoomMapButton(
+                    onZoomIn = { mapView.controller.zoomIn() },
+                    onZoomOut = { mapView.controller.zoomOut() },
+                    modifier =
+                        Modifier.align(Alignment.BottomEnd)
                             .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
+                CollapsibleHikesList(
+                    hikingRoutesViewModel,
+                    profile.hikingLevel,
+                    isSearching.value,
+                    navigationActions)
+                // Put SideBarNavigation after to make it appear on top of the map and HikeList
               }
-              // The zoom buttons are displayed on the bottom left of the screen
-              ZoomMapButton(
-                  onZoomIn = { mapView.controller.zoomIn() },
-                  onZoomOut = { mapView.controller.zoomOut() },
-                  modifier =
-                      Modifier.align(Alignment.BottomEnd)
-                          .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
-              CollapsibleHikesList(
-                  hikingRoutesViewModel, profile.hikingLevel, isSearching.value, navigationActions)
-              // Put SideBarNavigation after to make it appear on top of the map and HikeList
             }
-          }
-    }
-  }
+      }
 }
 
 @OptIn(ExperimentalPermissionsApi::class)

@@ -21,8 +21,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -58,10 +56,9 @@ import ch.hikemate.app.model.route.DetailedHikeRoute
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
 import ch.hikemate.app.model.route.saved.SavedHikesViewModel
 import ch.hikemate.app.ui.components.BackButton
-import ch.hikemate.app.ui.components.CenteredErrorAction
-import ch.hikemate.app.ui.components.CenteredLoadingAnimation
 import ch.hikemate.app.ui.components.ElevationGraph
 import ch.hikemate.app.ui.components.ElevationGraphStyleProperties
+import ch.hikemate.app.ui.components.GenericErrorHandler
 import ch.hikemate.app.ui.map.HikeDetailScreen.MAP_MAX_ZOOM
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_ADD_DATE_BUTTON
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_BOOKMARK_ICON
@@ -203,46 +200,34 @@ fun HikeDetailScreen(
   val errorMessageIdState = profileViewModel.errorMessageId.collectAsState()
   val profileState = profileViewModel.profile.collectAsState()
 
-  when {
-    errorMessageIdState.value != null -> {
-      Log.e("HikeDetailScreen", "Error message: ${stringResource(errorMessageIdState.value!!)}")
-      // Display an error message if an error occurred
-      CenteredErrorAction(
-          errorMessageId = errorMessageIdState.value!!,
-          actionIcon = Icons.Outlined.Home,
-          actionContentDescriptionStringId = R.string.go_back,
-          onAction = { navigationActions.navigateTo(Route.MAP) })
-    }
-    profileState.value == null -> {
-      Log.e("HikeDetailScreen", "Profile is null")
-      CenteredLoadingAnimation()
-    }
-    else -> {
-      val profile = profileState.value!!
+  GenericErrorHandler(
+      errorMessageIdState = errorMessageIdState,
+      actionContentDescriptionStringId = R.string.go_back,
+      actionOnErrorAction = { navigationActions.navigateTo(Route.MAP) },
+      valueState = profileState,
+  ) { profile ->
+    Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {
+      // Map
+      AndroidView(
+          factory = { mapView },
+          modifier =
+              Modifier.fillMaxWidth()
+                  .padding(bottom = 300.dp) // Reserve space for the scaffold at the bottom
+                  .testTag(TEST_TAG_MAP))
+      // Back Button at the top of the screen
+      BackButton(
+          navigationActions = navigationActions,
+          modifier = Modifier.padding(top = 40.dp, start = 16.dp, end = 16.dp))
+      // Zoom buttons at the bottom right of the screen
+      ZoomMapButton(
+          onZoomIn = { mapView.controller.zoomIn() },
+          onZoomOut = { mapView.controller.zoomOut() },
+          modifier =
+              Modifier.align(Alignment.BottomEnd)
+                  .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
 
-      Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {
-        // Map
-        AndroidView(
-            factory = { mapView },
-            modifier =
-                Modifier.fillMaxWidth()
-                    .padding(bottom = 300.dp) // Reserve space for the scaffold at the bottom
-                    .testTag(TEST_TAG_MAP))
-        // Back Button at the top of the screen
-        BackButton(
-            navigationActions = navigationActions,
-            modifier = Modifier.padding(top = 40.dp, start = 16.dp, end = 16.dp))
-        // Zoom buttons at the bottom right of the screen
-        ZoomMapButton(
-            onZoomIn = { mapView.controller.zoomIn() },
-            onZoomOut = { mapView.controller.zoomOut() },
-            modifier =
-                Modifier.align(Alignment.BottomEnd)
-                    .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
-
-        // Hike Details bottom sheet
-        HikeDetails(detailedRoute, savedHikesViewModel, elevationData, profile.hikingLevel)
-      }
+      // Hike Details bottom sheet
+      HikeDetails(detailedRoute, savedHikesViewModel, elevationData, profile.hikingLevel)
     }
   }
 }
