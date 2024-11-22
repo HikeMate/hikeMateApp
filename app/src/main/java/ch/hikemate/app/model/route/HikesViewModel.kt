@@ -129,7 +129,11 @@ class HikesViewModel(
    * @param onFailure Will be called if an error is encountered.
    */
   fun refreshSavedHikesCache(onSuccess: () -> Unit, onFailure: () -> Unit) =
-    viewModelScope.launch { refreshSavedHikesCacheAsync(onSuccess, onFailure) }
+    viewModelScope.launch {
+      _loading.value = true
+      refreshSavedHikesCacheAsync(onSuccess, onFailure)
+      _loading.value = false
+    }
 
   /**
    * Loads the current user's saved hikes and replaces [hikeFlows] with those.
@@ -277,13 +281,80 @@ class HikesViewModel(
       _selectedHike.value = null
     }
 
-  private suspend fun refreshSavedHikesCacheAsync(onSuccess: () -> Unit, onFailure: () -> Unit) {
-    // TODO : Implement HikesViewModel.refreshSavedHikesCacheAsync
-  }
+  /**
+   * This function performs a loading operation but DOES NOT set [_loading]. If calling it from
+   * another function, please set [_loading] to true before calling the function and to false once
+   * the call has ended.
+   *
+   * @return True if the operation is successful, false otherwise.
+   */
+  private suspend fun refreshSavedHikesCacheAsync(onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}): Boolean =
+    withContext(dispatcher) {
+      val savedHikes: List<SavedHike>
+      try {
+        // Load the saved hikes from the repository
+        savedHikes = savedHikesRepo.loadSavedHikes()
+      }
+      catch (e: Exception) {
+        Log.e(LOG_TAG, "Error encountered while loading saved hikes", e)
+        _loading.value = false
+        onFailure()
+        return@withContext false
+      }
 
-  private suspend fun loadSavedHikesAsync(onSuccess: () -> Unit, onFailure: () -> Unit) {
-    // TODO : Implement HikesViewModel.loadSavedHikesAsync
-  }
+      // Wait for the lock to avoid concurrent modifications
+      _hikesMutex.withLock {
+        // Clear the current saved hikes register
+        _savedHikesMap.clear()
+
+        // Build the new saved hikes register
+        savedHikes.forEach { savedHike ->
+          _savedHikesMap[savedHike.id] = savedHike.date
+        }
+      }
+
+      onSuccess()
+      return@withContext true
+    }
+
+  private suspend fun loadSavedHikesAsync(onSuccess: () -> Unit, onFailure: () -> Unit) =
+    withContext(dispatcher) {
+      // Indicate the view model is currently loading, for the UI to tell the user in some way
+      _loading.value = true
+
+      // Update the local cache of saved hikes before adding them to _hikeFlows
+      val success = refreshSavedHikesCacheAsync()
+
+      // Avoid making saved hikes list that is empty or not up-to-date
+      if (!success) {
+        _loading.value = false
+        onFailure()
+        return@withContext
+      }
+
+      // Wait for the lock to avoid concurrent modifications
+      _hikesMutex.withLock {
+
+        // Update the map of hikes to reflect the changes
+        _hikeFlowsMap.values.forEach { hikeFlow ->
+          val hike = hikeFlow.value
+          // Check if a change actually happened to avoid unnecessary updates
+          if (hike.isSaved != _savedHikesMap.containsKey(hike.id) || hike.plannedDate != _savedHikesMap[hike.id]) {
+            val newHikeState = hike.copy(
+              isSaved = _savedHikesMap.containsKey(hike.id),
+              plannedDate = _savedHikesMap[hike.id]
+            )
+            hikeFlow.value = newHikeState
+          }
+        }
+
+        // Update the exposed list of hikes based on the map of hikes
+        updateHikeFlowsList()
+      }
+
+      // Perform the callback without the lock, to avoid deadlocks and improve performance
+      onSuccess()
+    }
 
   private suspend fun saveHikeAsync(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) =
     withContext(dispatcher) {
