@@ -279,15 +279,15 @@ class HikesViewModel(
    * If this function is called several times for the same hike, it will only send a request the
    * first time and mark the data as requested (see [DeferredData] and [Hike] for more information).
    *
-   * @param hike The hike to retrieve the elevation data for.
+   * @param hikeId The ID of the hike to retrieve the elevation data for.
    * @param onSuccess To be called once the elevation has been successfully retrieved for the hike.
    *   Do not use this to retrieve the elevation, rather observe the hike in [hikeFlows] to be
    *   notified automatically.
    * @param onFailure To be called if a problem is encountered and prevents the elevation from being
    *   retrieved.
    */
-  fun retrieveElevationDataFor(hike: Hike, onSuccess: () -> Unit, onFailure: () -> Unit) =
-    viewModelScope.launch { retrieveElevationDataForAsync(hike, onSuccess, onFailure) }
+  fun retrieveElevationDataFor(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) =
+    viewModelScope.launch { retrieveElevationDataForAsync(hikeId, onSuccess, onFailure) }
 
   /**
    * Computes all details attributes of a hike.
@@ -298,13 +298,13 @@ class HikesViewModel(
    * If this function is called several times for the same hike, it will only send a request the
    * first time and mark the data as requested (see [DeferredData] and [Hike] for more information).
    *
-   * @param hike The hike to retrieve the details attributes for.
+   * @param hikeId The ID of the hike to retrieve the details attributes for.
    * @param onSuccess To be called once the details have been successfully retrieved. Do not use
    * this to retrieve the details values, rather observe the hike in [hikeFlows] to be notified
    * automatically.
    */
-  fun computeDetailsFor(hike: Hike, onSuccess: () -> Unit, onFailure: () -> Unit) =
-    viewModelScope.launch { retrieveDetailsForAsync(hike, onSuccess, onFailure) }
+  fun computeDetailsFor(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) =
+    viewModelScope.launch { retrieveDetailsForAsync(hikeId, onSuccess, onFailure) }
 
   private suspend fun selectHikeAsync(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) =
     withContext(dispatcher) {
@@ -755,11 +755,12 @@ class HikesViewModel(
       )
     }
 
-  private suspend fun retrieveElevationDataForAsync(hike: Hike, onSuccess: () -> Unit, onFailure: () -> Unit) {
+  private suspend fun retrieveElevationDataForAsync(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) {
+
     // TODO : Implement HikesViewModel.retrieveElevationDataForAsync
   }
 
-  private suspend fun retrieveDetailsForAsync(hike: Hike, onSuccess: () -> Unit, onFailure: () -> Unit) {
+  private suspend fun retrieveDetailsForAsync(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) {
     // TODO : Implement HikesViewModel.retrieveDetailsForAsync
   }
 }
