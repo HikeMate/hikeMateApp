@@ -25,10 +25,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.hikemate.app.R
 import ch.hikemate.app.model.authentication.AuthViewModel
-import ch.hikemate.app.model.profile.ProfileViewModel
 import ch.hikemate.app.ui.components.BackButton
 import ch.hikemate.app.ui.components.BigButton
 import ch.hikemate.app.ui.components.ButtonType
@@ -56,7 +54,6 @@ object CreateAccountScreen {
 fun CreateAccountScreen(
     navigationActions: NavigationActions,
     authViewModel: AuthViewModel,
-    profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory)
 ) {
   val context = LocalContext.current
 
@@ -103,9 +100,6 @@ fun CreateAccountScreen(
             onSuccess = {
               // Navigate to the map screen
               navigationActions.navigateTo(Route.MAP)
-              if (authViewModel.currentUser.value != null) {
-                profileViewModel.getProfileById(authViewModel.currentUser.value!!.uid)
-              }
             },
             onErrorAction = {
               // Show an error message in a toast
