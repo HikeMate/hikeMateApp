@@ -45,7 +45,7 @@ class HikesViewModel(
 
   private val _savedHikesMap = mutableMapOf<String, SavedHike>()
 
-  private val _hikeFlowsMap = mutableMapOf<String, MutableStateFlow<Hike>>()
+  private var _hikeFlowsMap = mutableMapOf<String, MutableStateFlow<Hike>>()
 
   private val _loading = MutableStateFlow<Boolean>(false)
 
@@ -504,9 +504,86 @@ class HikesViewModel(
       }
     }
 
-  private suspend fun loadHikesInBoundsAsync(boundingBox: BoundingBox, onSuccess: () -> Unit, onFailure: () -> Unit) {
-    // TODO : Implement HikesViewModel.loadHikesInBoundsAsync
-  }
+  private suspend fun loadHikesInBoundsAsync(boundingBox: BoundingBox, onSuccess: () -> Unit, onFailure: () -> Unit) =
+    withContext(dispatcher) {
+      // Let the user know a heavy load operation is being performed
+      _loading.value = true
+
+      // Load the hikes from the repository
+      val hikes: List<HikeRoute>
+      try {
+        hikes = loadHikesInBoundsRepoWrapper(boundingBox.toBounds())
+      }
+      catch (e: Exception) {
+        Log.e(LOG_TAG, "Error encountered while loading hikes in bounds", e)
+        _loading.value = false
+        onFailure()
+        return@withContext
+      }
+
+      // Wait for the lock to avoid concurrent modifications
+      _hikesMutex.withLock {
+        // Keep already loaded hikes, discard the ones that do not appear in the given bounds
+        _hikeFlowsMap = _hikeFlowsMap.filterKeys { key -> hikes.none { hike -> hike.id == key } }.toMutableMap()
+
+        // Add the new hikes to the map of hikes
+        _hikeFlowsMap = hikes.map { osmData ->
+          val existingFlow = _hikeFlowsMap[osmData.id]
+
+          // The hike is not in the map yet, add it
+          return@map if (existingFlow == null) {
+            val hike = Hike(
+              id = osmData.id,
+              isSaved = _savedHikesMap.containsKey(osmData.id),
+              plannedDate = _savedHikesMap[osmData.id]?.date,
+              name = osmData.name,
+              description = osmData.description,
+              bounds = DeferredData.Obtained(osmData.bounds),
+              waypoints = DeferredData.Obtained(osmData.ways)
+            )
+            Pair(hike.id, MutableStateFlow(hike))
+
+          } else {
+            // The hike is already in the map, update it
+            val existingHike = existingFlow.value
+            // Assume bounds and waypoints don't change for a hike. If they are already loaded, don't update them
+            if (existingHike.bounds !is DeferredData.Obtained || existingHike.waypoints !is DeferredData.Obtained) {
+              val newHike = existingHike.copy(bounds = DeferredData.Obtained(osmData.bounds), waypoints = DeferredData.Obtained(osmData.ways))
+              // As the list will be updated as a whole, no need to update the state flow here
+              Pair(existingHike.id, MutableStateFlow(newHike))
+            }
+            else {
+              Pair(existingHike.id, existingFlow)
+            }
+          }
+        }
+          .toMap()
+          .toMutableMap()
+
+        // Update the exposed list of hikes based on the map of hikes
+        updateHikeFlowsList()
+      }
+
+      // The heavy loading operation is done now
+      _loading.value = false
+
+      // Call the success callback once the mutex has been released to avoid locking for too long
+      onSuccess()
+    }
+
+  /**
+   * The [HikeRoutesRepository] interface has been developed without coroutines in mind, hence we
+   * need a wrapper to "convert" the [HikeRoutesRepository.getRoutes] function that uses callback
+   * to a suspend function.
+   */
+  private suspend fun loadHikesInBoundsRepoWrapper(bounds: Bounds): List<HikeRoute> =
+    suspendCoroutine { continuation ->
+      osmHikesRepo.getRoutes(
+        bounds = bounds,
+        onSuccess = { routes -> continuation.resume(routes) },
+        onFailure = { exception -> continuation.resumeWithException(exception) }
+      )
+    }
 
   private suspend fun retrieveLoadedHikesOsmDataAsync(onSuccess: () -> Unit, onFailure: () -> Unit) {
     // TODO : Implement HikesViewModel.retrieveLoadedHikesOsmDataAsync
