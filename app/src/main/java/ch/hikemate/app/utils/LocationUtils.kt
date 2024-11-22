@@ -226,7 +226,7 @@ object LocationUtils {
    * @return A triple containing the closest point, the progress distance, and the distance from the
    *   location to the projected point
    */
-  fun Location.fromLocationToLine(route: HikeRoute): Triple<LatLong, Double, Double>? {
+  fun Location.projectLocationToHikeRoute(route: HikeRoute): Triple<LatLong, Double, Double>? {
     if (route.ways.isEmpty()) return null
 
     if (route.ways.size == 1) {
