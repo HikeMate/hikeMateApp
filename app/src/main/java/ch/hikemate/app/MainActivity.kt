@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -85,6 +86,13 @@ fun HikeMateApp() {
   val listOfHikeRoutesViewModel: ListOfHikeRoutesViewModel =
       viewModel(factory = ListOfHikeRoutesViewModel.Factory)
   val savedHikesViewModel: SavedHikesViewModel = viewModel(factory = SavedHikesViewModel.Factory)
+
+  val user = authViewModel.currentUser.collectAsState().value
+  LaunchedEffect(authViewModel.currentUser.collectAsState()) {
+    if (user != null) {
+      profileViewModel.getProfileById(user.uid)
+    }
+  }
 
   NavHost(
       navController = navController,
