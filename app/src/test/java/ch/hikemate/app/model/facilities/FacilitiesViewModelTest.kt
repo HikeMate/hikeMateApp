@@ -1,12 +1,14 @@
 package ch.hikemate.app.model.facilities
 
 import ch.hikemate.app.model.route.Bounds
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.TestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.fail
 import org.junit.Before
@@ -22,7 +24,7 @@ import org.osmdroid.util.GeoPoint
 class FacilitiesViewModelTest {
 
   private lateinit var mockFacilitiesRepository: FacilitiesRepository
-  private lateinit var testDispatcher: CoroutineDispatcher
+  private lateinit var testDispatcher: TestDispatcher
 
   private lateinit var facilitiesViewModel: FacilitiesViewModel // SUT
 
@@ -32,12 +34,17 @@ class FacilitiesViewModelTest {
   @OptIn(ExperimentalCoroutinesApi::class)
   @Before
   fun setUp() {
-    // Testing coroutines is easier if everything is set to run on a single thread
-    Dispatchers.setMain(UnconfinedTestDispatcher())
+    testDispatcher = StandardTestDispatcher()
+    Dispatchers.setMain(testDispatcher)
 
     mockFacilitiesRepository = mock()
-    testDispatcher = StandardTestDispatcher()
-    facilitiesViewModel = FacilitiesViewModel(mockFacilitiesRepository, UnconfinedTestDispatcher())
+    facilitiesViewModel = FacilitiesViewModel(mockFacilitiesRepository, testDispatcher)
+  }
+
+  @OptIn(ExperimentalCoroutinesApi::class)
+  @After
+  fun tearDown() {
+    Dispatchers.resetMain()
   }
 
   @Test
@@ -71,7 +78,7 @@ class FacilitiesViewModelTest {
   }
 
   @Test
-  fun testGetFacilities_usesCache_sameBounds() {
+  fun testGetFacilities_usesCache_sameBounds() = runTest {
     val facilities = listOf(Facility(FacilityType.TOILETS, GeoPoint(46.51, 6.61)))
 
     var onSuccessCallCount = 0 // Used to make sure the first onSuccess callback is only called once
@@ -88,6 +95,8 @@ class FacilitiesViewModelTest {
           onSuccessCallCount++
         },
         onFailure = { fail("Should not be called") })
+
+    testDispatcher.scheduler.advanceUntilIdle()
 
     // Second call to getFacilities should use the cache
     facilitiesViewModel.getFacilities(
@@ -95,12 +104,14 @@ class FacilitiesViewModelTest {
         onSuccess = { result -> assertEquals(facilities, result) },
         onFailure = { fail("Should not be called") })
 
+    testDispatcher.scheduler.advanceUntilIdle()
+
     verify(mockFacilitiesRepository, times(1)).getFacilities(any(), any(), any())
     assertEquals(1, onSuccessCallCount)
   }
 
   @Test
-  fun testGetFacilities_usesCache_containedBounds() {
+  fun testGetFacilities_usesCache_containedBounds() = runTest {
     val facilities = listOf(Facility(FacilityType.TOILETS, GeoPoint(46.51, 6.61)))
 
     var onSuccessCallCount = 0 // Used to make sure the first onSuccess callback is only called once
@@ -117,6 +128,8 @@ class FacilitiesViewModelTest {
           onSuccessCallCount++
         },
         onFailure = { fail("Should not be called") })
+
+    testDispatcher.scheduler.advanceUntilIdle()
 
     // Second call to getFacilities should use the cache. The bounds here are within the previous
     // calls bounds
@@ -125,12 +138,14 @@ class FacilitiesViewModelTest {
         onSuccess = { result -> assertEquals(facilities, result) },
         onFailure = { fail("Should not be called") })
 
+    testDispatcher.scheduler.advanceUntilIdle()
+
     verify(mockFacilitiesRepository, times(1)).getFacilities(any(), any(), any())
     assertEquals(1, onSuccessCallCount)
   }
 
   @Test
-  fun testGetFacilities_doesNotUseCache_onDifferentBounds() {
+  fun testGetFacilities_doesNotUseCache_onDifferentBounds() = runTest {
     val otherBounds = Bounds(41.0, 7.0, 42.0, 8.0)
     val otherFacilities =
         listOf(
@@ -152,11 +167,15 @@ class FacilitiesViewModelTest {
         onSuccess = { result -> assertEquals(testFacilities, result) },
         onFailure = { fail("Should not be called") })
 
+    testDispatcher.scheduler.advanceUntilIdle()
+
     // Second call to getFacilities should not use the cache, since the bounds do not overlap
     facilitiesViewModel.getFacilities(
         bounds = otherBounds,
         onSuccess = { result -> assertEquals(otherFacilities, result) },
         onFailure = { fail("Should not be called") })
+
+    testDispatcher.scheduler.advanceUntilIdle()
 
     verify(mockFacilitiesRepository, times(2)).getFacilities(any(), any(), any())
   }
