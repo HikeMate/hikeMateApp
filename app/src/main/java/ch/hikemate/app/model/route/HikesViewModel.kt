@@ -43,7 +43,7 @@ class HikesViewModel(
 
   private val _hikesMutex = Mutex()
 
-  private val _savedHikesMap = mutableMapOf<String, Timestamp?>()
+  private val _savedHikesMap = mutableMapOf<String, SavedHike>()
 
   private val _hikeFlowsMap = mutableMapOf<String, MutableStateFlow<Hike>>()
 
@@ -309,7 +309,7 @@ class HikesViewModel(
 
         // Build the new saved hikes register
         savedHikes.forEach { savedHike ->
-          _savedHikesMap[savedHike.id] = savedHike.date
+          _savedHikesMap[savedHike.id] = savedHike
         }
       }
 
@@ -338,13 +338,11 @@ class HikesViewModel(
         // Update the map of hikes to reflect the changes
         _hikeFlowsMap.values.forEach { hikeFlow ->
           val hike = hikeFlow.value
+          val savedHike = _savedHikesMap[hike.id]
           // Check if a change actually happened to avoid unnecessary updates
-          if (hike.isSaved != _savedHikesMap.containsKey(hike.id) || hike.plannedDate != _savedHikesMap[hike.id]) {
-            val newHikeState = hike.copy(
-              isSaved = _savedHikesMap.containsKey(hike.id),
-              plannedDate = _savedHikesMap[hike.id]
-            )
-            hikeFlow.value = newHikeState
+          val (changeNeeded, updated) = hikeNeedsSavedStatusUpdate(hike, savedHike)
+          if (changeNeeded) {
+            hikeFlow.value = updated
           }
         }
 
@@ -355,6 +353,37 @@ class HikesViewModel(
       // Perform the callback without the lock, to avoid deadlocks and improve performance
       onSuccess()
     }
+
+  /**
+   * Determines whether [hike] needs an update to its saved status based on [savedHike].
+   *
+   * Does not actually update the hike, that is left to the caller to do.
+   *
+   * @param hike The hike that might need an update to its saved status
+   * @param savedHike The currently known saved status of the provided hike. Null means the hike is
+   * not saved.
+   *
+   * @return (false, [hike]) if the hike does not need an update, (true, updated) if the hike does
+   * need an update, with updated being the hike with the new saved status.
+   */
+  private fun hikeNeedsSavedStatusUpdate(hike: Hike, savedHike: SavedHike?): Pair<Boolean, Hike> {
+    // If the hike is marked as saved but was unsaved, clear its saved state
+    if (savedHike == null) {
+      return if (hike.isSaved) {
+        Pair(true, hike.copy(isSaved = false, plannedDate = null))
+      }
+      else {
+        Pair(false, hike)
+      }
+    }
+
+    // If the hike is saved, check if one of the attributes changed (assume the name won't change)
+    return if (!hike.isSaved || hike.plannedDate != savedHike.date) {
+      Pair(true, hike.copy(isSaved = true, plannedDate = savedHike.date))
+    } else {
+      Pair(false, hike)
+    }
+  }
 
   private suspend fun saveHikeAsync(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) =
     withContext(dispatcher) {
@@ -381,7 +410,7 @@ class HikesViewModel(
         }
 
         // Update the saved hikes map
-        _savedHikesMap[hikeId] = hike.plannedDate
+        _savedHikesMap[hikeId] = SavedHike(hike.id, hike.name ?: "", hike.plannedDate)
 
         // Update the hike's state flow
         val newHikeState = hikeFlow.value.copy(isSaved = true)
