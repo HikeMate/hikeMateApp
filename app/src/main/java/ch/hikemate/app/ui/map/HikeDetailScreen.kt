@@ -2,7 +2,7 @@ package ch.hikemate.app.ui.map
 
 import android.annotation.SuppressLint
 import android.app.DatePickerDialog
-import android.widget.Toast
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
@@ -31,7 +31,6 @@ import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -102,9 +101,15 @@ fun HikeDetailScreen(
 
   val context = LocalContext.current
 
+  LaunchedEffect(listOfHikeRoutesViewModel.selectedHikeRoute.collectAsState().value) {
+    if (listOfHikeRoutesViewModel.selectedHikeRoute.value == null) {
+      navigationActions.goBack()
+    }
+  }
+
   if (listOfHikeRoutesViewModel.selectedHikeRoute.collectAsState().value == null) {
-    Toast.makeText(context, "No route selected, returning to map.", Toast.LENGTH_SHORT).show()
-    navigationActions.goBack()
+    Log.e("HikeDetailScreen", "No selected hike route")
+    return
   }
 
   val route = listOfHikeRoutesViewModel.selectedHikeRoute.collectAsState().value!!
@@ -191,7 +196,8 @@ fun HikeDetailScreen(
     // Back Button at the top of the screen
     BackButton(
         navigationActions = navigationActions,
-        modifier = Modifier.padding(top = 40.dp, start = 16.dp, end = 16.dp))
+        modifier = Modifier.padding(top = 40.dp, start = 16.dp, end = 16.dp),
+        onClick = { listOfHikeRoutesViewModel.clearSelectedRoute() })
     // Zoom buttons at the bottom right of the screen
     ZoomMapButton(
         onZoomIn = { mapView.controller.zoomIn() },
@@ -212,7 +218,7 @@ fun HikeDetails(
     savedHikesViewModel: SavedHikesViewModel,
     elevationData: List<Double>
 ) {
-  val hikeDetailState by savedHikesViewModel.hikeDetailState.collectAsState(null)
+  val hikeDetailState = savedHikesViewModel.hikeDetailState.collectAsState(null).value
 
   // Handle save/unsave actions
   val isSaved = hikeDetailState?.isSaved ?: false
