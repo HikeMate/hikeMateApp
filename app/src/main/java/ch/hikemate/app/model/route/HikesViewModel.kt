@@ -456,7 +456,7 @@ class HikesViewModel(
         _savedHikesMap.remove(hikeId)
 
         // Update the hike's state flow
-        val newHikeState = hikeFlow.value.copy(isSaved = false)
+        val newHikeState = hikeFlow.value.copy(isSaved = false, plannedDate = null)
         hikeFlow.value = newHikeState
 
         successful = true
