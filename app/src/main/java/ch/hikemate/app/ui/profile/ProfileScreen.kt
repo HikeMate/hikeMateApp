@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material3.MaterialTheme
@@ -116,14 +117,10 @@ fun ProfileScreen(
             modifier =
                 Modifier.testTag(Screen.PROFILE)
                     .padding(
-                        // Here we have 2 calls to padding. The first one is for the status bar
-                        // padding
-                        // and the second one is for the content padding. 2 padding will add up.
-                        // There is another way to do but we decided that this version was cleaner.
                         start = 16.dp,
                         end = 16.dp,
-                        top = 40.dp,
-                    ),
+                    )
+                    .safeDrawingPadding(),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
               Text(
                   context.getString(R.string.profile_screen_title),

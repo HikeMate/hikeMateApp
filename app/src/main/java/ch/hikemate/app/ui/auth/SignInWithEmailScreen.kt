@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material3.OutlinedTextField
@@ -80,11 +81,10 @@ fun SignInWithEmailScreen(
       modifier =
           Modifier.testTag(Screen.SIGN_IN_WITH_EMAIL)
               .padding(
-                  // Add for the status bar
                   start = 16.dp,
                   end = 16.dp,
-                  top = 40.dp,
-              ),
+              )
+              .safeDrawingPadding(),
       verticalArrangement = Arrangement.spacedBy(16.dp)) {
         BackButton(navigationActions)
         Text(

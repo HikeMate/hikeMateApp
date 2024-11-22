@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -221,7 +222,7 @@ fun HikeDetailScreen(
       // Back Button at the top of the screen
       BackButton(
           navigationActions = navigationActions,
-          modifier = Modifier.padding(top = 40.dp, start = 16.dp, end = 16.dp),
+          modifier = Modifier.padding(start = 16.dp, end = 16.dp).safeContentPadding(),
           onClick = { listOfHikeRoutesViewModel.clearSelectedRoute() })
       // Zoom buttons at the bottom right of the screen
       ZoomMapButton(
