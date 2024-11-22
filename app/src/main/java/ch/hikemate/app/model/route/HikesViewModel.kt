@@ -572,7 +572,7 @@ class HikesViewModel(
 
   private suspend fun setPlannedDateAsync(hikeId: String, date: Timestamp?, onSuccess: () -> Unit, onFailure: () -> Unit) =
     withContext(dispatcher) {
-      var successful: Boolean = false
+      var successful = false
       _hikesMutex.withLock {
         // Retrieve the hike to update from the loaded hikes
         val hikeFlow = _hikeFlowsMap[hikeId] ?: return@withLock
