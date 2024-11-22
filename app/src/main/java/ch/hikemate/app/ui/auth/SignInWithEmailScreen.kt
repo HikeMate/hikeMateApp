@@ -2,9 +2,8 @@ package ch.hikemate.app.ui.auth
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
@@ -129,12 +128,10 @@ fun SignInWithEmailScreen(
                   })
             })
 
-        // Push the sign up button to the bottom of the screen by adding a spacer
-        Spacer(modifier = Modifier.weight(1f))
-
-        Box(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-            contentAlignment = Alignment.Center) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(bottom = 16.dp),
+            verticalArrangement = Arrangement.Bottom,
+            horizontalAlignment = Alignment.CenterHorizontally) {
               TextButton(
                   onClick = {
                     // Navigate to the sign up screen
