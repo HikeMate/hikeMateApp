@@ -504,6 +504,10 @@ class HikesViewModel(
       }
     }
 
+  private suspend fun setPlannedDateAsync(hikeId: String, date: Timestamp?, onSuccess: () -> Unit, onFailure: () -> Unit) {
+    // TODO : Implement HikesViewModel.setPlannedDateAsync
+  }
+
   private suspend fun loadHikesInBoundsAsync(boundingBox: BoundingBox, onSuccess: () -> Unit, onFailure: () -> Unit) =
     withContext(dispatcher) {
       // Let the user know a heavy load operation is being performed
@@ -591,9 +595,5 @@ class HikesViewModel(
 
   private suspend fun retrieveElevationDataForAsync(hike: Hike, onSuccess: () -> Unit, onFailure: () -> Unit) {
     // TODO : Implement HikesViewModel.retrieveElevationDataForAsync
-  }
-
-  private suspend fun setPlannedDateAsync(hikeId: String, date: Timestamp?, onSuccess: () -> Unit, onFailure: () -> Unit) {
-    // TODO : Implement HikesViewModel.setPlannedDateAsync
   }
 }
