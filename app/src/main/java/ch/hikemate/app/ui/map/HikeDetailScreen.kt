@@ -55,10 +55,10 @@ import ch.hikemate.app.model.profile.ProfileViewModel
 import ch.hikemate.app.model.route.DetailedHikeRoute
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
 import ch.hikemate.app.model.route.saved.SavedHikesViewModel
+import ch.hikemate.app.ui.components.AsyncStateHandler
 import ch.hikemate.app.ui.components.BackButton
 import ch.hikemate.app.ui.components.ElevationGraph
 import ch.hikemate.app.ui.components.ElevationGraphStyleProperties
-import ch.hikemate.app.ui.components.GenericErrorHandler
 import ch.hikemate.app.ui.map.HikeDetailScreen.MAP_MAX_ZOOM
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_ADD_DATE_BUTTON
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_BOOKMARK_ICON
@@ -200,7 +200,7 @@ fun HikeDetailScreen(
   val errorMessageIdState = profileViewModel.errorMessageId.collectAsState()
   val profileState = profileViewModel.profile.collectAsState()
 
-  GenericErrorHandler(
+  AsyncStateHandler(
       errorMessageIdState = errorMessageIdState,
       actionContentDescriptionStringId = R.string.go_back,
       actionOnErrorAction = { navigationActions.navigateTo(Route.MAP) },

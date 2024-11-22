@@ -52,7 +52,7 @@ import ch.hikemate.app.model.profile.HikingLevel
 import ch.hikemate.app.model.profile.ProfileViewModel
 import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
-import ch.hikemate.app.ui.components.GenericErrorHandler
+import ch.hikemate.app.ui.components.AsyncStateHandler
 import ch.hikemate.app.ui.components.HikeCard
 import ch.hikemate.app.ui.components.HikeCardStyleProperties
 import ch.hikemate.app.ui.navigation.BottomBarNavigation
@@ -392,7 +392,7 @@ fun MapScreen(
   val errorMessageIdState = profileViewModel.errorMessageId.collectAsState()
   val profileState = profileViewModel.profile.collectAsState()
 
-  GenericErrorHandler(
+  AsyncStateHandler(
       errorMessageIdState = errorMessageIdState,
       actionContentDescriptionStringId = R.string.go_back,
       actionOnErrorAction = { navigationActions.navigateTo(Route.MAP) },
