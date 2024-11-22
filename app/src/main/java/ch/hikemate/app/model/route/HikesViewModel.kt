@@ -420,36 +420,9 @@ class HikesViewModel(
 
   private suspend fun saveHikeAsync(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) =
     withContext(dispatcher) {
-      var successful = false
+      val successful: Boolean
       _hikesMutex.withLock {
-        // Retrieve the hike to save from the loaded hikes
-        val hikeFlow = _hikeFlowsMap[hikeId] ?: return@withLock
-        val hike = hikeFlow.value
-
-        // Avoid updating the hike if it is already saved
-        if (hike.isSaved) {
-          successful = true
-          return@withLock
-        }
-
-        // Save the hike using the repository
-        try {
-          savedHikesRepo.addSavedHike(SavedHike(hike.id, hike.name ?: "", hike.plannedDate))
-        }
-        catch (e: Exception) {
-          Log.e(LOG_TAG, "Error encountered while saving hike", e)
-          successful = false
-          return@withLock
-        }
-
-        // Update the saved hikes map
-        _savedHikesMap[hikeId] = SavedHike(hike.id, hike.name ?: "", hike.plannedDate)
-
-        // Update the hike's state flow
-        val newHikeState = hikeFlow.value.copy(isSaved = true)
-        hikeFlow.value = newHikeState
-
-        successful = true
+        successful = saveHikeAsyncInternal(hikeId)
       }
 
       // Perform the callback without the lock, to avoid deadlocks and improve performance
@@ -460,6 +433,45 @@ class HikesViewModel(
         onFailure()
       }
     }
+
+  /**
+   * Saves the hike corresponding to the provided [hikeId].
+   *
+   * CAUTION: This method DOES NOT acquire the [_hikesMutex]. It is the responsibility of the caller
+   * to call this function inside of a [Mutex.withLock] block.
+   *
+   * @param hikeId The ID of the hike that should be saved.
+   *
+   * @return True if the operation was successful, false otherwise.
+   */
+  private suspend fun saveHikeAsyncInternal(hikeId: String): Boolean {
+    // Retrieve the hike to save from the loaded hikes
+    val hikeFlow = _hikeFlowsMap[hikeId] ?: return false
+    val hike = hikeFlow.value
+
+    // Avoid updating the hike if it is already saved
+    if (hike.isSaved) {
+      return true
+    }
+
+    // Save the hike using the repository
+    try {
+      savedHikesRepo.addSavedHike(SavedHike(hike.id, hike.name ?: "", hike.plannedDate))
+    }
+    catch (e: Exception) {
+      Log.e(LOG_TAG, "Error encountered while saving hike", e)
+      return false
+    }
+
+    // Update the saved hikes map
+    _savedHikesMap[hikeId] = SavedHike(hike.id, hike.name ?: "", hike.plannedDate)
+
+    // Update the hike's state flow
+    val newHikeState = hikeFlow.value.copy(isSaved = true)
+    hikeFlow.value = newHikeState
+
+    return true
+  }
 
   private suspend fun unsaveHikeAsync(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) =
     withContext(dispatcher) {
