@@ -665,9 +665,64 @@ class HikesViewModel(
       )
     }
 
-  private suspend fun retrieveLoadedHikesOsmDataAsync(onSuccess: () -> Unit, onFailure: () -> Unit) {
-    // TODO : Implement HikesViewModel.retrieveLoadedHikesOsmDataAsync
-  }
+  private fun hasOsmData(hike: Hike): Boolean =
+    hike.bounds is DeferredData.Obtained && hike.waypoints is DeferredData.Obtained
+
+  private suspend fun retrieveLoadedHikesOsmDataAsync(onSuccess: () -> Unit, onFailure: () -> Unit) =
+    withContext(dispatcher) {
+      // Notify the UI that a heavy loading operation is in progress
+      _loading.value = true
+
+      // Prepare a list of hikes for which we need to retrieve the data
+      val idsToRetrieve: List<String>
+      _hikesMutex.withLock {
+        idsToRetrieve = _hikeFlowsMap.values.filter { hasOsmData(it.value) }.map { it.value.id }
+      }
+
+      // Retrieve the OSM data of the hikes
+      val hikeRoutes: List<HikeRoute>
+      try {
+        hikeRoutes = loadHikesByIdsRepoWrapper(idsToRetrieve)
+      }
+      catch (e: Exception) {
+        Log.e(LOG_TAG, "Error encountered while loading hikes OSM data", e)
+        onFailure()
+        return@withContext
+      }
+
+      // Update the retrieved data for the loaded hikes
+      _hikesMutex.withLock {
+        hikeRoutes.forEach { hikeRoute ->
+          val hikeFlow = _hikeFlowsMap[hikeRoute.id] ?: return@forEach
+          val hike = hikeFlow.value
+
+          val newHike = hike.copy(
+            name = hikeRoute.name,
+            description = hikeRoute.description,
+            bounds = DeferredData.Obtained(hikeRoute.bounds),
+            waypoints = DeferredData.Obtained(hikeRoute.ways)
+          )
+          hikeFlow.value = newHike
+        }
+      }
+
+      // Release the mutex before calling onSuccess to avoid deadlocks or performance issues
+      onSuccess()
+    }
+
+  /**
+   * The [HikeRoutesRepository] interface has been developed without coroutines in mind, hence we
+   * need a wrapper to "convert" the [HikeRoutesRepository.getRouteById] function that uses callback
+   * to a suspend function.
+   */
+  private suspend fun loadHikesByIdsRepoWrapper(ids: List<String>): List<HikeRoute> =
+    suspendCoroutine { continuation ->
+      osmHikesRepo.getRoutesByIds(
+        routeIds = ids,
+        onSuccess = { hikeRoutes -> continuation.resume(hikeRoutes) },
+        onFailure = { exception -> continuation.resumeWithException(exception) }
+      )
+    }
 
   private suspend fun retrieveElevationDataForAsync(hike: Hike, onSuccess: () -> Unit, onFailure: () -> Unit) {
     // TODO : Implement HikesViewModel.retrieveElevationDataForAsync
