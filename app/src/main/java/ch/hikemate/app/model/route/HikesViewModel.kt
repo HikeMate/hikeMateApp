@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import ch.hikemate.app.model.elevation.ElevationService
 import ch.hikemate.app.model.route.saved.SavedHike
 import ch.hikemate.app.model.route.saved.SavedHikesRepository
+import ch.hikemate.app.utils.RouteUtils
 import com.google.firebase.Timestamp
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -860,7 +861,125 @@ class HikesViewModel(
       )
     }
 
-  private suspend fun retrieveDetailsForAsync(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) {
-    // TODO : Implement HikesViewModel.retrieveDetailsForAsync
-  }
+  private suspend fun retrieveDetailsForAsync(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) =
+    withContext(dispatcher) {
+      // Retrieve the current value of the hike and note what computations are required
+      var success = false
+      var alreadyComputed = false
+      var alreadyRequested = false
+      var nullableWayPoints: List<LatLong>? = null
+      var nullableElevation: List<Double>? = null
+      _hikesMutex.withLock {
+        val hikeFlow = _hikeFlowsMap[hikeId] ?: return@withLock
+        val hike = hikeFlow.value
+
+        // Check that the details data hasn't been computed already
+        alreadyComputed = areDetailsComputedFor(hike)
+        if (alreadyComputed) {
+          success = true
+          return@withLock
+        }
+
+        // Only perform the computation if it hasn't been started for all components yet
+        if (hike.distance is DeferredData.Requested
+          && hike.estimatedTime is DeferredData.Requested
+          && hike.difficulty is DeferredData.Requested
+          && hike.elevationGain is DeferredData.Requested
+          ) {
+          success = true
+          alreadyRequested = true
+          return@withLock
+        }
+
+        // Check that the way points and the elevation have been retrieved for this hike
+        if (hike.waypoints !is DeferredData.Obtained || hike.elevation !is DeferredData.Obtained) {
+          return@withLock
+        }
+        nullableWayPoints = hike.waypoints.data
+        nullableElevation = hike.elevation.data
+
+        // Set the details of the hike to have been requested
+        val hikeWithRequestedAttributes = hike.copy(
+          distance = DeferredData.Requested,
+          estimatedTime = DeferredData.Requested,
+          difficulty = DeferredData.Requested,
+          elevationGain = DeferredData.Requested,
+        )
+        hikeFlow.value = hikeWithRequestedAttributes
+
+        success = true
+      }
+
+      if (!success) {
+        onFailure()
+        return@withContext
+      }
+      else if (alreadyComputed || alreadyRequested) {
+        onSuccess()
+        return@withContext
+      }
+
+      // Safely extract the way points from the nullable variable to make the compiler happy
+      val waypoints = nullableWayPoints ?: run {
+        onFailure()
+        return@withContext
+      }
+
+      // Safely extract the elevation from the nullable variable to make the compiler happy
+      val elevation = nullableElevation ?: run {
+        onFailure()
+        return@withContext
+      }
+
+      // Perform the actual computations
+      val distance: Double
+      val elevationGain: Double
+      val estimatedTime: Double
+      val difficulty: HikeDifficulty
+      try {
+        distance = RouteUtils.computeTotalDistance(waypoints)
+        elevationGain = RouteUtils.calculateElevationGain(elevation)
+        estimatedTime = RouteUtils.estimateTime(distance, elevationGain)
+        difficulty = RouteUtils.determineDifficulty(distance, elevationGain)
+      }
+      catch (e: Exception) {
+        Log.e(LOG_TAG, "Error while computing hike details", e)
+
+        // Set the detail properties back to NotRequested
+        _hikesMutex.withLock {
+          val hikeFlow = _hikeFlowsMap[hikeId] ?: return@withLock
+          val updatedHike = hikeFlow.value.copy(
+            distance = DeferredData.NotRequested,
+            elevationGain = DeferredData.NotRequested,
+            estimatedTime = DeferredData.NotRequested,
+            difficulty = DeferredData.NotRequested,
+          )
+          hikeFlow.value = updatedHike
+        }
+
+        onFailure()
+        return@withContext
+      }
+
+      // Update the hike in the list
+      success = false
+      _hikesMutex.withLock {
+        val hikeFlow = _hikeFlowsMap[hikeId] ?: return@withLock
+        val updatedHike = hikeFlow.value.copy(
+          distance = DeferredData.Obtained(distance),
+          elevationGain = DeferredData.Obtained(elevationGain),
+          estimatedTime = DeferredData.Obtained(estimatedTime),
+          difficulty = DeferredData.Obtained(difficulty)
+        )
+        hikeFlow.value = updatedHike
+        success = true
+      }
+
+      if (success) {
+        onSuccess()
+      }
+      else {
+        onFailure()
+      }
+    }
 }
