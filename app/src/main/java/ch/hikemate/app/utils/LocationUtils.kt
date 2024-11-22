@@ -6,6 +6,8 @@ import android.os.Looper
 import android.util.Log
 import android.widget.Toast
 import ch.hikemate.app.R
+import ch.hikemate.app.model.route.HikeRoute
+import ch.hikemate.app.model.route.LatLong
 import ch.hikemate.app.ui.map.MapScreen
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.MultiplePermissionsState
@@ -216,5 +218,47 @@ object LocationUtils {
       stopUserLocationUpdates(context, locationUpdatedCallback)
       MapUtils.clearUserPosition(userLocationMarker, mapView, invalidate = true)
     }
+  }
+
+  /**
+   * Projects a location to the closest point in a HikeRoute
+   *
+   * @return A triple containing the closest point, the progress distance, and the distance from the
+   *   location to the projected point
+   */
+  fun Location.fromLocationToLine(route: HikeRoute): Triple<LatLong, Double, Double>? {
+    if (route.ways.isEmpty()) return null
+
+    if (route.ways.size == 1) {
+      val location = LatLong(latitude, longitude)
+      val projectedLocation = location.projectPointIntoLine(route.ways[0], route.ways[0])
+      val distance = projectedLocation.distanceTo(location)
+
+      return Triple(projectedLocation, distance / route.length, distance)
+    }
+
+    val location = LatLong(latitude, longitude)
+    val routeLength = route.length
+
+    // Find closest segment
+    var minDistance = Double.MAX_VALUE
+    var closestPoint = route.ways[0]
+    var progressDistance = 0.0
+    var distanceCovered = 0.0
+
+    route.ways.windowed(2).forEach { (p1, p2) ->
+      val segmentLength = p1.distanceTo(p2)
+      val projected = location.projectPointIntoLine(p1, p2)
+      val distance = location.distanceTo(projected)
+
+      if (distance < minDistance) {
+        minDistance = distance
+        closestPoint = projected
+        progressDistance = distanceCovered + projected.distanceTo(p1)
+      }
+      distanceCovered += segmentLength
+    }
+
+    return Triple(closestPoint, progressDistance / routeLength, minDistance)
   }
 }

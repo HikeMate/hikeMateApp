@@ -104,6 +104,26 @@ data class LatLong(val lat: Double, val lon: Double) {
     return 2 * earthRadius * asin(sqrt(a))
   }
 
+  /**
+   * Project this point onto a line segment between two points
+   *
+   * @return the projected point in LatLong
+   */
+  fun projectPointIntoLine(start: LatLong, end: LatLong): LatLong {
+    val dx = end.lon - start.lon
+    val dy = end.lat - start.lat
+
+    val l2 = dx * dx + dy * dy
+
+    if (l2 == 0.0) return start
+
+    val t = ((this.lon - start.lon) * dx + (this.lat - start.lat) * dy) / l2
+
+    val tClamped = t.coerceIn(0.0, 1.0)
+
+    return LatLong(start.lat + tClamped * dy, start.lon + tClamped * dx)
+  }
+
   override fun equals(other: Any?): Boolean {
     return if (other is LatLong) {
       lat == other.lat && lon == other.lon
@@ -133,9 +153,19 @@ data class HikeRoute(
     val name: String? = null,
     val description: String? = null
 ) {
+  val length: Double
+    get() = getLength()
+
   /** Get the color of the route from its id. The color should be the same for the same route id. */
   fun getColor(): Int {
     return hikeColors[abs(id.hashCode()) % hikeColors.size]
+  }
+
+  /**
+   * Get the length of the hike
+   */
+  private fun getLength(): Double {
+    return ways.windowed(2).sumOf { (p1, p2) -> p1.distanceTo(p2) }
   }
 }
 
