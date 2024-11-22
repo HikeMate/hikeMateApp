@@ -257,6 +257,20 @@ class HikesViewModel(
     viewModelScope.launch { retrieveLoadedHikesOsmDataAsync(onSuccess, onFailure) }
 
   /**
+   * Indicates whether [retrieveElevationDataFor] can be called for the provided hike.
+   *
+   * See the documentation of [retrieveElevationDataFor] for details about what this function
+   * checks. Everything is documented, no additional checks are performed. This is a merely a helper
+   * function.
+   *
+   * @param hike The hike to check.
+   *
+   * @return True if the [retrieveElevationDataFor] can be called for this hike, false otherwise.
+   */
+  fun canElevationDataBeRetrievedFor(hike: Hike): Boolean =
+    hike.waypoints is DeferredData.Obtained
+
+  /**
    * Retrieves the elevation data for a hike.
    *
    * Requires the hike's way points list to have been loaded before. If the way points are not
