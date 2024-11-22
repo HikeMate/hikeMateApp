@@ -755,10 +755,95 @@ class HikesViewModel(
       )
     }
 
-  private suspend fun retrieveElevationDataForAsync(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) {
+  private suspend fun retrieveElevationDataForAsync(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) =
+    withContext(dispatcher) {
+      // Retrieve the hike from the list to perform a few checks
+      var success = false
+      var alreadyComputed = false
+      var mutableWaypoints: List<LatLong>? = null
+      _hikesMutex.withLock {
+        val hikeFlow = _hikeFlowsMap[hikeId] ?: return@withLock
+        val hike = hikeFlow.value
 
-    // TODO : Implement HikesViewModel.retrieveElevationDataForAsync
-  }
+        // If the elevation of this hike is already computed or requested, do nothing
+        alreadyComputed = hike.elevation !is DeferredData.NotRequested
+        if (alreadyComputed) {
+          success = true
+          return@withLock
+        }
+
+        // If the way points of the hike have not been loaded, fail
+        if (hike.waypoints !is DeferredData.Obtained) {
+          success = false
+          return@withLock
+        }
+        mutableWaypoints = hike.waypoints.data
+
+        // The elevation has not been requested yet, mark it as requested
+        val hikeMarkedAsRequested = hike.copy(elevation = DeferredData.Requested)
+        hikeFlow.value = hikeMarkedAsRequested
+        success = true
+      }
+
+      if (alreadyComputed) {
+        onSuccess()
+        return@withContext
+      }
+      else if (!success) {
+        onFailure()
+        return@withContext
+      }
+
+      // Extract the waypoints from the nullable variable safely for the compiler to be happy
+      val waypoints: List<LatLong> = mutableWaypoints ?: run {
+        onFailure()
+        return@withContext
+      }
+
+      // Launch a request for the elevation data of the hike
+      val elevation: List<Double>
+      try {
+        elevation = getElevationRepoWrapper(waypoints, hikeId)
+      }
+      catch (e: Exception) {
+        Log.e(LOG_TAG, "Error encountered while retrieving elevation", e)
+        onFailure()
+        return@withContext
+      }
+
+      // Update the hike's elevation data
+      success = false
+      _hikesMutex.withLock {
+        val hikeFlow = _hikeFlowsMap[hikeId] ?: return@withLock
+        val hike = hikeFlow.value
+
+        val updatedHike = hike.copy(elevation = DeferredData.Obtained(elevation))
+        hikeFlow.value = updatedHike
+        success = true
+      }
+
+      if (success) {
+        onSuccess()
+      }
+      else {
+        onFailure()
+      }
+    }
+
+  /**
+   * The [ElevationService] interface has been developed without coroutines in mind, hence we
+   * need a wrapper to "convert" the [ElevationService.getElevation] function that uses callback
+   * to a suspend function.
+   */
+  private suspend fun getElevationRepoWrapper(coordinates: List<LatLong>, hikeId: String): List<Double> =
+    suspendCoroutine { continuation ->
+      elevationRepo.getElevation(
+        coordinates = coordinates,
+        hikeID = hikeId,
+        onSuccess = { elevation -> continuation.resume(elevation) },
+        onFailure = { exception -> continuation.resumeWithException(exception) }
+      )
+    }
 
   private suspend fun retrieveDetailsForAsync(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) {
     // TODO : Implement HikesViewModel.retrieveDetailsForAsync
