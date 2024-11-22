@@ -289,6 +289,23 @@ class HikesViewModel(
   fun retrieveElevationDataFor(hike: Hike, onSuccess: () -> Unit, onFailure: () -> Unit) =
     viewModelScope.launch { retrieveElevationDataForAsync(hike, onSuccess, onFailure) }
 
+  /**
+   * Computes all details attributes of a hike.
+   *
+   * Requires the hike's way points and elevation to have been loaded before. If the way points or
+   * the elevation are not available, [onFailure] will be called.
+   *
+   * If this function is called several times for the same hike, it will only send a request the
+   * first time and mark the data as requested (see [DeferredData] and [Hike] for more information).
+   *
+   * @param hike The hike to retrieve the details attributes for.
+   * @param onSuccess To be called once the details have been successfully retrieved. Do not use
+   * this to retrieve the details values, rather observe the hike in [hikeFlows] to be notified
+   * automatically.
+   */
+  fun computeDetailsFor(hike: Hike, onSuccess: () -> Unit, onFailure: () -> Unit) =
+    viewModelScope.launch { retrieveDetailsForAsync(hike, onSuccess, onFailure) }
+
   private suspend fun selectHikeAsync(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) =
     withContext(dispatcher) {
       var successful = false
@@ -740,5 +757,9 @@ class HikesViewModel(
 
   private suspend fun retrieveElevationDataForAsync(hike: Hike, onSuccess: () -> Unit, onFailure: () -> Unit) {
     // TODO : Implement HikesViewModel.retrieveElevationDataForAsync
+  }
+
+  private suspend fun retrieveDetailsForAsync(hike: Hike, onSuccess: () -> Unit, onFailure: () -> Unit) {
+    // TODO : Implement HikesViewModel.retrieveDetailsForAsync
   }
 }
