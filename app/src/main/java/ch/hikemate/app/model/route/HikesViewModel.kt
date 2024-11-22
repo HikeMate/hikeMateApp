@@ -290,6 +290,21 @@ class HikesViewModel(
     viewModelScope.launch { retrieveElevationDataForAsync(hikeId, onSuccess, onFailure) }
 
   /**
+   * Indicates whether all details data have been computed for the provided hike.
+   *
+   * This is merely a helper function and does not perform any operations on the hike.
+   *
+   * @param hike The hike to check.
+   *
+   * @return True if all details attribute were already computed for this hike, false otherwise.
+   */
+  fun areDetailsComputedFor(hike: Hike): Boolean =
+    hike.distance is DeferredData.Obtained
+            && hike.estimatedTime is DeferredData.Obtained
+            && hike.difficulty is DeferredData.Obtained
+            && hike.elevationGain is DeferredData.Obtained
+
+  /**
    * Computes all details attributes of a hike.
    *
    * Requires the hike's way points and elevation to have been loaded before. If the way points or
