@@ -38,7 +38,8 @@ object Guide {
               contentResId = R.string.guide_content_difficulty_levels),
           GuideTopic(
               titleResId = R.string.guide_topic_track_location,
-              contentResId = R.string.guide_content_track_location))
+              contentResId = R.string.guide_content_track_location,
+              actionRoute = Route.MAP))
 
   val HIKING_GUIDE_TOPICS =
       listOf(

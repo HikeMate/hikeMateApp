@@ -120,6 +120,15 @@ fun GuideScreen(
       }
 }
 
+/**
+ * The guide's content containing the LazyColumn with all the sections
+ *
+ * @param modifier
+ * @param padding
+ * @param appTopics
+ * @param hikingTopics
+ * @param navigationActions
+ */
 @Composable
 private fun GuideContent(
     modifier: Modifier,
@@ -164,6 +173,7 @@ private fun GuideContent(
   }
 }
 
+/** Guide header which contains the logo and the title */
 @Composable
 private fun GuideHeader() {
   Row(
@@ -183,6 +193,7 @@ private fun GuideHeader() {
       }
 }
 
+/** Hiking guide section title */
 @Composable
 private fun HikingGuideSection() {
   Spacer(modifier = Modifier.height(GuideScreen.SECTION_SPACING_DP.dp))
@@ -220,6 +231,14 @@ private fun ExpandableTopicCard(
       }
 }
 
+/**
+ * The content of a topic
+ *
+ * @param topic
+ * @param isExpanded
+ * @param onExpandToggle what to do when the user opens the Card
+ * @param navigationActions
+ */
 @Composable
 private fun TopicCardContent(
     topic: GuideTopic,
@@ -251,6 +270,13 @@ private fun TopicCardContent(
   }
 }
 
+/**
+ * The content of the card/topic once expanded
+ *
+ * @param topic
+ * @param isExpanded
+ * @param navigationActions
+ */
 @Composable
 private fun ExpandableContent(
     topic: GuideTopic,
