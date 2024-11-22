@@ -17,6 +17,9 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.osmdroid.util.BoundingBox
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 
 /**
  * View model to work with hikes.
@@ -117,7 +120,21 @@ class HikesViewModel(
     viewModelScope.launch { unselectHikeAsync() }
 
   /**
+   * Downloads the current user's saved hikes from the database and caches them locally.
+   *
+   * This function DOES NOT update [hikeFlows], it simply caches saved hikes locally. To update
+   * [hikeFlows] with the list of saved hikes, see [loadSavedHikes].
+   *
+   * @param onSuccess To be called when the saved hikes cache has been updated successfully.
+   * @param onFailure Will be called if an error is encountered.
+   */
+  fun refreshSavedHikesCache(onSuccess: () -> Unit, onFailure: () -> Unit) =
+    viewModelScope.launch { refreshSavedHikesCacheAsync(onSuccess, onFailure) }
+
+  /**
    * Loads the current user's saved hikes and replaces [hikeFlows] with those.
+   *
+   * This function refreshes the local cache of saved hikes to ensure data is up-to-date.
    *
    * The loaded hikes will only contain minimal data. To load more data, see
    * [retrieveLoadedHikesOsmData] and [retrieveElevationDataFor].
@@ -259,6 +276,10 @@ class HikesViewModel(
       _selectedHikeId = null
       _selectedHike.value = null
     }
+
+  private suspend fun refreshSavedHikesCacheAsync(onSuccess: () -> Unit, onFailure: () -> Unit) {
+    // TODO : Implement HikesViewModel.refreshSavedHikesCacheAsync
+  }
 
   private suspend fun loadSavedHikesAsync(onSuccess: () -> Unit, onFailure: () -> Unit) {
     // TODO : Implement HikesViewModel.loadSavedHikesAsync
