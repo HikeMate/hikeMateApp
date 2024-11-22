@@ -3,10 +3,12 @@ package ch.hikemate.app.model.profile
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import ch.hikemate.app.R
 import com.google.firebase.FirebaseApp
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertNotNull
 import org.junit.Before
 import org.junit.Test
@@ -53,11 +55,6 @@ class ProfileViewModelTest {
       val listener = it.getArgument<FirebaseAuth.AuthStateListener>(0)
       listener.onAuthStateChanged(firebaseAuth)
       null
-    }
-
-    `when`(repository.init(any())).thenAnswer {
-      val initAction = it.getArgument<() -> Unit>(0)
-      initAction()
     }
 
     profileViewModel = ProfileViewModel(repository)
@@ -110,5 +107,47 @@ class ProfileViewModelTest {
     verify(repository).deleteProfileById(eq("1"), any(), any())
 
     assert(profileViewModel.profile.value == null)
+  }
+
+  @Test
+  fun getProfileById_errorThrownByRepositoryIsHandled() {
+    `when`(repository.getProfileById(any(), any(), any())).thenAnswer {
+      val onFailure = it.getArgument<(Exception) -> Unit>(2)
+      onFailure(Exception(context.getString(R.string.an_error_occurred_while_fetching_the_profile)))
+    }
+
+    profileViewModel.getProfileById("1")
+
+    assertEquals(
+        profileViewModel.errorMessageId.value,
+        R.string.an_error_occurred_while_fetching_the_profile)
+  }
+
+  @Test
+  fun updateProfile_errorThrownByRepositoryIsHandled() {
+    `when`(repository.updateProfile(any(), any(), any())).thenAnswer {
+      val onFailure = it.getArgument<(Exception) -> Unit>(2)
+      onFailure(Exception(context.getString(R.string.an_error_occurred_while_updating_the_profile)))
+    }
+
+    profileViewModel.updateProfile(profile)
+
+    assertEquals(
+        profileViewModel.errorMessageId.value,
+        R.string.an_error_occurred_while_updating_the_profile)
+  }
+
+  @Test
+  fun deleteProfileById_errorThrownByRepositoryIsHandled() {
+    `when`(repository.deleteProfileById(any(), any(), any())).thenAnswer {
+      val onFailure = it.getArgument<(Exception) -> Unit>(2)
+      onFailure(Exception(context.getString(R.string.an_error_occurred_while_deleting_the_profile)))
+    }
+
+    profileViewModel.deleteProfileById("1")
+
+    assertEquals(
+        profileViewModel.errorMessageId.value,
+        R.string.an_error_occurred_while_deleting_the_profile)
   }
 }
