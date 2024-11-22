@@ -89,14 +89,14 @@ object HikeDetailScreen {
   const val MAP_MIN_LONGITUDE = -180.0
   const val MAP_BOUNDS_MARGIN: Int = 100
 
-  const val TEST_TAG_MAP = "map"
-  const val TEST_TAG_HIKE_NAME = "hikeName"
-  const val TEST_TAG_BOOKMARK_ICON = "bookmarkIcon"
-  const val TEST_TAG_ELEVATION_GRAPH = "elevationGraph"
-  const val TEST_TAG_DETAIL_ROW_TAG = "detailRowTag"
-  const val TEST_TAG_DETAIL_ROW_VALUE = "detailRowValue"
-  const val TEST_TAG_ADD_DATE_BUTTON = "addDateButton"
-  const val TEST_TAG_PLANNED_DATE_TEXT_BOX = "plannedDateTextBox"
+  const val TEST_TAG_MAP = "HikeDetailScreenMap"
+  const val TEST_TAG_HIKE_NAME = "HikeDetailScreenHikeName"
+  const val TEST_TAG_BOOKMARK_ICON = "HikeDetailScreenBookmarkIcon"
+  const val TEST_TAG_ELEVATION_GRAPH = "HikeDetailScreenElevationGraph"
+  const val TEST_TAG_DETAIL_ROW_TAG = "HikeDetailScreenDetailRowTag"
+  const val TEST_TAG_DETAIL_ROW_VALUE = "HikeDetailScreenDetailRowValue"
+  const val TEST_TAG_ADD_DATE_BUTTON = "HikeDetailScreenAddDateButton"
+  const val TEST_TAG_PLANNED_DATE_TEXT_BOX = "HikeDetailScreenPlannedDateTextBox"
 }
 
 @Composable
