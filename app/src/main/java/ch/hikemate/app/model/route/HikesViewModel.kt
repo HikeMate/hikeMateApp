@@ -373,44 +373,58 @@ class HikesViewModel(
 
       // Wait for the lock to avoid concurrent modifications
       _hikesMutex.withLock {
-        // Clear the current saved hikes register
-        _savedHikesMap.clear()
-
-        // Build the new saved hikes register
-        savedHikes.forEach { savedHike ->
-          _savedHikesMap[savedHike.id] = savedHike
-        }
-
-        // Update the map of hikes to reflect the changes
-        val toRemove: MutableSet<String> = mutableSetOf()
-        _hikeFlowsMap.values.forEach { hikeFlow ->
-          val hike = hikeFlow.value
-          val savedHike = _savedHikesMap[hike.id]
-          // If the list currently only contains saved hikes and this hike was unsaved, remove it
-          if (_loadedHikesType == LoadedHikes.FromSaved && savedHike == null) {
-            toRemove.add(hike.id)
-          }
-          // Otherwise, check if a change actually happened to avoid unnecessary updates
-          else {
-            val (changeNeeded, updated) = hikeNeedsSavedStatusUpdate(hike, savedHike)
-            if (changeNeeded) {
-              hikeFlow.value = updated
-            }
-          }
-        }
-
-        // Remove the hikes that need to be removed
-        for (hikeId in toRemove) {
-          _hikeFlowsMap.remove(hikeId)
-        }
-
-        // Update the exposed list of hikes based on the map of hikes
-        updateHikeFlowsList()
+        updateSavedHikesCache(savedHikes)
       }
 
       onSuccess()
       return@withContext true
     }
+
+  /**
+   * Helper function for [refreshSavedHikesCacheAsync].
+   *
+   * Takes a list of saved hikes and updates the local cache of saved hikes with that list.
+   *
+   * It is the caller's responsibility to ensure the saved hikes list is up-to-date and to acquire
+   * [_hikesMutex] before calling this function.
+   *
+   * @param newList The list of saved hikes to update the cache with.
+   */
+  private suspend fun updateSavedHikesCache(newList: List<SavedHike>) {
+    // Clear the current saved hikes register
+    _savedHikesMap.clear()
+
+    // Build the new saved hikes register
+    newList.forEach { savedHike ->
+      _savedHikesMap[savedHike.id] = savedHike
+    }
+
+    // Update the map of hikes to reflect the changes
+    val toRemove: MutableSet<String> = mutableSetOf()
+    _hikeFlowsMap.values.forEach { hikeFlow ->
+      val hike = hikeFlow.value
+      val savedHike = _savedHikesMap[hike.id]
+      // If the list currently only contains saved hikes and this hike was unsaved, remove it
+      if (_loadedHikesType == LoadedHikes.FromSaved && savedHike == null) {
+        toRemove.add(hike.id)
+      }
+      // Otherwise, check if a change actually happened to avoid unnecessary updates
+      else {
+        val (changeNeeded, updated) = hikeNeedsSavedStatusUpdate(hike, savedHike)
+        if (changeNeeded) {
+          hikeFlow.value = updated
+        }
+      }
+    }
+
+    // Remove the hikes that need to be removed
+    for (hikeId in toRemove) {
+      _hikeFlowsMap.remove(hikeId)
+    }
+
+    // Update the exposed list of hikes based on the map of hikes
+    updateHikeFlowsList()
+  }
 
   private suspend fun loadSavedHikesAsync(onSuccess: () -> Unit, onFailure: () -> Unit) =
     withContext(dispatcher) {
