@@ -664,7 +664,7 @@ class HikesViewModel(
               isSaved = _savedHikesMap.containsKey(osmData.id),
               plannedDate = _savedHikesMap[osmData.id]?.date,
               name = osmData.name,
-              description = osmData.description,
+              description = DeferredData.Obtained(osmData.description),
               bounds = DeferredData.Obtained(osmData.bounds),
               waypoints = DeferredData.Obtained(osmData.ways)
             )
@@ -675,7 +675,10 @@ class HikesViewModel(
             val existingHike = existingFlow.value
             // Assume bounds and waypoints don't change for a hike. If they are already loaded, don't update them
             if (existingHike.bounds !is DeferredData.Obtained || existingHike.waypoints !is DeferredData.Obtained) {
-              val newHike = existingHike.copy(bounds = DeferredData.Obtained(osmData.bounds), waypoints = DeferredData.Obtained(osmData.ways))
+              val newHike = existingHike.copy(
+                description = DeferredData.Obtained(osmData.description),
+                bounds = DeferredData.Obtained(osmData.bounds),
+                waypoints = DeferredData.Obtained(osmData.ways))
               // As the list will be updated as a whole, no need to update the state flow here
               Pair(existingHike.id, MutableStateFlow(newHike))
             }
@@ -713,7 +716,7 @@ class HikesViewModel(
     }
 
   private fun hasOsmData(hike: Hike): Boolean =
-    hike.bounds is DeferredData.Obtained && hike.waypoints is DeferredData.Obtained
+    hike.description is DeferredData.Obtained && hike.bounds is DeferredData.Obtained && hike.waypoints is DeferredData.Obtained
 
   private suspend fun retrieveLoadedHikesOsmDataAsync(onSuccess: () -> Unit, onFailure: () -> Unit) =
     withContext(dispatcher) {
@@ -745,7 +748,7 @@ class HikesViewModel(
 
           val newHike = hike.copy(
             name = hikeRoute.name,
-            description = hikeRoute.description,
+            description = DeferredData.Obtained(hikeRoute.description),
             bounds = DeferredData.Obtained(hikeRoute.bounds),
             waypoints = DeferredData.Obtained(hikeRoute.ways)
           )

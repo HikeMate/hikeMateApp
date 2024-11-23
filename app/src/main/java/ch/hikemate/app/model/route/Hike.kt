@@ -32,7 +32,7 @@ data class Hike(
     val isSaved: Boolean,
     val plannedDate: Timestamp?,
     val name: String?,
-    val description: String?,
+    val description: DeferredData<String?> = DeferredData.NotRequested,
     val bounds: DeferredData<Bounds> = DeferredData.NotRequested,
     val waypoints: DeferredData<List<LatLong>> = DeferredData.NotRequested,
     val elevation: DeferredData<List<Double>> = DeferredData.NotRequested,
