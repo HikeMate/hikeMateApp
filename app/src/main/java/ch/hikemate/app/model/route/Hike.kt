@@ -12,7 +12,7 @@ import com.google.firebase.Timestamp
  * @param id The unique ID of the hike.
  * @param isSaved Whether the hike has been saved by the user.
  * @param plannedDate The date at which the user plans to go on the hike. Null if the user did not
- * save the date or saved it without a specific date.
+ *   save the date or saved it without a specific date.
  * @param name Human-readable name of the hike.
  * @param description Human-readable description of the hike.
  * @param bounds Minimum and maximum latitude/longitude of the hike on a map.

@@ -8,6 +8,9 @@ import ch.hikemate.app.model.route.saved.SavedHike
 import ch.hikemate.app.model.route.saved.SavedHikesRepository
 import ch.hikemate.app.utils.RouteUtils
 import com.google.firebase.Timestamp
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,9 +21,6 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.osmdroid.util.BoundingBox
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
 
 /**
  * View model to work with hikes.
@@ -33,10 +33,10 @@ import kotlin.coroutines.suspendCoroutine
  * @param dispatcher The dispatcher to be used to launch coroutines.
  */
 class HikesViewModel(
-  private val savedHikesRepo: SavedHikesRepository,
-  private val osmHikesRepo: HikeRoutesRepository,
-  private val elevationRepo: ElevationService,
-  private val dispatcher: CoroutineDispatcher = Dispatchers.IO
+    private val savedHikesRepo: SavedHikesRepository,
+    private val osmHikesRepo: HikeRoutesRepository,
+    private val elevationRepo: ElevationService,
+    private val dispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : ViewModel() {
   companion object {
     private const val LOG_TAG = "HikesViewModel"
@@ -59,23 +59,15 @@ class HikesViewModel(
   private var _selectedHikeId: String? = null
   private val _selectedHike = MutableStateFlow<Hike?>(null)
 
-  /**
-   * Internal type used to store where the hikes in [_hikeFlowsMap] come from.
-   */
+  /** Internal type used to store where the hikes in [_hikeFlowsMap] come from. */
   private enum class LoadedHikes {
-    /**
-     * No hikes have been loaded yet.
-     */
+    /** No hikes have been loaded yet. */
     None,
 
-    /**
-     * The hikes loaded in [_hikeFlowsMap] are the saved hikes.
-     */
+    /** The hikes loaded in [_hikeFlowsMap] are the saved hikes. */
     FromSaved,
 
-    /**
-     * The hikes loaded in [_hikeFlowsMap] were fetched from within a geographical rectangle.
-     */
+    /** The hikes loaded in [_hikeFlowsMap] were fetched from within a geographical rectangle. */
     FromBounds
   }
 
@@ -131,7 +123,7 @@ class HikesViewModel(
    *   correspond to any loaded hike.
    */
   fun selectHike(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) =
-    viewModelScope.launch { selectHikeAsync(hikeId, onSuccess, onFailure) }
+      viewModelScope.launch { selectHikeAsync(hikeId, onSuccess, onFailure) }
 
   /**
    * Sets [selectedHike] to null.
@@ -139,8 +131,7 @@ class HikesViewModel(
    * Note: the currently selected hike will NOT be removed from [hikeFlows], only [selectedHike]
    * will be impacted.
    */
-  fun unselectHike() =
-    viewModelScope.launch { unselectHikeAsync() }
+  fun unselectHike() = viewModelScope.launch { unselectHikeAsync() }
 
   /**
    * Downloads the current user's saved hikes from the database and caches them locally.
@@ -152,11 +143,11 @@ class HikesViewModel(
    * @param onFailure Will be called if an error is encountered.
    */
   fun refreshSavedHikesCache(onSuccess: () -> Unit, onFailure: () -> Unit) =
-    viewModelScope.launch {
-      _loading.value = true
-      refreshSavedHikesCacheAsync(onSuccess, onFailure)
-      _loading.value = false
-    }
+      viewModelScope.launch {
+        _loading.value = true
+        refreshSavedHikesCacheAsync(onSuccess, onFailure)
+        _loading.value = false
+      }
 
   /**
    * Loads the current user's saved hikes and replaces [hikeFlows] with those.
@@ -170,7 +161,7 @@ class HikesViewModel(
    * @param onFailure Will be called if an error is encountered.
    */
   fun loadSavedHikes(onSuccess: () -> Unit, onFailure: () -> Unit) =
-    viewModelScope.launch { loadSavedHikesAsync(onSuccess, onFailure) }
+      viewModelScope.launch { loadSavedHikesAsync(onSuccess, onFailure) }
 
   /**
    * Marks a hike as saved by the current user.
@@ -184,7 +175,7 @@ class HikesViewModel(
    * @param onFailure To be called if a problem is encountered and the hike cannot be saved.
    */
   fun saveHike(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) =
-    viewModelScope.launch { saveHikeAsync(hikeId, onSuccess, onFailure) }
+      viewModelScope.launch { saveHikeAsync(hikeId, onSuccess, onFailure) }
 
   /**
    * Unmarks a hike as saved by the current user.
@@ -198,7 +189,7 @@ class HikesViewModel(
    * @param onFailure To be called if a problem is encountered and the hike cannot be unsaved.
    */
   fun unsaveHike(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) =
-    viewModelScope.launch { unsaveHikeAsync(hikeId, onSuccess, onFailure) }
+      viewModelScope.launch { unsaveHikeAsync(hikeId, onSuccess, onFailure) }
 
   /**
    * Sets the planned date of a hike.
@@ -216,12 +207,11 @@ class HikesViewModel(
    * @param onFailure To be called if a problem prevents the operation's success.
    */
   fun setPlannedDate(
-    hikeId: String,
-    date: Timestamp?,
-    onSuccess: () -> Unit,
-    onFailure: () -> Unit
-  ) =
-    viewModelScope.launch { setPlannedDateAsync(hikeId, date, onSuccess, onFailure) }
+      hikeId: String,
+      date: Timestamp?,
+      onSuccess: () -> Unit,
+      onFailure: () -> Unit
+  ) = viewModelScope.launch { setPlannedDateAsync(hikeId, date, onSuccess, onFailure) }
 
   /**
    * Replaces the current hikes in [hikeFlows] with hikes loaded from OSM in the provided bounds.
@@ -234,7 +224,7 @@ class HikesViewModel(
    * @param onFailure Will be called if an error is encountered.
    */
   fun loadHikesInBounds(bounds: BoundingBox, onSuccess: () -> Unit, onFailure: () -> Unit) =
-    viewModelScope.launch { loadHikesInBoundsAsync(bounds, onSuccess, onFailure) }
+      viewModelScope.launch { loadHikesInBoundsAsync(bounds, onSuccess, onFailure) }
 
   /**
    * Retrieves the bounding box and way points of the currently loaded hikes.
@@ -255,7 +245,7 @@ class HikesViewModel(
    *   operation.
    */
   fun retrieveLoadedHikesOsmData(onSuccess: () -> Unit, onFailure: () -> Unit) =
-    viewModelScope.launch { retrieveLoadedHikesOsmDataAsync(onSuccess, onFailure) }
+      viewModelScope.launch { retrieveLoadedHikesOsmDataAsync(onSuccess, onFailure) }
 
   /**
    * Indicates whether [retrieveElevationDataFor] can be called for the provided hike.
@@ -265,11 +255,9 @@ class HikesViewModel(
    * function.
    *
    * @param hike The hike to check.
-   *
    * @return True if the [retrieveElevationDataFor] can be called for this hike, false otherwise.
    */
-  fun canElevationDataBeRetrievedFor(hike: Hike): Boolean =
-    hike.waypoints is DeferredData.Obtained
+  fun canElevationDataBeRetrievedFor(hike: Hike): Boolean = hike.waypoints is DeferredData.Obtained
 
   /**
    * Retrieves the elevation data for a hike.
@@ -288,7 +276,7 @@ class HikesViewModel(
    *   retrieved.
    */
   fun retrieveElevationDataFor(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) =
-    viewModelScope.launch { retrieveElevationDataForAsync(hikeId, onSuccess, onFailure) }
+      viewModelScope.launch { retrieveElevationDataForAsync(hikeId, onSuccess, onFailure) }
 
   /**
    * Indicates whether all details data have been computed for the provided hike.
@@ -296,14 +284,13 @@ class HikesViewModel(
    * This is merely a helper function and does not perform any operations on the hike.
    *
    * @param hike The hike to check.
-   *
    * @return True if all details attribute were already computed for this hike, false otherwise.
    */
   fun areDetailsComputedFor(hike: Hike): Boolean =
-    hike.distance is DeferredData.Obtained
-            && hike.estimatedTime is DeferredData.Obtained
-            && hike.difficulty is DeferredData.Obtained
-            && hike.elevationGain is DeferredData.Obtained
+      hike.distance is DeferredData.Obtained &&
+          hike.estimatedTime is DeferredData.Obtained &&
+          hike.difficulty is DeferredData.Obtained &&
+          hike.elevationGain is DeferredData.Obtained
 
   /**
    * Computes all details attributes of a hike.
@@ -316,39 +303,42 @@ class HikesViewModel(
    *
    * @param hikeId The ID of the hike to retrieve the details attributes for.
    * @param onSuccess To be called once the details have been successfully retrieved. Do not use
-   * this to retrieve the details values, rather observe the hike in [hikeFlows] to be notified
-   * automatically.
+   *   this to retrieve the details values, rather observe the hike in [hikeFlows] to be notified
+   *   automatically.
    */
   fun computeDetailsFor(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) =
-    viewModelScope.launch { retrieveDetailsForAsync(hikeId, onSuccess, onFailure) }
+      viewModelScope.launch { retrieveDetailsForAsync(hikeId, onSuccess, onFailure) }
 
-  private suspend fun selectHikeAsync(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) =
-    withContext(dispatcher) {
-      var successful = false
-      _hikesMutex.withLock {
-        // Retrieve the hike to select from the loaded hikes
-        val hike = _hikeFlowsMap[hikeId] ?: return@withLock
+  private suspend fun selectHikeAsync(
+      hikeId: String,
+      onSuccess: () -> Unit,
+      onFailure: () -> Unit
+  ) =
+      withContext(dispatcher) {
+        var successful = false
+        _hikesMutex.withLock {
+          // Retrieve the hike to select from the loaded hikes
+          val hike = _hikeFlowsMap[hikeId] ?: return@withLock
 
-        // Mark the hike as selected
-        _selectedHikeId = hikeId
-        _selectedHike.value = hike.value
-        successful = true
-      }
+          // Mark the hike as selected
+          _selectedHikeId = hikeId
+          _selectedHike.value = hike.value
+          successful = true
+        }
 
-      // Perform the callback without the lock, to avoid deadlocks and improve performance
-      if (successful) {
-        onSuccess()
+        // Perform the callback without the lock, to avoid deadlocks and improve performance
+        if (successful) {
+          onSuccess()
+        } else {
+          onFailure()
+        }
       }
-      else {
-        onFailure()
-      }
-    }
 
   private suspend fun unselectHikeAsync() =
-    _hikesMutex.withLock {
-      _selectedHikeId = null
-      _selectedHike.value = null
-    }
+      _hikesMutex.withLock {
+        _selectedHikeId = null
+        _selectedHike.value = null
+      }
 
   /**
    * This function performs a loading operation but DOES NOT set [_loading]. If calling it from
@@ -357,28 +347,28 @@ class HikesViewModel(
    *
    * @return True if the operation is successful, false otherwise.
    */
-  private suspend fun refreshSavedHikesCacheAsync(onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}): Boolean =
-    withContext(dispatcher) {
-      val savedHikes: List<SavedHike>
-      try {
-        // Load the saved hikes from the repository
-        savedHikes = savedHikesRepo.loadSavedHikes()
-      }
-      catch (e: Exception) {
-        Log.e(LOG_TAG, "Error encountered while loading saved hikes", e)
-        _loading.value = false
-        onFailure()
-        return@withContext false
-      }
+  private suspend fun refreshSavedHikesCacheAsync(
+      onSuccess: () -> Unit = {},
+      onFailure: () -> Unit = {}
+  ): Boolean =
+      withContext(dispatcher) {
+        val savedHikes: List<SavedHike>
+        try {
+          // Load the saved hikes from the repository
+          savedHikes = savedHikesRepo.loadSavedHikes()
+        } catch (e: Exception) {
+          Log.e(LOG_TAG, "Error encountered while loading saved hikes", e)
+          _loading.value = false
+          onFailure()
+          return@withContext false
+        }
 
-      // Wait for the lock to avoid concurrent modifications
-      _hikesMutex.withLock {
-        updateSavedHikesCache(savedHikes)
-      }
+        // Wait for the lock to avoid concurrent modifications
+        _hikesMutex.withLock { updateSavedHikesCache(savedHikes) }
 
-      onSuccess()
-      return@withContext true
-    }
+        onSuccess()
+        return@withContext true
+      }
 
   /**
    * Helper function for [refreshSavedHikesCacheAsync].
@@ -395,9 +385,7 @@ class HikesViewModel(
     _savedHikesMap.clear()
 
     // Build the new saved hikes register
-    newList.forEach { savedHike ->
-      _savedHikesMap[savedHike.id] = savedHike
-    }
+    newList.forEach { savedHike -> _savedHikesMap[savedHike.id] = savedHike }
 
     // Update the map of hikes to reflect the changes
     val toRemove: MutableSet<String> = mutableSetOf()
@@ -427,26 +415,25 @@ class HikesViewModel(
   }
 
   private suspend fun loadSavedHikesAsync(onSuccess: () -> Unit, onFailure: () -> Unit) =
-    withContext(dispatcher) {
-      // Indicate the view model is currently loading, for the UI to tell the user in some way
-      _loading.value = true
+      withContext(dispatcher) {
+        // Indicate the view model is currently loading, for the UI to tell the user in some way
+        _loading.value = true
 
-      // Remember that the loaded hikes list will now only hold saved hikes
-      _loadedHikesType = LoadedHikes.FromSaved
+        // Remember that the loaded hikes list will now only hold saved hikes
+        _loadedHikesType = LoadedHikes.FromSaved
 
-      // Update the local cache of saved hikes and add them to _hikeFlows
-      val success = refreshSavedHikesCacheAsync()
+        // Update the local cache of saved hikes and add them to _hikeFlows
+        val success = refreshSavedHikesCacheAsync()
 
-      // Indicate the view model has finished the heavy loading operation
-      _loading.value = false
+        // Indicate the view model has finished the heavy loading operation
+        _loading.value = false
 
-      if (success) {
-        onSuccess()
+        if (success) {
+          onSuccess()
+        } else {
+          onFailure()
+        }
       }
-      else {
-        onFailure()
-      }
-    }
 
   /**
    * Determines whether [hike] needs an update to its saved status based on [savedHike].
@@ -455,18 +442,16 @@ class HikesViewModel(
    *
    * @param hike The hike that might need an update to its saved status
    * @param savedHike The currently known saved status of the provided hike. Null means the hike is
-   * not saved.
-   *
+   *   not saved.
    * @return (false, [hike]) if the hike does not need an update, (true, updated) if the hike does
-   * need an update, with updated being the hike with the new saved status.
+   *   need an update, with updated being the hike with the new saved status.
    */
   private fun hikeNeedsSavedStatusUpdate(hike: Hike, savedHike: SavedHike?): Pair<Boolean, Hike> {
     // If the hike is marked as saved but was unsaved, clear its saved state
     if (savedHike == null) {
       return if (hike.isSaved) {
         Pair(true, hike.copy(isSaved = false, plannedDate = null))
-      }
-      else {
+      } else {
         Pair(false, hike)
       }
     }
@@ -480,20 +465,17 @@ class HikesViewModel(
   }
 
   private suspend fun saveHikeAsync(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) =
-    withContext(dispatcher) {
-      val successful: Boolean
-      _hikesMutex.withLock {
-        successful = saveHikeAsyncInternal(hikeId)
-      }
+      withContext(dispatcher) {
+        val successful: Boolean
+        _hikesMutex.withLock { successful = saveHikeAsyncInternal(hikeId) }
 
-      // Perform the callback without the lock, to avoid deadlocks and improve performance
-      if (successful) {
-        onSuccess()
+        // Perform the callback without the lock, to avoid deadlocks and improve performance
+        if (successful) {
+          onSuccess()
+        } else {
+          onFailure()
+        }
       }
-      else {
-        onFailure()
-      }
-    }
 
   /**
    * Saves the hike corresponding to the provided [hikeId].
@@ -502,7 +484,6 @@ class HikesViewModel(
    * to call this function inside of a [Mutex.withLock] block.
    *
    * @param hikeId The ID of the hike that should be saved.
-   *
    * @return True if the operation was successful, false otherwise.
    */
   private suspend fun saveHikeAsyncInternal(hikeId: String): Boolean {
@@ -518,8 +499,7 @@ class HikesViewModel(
     // Save the hike using the repository
     try {
       savedHikesRepo.addSavedHike(SavedHike(hike.id, hike.name ?: "", hike.plannedDate))
-    }
-    catch (e: Exception) {
+    } catch (e: Exception) {
       Log.e(LOG_TAG, "Error encountered while saving hike", e)
       return false
     }
@@ -534,72 +514,77 @@ class HikesViewModel(
     return true
   }
 
-  private suspend fun unsaveHikeAsync(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) =
-    withContext(dispatcher) {
-      var successful = false
-      _hikesMutex.withLock {
-        // Retrieve the hike to unsave from the loaded hikes
-        val hikeFlow = _hikeFlowsMap[hikeId] ?: return@withLock
-        val hike = hikeFlow.value
+  private suspend fun unsaveHikeAsync(
+      hikeId: String,
+      onSuccess: () -> Unit,
+      onFailure: () -> Unit
+  ) =
+      withContext(dispatcher) {
+        var successful = false
+        _hikesMutex.withLock {
+          // Retrieve the hike to unsave from the loaded hikes
+          val hikeFlow = _hikeFlowsMap[hikeId] ?: return@withLock
+          val hike = hikeFlow.value
 
-        // Avoid updating the hike if it is not saved
-        if (!hike.isSaved) {
+          // Avoid updating the hike if it is not saved
+          if (!hike.isSaved) {
+            successful = true
+            return@withLock
+          }
+
+          // Unsave the hike using the repository
+          try {
+            savedHikesRepo.removeSavedHike(SavedHike(hike.id, hike.name ?: "", hike.plannedDate))
+          } catch (e: Exception) {
+            Log.e(LOG_TAG, "Error encountered while unsaving hike", e)
+            successful = false
+            return@withLock
+          }
+
+          // Update the saved hikes map
+          _savedHikesMap.remove(hikeId)
+
+          if (_loadedHikesType == LoadedHikes.FromSaved) {
+            // Only saved hikes may stay in the list, delete the unsaved hike from the list
+            _hikeFlowsMap.remove(hikeId)
+            updateHikeFlowsList()
+          } else {
+            // The hike can stay even if it is not saved, so update it
+            val newHikeState = hikeFlow.value.copy(isSaved = false, plannedDate = null)
+            hikeFlow.value = newHikeState
+          }
+
           successful = true
-          return@withLock
         }
 
-        // Unsave the hike using the repository
-        try {
-          savedHikesRepo.removeSavedHike(SavedHike(hike.id, hike.name ?: "", hike.plannedDate))
+        // Perform the callback without the lock, to avoid deadlocks and improve performance
+        if (successful) {
+          onSuccess()
+        } else {
+          onFailure()
         }
-        catch (e: Exception) {
-          Log.e(LOG_TAG, "Error encountered while unsaving hike", e)
-          successful = false
-          return@withLock
-        }
+      }
 
-        // Update the saved hikes map
-        _savedHikesMap.remove(hikeId)
-
-        if (_loadedHikesType == LoadedHikes.FromSaved) {
-          // Only saved hikes may stay in the list, delete the unsaved hike from the list
-          _hikeFlowsMap.remove(hikeId)
-          updateHikeFlowsList()
-        }
-        else {
-          // The hike can stay even if it is not saved, so update it
-          val newHikeState = hikeFlow.value.copy(isSaved = false, plannedDate = null)
-          hikeFlow.value = newHikeState
+  private suspend fun setPlannedDateAsync(
+      hikeId: String,
+      date: Timestamp?,
+      onSuccess: () -> Unit,
+      onFailure: () -> Unit
+  ) =
+      withContext(dispatcher) {
+        var successful = false
+        _hikesMutex.withLock {
+          // Retrieve the hike to update from the loaded hikes
+          val hikeFlow = _hikeFlowsMap[hikeId] ?: return@withLock
+          successful = updateHikePlannedDateAsync(hikeFlow, date)
         }
 
-        successful = true
+        if (successful) {
+          onSuccess()
+        } else {
+          onFailure()
+        }
       }
-
-      // Perform the callback without the lock, to avoid deadlocks and improve performance
-      if (successful) {
-        onSuccess()
-      }
-      else {
-        onFailure()
-      }
-    }
-
-  private suspend fun setPlannedDateAsync(hikeId: String, date: Timestamp?, onSuccess: () -> Unit, onFailure: () -> Unit) =
-    withContext(dispatcher) {
-      var successful = false
-      _hikesMutex.withLock {
-        // Retrieve the hike to update from the loaded hikes
-        val hikeFlow = _hikeFlowsMap[hikeId] ?: return@withLock
-        successful = updateHikePlannedDateAsync(hikeFlow, date)
-      }
-
-      if (successful) {
-        onSuccess()
-      }
-      else {
-        onFailure()
-      }
-    }
 
   /**
    * Helper function to update the planned date of a hike.
@@ -608,10 +593,12 @@ class HikesViewModel(
    * caller's responsibility to acquire the lock.
    *
    * @param hikeFlow The flow of the hike to update.
-   *
    * @return True if the operation was successful, false otherwise.
    */
-  private suspend fun updateHikePlannedDateAsync(hikeFlow: MutableStateFlow<Hike>, date: Timestamp?): Boolean {
+  private suspend fun updateHikePlannedDateAsync(
+      hikeFlow: MutableStateFlow<Hike>,
+      date: Timestamp?
+  ): Boolean {
     val hike = hikeFlow.value
 
     // If the hike is already saved with the provided date, don't do anything
@@ -629,8 +616,7 @@ class HikesViewModel(
     if (savedHike != null) {
       try {
         savedHikesRepo.removeSavedHike(savedHike)
-      }
-      catch (e: Exception) {
+      } catch (e: Exception) {
         Log.e(LOG_TAG, "Error encountered while unsaving hike temporarily", e)
         return false
       }
@@ -640,8 +626,7 @@ class HikesViewModel(
     val newSavedHike = SavedHike(id = hike.id, name = hike.name ?: "", date = date)
     try {
       savedHikesRepo.addSavedHike(newSavedHike)
-    }
-    catch (e: Exception) {
+    } catch (e: Exception) {
       Log.e(LOG_TAG, "Error encountered while re-saving hike", e)
       return false
     }
@@ -655,134 +640,147 @@ class HikesViewModel(
     return true
   }
 
-  private suspend fun loadHikesInBoundsAsync(boundingBox: BoundingBox, onSuccess: () -> Unit, onFailure: () -> Unit) =
-    withContext(dispatcher) {
-      // Let the user know a heavy load operation is being performed
-      _loading.value = true
+  private suspend fun loadHikesInBoundsAsync(
+      boundingBox: BoundingBox,
+      onSuccess: () -> Unit,
+      onFailure: () -> Unit
+  ) =
+      withContext(dispatcher) {
+        // Let the user know a heavy load operation is being performed
+        _loading.value = true
 
-      // Load the hikes from the repository
-      val hikes: List<HikeRoute>
-      try {
-        hikes = loadHikesInBoundsRepoWrapper(boundingBox.toBounds())
-      }
-      catch (e: Exception) {
-        Log.e(LOG_TAG, "Error encountered while loading hikes in bounds", e)
-        _loading.value = false
-        onFailure()
-        return@withContext
-      }
-
-      // Wait for the lock to avoid concurrent modifications
-      _hikesMutex.withLock {
-        // Keep already loaded hikes, discard the ones that do not appear in the given bounds
-        _hikeFlowsMap = _hikeFlowsMap.filterKeys { key -> hikes.none { hike -> hike.id == key } }.toMutableMap()
-
-        // Add the new hikes to the map of hikes
-        _hikeFlowsMap = hikes.map { osmData ->
-          val existingFlow = _hikeFlowsMap[osmData.id]
-
-          // The hike is not in the map yet, add it
-          return@map if (existingFlow == null) {
-            val hike = Hike(
-              id = osmData.id,
-              isSaved = _savedHikesMap.containsKey(osmData.id),
-              plannedDate = _savedHikesMap[osmData.id]?.date,
-              name = osmData.name,
-              description = DeferredData.Obtained(osmData.description),
-              bounds = DeferredData.Obtained(osmData.bounds),
-              waypoints = DeferredData.Obtained(osmData.ways)
-            )
-            Pair(hike.id, MutableStateFlow(hike))
-
-          } else {
-            // The hike is already in the map, update it
-            val existingHike = existingFlow.value
-            // Assume bounds and waypoints don't change for a hike. If they are already loaded, don't update them
-            if (existingHike.bounds !is DeferredData.Obtained || existingHike.waypoints !is DeferredData.Obtained) {
-              val newHike = existingHike.copy(
-                description = DeferredData.Obtained(osmData.description),
-                bounds = DeferredData.Obtained(osmData.bounds),
-                waypoints = DeferredData.Obtained(osmData.ways))
-              // As the list will be updated as a whole, no need to update the state flow here
-              Pair(existingHike.id, MutableStateFlow(newHike))
-            }
-            else {
-              Pair(existingHike.id, existingFlow)
-            }
-          }
+        // Load the hikes from the repository
+        val hikes: List<HikeRoute>
+        try {
+          hikes = loadHikesInBoundsRepoWrapper(boundingBox.toBounds())
+        } catch (e: Exception) {
+          Log.e(LOG_TAG, "Error encountered while loading hikes in bounds", e)
+          _loading.value = false
+          onFailure()
+          return@withContext
         }
-          .toMap()
-          .toMutableMap()
 
-        // Update the exposed list of hikes based on the map of hikes
-        updateHikeFlowsList()
+        // Wait for the lock to avoid concurrent modifications
+        _hikesMutex.withLock {
+          // Keep already loaded hikes, discard the ones that do not appear in the given bounds
+          _hikeFlowsMap =
+              _hikeFlowsMap
+                  .filterKeys { key -> hikes.none { hike -> hike.id == key } }
+                  .toMutableMap()
+
+          // Add the new hikes to the map of hikes
+          _hikeFlowsMap =
+              hikes
+                  .map { osmData ->
+                    val existingFlow = _hikeFlowsMap[osmData.id]
+
+                    // The hike is not in the map yet, add it
+                    return@map if (existingFlow == null) {
+                      val hike =
+                          Hike(
+                              id = osmData.id,
+                              isSaved = _savedHikesMap.containsKey(osmData.id),
+                              plannedDate = _savedHikesMap[osmData.id]?.date,
+                              name = osmData.name,
+                              description = DeferredData.Obtained(osmData.description),
+                              bounds = DeferredData.Obtained(osmData.bounds),
+                              waypoints = DeferredData.Obtained(osmData.ways))
+                      Pair(hike.id, MutableStateFlow(hike))
+                    } else {
+                      // The hike is already in the map, update it
+                      val existingHike = existingFlow.value
+                      // Assume bounds and waypoints don't change for a hike. If they are already
+                      // loaded, don't update them
+                      if (existingHike.bounds !is DeferredData.Obtained ||
+                          existingHike.waypoints !is DeferredData.Obtained) {
+                        val newHike =
+                            existingHike.copy(
+                                description = DeferredData.Obtained(osmData.description),
+                                bounds = DeferredData.Obtained(osmData.bounds),
+                                waypoints = DeferredData.Obtained(osmData.ways))
+                        // As the list will be updated as a whole, no need to update the state flow
+                        // here
+                        Pair(existingHike.id, MutableStateFlow(newHike))
+                      } else {
+                        Pair(existingHike.id, existingFlow)
+                      }
+                    }
+                  }
+                  .toMap()
+                  .toMutableMap()
+
+          // Update the exposed list of hikes based on the map of hikes
+          updateHikeFlowsList()
+        }
+
+        // The heavy loading operation is done now
+        _loading.value = false
+
+        // Call the success callback once the mutex has been released to avoid locking for too long
+        onSuccess()
       }
-
-      // The heavy loading operation is done now
-      _loading.value = false
-
-      // Call the success callback once the mutex has been released to avoid locking for too long
-      onSuccess()
-    }
 
   /**
    * The [HikeRoutesRepository] interface has been developed without coroutines in mind, hence we
-   * need a wrapper to "convert" the [HikeRoutesRepository.getRoutes] function that uses callback
-   * to a suspend function.
+   * need a wrapper to "convert" the [HikeRoutesRepository.getRoutes] function that uses callback to
+   * a suspend function.
    */
   private suspend fun loadHikesInBoundsRepoWrapper(bounds: Bounds): List<HikeRoute> =
-    suspendCoroutine { continuation ->
-      osmHikesRepo.getRoutes(
-        bounds = bounds,
-        onSuccess = { routes -> continuation.resume(routes) },
-        onFailure = { exception -> continuation.resumeWithException(exception) }
-      )
-    }
+      suspendCoroutine { continuation ->
+        osmHikesRepo.getRoutes(
+            bounds = bounds,
+            onSuccess = { routes -> continuation.resume(routes) },
+            onFailure = { exception -> continuation.resumeWithException(exception) })
+      }
 
   private fun hasOsmData(hike: Hike): Boolean =
-    hike.description is DeferredData.Obtained && hike.bounds is DeferredData.Obtained && hike.waypoints is DeferredData.Obtained
+      hike.description is DeferredData.Obtained &&
+          hike.bounds is DeferredData.Obtained &&
+          hike.waypoints is DeferredData.Obtained
 
-  private suspend fun retrieveLoadedHikesOsmDataAsync(onSuccess: () -> Unit, onFailure: () -> Unit) =
-    withContext(dispatcher) {
-      // Notify the UI that a heavy loading operation is in progress
-      _loading.value = true
+  private suspend fun retrieveLoadedHikesOsmDataAsync(
+      onSuccess: () -> Unit,
+      onFailure: () -> Unit
+  ) =
+      withContext(dispatcher) {
+        // Notify the UI that a heavy loading operation is in progress
+        _loading.value = true
 
-      // Prepare a list of hikes for which we need to retrieve the data
-      val idsToRetrieve: List<String>
-      _hikesMutex.withLock {
-        idsToRetrieve = _hikeFlowsMap.values.filter { hasOsmData(it.value) }.map { it.value.id }
-      }
-
-      // Retrieve the OSM data of the hikes
-      val hikeRoutes: List<HikeRoute>
-      try {
-        hikeRoutes = loadHikesByIdsRepoWrapper(idsToRetrieve)
-      }
-      catch (e: Exception) {
-        Log.e(LOG_TAG, "Error encountered while loading hikes OSM data", e)
-        onFailure()
-        return@withContext
-      }
-
-      // Update the retrieved data for the loaded hikes
-      _hikesMutex.withLock {
-        hikeRoutes.forEach { hikeRoute ->
-          val hikeFlow = _hikeFlowsMap[hikeRoute.id] ?: return@forEach
-          val hike = hikeFlow.value
-
-          val newHike = hike.copy(
-            name = hikeRoute.name,
-            description = DeferredData.Obtained(hikeRoute.description),
-            bounds = DeferredData.Obtained(hikeRoute.bounds),
-            waypoints = DeferredData.Obtained(hikeRoute.ways)
-          )
-          hikeFlow.value = newHike
+        // Prepare a list of hikes for which we need to retrieve the data
+        val idsToRetrieve: List<String>
+        _hikesMutex.withLock {
+          idsToRetrieve = _hikeFlowsMap.values.filter { hasOsmData(it.value) }.map { it.value.id }
         }
-      }
 
-      // Release the mutex before calling onSuccess to avoid deadlocks or performance issues
-      onSuccess()
-    }
+        // Retrieve the OSM data of the hikes
+        val hikeRoutes: List<HikeRoute>
+        try {
+          hikeRoutes = loadHikesByIdsRepoWrapper(idsToRetrieve)
+        } catch (e: Exception) {
+          Log.e(LOG_TAG, "Error encountered while loading hikes OSM data", e)
+          onFailure()
+          return@withContext
+        }
+
+        // Update the retrieved data for the loaded hikes
+        _hikesMutex.withLock {
+          hikeRoutes.forEach { hikeRoute ->
+            val hikeFlow = _hikeFlowsMap[hikeRoute.id] ?: return@forEach
+            val hike = hikeFlow.value
+
+            val newHike =
+                hike.copy(
+                    name = hikeRoute.name,
+                    description = DeferredData.Obtained(hikeRoute.description),
+                    bounds = DeferredData.Obtained(hikeRoute.bounds),
+                    waypoints = DeferredData.Obtained(hikeRoute.ways))
+            hikeFlow.value = newHike
+          }
+        }
+
+        // Release the mutex before calling onSuccess to avoid deadlocks or performance issues
+        onSuccess()
+      }
 
   /**
    * The [HikeRoutesRepository] interface has been developed without coroutines in mind, hence we
@@ -790,165 +788,171 @@ class HikesViewModel(
    * to a suspend function.
    */
   private suspend fun loadHikesByIdsRepoWrapper(ids: List<String>): List<HikeRoute> =
-    suspendCoroutine { continuation ->
-      osmHikesRepo.getRoutesByIds(
-        routeIds = ids,
-        onSuccess = { hikeRoutes -> continuation.resume(hikeRoutes) },
-        onFailure = { exception -> continuation.resumeWithException(exception) }
-      )
-    }
+      suspendCoroutine { continuation ->
+        osmHikesRepo.getRoutesByIds(
+            routeIds = ids,
+            onSuccess = { hikeRoutes -> continuation.resume(hikeRoutes) },
+            onFailure = { exception -> continuation.resumeWithException(exception) })
+      }
 
-  private suspend fun retrieveElevationDataForAsync(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) =
-    withContext(dispatcher) {
-      // Retrieve the hike from the list to perform a few checks
-      var success = false
-      var alreadyComputed = false
-      var mutableWaypoints: List<LatLong>? = null
-      _hikesMutex.withLock {
-        val hikeFlow = _hikeFlowsMap[hikeId] ?: return@withLock
-        val hike = hikeFlow.value
+  private suspend fun retrieveElevationDataForAsync(
+      hikeId: String,
+      onSuccess: () -> Unit,
+      onFailure: () -> Unit
+  ) =
+      withContext(dispatcher) {
+        // Retrieve the hike from the list to perform a few checks
+        var success = false
+        var alreadyComputed = false
+        var mutableWaypoints: List<LatLong>? = null
+        _hikesMutex.withLock {
+          val hikeFlow = _hikeFlowsMap[hikeId] ?: return@withLock
+          val hike = hikeFlow.value
 
-        // If the elevation of this hike is already computed or requested, do nothing
-        alreadyComputed = hike.elevation !is DeferredData.NotRequested
-        if (alreadyComputed) {
+          // If the elevation of this hike is already computed or requested, do nothing
+          alreadyComputed = hike.elevation !is DeferredData.NotRequested
+          if (alreadyComputed) {
+            success = true
+            return@withLock
+          }
+
+          // If the way points of the hike have not been loaded, fail
+          if (hike.waypoints !is DeferredData.Obtained) {
+            success = false
+            return@withLock
+          }
+          mutableWaypoints = hike.waypoints.data
+
+          // The elevation has not been requested yet, mark it as requested
+          val hikeMarkedAsRequested = hike.copy(elevation = DeferredData.Requested)
+          hikeFlow.value = hikeMarkedAsRequested
           success = true
-          return@withLock
         }
 
-        // If the way points of the hike have not been loaded, fail
-        if (hike.waypoints !is DeferredData.Obtained) {
-          success = false
-          return@withLock
+        if (alreadyComputed) {
+          onSuccess()
+          return@withContext
+        } else if (!success) {
+          onFailure()
+          return@withContext
         }
-        mutableWaypoints = hike.waypoints.data
 
-        // The elevation has not been requested yet, mark it as requested
-        val hikeMarkedAsRequested = hike.copy(elevation = DeferredData.Requested)
-        hikeFlow.value = hikeMarkedAsRequested
-        success = true
-      }
+        // Extract the waypoints from the nullable variable safely for the compiler to be happy
+        val waypoints: List<LatLong> =
+            mutableWaypoints
+                ?: run {
+                  onFailure()
+                  return@withContext
+                }
 
-      if (alreadyComputed) {
-        onSuccess()
-        return@withContext
-      }
-      else if (!success) {
-        onFailure()
-        return@withContext
-      }
+        // Launch a request for the elevation data of the hike
+        val elevation: List<Double>
+        try {
+          elevation = getElevationRepoWrapper(waypoints, hikeId)
+        } catch (e: Exception) {
+          Log.e(LOG_TAG, "Error encountered while retrieving elevation", e)
+          onFailure()
+          return@withContext
+        }
 
-      // Extract the waypoints from the nullable variable safely for the compiler to be happy
-      val waypoints: List<LatLong> = mutableWaypoints ?: run {
-        onFailure()
-        return@withContext
-      }
+        // Update the hike's elevation data
+        success = false
+        _hikesMutex.withLock {
+          val hikeFlow = _hikeFlowsMap[hikeId] ?: return@withLock
+          val hike = hikeFlow.value
 
-      // Launch a request for the elevation data of the hike
-      val elevation: List<Double>
-      try {
-        elevation = getElevationRepoWrapper(waypoints, hikeId)
-      }
-      catch (e: Exception) {
-        Log.e(LOG_TAG, "Error encountered while retrieving elevation", e)
-        onFailure()
-        return@withContext
-      }
+          val updatedHike = hike.copy(elevation = DeferredData.Obtained(elevation))
+          hikeFlow.value = updatedHike
+          success = true
+        }
 
-      // Update the hike's elevation data
-      success = false
-      _hikesMutex.withLock {
-        val hikeFlow = _hikeFlowsMap[hikeId] ?: return@withLock
-        val hike = hikeFlow.value
-
-        val updatedHike = hike.copy(elevation = DeferredData.Obtained(elevation))
-        hikeFlow.value = updatedHike
-        success = true
+        if (success) {
+          onSuccess()
+        } else {
+          onFailure()
+        }
       }
-
-      if (success) {
-        onSuccess()
-      }
-      else {
-        onFailure()
-      }
-    }
 
   /**
-   * The [ElevationService] interface has been developed without coroutines in mind, hence we
-   * need a wrapper to "convert" the [ElevationService.getElevation] function that uses callback
-   * to a suspend function.
+   * The [ElevationService] interface has been developed without coroutines in mind, hence we need a
+   * wrapper to "convert" the [ElevationService.getElevation] function that uses callback to a
+   * suspend function.
    */
-  private suspend fun getElevationRepoWrapper(coordinates: List<LatLong>, hikeId: String): List<Double> =
-    suspendCoroutine { continuation ->
-      elevationRepo.getElevation(
+  private suspend fun getElevationRepoWrapper(
+      coordinates: List<LatLong>,
+      hikeId: String
+  ): List<Double> = suspendCoroutine { continuation ->
+    elevationRepo.getElevation(
         coordinates = coordinates,
         hikeID = hikeId,
         onSuccess = { elevation -> continuation.resume(elevation) },
-        onFailure = { exception -> continuation.resumeWithException(exception) }
-      )
-    }
+        onFailure = { exception -> continuation.resumeWithException(exception) })
+  }
 
-  private suspend fun retrieveDetailsForAsync(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) =
-    withContext(dispatcher) {
-      // Retrieve the current value of the hike and note what computations are required
-      val (performRequest, waypoints, elevation) =
-        checkDetailsCanBeRetrievedForAsync(hikeId, onSuccess, onFailure)
+  private suspend fun retrieveDetailsForAsync(
+      hikeId: String,
+      onSuccess: () -> Unit,
+      onFailure: () -> Unit
+  ) =
+      withContext(dispatcher) {
+        // Retrieve the current value of the hike and note what computations are required
+        val (performRequest, waypoints, elevation) =
+            checkDetailsCanBeRetrievedForAsync(hikeId, onSuccess, onFailure)
 
-      if (!performRequest) {
-        return@withContext
-      }
-
-      // Perform the actual computations
-      val distance: Double
-      val elevationGain: Double
-      val estimatedTime: Double
-      val difficulty: HikeDifficulty
-      try {
-        distance = RouteUtils.computeTotalDistance(waypoints)
-        elevationGain = RouteUtils.calculateElevationGain(elevation)
-        estimatedTime = RouteUtils.estimateTime(distance, elevationGain)
-        difficulty = RouteUtils.determineDifficulty(distance, elevationGain)
-      }
-      catch (e: Exception) {
-        Log.e(LOG_TAG, "Error while computing hike details", e)
-
-        // Set the detail properties back to NotRequested
-        _hikesMutex.withLock {
-          val hikeFlow = _hikeFlowsMap[hikeId] ?: return@withLock
-          val updatedHike = hikeFlow.value.copy(
-            distance = DeferredData.NotRequested,
-            elevationGain = DeferredData.NotRequested,
-            estimatedTime = DeferredData.NotRequested,
-            difficulty = DeferredData.NotRequested,
-          )
-          hikeFlow.value = updatedHike
+        if (!performRequest) {
+          return@withContext
         }
 
-        onFailure()
-        return@withContext
-      }
+        // Perform the actual computations
+        val distance: Double
+        val elevationGain: Double
+        val estimatedTime: Double
+        val difficulty: HikeDifficulty
+        try {
+          distance = RouteUtils.computeTotalDistance(waypoints)
+          elevationGain = RouteUtils.calculateElevationGain(elevation)
+          estimatedTime = RouteUtils.estimateTime(distance, elevationGain)
+          difficulty = RouteUtils.determineDifficulty(distance, elevationGain)
+        } catch (e: Exception) {
+          Log.e(LOG_TAG, "Error while computing hike details", e)
 
-      // Update the hike in the list
-      var success = false
-      _hikesMutex.withLock {
-        val hikeFlow = _hikeFlowsMap[hikeId] ?: return@withLock
-        val updatedHike = hikeFlow.value.copy(
-          distance = DeferredData.Obtained(distance),
-          elevationGain = DeferredData.Obtained(elevationGain),
-          estimatedTime = DeferredData.Obtained(estimatedTime),
-          difficulty = DeferredData.Obtained(difficulty)
-        )
-        hikeFlow.value = updatedHike
-        success = true
-      }
+          // Set the detail properties back to NotRequested
+          _hikesMutex.withLock {
+            val hikeFlow = _hikeFlowsMap[hikeId] ?: return@withLock
+            val updatedHike =
+                hikeFlow.value.copy(
+                    distance = DeferredData.NotRequested,
+                    elevationGain = DeferredData.NotRequested,
+                    estimatedTime = DeferredData.NotRequested,
+                    difficulty = DeferredData.NotRequested,
+                )
+            hikeFlow.value = updatedHike
+          }
 
-      if (success) {
-        onSuccess()
+          onFailure()
+          return@withContext
+        }
+
+        // Update the hike in the list
+        var success = false
+        _hikesMutex.withLock {
+          val hikeFlow = _hikeFlowsMap[hikeId] ?: return@withLock
+          val updatedHike =
+              hikeFlow.value.copy(
+                  distance = DeferredData.Obtained(distance),
+                  elevationGain = DeferredData.Obtained(elevationGain),
+                  estimatedTime = DeferredData.Obtained(estimatedTime),
+                  difficulty = DeferredData.Obtained(difficulty))
+          hikeFlow.value = updatedHike
+          success = true
+        }
+
+        if (success) {
+          onSuccess()
+        } else {
+          onFailure()
+        }
       }
-      else {
-        onFailure()
-      }
-    }
 
   /**
    * Helper function for [retrieveDetailsForAsync].
@@ -964,18 +968,21 @@ class HikesViewModel(
    *
    * @param hikeId The ID of the hike to check the data for.
    * @param onSuccess To be called if the data was already obtained or requested. Won't be called if
-   * a request should be performed.
+   *   a request should be performed.
    * @param onFailure To be called if no hike corresponding to the provided ID was found.
-   *
    * @return A triple containing:
    * - A `Boolean` indicating whether the request should be performed. A value of true means the
-   * request should be performed, false means the data is already available or an error occurred.
+   *   request should be performed, false means the data is already available or an error occurred.
    * - The `List` of way points of the hike, if available. If not available, the list will be empty
-   * and the boolean will be false.
+   *   and the boolean will be false.
    * - The `List` of elevation data of the hike, if available. If not available, the list will be
-   * empty and the boolean will be false.
+   *   empty and the boolean will be false.
    */
-  private suspend fun checkDetailsCanBeRetrievedForAsync(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit): Triple<Boolean, List<LatLong>, List<Double>> {
+  private suspend fun checkDetailsCanBeRetrievedForAsync(
+      hikeId: String,
+      onSuccess: () -> Unit,
+      onFailure: () -> Unit
+  ): Triple<Boolean, List<LatLong>, List<Double>> {
     var success = false
     var alreadyComputed = false
     var alreadyRequested = false
@@ -993,11 +1000,10 @@ class HikesViewModel(
       }
 
       // Only perform the computation if it hasn't been started for all components yet
-      if (hike.distance is DeferredData.Requested
-        && hike.estimatedTime is DeferredData.Requested
-        && hike.difficulty is DeferredData.Requested
-        && hike.elevationGain is DeferredData.Requested
-      ) {
+      if (hike.distance is DeferredData.Requested &&
+          hike.estimatedTime is DeferredData.Requested &&
+          hike.difficulty is DeferredData.Requested &&
+          hike.elevationGain is DeferredData.Requested) {
         success = true
         alreadyRequested = true
         return@withLock
@@ -1011,12 +1017,13 @@ class HikesViewModel(
       nullableElevation = hike.elevation.data
 
       // Set the details of the hike to have been requested
-      val hikeWithRequestedAttributes = hike.copy(
-        distance = DeferredData.Requested,
-        estimatedTime = DeferredData.Requested,
-        difficulty = DeferredData.Requested,
-        elevationGain = DeferredData.Requested,
-      )
+      val hikeWithRequestedAttributes =
+          hike.copy(
+              distance = DeferredData.Requested,
+              estimatedTime = DeferredData.Requested,
+              difficulty = DeferredData.Requested,
+              elevationGain = DeferredData.Requested,
+          )
       hikeFlow.value = hikeWithRequestedAttributes
 
       success = true
@@ -1025,23 +1032,26 @@ class HikesViewModel(
     if (!success) {
       onFailure()
       return Triple(false, emptyList(), emptyList())
-    }
-    else if (alreadyComputed || alreadyRequested) {
+    } else if (alreadyComputed || alreadyRequested) {
       onSuccess()
       return Triple(false, emptyList(), emptyList())
     }
 
     // Safely extract the way points from the nullable variable to make the compiler happy
-    val waypoints = nullableWayPoints ?: run {
-      onFailure()
-      return Triple(false, emptyList(), emptyList())
-    }
+    val waypoints =
+        nullableWayPoints
+            ?: run {
+              onFailure()
+              return Triple(false, emptyList(), emptyList())
+            }
 
     // Safely extract the elevation from the nullable variable to make the compiler happy
-    val elevation = nullableElevation ?: run {
-      onFailure()
-      return Triple(false, emptyList(), emptyList())
-    }
+    val elevation =
+        nullableElevation
+            ?: run {
+              onFailure()
+              return Triple(false, emptyList(), emptyList())
+            }
 
     return Triple(true, waypoints, elevation)
   }
