@@ -1,5 +1,6 @@
 package ch.hikemate.app.model.route
 
+import android.util.Log
 import ch.hikemate.app.ui.theme.hikeColors
 import kotlin.math.abs
 import kotlin.math.asin
@@ -68,6 +69,10 @@ data class Bounds(val minLat: Double, val minLon: Double, val maxLat: Double, va
       return this
     }
 
+    fun isCrossingDateLine(): Boolean {
+      return minLon > maxLon
+    }
+
     fun build(): Bounds {
       return Bounds(minLat, minLon, maxLat, maxLon)
     }
@@ -75,6 +80,7 @@ data class Bounds(val minLat: Double, val minLon: Double, val maxLat: Double, va
 }
 
 fun BoundingBox.toBounds(): Bounds {
+  Log.i("BoundingBox", " searching at n:$latNorth, e:$lonEast, s:$latSouth, w:$lonWest")
   return Bounds(latSouth, lonWest, latNorth, lonEast)
 }
 

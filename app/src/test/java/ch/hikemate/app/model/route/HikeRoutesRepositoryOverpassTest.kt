@@ -815,6 +815,57 @@ class HikeRoutesRepositoryOverpassTest {
           .request(mock())
           .build()
 
+  private val responseCrossingTheDateLine =
+      Response.Builder()
+          .code(200)
+          .message("OK")
+          .body(
+              """
+{
+    "version": 0.6,
+    "generator": "Overpass API 0.7.62.1 084b4234",
+    "osm3s": {
+        "timestamp_osm_base": "2024-10-10T19:14:42Z",
+        "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+    },
+    "elements": [
+        {
+            "type": "relation",
+            "id": 124582,
+            "bounds": {
+                "minlat": 45.8689061,
+                "minlon": 170.0,
+                "maxlat": 46.8283926,
+                "maxlon": -170.0
+            },
+            "members": [
+                {
+                    "type": "way",
+                    "ref": 936770892,
+                    "role": "",
+                    "geometry": [
+                        {
+                            "lat": 46.8240018,
+                            "lon": 6.4395807
+                        }
+                    ]
+                }
+            ],
+            "tags": {
+              "name": "Dézaley - Lavaux Vinorama"
+            }
+        }
+    ]
+}
+"""
+                  .trimIndent()
+                  .replace("\n", "")
+                  .toResponseBody())
+          .protocol(Protocol.HTTP_1_1)
+          .header("Content-Type", "application/json")
+          .request(mock())
+          .build()
+
   private val sanitizedNameSet =
       setOf(
           "Dézaley - Lavaux Vinorama",
@@ -1277,6 +1328,23 @@ class HikeRoutesRepositoryOverpassTest {
         }
 
     assert(onSuccessCalled)
+  }
+
+  @Test
+  fun getRoutes_worksOnCrossingTheDateLine() {
+    val mockCall = mock(Call::class.java)
+    `when`(mockClient.newCall(any())).thenReturn(mockCall)
+
+    val callbackCapture = argumentCaptor<okhttp3.Callback>()
+
+    `when`(mockCall.enqueue(callbackCapture.capture())).then {
+      callbackCapture.firstValue.onResponse(mockCall, responseCrossingTheDateLine)
+    }
+
+    hikingRouteProviderRepositoryOverpass.getRoutes(
+        bounds, { routes -> assertEquals(0, routes.size) }) {
+          fail("Failed to fetch routes from Overpass API")
+        }
   }
 
   @Test

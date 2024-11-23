@@ -146,6 +146,20 @@ class ListOfHikeRoutesViewModelTest {
   }
 
   @Test
+  fun setAreaCrossingDateLineCallsRepositoryTwice() {
+    // When the hike repository calls the getRoutes method, return on success
+    `when`(hikesRepository.getRoutes(any(), any(), any())).thenAnswer {
+      val onSuccess = it.getArgument<(List<HikeRoute>) -> Unit>(1)
+      onSuccess(emptyList())
+    }
+
+    // Since we use UnconfinedTestDispatcher, we don't need to wait for the coroutine to finish
+    listOfHikeRoutesViewModel.setArea(BoundingBox(50.0, -170.0, 40.0, 170.0))
+
+    verify(hikesRepository, times(2)).getRoutes(any(), any(), any())
+  }
+
+  @Test
   fun selectRouteByIdCallsRepoAndSelectsHike() {
     // Given
     val hike =

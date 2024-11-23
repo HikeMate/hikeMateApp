@@ -52,6 +52,17 @@ class HikeRouteTest {
   }
 
   @Test
+  fun boundsBuilderIsCrossingDateLine() {
+    val bounds = Bounds.Builder().setMinLat(0.0).setMinLon(170.0).setMaxLat(0.0).setMaxLon(-170.0)
+
+    assertTrue(bounds.isCrossingDateLine())
+
+    val bounds2 = Bounds.Builder().setMinLat(0.0).setMinLon(-170.0).setMaxLat(0.0).setMaxLon(170.0)
+
+    assertFalse(bounds2.isCrossingDateLine())
+  }
+
+  @Test
   fun getColorsIsDeterministic() {
     val bounds = Bounds(0.0, 0.0, 0.0, 0.0)
     val hikes =

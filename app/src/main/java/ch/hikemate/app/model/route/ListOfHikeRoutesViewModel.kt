@@ -51,6 +51,26 @@ open class ListOfHikeRoutesViewModel(
   private suspend fun getRoutesAsync(onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}) {
     withContext(dispatcher) {
       val area = area_.value ?: return@withContext
+
+      // Check if the area is on the date line
+      if (area.lonEast < area.lonWest) {
+        val bounds1 = BoundingBox(area.latNorth, 180.0, area.latSouth, area.lonWest)
+        val bounds2 = BoundingBox(area.latNorth, area.lonEast, area.latSouth, -180.0)
+        hikeRoutesRepository.getRoutes(
+            bounds = bounds1.toBounds(),
+            onSuccess = { routes1 ->
+              hikeRoutesRepository.getRoutes(
+                  bounds = bounds2.toBounds(),
+                  onSuccess = { routes2 ->
+                    hikeRoutes_.value = routes1 + routes2
+                    onSuccess()
+                  },
+                  onFailure = { _ -> onFailure() })
+            },
+            onFailure = { _ -> onFailure() })
+        return@withContext
+      }
+
       hikeRoutesRepository.getRoutes(
           bounds = area.toBounds(),
           onSuccess = { routes ->

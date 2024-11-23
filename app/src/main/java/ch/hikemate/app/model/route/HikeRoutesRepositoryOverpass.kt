@@ -332,7 +332,8 @@ class HikeRoutesRepositoryOverpass(private val client: OkHttpClient) : HikeRoute
       }
       val flattenWays = flattenHikeWays(ways)
       // If there is no way in the route regardless of the reason, we discard the route
-      if (flattenWays.isEmpty()) {
+      // Also, if the bounds are crossing the date line, we discard the route
+      if (flattenWays.isEmpty() || boundsBuilder.isCrossingDateLine()) {
         return null
       }
       return HikeRoute(id, boundsBuilder.build(), flattenWays, elementName, description)
