@@ -867,70 +867,10 @@ class HikesViewModel(
   private suspend fun retrieveDetailsForAsync(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) =
     withContext(dispatcher) {
       // Retrieve the current value of the hike and note what computations are required
-      var success = false
-      var alreadyComputed = false
-      var alreadyRequested = false
-      var nullableWayPoints: List<LatLong>? = null
-      var nullableElevation: List<Double>? = null
-      _hikesMutex.withLock {
-        val hikeFlow = _hikeFlowsMap[hikeId] ?: return@withLock
-        val hike = hikeFlow.value
+      val (performRequest, waypoints, elevation) =
+        checkDetailsCanBeRetrievedForAsync(hikeId, onSuccess, onFailure)
 
-        // Check that the details data hasn't been computed already
-        alreadyComputed = areDetailsComputedFor(hike)
-        if (alreadyComputed) {
-          success = true
-          return@withLock
-        }
-
-        // Only perform the computation if it hasn't been started for all components yet
-        if (hike.distance is DeferredData.Requested
-          && hike.estimatedTime is DeferredData.Requested
-          && hike.difficulty is DeferredData.Requested
-          && hike.elevationGain is DeferredData.Requested
-          ) {
-          success = true
-          alreadyRequested = true
-          return@withLock
-        }
-
-        // Check that the way points and the elevation have been retrieved for this hike
-        if (hike.waypoints !is DeferredData.Obtained || hike.elevation !is DeferredData.Obtained) {
-          return@withLock
-        }
-        nullableWayPoints = hike.waypoints.data
-        nullableElevation = hike.elevation.data
-
-        // Set the details of the hike to have been requested
-        val hikeWithRequestedAttributes = hike.copy(
-          distance = DeferredData.Requested,
-          estimatedTime = DeferredData.Requested,
-          difficulty = DeferredData.Requested,
-          elevationGain = DeferredData.Requested,
-        )
-        hikeFlow.value = hikeWithRequestedAttributes
-
-        success = true
-      }
-
-      if (!success) {
-        onFailure()
-        return@withContext
-      }
-      else if (alreadyComputed || alreadyRequested) {
-        onSuccess()
-        return@withContext
-      }
-
-      // Safely extract the way points from the nullable variable to make the compiler happy
-      val waypoints = nullableWayPoints ?: run {
-        onFailure()
-        return@withContext
-      }
-
-      // Safely extract the elevation from the nullable variable to make the compiler happy
-      val elevation = nullableElevation ?: run {
-        onFailure()
+      if (!performRequest) {
         return@withContext
       }
 
@@ -965,7 +905,7 @@ class HikesViewModel(
       }
 
       // Update the hike in the list
-      success = false
+      var success = false
       _hikesMutex.withLock {
         val hikeFlow = _hikeFlowsMap[hikeId] ?: return@withLock
         val updatedHike = hikeFlow.value.copy(
@@ -985,4 +925,100 @@ class HikesViewModel(
         onFailure()
       }
     }
+
+  /**
+   * Helper function for [retrieveDetailsForAsync].
+   *
+   * Checks that the required data ([Hike.waypoints] and [Hike.elevation]) are available, and that a
+   * request is not already ongoing. Returns the data if it is available, and indicates whether a
+   * request should be performed.
+   *
+   * If a request should be performed, this function will also mark the data as requested.
+   *
+   * Note: this function does not set its context to [dispatcher], it is the responsibility of the
+   * caller to do so.
+   *
+   * @param hikeId The ID of the hike to check the data for.
+   * @param onSuccess To be called if the data was already obtained or requested. Won't be called if
+   * a request should be performed.
+   * @param onFailure To be called if no hike corresponding to the provided ID was found.
+   *
+   * @return A triple containing:
+   * - A `Boolean` indicating whether the request should be performed. A value of true means the
+   * request should be performed, false means the data is already available or an error occurred.
+   * - The `List` of way points of the hike, if available. If not available, the list will be empty
+   * and the boolean will be false.
+   * - The `List` of elevation data of the hike, if available. If not available, the list will be
+   * empty and the boolean will be false.
+   */
+  private suspend fun checkDetailsCanBeRetrievedForAsync(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit): Triple<Boolean, List<LatLong>, List<Double>> {
+    var success = false
+    var alreadyComputed = false
+    var alreadyRequested = false
+    var nullableWayPoints: List<LatLong>? = null
+    var nullableElevation: List<Double>? = null
+    _hikesMutex.withLock {
+      val hikeFlow = _hikeFlowsMap[hikeId] ?: return@withLock
+      val hike = hikeFlow.value
+
+      // Check that the details data hasn't been computed already
+      alreadyComputed = areDetailsComputedFor(hike)
+      if (alreadyComputed) {
+        success = true
+        return@withLock
+      }
+
+      // Only perform the computation if it hasn't been started for all components yet
+      if (hike.distance is DeferredData.Requested
+        && hike.estimatedTime is DeferredData.Requested
+        && hike.difficulty is DeferredData.Requested
+        && hike.elevationGain is DeferredData.Requested
+      ) {
+        success = true
+        alreadyRequested = true
+        return@withLock
+      }
+
+      // Check that the way points and the elevation have been retrieved for this hike
+      if (hike.waypoints !is DeferredData.Obtained || hike.elevation !is DeferredData.Obtained) {
+        return@withLock
+      }
+      nullableWayPoints = hike.waypoints.data
+      nullableElevation = hike.elevation.data
+
+      // Set the details of the hike to have been requested
+      val hikeWithRequestedAttributes = hike.copy(
+        distance = DeferredData.Requested,
+        estimatedTime = DeferredData.Requested,
+        difficulty = DeferredData.Requested,
+        elevationGain = DeferredData.Requested,
+      )
+      hikeFlow.value = hikeWithRequestedAttributes
+
+      success = true
+    }
+
+    if (!success) {
+      onFailure()
+      return Triple(false, emptyList(), emptyList())
+    }
+    else if (alreadyComputed || alreadyRequested) {
+      onSuccess()
+      return Triple(false, emptyList(), emptyList())
+    }
+
+    // Safely extract the way points from the nullable variable to make the compiler happy
+    val waypoints = nullableWayPoints ?: run {
+      onFailure()
+      return Triple(false, emptyList(), emptyList())
+    }
+
+    // Safely extract the elevation from the nullable variable to make the compiler happy
+    val elevation = nullableElevation ?: run {
+      onFailure()
+      return Triple(false, emptyList(), emptyList())
+    }
+
+    return Triple(true, waypoints, elevation)
+  }
 }
