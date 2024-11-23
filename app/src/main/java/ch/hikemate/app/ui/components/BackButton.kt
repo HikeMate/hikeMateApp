@@ -27,9 +27,13 @@ object BackButton {
  * @param navigationActions The navigation actions.
  */
 @Composable
-fun BackButton(navigationActions: NavigationActions, modifier: Modifier = Modifier) {
+fun BackButton(
+    navigationActions: NavigationActions,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = { navigationActions.goBack() }
+) {
   IconButton(
-      onClick = { navigationActions.goBack() },
+      onClick = { onClick() },
       modifier =
           modifier
               .testTag(BackButton.BACK_BUTTON_TEST_TAG)
