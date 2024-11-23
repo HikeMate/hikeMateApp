@@ -576,51 +576,7 @@ class HikesViewModel(
       _hikesMutex.withLock {
         // Retrieve the hike to update from the loaded hikes
         val hikeFlow = _hikeFlowsMap[hikeId] ?: return@withLock
-        val hike = hikeFlow.value
-
-        // If the hike is already saved with the provided date, don't do anything
-        if (hike.isSaved && hike.plannedDate == date) {
-          successful = true
-          return@withLock
-        }
-
-        // If the hike is not saved but the hike date is null, the operation is useless
-        if (!hike.isSaved && date == null) {
-          successful = true
-          return@withLock
-        }
-
-        // If the hike is already saved, unsave it temporarily
-        val savedHike = _savedHikesMap[hikeId]
-        if (savedHike != null) {
-          try {
-            savedHikesRepo.removeSavedHike(savedHike)
-          }
-          catch (e: Exception) {
-            Log.e(LOG_TAG, "Error encountered while unsaving hike temporarily", e)
-            successful = false
-            return@withLock
-          }
-        }
-
-        // Set the hike's planned date to the right one
-        val newSavedHike = SavedHike(id = hikeId, name = hike.name ?: "", date = date)
-        try {
-          savedHikesRepo.addSavedHike(newSavedHike)
-        }
-        catch (e: Exception) {
-          Log.e(LOG_TAG, "Error encountered while re-saving hike", e)
-          successful = false
-          return@withLock
-        }
-
-        // Update the hike in the saved hikes map
-        _savedHikesMap[hikeId] = newSavedHike
-
-        // Update the hike's state flow
-        hikeFlow.value = hike.copy(isSaved = true, plannedDate = date)
-
-        successful = true
+        successful = updateHikePlannedDateAsync(hikeFlow, date)
       }
 
       if (successful) {
@@ -630,6 +586,60 @@ class HikesViewModel(
         onFailure()
       }
     }
+
+  /**
+   * Helper function to update the planned date of a hike.
+   *
+   * This function requires [_hikesMutex]'s lock to be acquired before being called. It is the
+   * caller's responsibility to acquire the lock.
+   *
+   * @param hikeFlow The flow of the hike to update.
+   *
+   * @return True if the operation was successful, false otherwise.
+   */
+  private suspend fun updateHikePlannedDateAsync(hikeFlow: MutableStateFlow<Hike>, date: Timestamp?): Boolean {
+    val hike = hikeFlow.value
+
+    // If the hike is already saved with the provided date, don't do anything
+    if (hike.isSaved && hike.plannedDate == date) {
+      return true
+    }
+
+    // If the hike is not saved but the hike date is null, the operation is useless
+    if (!hike.isSaved && date == null) {
+      return true
+    }
+
+    // If the hike is already saved, unsave it temporarily
+    val savedHike = _savedHikesMap[hike.id]
+    if (savedHike != null) {
+      try {
+        savedHikesRepo.removeSavedHike(savedHike)
+      }
+      catch (e: Exception) {
+        Log.e(LOG_TAG, "Error encountered while unsaving hike temporarily", e)
+        return false
+      }
+    }
+
+    // Set the hike's planned date to the right one
+    val newSavedHike = SavedHike(id = hike.id, name = hike.name ?: "", date = date)
+    try {
+      savedHikesRepo.addSavedHike(newSavedHike)
+    }
+    catch (e: Exception) {
+      Log.e(LOG_TAG, "Error encountered while re-saving hike", e)
+      return false
+    }
+
+    // Update the hike in the saved hikes map
+    _savedHikesMap[hike.id] = newSavedHike
+
+    // Update the hike's state flow
+    hikeFlow.value = hike.copy(isSaved = true, plannedDate = date)
+
+    return true
+  }
 
   private suspend fun loadHikesInBoundsAsync(boundingBox: BoundingBox, onSuccess: () -> Unit, onFailure: () -> Unit) =
     withContext(dispatcher) {
