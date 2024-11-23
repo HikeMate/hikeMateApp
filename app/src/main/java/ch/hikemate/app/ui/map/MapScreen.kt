@@ -425,12 +425,14 @@ fun MapScreen(
                     onClick = {
                       val hasLocationPermission =
                           LocationUtils.hasLocationPermission(locationPermissionState)
-                      // If the user has granted at least one of the two permissions, center the map on
+                      // If the user has granted at least one of the two permissions, center the map
+                      // on
                       // the user's location
                       if (hasLocationPermission) {
                         MapUtils.centerMapOnUserLocation(context, mapView, userLocationMarker)
                       }
-                      // If the user yet needs to grant the permission, show a custom educational alert
+                      // If the user yet needs to grant the permission, show a custom educational
+                      // alert
                       else {
                         showLocationPermissionDialog = true
                       }
@@ -456,10 +458,7 @@ fun MapScreen(
                     modifier =
                         Modifier.align(Alignment.BottomEnd)
                             .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
-                CollapsibleHikesList(
-                    hikingRoutesViewModel,
-                    profile.hikingLevel,
-                    isSearching.value)
+                CollapsibleHikesList(hikingRoutesViewModel, profile.hikingLevel, isSearching.value)
                 // Put SideBarNavigation after to make it appear on top of the map and HikeList
               }
             }
@@ -568,7 +567,11 @@ fun MapMyLocationButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel, userHikingLevel: HikingLevel, isSearching: Boolean) {
+fun CollapsibleHikesList(
+    hikingRoutesViewModel: ListOfHikeRoutesViewModel,
+    userHikingLevel: HikingLevel,
+    isSearching: Boolean
+) {
   val scaffoldState = rememberBottomSheetScaffoldState()
   val routes = hikingRoutesViewModel.hikeRoutes.collectAsState()
   val context = LocalContext.current
