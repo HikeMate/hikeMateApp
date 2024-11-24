@@ -80,7 +80,9 @@ data class Bounds(val minLat: Double, val minLon: Double, val maxLat: Double, va
 }
 
 fun BoundingBox.toBounds(): Bounds {
-  Log.i("BoundingBox", " searching at n:$latNorth, e:$lonEast, s:$latSouth, w:$lonWest")
+  Log.i(
+      "BoundingBox",
+      "Converting BoundingBox to Bounds(n:$latNorth, e:$lonEast, s:$latSouth, w:$lonWest)")
   return Bounds(latSouth, lonWest, latNorth, lonEast)
 }
 

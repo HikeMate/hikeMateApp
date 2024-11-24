@@ -1341,10 +1341,18 @@ class HikeRoutesRepositoryOverpassTest {
       callbackCapture.firstValue.onResponse(mockCall, responseCrossingTheDateLine)
     }
 
+    var successCalled = false
+
     hikingRouteProviderRepositoryOverpass.getRoutes(
-        bounds, { routes -> assertEquals(0, routes.size) }) {
+        bounds,
+        { routes ->
+          assertEquals(0, routes.size)
+          successCalled = true
+        }) {
           fail("Failed to fetch routes from Overpass API")
         }
+
+    assert(successCalled)
   }
 
   @Test

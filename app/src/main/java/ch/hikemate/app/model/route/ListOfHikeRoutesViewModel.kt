@@ -6,6 +6,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import ch.hikemate.app.model.elevation.ElevationService
 import ch.hikemate.app.model.elevation.ElevationServiceRepository
+import ch.hikemate.app.model.extensions.crossesDateLine
+import ch.hikemate.app.model.extensions.splitByDateLine
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -53,9 +55,8 @@ open class ListOfHikeRoutesViewModel(
       val area = area_.value ?: return@withContext
 
       // Check if the area is on the date line
-      if (area.lonEast < area.lonWest) {
-        val bounds1 = BoundingBox(area.latNorth, 180.0, area.latSouth, area.lonWest)
-        val bounds2 = BoundingBox(area.latNorth, area.lonEast, area.latSouth, -180.0)
+      if (area.crossesDateLine()) {
+        val (bounds1, bounds2) = area.splitByDateLine()
         hikeRoutesRepository.getRoutes(
             bounds = bounds1.toBounds(),
             onSuccess = { routes1 ->
