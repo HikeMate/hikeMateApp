@@ -410,6 +410,17 @@ class HikesViewModel(
       _hikeFlowsMap.remove(hikeId)
     }
 
+    // Add the saved hikes that were not in the list yet
+    _savedHikesMap.forEach { (hikeId, savedHike) ->
+      if (!_hikeFlowsMap.containsKey(hikeId)) {
+        _hikeFlowsMap[hikeId] = MutableStateFlow(Hike(
+          id = savedHike.id,
+          isSaved = true,
+          plannedDate = savedHike.date,
+          name = savedHike.name))
+      }
+    }
+
     // Update the exposed list of hikes based on the map of hikes
     updateHikeFlowsList()
   }
