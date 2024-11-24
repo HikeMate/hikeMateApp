@@ -51,7 +51,7 @@ class HikesViewModelTest {
   // UTILS FOR TESTING
   // ==========================================================================
 
-  private val singleSavedHike: List<SavedHike> = listOf(SavedHike(id = "saved", name = "Saved Hike", date = null))
+  private val singleSavedHike1: List<SavedHike> = listOf(SavedHike(id = "saved1", name = "Saved Hike 1", date = null))
 
   private fun loadSavedHikes(savedHikes: List<SavedHike>, onSuccess: () -> Unit = {}, onFailure: () -> Unit = {})  {
     coEvery { savedHikesRepo.loadSavedHikes() } returns savedHikes
@@ -85,10 +85,10 @@ class HikesViewModelTest {
   @Test
   fun selectHikeSucceedsIfHikeFound() = runTest(dispatcher) {
     // There needs to be at least one hike in the loaded list to select it
-    loadSavedHikes(singleSavedHike)
+    loadSavedHikes(singleSavedHike1)
     // No hike is selected initially
     assertNull(hikesViewModel.selectedHike.value)
-    val hikeId = singleSavedHike[0].id
+    val hikeId = singleSavedHike1[0].id
 
     // Select the hike
     var onSuccessCalled = false
@@ -112,9 +112,9 @@ class HikesViewModelTest {
   @Test
   fun unselectHikeSucceedsWhenHikeIsSelected() = runTest(dispatcher) {
     // There needs to be at least one hike in the loaded list to select it
-    loadSavedHikes(singleSavedHike)
+    loadSavedHikes(singleSavedHike1)
     // Select a hike
-    val hikeId = singleSavedHike[0].id
+    val hikeId = singleSavedHike1[0].id
     hikesViewModel.selectHike(hikeId)
     // Check that the hike is selected, otherwise the test does not make sense
     assertNotNull(hikesViewModel.selectedHike.value)
