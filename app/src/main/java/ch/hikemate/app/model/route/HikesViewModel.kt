@@ -951,6 +951,10 @@ class HikesViewModel(
 
           val updatedHike = hike.copy(elevation = DeferredData.Obtained(elevation))
           hikeFlow.value = updatedHike
+
+          // Update the selected hike if necessary
+          updateSelectedHike()
+
           success = true
         }
 
