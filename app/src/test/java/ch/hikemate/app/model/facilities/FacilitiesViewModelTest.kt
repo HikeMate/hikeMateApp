@@ -112,7 +112,7 @@ class FacilitiesViewModelTest {
 
   @Test
   fun testGetFacilities_usesCache_containedBounds() = runTest {
-    val facilities = listOf(Facility(FacilityType.TOILETS, GeoPoint(46.51, 6.61)))
+    val facilities = listOf(Facility(FacilityType.TOILETS, GeoPoint(46.505, 6.605)))
 
     var onSuccessCallCount = 0 // Used to make sure the first onSuccess callback is only called once
 
@@ -146,11 +146,12 @@ class FacilitiesViewModelTest {
 
   @Test
   fun testGetFacilities_doesNotUseCache_onDifferentBounds() = runTest {
+    // otherBounds does not overlap with testBounds
     val otherBounds = Bounds(41.0, 7.0, 42.0, 8.0)
-    val otherFacilities =
+    val otherFacilities = // two facilities contained within "otherBounds"
         listOf(
-            Facility(FacilityType.BENCH, GeoPoint(42.0, 7.5)),
-            Facility(FacilityType.DRINKING_WATER, GeoPoint(41.5, 7.1)))
+            Facility(FacilityType.BENCH, GeoPoint(41.1, 7.51)),
+            Facility(FacilityType.DRINKING_WATER, GeoPoint(41.2, 7.2)))
 
     `when`(mockFacilitiesRepository.getFacilities(eq(testBounds), any(), any())).then {
       val onSuccess = it.getArgument<(List<Facility>) -> Unit>(1)
@@ -159,7 +160,7 @@ class FacilitiesViewModelTest {
 
     `when`(mockFacilitiesRepository.getFacilities(eq(otherBounds), any(), any())).then {
       val onSuccess = it.getArgument<(List<Facility>) -> Unit>(1)
-      onSuccess(testFacilities)
+      onSuccess(otherFacilities)
     }
 
     facilitiesViewModel.getFacilities(
