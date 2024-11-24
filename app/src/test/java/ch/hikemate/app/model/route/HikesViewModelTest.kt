@@ -322,4 +322,71 @@ class HikesViewModelTest {
     // Check that loading was false at first, then true during the call, and false again at the end
     assertEquals(listOf(false, true, false), emissions)
   }
+
+  // ==========================================================================
+  // HikesViewModel.loadSavedHikes
+  // ==========================================================================
+
+  @Test
+  fun loadSavedHikesFailsIfRepoFails() = runTest(dispatcher) {
+    // Whenever asked for saved hikes, the repository will throw an exception
+    coEvery { savedHikesRepo.loadSavedHikes() } throws Exception("Failed to load saved hikes")
+
+    // Try loading saved hikes through the view model
+    var onFailureCalled = false
+    hikesViewModel.loadSavedHikes(
+      onSuccess = { fail("onSuccess should not have been called") },
+      onFailure = { onFailureCalled = true }
+    )
+
+    // The saved hikes repository should be called exactly once
+    coVerify(exactly = 1) { savedHikesRepo.loadSavedHikes() }
+    // The failure callback should be called
+    assertTrue(onFailureCalled)
+  }
+
+  @Test
+  fun loadSavedHikesSucceedsIfRepoSucceeds() = runTest(dispatcher) {
+    // Check nothing is in the hikes list before further operations
+    assertEquals(0, hikesViewModel.hikeFlows.value.size)
+
+    // Make sure the saved hikes repository provides a hike to be loaded
+    coEvery { savedHikesRepo.loadSavedHikes() } returns singleSavedHike1
+
+    // Load the saved hikes through the view model
+    var onSuccessCalled = false
+    hikesViewModel.loadSavedHikes(
+      onSuccess = { onSuccessCalled = true },
+      onFailure = { fail("onFailure should not have been called") }
+    )
+
+    // Check that the view model uses the repository
+    coVerify(exactly = 1) { savedHikesRepo.loadSavedHikes() }
+    // Check that the view model correctly calls the success callback
+    assertTrue(onSuccessCalled)
+    // Check that the view model now contains the loaded hikes list
+    assertEquals(singleSavedHike1.size, hikesViewModel.hikeFlows.value.size)
+  }
+
+  @Test
+  fun `loadSavedHikes sets loading to true then false`() = runTest(dispatcher) {
+    // Listen to the changes made to loading during the call
+    val emissions = mutableListOf<Boolean>()
+    val job = backgroundScope.launch {
+      hikesViewModel.loading.collect { emissions.add(it) }
+    }
+
+    // Set the repository to throw an exception because we do not care
+    coEvery { savedHikesRepo.loadSavedHikes() } throws Exception("Failed to load saved hikes")
+
+    // Load the saved hikes
+    hikesViewModel.loadSavedHikes()
+
+    // Because we are on an UnconfinedTestDispatcher(), the coroutine should be done by now, hence
+    // we can stop listening to the values emitted by loading.
+    job.cancel()
+
+    // Check that loading was false at first, then true during the call, and false again at the end
+    assertEquals(listOf(false, true, false), emissions)
+  }
 }
