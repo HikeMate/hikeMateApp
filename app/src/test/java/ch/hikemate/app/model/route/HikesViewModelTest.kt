@@ -437,6 +437,55 @@ class HikesViewModelTest {
     assertEquals(listOf(false, true, false), emissions)
   }
 
+  @Test
+  fun `loadSavedHikes updates selected hike if its status changes`() = runTest(dispatcher) {
+    // Load some hikes to be selected
+    loadOsmHikes(singleOsmHike1)
+
+    // Select the hike to be updated
+    val hikeId = singleOsmHike1[0].id
+    hikesViewModel.selectHike(hikeId)
+    // Check that the hike is selected
+    assertNotNull(hikesViewModel.selectedHike.value)
+    assertEquals(hikeId, hikesViewModel.selectedHike.value?.id)
+    // Check that the hike is not marked as saved yet
+    assertFalse(hikesViewModel.selectedHike.value?.isSaved ?: true)
+
+    // Include the selected hike in the saved hikes list
+    coEvery { savedHikesRepo.loadSavedHikes() } returns listOf(
+      SavedHike(id = hikeId, name = singleOsmHike1[0].name ?: "", date = firstJanuary2024)
+    )
+
+    // Load the saved hikes
+    hikesViewModel.loadSavedHikes()
+
+    // Check that the selected hike is now marked as saved
+    assertTrue(hikesViewModel.selectedHike.value?.isSaved ?: false)
+    assertEquals(firstJanuary2024, hikesViewModel.selectedHike.value?.plannedDate)
+  }
+
+  @Test
+  fun `loadSavedHikes clears selected hike if it is unloaded`() = runTest(dispatcher) {
+    // Load some hikes to be selected
+    loadSavedHikes(singleSavedHike1)
+
+    // Select the hike to be updated
+    val hikeId = singleSavedHike1[0].id
+    hikesViewModel.selectHike(hikeId)
+    // Check that the hike is selected
+    assertNotNull(hikesViewModel.selectedHike.value)
+    assertEquals(hikeId, hikesViewModel.selectedHike.value?.id)
+
+    // Remove the selected hike from the saved hikes list
+    coEvery { savedHikesRepo.loadSavedHikes() } returns emptyList()
+
+    // Load the saved hikes
+    hikesViewModel.loadSavedHikes()
+
+    // Check that the selected hike is now unselected
+    assertNull(hikesViewModel.selectedHike.value)
+  }
+
   // ==========================================================================
   // HikesViewModel.saveHike
   // ==========================================================================
