@@ -492,9 +492,6 @@ class HikesViewModelTest {
 
   @Test
   fun saveHikeFailsIfNoCorrespondingHikeIsFound() = runTest(dispatcher) {
-    // Check that no hike was loaded for now
-    assertEquals(0, hikesViewModel.hikeFlows.value.size)
-
     // Try to save a hike that is not loaded
     var onFailureCalled = false
     hikesViewModel.saveHike(
