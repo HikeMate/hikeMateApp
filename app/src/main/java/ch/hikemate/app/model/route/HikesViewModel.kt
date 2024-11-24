@@ -783,6 +783,9 @@ class HikesViewModel(
                   .toMap()
                   .toMutableMap()
 
+          // Update the selected hike if necessary
+          updateSelectedHike()
+
           // Update the exposed list of hikes based on the map of hikes
           updateHikeFlowsList()
         }
