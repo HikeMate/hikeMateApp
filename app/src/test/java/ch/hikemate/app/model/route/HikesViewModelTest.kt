@@ -66,6 +66,13 @@ class HikesViewModelTest {
 
   private val singleOsmHike1: List<HikeRoute> = listOf(HikeRoute(id = "osm1", name = "OSM Hike 1", bounds = Bounds(0.0, 0.0, 0.0, 0.0), ways = emptyList()))
 
+  private val singleOsmHike2: List<HikeRoute> = listOf(HikeRoute(id = "osm2", name = "OSM Hike 2", bounds = Bounds(0.0, 0.0, 0.0, 0.0), ways = emptyList()))
+
+  private val doubleOsmHikes1: List<HikeRoute> = listOf(
+    singleOsmHike1[0],
+    singleOsmHike2[0]
+  )
+
   private fun loadOsmHikes(osmHikes: List<HikeRoute>, onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}) {
     every { osmHikesRepo.getRoutes(any(), any(), any()) } answers {
       val successCallback = secondArg<(List<HikeRoute>) -> Unit>()
@@ -900,5 +907,134 @@ class HikesViewModelTest {
     assertTrue(hikesViewModel.selectedHike.value?.isSaved ?: false)
     // Check that the selected hike now has the planned date set
     assertEquals(firstJanuary2024, hikesViewModel.selectedHike.value?.plannedDate)
+  }
+
+  // ==========================================================================
+  // HikesViewModel.loadHikesInBounds
+  // ==========================================================================
+
+  @Test
+  fun `loadHikesInBounds fails if the repository fails`() = runTest(dispatcher) {
+    // Make sure the repository throws an exception when asked for hikes in bounds
+    coEvery { osmHikesRepo.getRoutes(any(), any(), any()) } throws Exception("Failed to load hikes in bounds")
+
+    // Try to load hikes in bounds through the view model
+    var onFailureCalled = false
+    hikesViewModel.loadHikesInBounds(
+      bounds = BoundingBox(0.0, 0.0, 0.0, 0.0),
+      onSuccess = { fail("onSuccess should not have been called") },
+      onFailure = { onFailureCalled = true }
+    )
+
+    // The OSM hikes repository should be called exactly once
+    coVerify(exactly = 1) { osmHikesRepo.getRoutes(any(), any(), any()) }
+    // The appropriate callback should be called
+    assertTrue(onFailureCalled)
+  }
+
+  @Test
+  fun `loadHikesInBounds succeeds if the repository succeeds`() = runTest(dispatcher) {
+    // Make sure the repo has some OSM hikes to return
+    every { osmHikesRepo.getRoutes(any(), any(), any()) } answers {
+      val onSuccess = secondArg<(List<HikeRoute>) -> Unit>()
+      onSuccess(doubleOsmHikes1)
+    }
+
+    // Try to load hikes in bounds through the view model
+    var onSuccessCalled = false
+    hikesViewModel.loadHikesInBounds(
+      bounds = BoundingBox(0.0, 0.0, 0.0, 0.0),
+      onSuccess = { onSuccessCalled = true },
+      onFailure = { fail("onFailure should not have been called") }
+    )
+
+    // The OSM hikes repository should be called exactly once
+    coVerify(exactly = 1) { osmHikesRepo.getRoutes(any(), any(), any()) }
+    // The appropriate callback should be called
+    assertTrue(onSuccessCalled)
+    // The view model should now contain the loaded hikes
+    assertEquals(doubleOsmHikes1.size, hikesViewModel.hikeFlows.value.size)
+    assertEquals(doubleOsmHikes1[0].id, hikesViewModel.hikeFlows.value[0].value.id)
+    assertEquals(doubleOsmHikes1[1].id, hikesViewModel.hikeFlows.value[1].value.id)
+  }
+
+  @Test
+  fun `loadHikesInBounds sets loading to true then false`() = runTest(dispatcher) {
+    // Listen to the changes made to loading during the call
+    val emissions = mutableListOf<Boolean>()
+    val job = backgroundScope.launch {
+      hikesViewModel.loading.collect { emissions.add(it) }
+    }
+
+    // Set the repository to throw an exception because we do not care
+    coEvery { osmHikesRepo.getRoutes(any(), any(), any()) } throws Exception("Failed to load saved hikes")
+
+    // Refresh the saved hikes cache
+    hikesViewModel.loadHikesInBounds(BoundingBox(0.0, 0.0, 0.0, 0.0))
+
+    // Because we are on an UnconfinedTestDispatcher(), the coroutine should be done by now, hence
+    // we can stop listening to the values emitted by loading.
+    job.cancel()
+
+    // Check that loading was false at first, then true during the call, and false again at the end
+    assertEquals(listOf(false, true, false), emissions)
+  }
+
+  @Test
+  fun `loadHikesInBounds updates the selected hike`() = runTest(dispatcher) {
+    // Load some hikes to be selected
+    val osmHike = singleOsmHike1[0]
+    loadSavedHikes(listOf(SavedHike(id = osmHike.id, name = osmHike.name ?: "", date = firstJanuary2024)))
+
+    // Select the hike to be updated
+    hikesViewModel.selectHike(osmHike.id)
+    // Check that the hike is selected
+    assertNotNull(hikesViewModel.selectedHike.value)
+    assertEquals(osmHike.id, hikesViewModel.selectedHike.value?.id)
+    // Check that OSM details of the selected hike are not obtained yet
+    assertFalse(hikesViewModel.selectedHike.value?.description is DeferredData.Obtained)
+    assertFalse(hikesViewModel.selectedHike.value?.bounds is DeferredData.Obtained)
+    assertFalse(hikesViewModel.selectedHike.value?.waypoints is DeferredData.Obtained)
+
+    // Make sure the repo has some OSM hikes to return
+    every { osmHikesRepo.getRoutes(any(), any(), any()) } answers {
+      val onSuccess = secondArg<(List<HikeRoute>) -> Unit>()
+      onSuccess(doubleOsmHikes1)
+    }
+
+    // Load hikes in bounds
+    hikesViewModel.loadHikesInBounds(BoundingBox(0.0, 0.0, 0.0, 0.0))
+
+    // Check that the selected hike is still selected
+    assertNotNull(hikesViewModel.selectedHike.value)
+    assertEquals(osmHike.id, hikesViewModel.selectedHike.value?.id)
+    // Check that the selected hike's OSM details have been updated
+    assertTrue(hikesViewModel.selectedHike.value?.description is DeferredData.Obtained)
+    assertTrue(hikesViewModel.selectedHike.value?.bounds is DeferredData.Obtained)
+    assertTrue(hikesViewModel.selectedHike.value?.waypoints is DeferredData.Obtained)
+  }
+
+  @Test
+  fun `loadHikesInBounds clears the selected hike if it is unloaded`() = runTest(dispatcher) {
+    // Load some hikes to be selected
+    loadSavedHikes(singleSavedHike1)
+
+    // Select the hike to be updated
+    hikesViewModel.selectHike(singleSavedHike1[0].id)
+    // Check that the hike is selected
+    assertNotNull(hikesViewModel.selectedHike.value)
+    assertEquals(singleSavedHike1[0].id, hikesViewModel.selectedHike.value?.id)
+
+    // Make sure the repo has some OSM hikes to return
+    every { osmHikesRepo.getRoutes(any(), any(), any()) } answers {
+      val onSuccess = secondArg<(List<HikeRoute>) -> Unit>()
+      onSuccess(doubleOsmHikes1)
+    }
+
+    // Load hikes in bounds
+    hikesViewModel.loadHikesInBounds(BoundingBox(0.0, 0.0, 0.0, 0.0))
+
+    // Check that the selected hike is now unselected
+    assertNull(hikesViewModel.selectedHike.value)
   }
 }
