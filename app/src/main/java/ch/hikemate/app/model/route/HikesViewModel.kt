@@ -416,13 +416,18 @@ class HikesViewModel(
     }
 
     // Add the saved hikes that were not in the list yet
-    _savedHikesMap.forEach { (hikeId, savedHike) ->
-      if (!_hikeFlowsMap.containsKey(hikeId)) {
-        _hikeFlowsMap[hikeId] = MutableStateFlow(Hike(
-          id = savedHike.id,
-          isSaved = true,
-          plannedDate = savedHike.date,
-          name = savedHike.name))
+    if (_loadedHikesType == LoadedHikes.FromSaved) {
+      _savedHikesMap.forEach { (hikeId, savedHike) ->
+        if (!_hikeFlowsMap.containsKey(hikeId)) {
+          _hikeFlowsMap[hikeId] = MutableStateFlow(
+            Hike(
+              id = savedHike.id,
+              isSaved = true,
+              plannedDate = savedHike.date,
+              name = savedHike.name
+            )
+          )
+        }
       }
     }
 
