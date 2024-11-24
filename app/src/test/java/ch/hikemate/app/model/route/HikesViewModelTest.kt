@@ -9,6 +9,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -1036,5 +1037,168 @@ class HikesViewModelTest {
 
     // Check that the selected hike is now unselected
     assertNull(hikesViewModel.selectedHike.value)
+  }
+
+  // ==========================================================================
+  // HikesViewModel.retrieveLoadedHikesOsmData
+  // ==========================================================================
+
+  @Test
+  fun `retrieveLoadedHikesOsmData fails if the repository fails`() = runTest(dispatcher) {
+    // Make sure there are loaded hikes with missing OSM details
+    loadSavedHikes(singleSavedHike1)
+
+    // Make sure the repository throws an exception when asked for hikes IDs
+    coEvery { osmHikesRepo.getRoutesByIds(any(), any(), any()) } throws Exception("Failed to load hikes in bounds")
+
+    // Try to retrieve the OSM data for the loaded hikes
+    var onFailureCalled = false
+    hikesViewModel.retrieveLoadedHikesOsmData(
+      onSuccess = { fail("onSuccess should not have been called") },
+      onFailure = { onFailureCalled = true }
+    )
+
+    // The OSM hikes repository should be called exactly once
+    coVerify(exactly = 1) { osmHikesRepo.getRoutesByIds(any(), any(), any()) }
+    // The appropriate callback should be called
+    assertTrue(onFailureCalled)
+  }
+
+  @Test
+  fun `retrieveLoadedHikesOsmData updates hikes with their OSM data`() = runTest(dispatcher) {
+    // Make sure there are loaded hikes with missing OSM details
+    val osmHike = singleOsmHike1[0]
+    loadSavedHikes(listOf(SavedHike(id = osmHike.id, name = osmHike.name ?: "", date = null)))
+
+    // Make sure the repository returns the OSM data for the loaded hikes
+    coEvery { osmHikesRepo.getRoutesByIds(any(), any(), any()) } answers {
+      val onSuccess = secondArg<(List<HikeRoute>) -> Unit>()
+      onSuccess(singleOsmHike1)
+    }
+
+    // Retrieve the OSM data for the loaded hikes
+    var onSuccessCalled = false
+    hikesViewModel.retrieveLoadedHikesOsmData(
+      onSuccess = { onSuccessCalled = true },
+      onFailure = { fail("onFailure should not have been called") }
+    )
+
+    // The OSM hikes repository should be called exactly once
+    verify(exactly = 1) { osmHikesRepo.getRoutesByIds(any(), any(), any()) }
+    // The appropriate callback should be called
+    assertTrue(onSuccessCalled)
+    // The view model should now contain the loaded hikes with their OSM data
+    assertEquals(singleOsmHike1.size, hikesViewModel.hikeFlows.value.size)
+    assertEquals(singleOsmHike1[0].id, hikesViewModel.hikeFlows.value[0].value.id)
+    assertEquals(singleOsmHike1[0].description, (hikesViewModel.hikeFlows.value[0].value.description as DeferredData.Obtained).data)
+    assertEquals(singleOsmHike1[0].bounds, (hikesViewModel.hikeFlows.value[0].value.bounds as DeferredData.Obtained).data)
+    assertEquals(singleOsmHike1[0].ways, (hikesViewModel.hikeFlows.value[0].value.waypoints as DeferredData.Obtained).data)
+  }
+
+  @Test
+  fun `retrieveLoadedHikesOsmData does not request already available data`() = runTest(dispatcher) {
+    // Load a first OSM hike with all its OSM data
+    loadOsmHikes(singleOsmHike1)
+
+    // Then load saved hikes, including the already loaded OSM hike plus another one
+    loadSavedHikes(listOf(
+      SavedHike(id = singleOsmHike1[0].id, name = singleOsmHike1[0].name ?: "", date = firstJanuary2024),
+      SavedHike(id = singleOsmHike2[0].id, name = singleOsmHike2[0].name ?: "", date = null)
+    ))
+
+    // Make sure the repository returns the OSM data for the loaded hikes
+    every { osmHikesRepo.getRoutesByIds(any(), any(), any()) } answers {
+      val ids = firstArg<List<String>>()
+      assertEquals(1, ids.size)
+      assertEquals(singleOsmHike2[0].id, ids[0])
+      val onSuccess = secondArg<(List<HikeRoute>) -> Unit>()
+      onSuccess(singleOsmHike2)
+    }
+
+    // Retrieve the OSM data for the loaded hikes
+    hikesViewModel.retrieveLoadedHikesOsmData()
+
+    // The OSM hikes repository should be called exactly once
+    verify(exactly = 1) { osmHikesRepo.getRoutesByIds(any(), any(), any()) }
+    // The view model should now contain the loaded hikes with their OSM data
+    assertEquals(singleOsmHike1.size + singleOsmHike2.size, hikesViewModel.hikeFlows.value.size)
+    val hike1 = hikesViewModel.hikeFlows.value.find { it.value.id == singleOsmHike1[0].id }?.value
+    assertNotNull(hike1)
+    assertEquals(singleOsmHike1[0].description, (hike1?.description as DeferredData.Obtained).data)
+    assertEquals(singleOsmHike1[0].bounds, (hike1.bounds as DeferredData.Obtained).data)
+    assertEquals(singleOsmHike1[0].ways, (hike1.waypoints as DeferredData.Obtained).data)
+    val hike2 = hikesViewModel.hikeFlows.value.find { it.value.id == singleOsmHike2[0].id }?.value
+    assertNotNull(hike2)
+    assertEquals(singleOsmHike2[0].description, (hike2?.description as DeferredData.Obtained).data)
+    assertEquals(singleOsmHike2[0].bounds, (hike2.bounds as DeferredData.Obtained).data)
+    assertEquals(singleOsmHike2[0].ways, (hike2.waypoints as DeferredData.Obtained).data)
+  }
+
+  @Test
+  fun `retrieveLoadedHikesOsmData does nothing if all data is available`() = runTest(dispatcher) {
+    // Make sure there are loaded hikes with their OSM details
+    loadOsmHikes(doubleOsmHikes1)
+
+    // Try to retrieve the OSM data for the loaded hikes
+    hikesViewModel.retrieveLoadedHikesOsmData()
+
+    // The OSM hikes repository should not be called
+    coVerify(exactly = 0) { osmHikesRepo.getRoutesByIds(any(), any(), any()) }
+  }
+
+  @Test
+  fun `retrieveLoadedHikesOsmData sets loading to true then false`() = runTest(dispatcher) {
+    // Listen to the changes made to loading during the call
+    val emissions = mutableListOf<Boolean>()
+    val job = backgroundScope.launch {
+      hikesViewModel.loading.collect { emissions.add(it) }
+    }
+
+    // Set the repository to throw an exception because we do not care
+    coEvery { osmHikesRepo.getRoutesByIds(any(), any(), any()) } throws Exception("Failed to load saved hikes")
+
+    // Retrieve the OSM data for the loaded hikes
+    hikesViewModel.retrieveLoadedHikesOsmData()
+
+    // Because we are on an UnconfinedTestDispatcher(), the coroutine should be done by now, hence
+    // we can stop listening to the values emitted by loading.
+    job.cancel()
+
+    // Check that loading was false at first, then true during the call, and false again at the end
+    assertEquals(listOf(false, true, false), emissions)
+  }
+
+  @Test
+  fun `retrieveLoadedHikesOsmData updates the selected hike`() = runTest(dispatcher) {
+    // Load some hikes to be selected
+    val osmHike = singleOsmHike1[0]
+    loadSavedHikes(listOf(SavedHike(id = osmHike.id, name = osmHike.name ?: "", date = null)))
+
+    // Select the hike to be updated
+    hikesViewModel.selectHike(osmHike.id)
+    // Check that the hike is selected
+    assertNotNull(hikesViewModel.selectedHike.value)
+    assertEquals(osmHike.id, hikesViewModel.selectedHike.value?.id)
+    // Check that OSM details of the selected hike are not obtained yet
+    assertFalse(hikesViewModel.selectedHike.value?.description is DeferredData.Obtained)
+    assertFalse(hikesViewModel.selectedHike.value?.bounds is DeferredData.Obtained)
+    assertFalse(hikesViewModel.selectedHike.value?.waypoints is DeferredData.Obtained)
+
+    // Make sure the repository returns the OSM data for the loaded hikes
+    coEvery { osmHikesRepo.getRoutesByIds(any(), any(), any()) } answers {
+      val onSuccess = secondArg<(List<HikeRoute>) -> Unit>()
+      onSuccess(singleOsmHike1)
+    }
+
+    // Retrieve the OSM data for the loaded hikes
+    hikesViewModel.retrieveLoadedHikesOsmData()
+
+    // Check that the selected hike is still selected
+    assertNotNull(hikesViewModel.selectedHike.value)
+    assertEquals(osmHike.id, hikesViewModel.selectedHike.value?.id)
+    // Check that the selected hike's OSM details have been updated
+    assertTrue(hikesViewModel.selectedHike.value?.description is DeferredData.Obtained)
+    assertTrue(hikesViewModel.selectedHike.value?.bounds is DeferredData.Obtained)
+    assertTrue(hikesViewModel.selectedHike.value?.waypoints is DeferredData.Obtained)
   }
 }
