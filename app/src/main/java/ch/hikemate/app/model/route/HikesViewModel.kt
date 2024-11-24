@@ -294,7 +294,15 @@ class HikesViewModel(
    *   operation.
    */
   fun retrieveLoadedHikesOsmData(onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}) =
-      viewModelScope.launch { retrieveLoadedHikesOsmDataAsync(onSuccess, onFailure) }
+      viewModelScope.launch {
+        // Notify the UI that a heavy loading operation is in progress
+        _loading.value = true
+
+        retrieveLoadedHikesOsmDataAsync(onSuccess, onFailure)
+
+        // The heavy loading operation is done now
+        _loading.value = false
+      }
 
   /**
    * Indicates whether [retrieveElevationDataFor] can be called for the provided hike.
@@ -817,9 +825,6 @@ class HikesViewModel(
       onFailure: () -> Unit
   ) =
       withContext(dispatcher) {
-        // Notify the UI that a heavy loading operation is in progress
-        _loading.value = true
-
         // Prepare a list of hikes for which we need to retrieve the data
         val idsToRetrieve: List<String>
         _hikesMutex.withLock {
@@ -828,7 +833,6 @@ class HikesViewModel(
 
         // If all routes already have their OSM data, do nothing more
         if (idsToRetrieve.isEmpty()) {
-          _loading.value = false
           onSuccess()
           return@withContext
         }
