@@ -823,7 +823,7 @@ class HikesViewModel(
         // Prepare a list of hikes for which we need to retrieve the data
         val idsToRetrieve: List<String>
         _hikesMutex.withLock {
-          idsToRetrieve = _hikeFlowsMap.values.filter { hasOsmData(it.value) }.map { it.value.id }
+          idsToRetrieve = _hikeFlowsMap.values.filter { !hasOsmData(it.value) }.map { it.value.id }
         }
 
         // Retrieve the OSM data of the hikes
