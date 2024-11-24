@@ -4,7 +4,6 @@ import ch.hikemate.app.model.elevation.ElevationService
 import ch.hikemate.app.model.route.saved.SavedHike
 import ch.hikemate.app.model.route.saved.SavedHikesRepository
 import io.mockk.coEvery
-import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -104,5 +103,38 @@ class HikesViewModelTest {
     assertEquals(hikeId, hikesViewModel.selectedHike.value?.id)
     // The appropriate callback should be called
     assertTrue(onSuccessCalled)
+  }
+
+  // ==========================================================================
+  // HikesViewModel.selectHike
+  // ==========================================================================
+
+  @Test
+  fun unselectHikeSucceedsWhenHikeIsSelected() = runTest(dispatcher) {
+    // There needs to be at least one hike in the loaded list to select it
+    loadSavedHikes(singleSavedHike)
+    // Select a hike
+    val hikeId = singleSavedHike[0].id
+    hikesViewModel.selectHike(hikeId)
+    // Check that the hike is selected, otherwise the test does not make sense
+    assertNotNull(hikesViewModel.selectedHike.value)
+
+    // Unselect the hike
+    hikesViewModel.unselectHike()
+
+    // Check that the hike was indeed unselected
+    assertNull(hikesViewModel.selectedHike.value)
+  }
+
+  @Test
+  fun unselectHikeSucceedsWhenNoHikeIsSelected() = runTest(dispatcher) {
+    // No hike should be selected at the start of the test
+    assertNull(hikesViewModel.selectedHike.value)
+
+    // Unselect the hike
+    hikesViewModel.unselectHike()
+
+    // Check that nothing has changed and that no hike is selected
+    assertNull(hikesViewModel.selectedHike.value)
   }
 }
