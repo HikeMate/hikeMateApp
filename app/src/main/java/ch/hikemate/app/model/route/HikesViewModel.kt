@@ -84,8 +84,7 @@ class HikesViewModel(
       // The selected hike is not in the map, unselect it.
       _selectedHikeId = null
       _selectedHike.value = null
-    }
-    else {
+    } else {
       // The selected hike is still in the map, update it.
       val flowValue = selectedHikeFlow.value
       if (flowValue != selectedHike) {
@@ -264,7 +263,11 @@ class HikesViewModel(
    * @param onSuccess To be called when hikes have been successfully loaded.
    * @param onFailure Will be called if an error is encountered.
    */
-  fun loadHikesInBounds(bounds: BoundingBox, onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}) =
+  fun loadHikesInBounds(
+      bounds: BoundingBox,
+      onSuccess: () -> Unit = {},
+      onFailure: () -> Unit = {}
+  ) =
       viewModelScope.launch {
         // Let the user know a heavy load operation is being performed
         _loading.value = true
@@ -332,8 +335,11 @@ class HikesViewModel(
    * @param onFailure To be called if a problem is encountered and prevents the elevation from being
    *   retrieved.
    */
-  fun retrieveElevationDataFor(hikeId: String, onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}) =
-      viewModelScope.launch { retrieveElevationDataForAsync(hikeId, onSuccess, onFailure) }
+  fun retrieveElevationDataFor(
+      hikeId: String,
+      onSuccess: () -> Unit = {},
+      onFailure: () -> Unit = {}
+  ) = viewModelScope.launch { retrieveElevationDataForAsync(hikeId, onSuccess, onFailure) }
 
   /**
    * Indicates whether all details data have been computed for the provided hike.
@@ -473,14 +479,13 @@ class HikesViewModel(
     if (_loadedHikesType == LoadedHikes.FromSaved) {
       _savedHikesMap.forEach { (hikeId, savedHike) ->
         if (!_hikeFlowsMap.containsKey(hikeId)) {
-          _hikeFlowsMap[hikeId] = MutableStateFlow(
-            Hike(
-              id = savedHike.id,
-              isSaved = true,
-              plannedDate = savedHike.date,
-              name = savedHike.name
-            )
-          )
+          _hikeFlowsMap[hikeId] =
+              MutableStateFlow(
+                  Hike(
+                      id = savedHike.id,
+                      isSaved = true,
+                      plannedDate = savedHike.date,
+                      name = savedHike.name))
         }
       }
     }
@@ -727,7 +732,8 @@ class HikesViewModel(
       onFailure: () -> Unit
   ) =
       withContext(dispatcher) {
-        // We are loading hikes from bounds, remember this to avoid overriding loaded hikes with saved
+        // We are loading hikes from bounds, remember this to avoid overriding loaded hikes with
+        // saved
         // hikes when those get reloaded.
         _loadedHikesType = LoadedHikes.FromBounds
 
