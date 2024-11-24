@@ -363,7 +363,6 @@ class HikesViewModel(
           savedHikes = savedHikesRepo.loadSavedHikes()
         } catch (e: Exception) {
           Log.e(LOG_TAG, "Error encountered while loading saved hikes", e)
-          _loading.value = false
           onFailure()
           return@withContext false
         }
