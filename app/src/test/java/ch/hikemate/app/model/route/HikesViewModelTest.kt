@@ -560,4 +560,28 @@ class HikesViewModelTest {
     // The hike should now be marked as saved
     assertTrue(hikesViewModel.hikeFlows.value[0].value.isSaved)
   }
+
+  @Test
+  fun `saveHike updates selected hike if its status changes`() = runTest(dispatcher) {
+    // Load some hikes to be selected
+    loadOsmHikes(singleOsmHike1)
+
+    // Select the hike to be updated
+    val hikeId = singleOsmHike1[0].id
+    hikesViewModel.selectHike(hikeId)
+    // Check that the hike is selected
+    assertNotNull(hikesViewModel.selectedHike.value)
+    assertEquals(hikeId, hikesViewModel.selectedHike.value?.id)
+    // Check that the hike is not marked as saved yet
+    assertFalse(hikesViewModel.selectedHike.value?.isSaved ?: true)
+
+    // Make sure the saved hikes repository saves the hike
+    coEvery { savedHikesRepo.addSavedHike(any()) } returns Unit
+
+    // Save the selected hike
+    hikesViewModel.saveHike(hikeId)
+
+    // Check that the selected hike is now marked as saved
+    assertTrue(hikesViewModel.selectedHike.value?.isSaved ?: false)
+  }
 }
