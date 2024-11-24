@@ -969,7 +969,7 @@ class HikesViewModelTest {
     // Set the repository to throw an exception because we do not care
     coEvery { osmHikesRepo.getRoutes(any(), any(), any()) } throws Exception("Failed to load saved hikes")
 
-    // Refresh the saved hikes cache
+    // Load hikes in bounds
     hikesViewModel.loadHikesInBounds(BoundingBox(0.0, 0.0, 0.0, 0.0))
 
     // Because we are on an UnconfinedTestDispatcher(), the coroutine should be done by now, hence
