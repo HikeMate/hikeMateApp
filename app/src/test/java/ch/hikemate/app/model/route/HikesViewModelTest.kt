@@ -323,6 +323,53 @@ class HikesViewModelTest {
     assertEquals(listOf(false, true, false), emissions)
   }
 
+  @Test
+  fun `refreshSavedHikesCache updates selected hike if its status changes`() = runTest(dispatcher) {
+    // Load some hikes to be selected
+    loadOsmHikes(singleOsmHike1)
+
+    // Select the hike to be updated
+    val hikeId = singleOsmHike1[0].id
+    hikesViewModel.selectHike(hikeId)
+    // Check that the hike is selected
+    assertNotNull(hikesViewModel.selectedHike.value)
+    assertEquals(hikeId, hikesViewModel.selectedHike.value?.id)
+
+    // Include the selected hike in the saved hikes list
+    coEvery { savedHikesRepo.loadSavedHikes() } returns listOf(
+      SavedHike(id = hikeId, name = singleOsmHike1[0].name ?: "", date = firstJanuary2024)
+    )
+
+    // Refresh the saved hikes cache
+    hikesViewModel.refreshSavedHikesCache()
+
+    // Check that the selected hike is now marked as saved
+    assertTrue(hikesViewModel.selectedHike.value?.isSaved ?: false)
+    assertEquals(firstJanuary2024, hikesViewModel.selectedHike.value?.plannedDate)
+  }
+
+  @Test
+  fun `refreshSavedHikesCache clears selected hike if it is unloaded`() = runTest(dispatcher) {
+    // Load some hikes to be selected
+    loadSavedHikes(singleSavedHike1)
+
+    // Select the hike to be updated
+    val hikeId = singleSavedHike1[0].id
+    hikesViewModel.selectHike(hikeId)
+    // Check that the hike is selected
+    assertNotNull(hikesViewModel.selectedHike.value)
+    assertEquals(hikeId, hikesViewModel.selectedHike.value?.id)
+
+    // Remove the selected hike from the saved hikes list
+    coEvery { savedHikesRepo.loadSavedHikes() } returns emptyList()
+
+    // Refresh the saved hikes cache
+    hikesViewModel.refreshSavedHikesCache()
+
+    // Check that the selected hike is now unselected
+    assertNull(hikesViewModel.selectedHike.value)
+  }
+
   // ==========================================================================
   // HikesViewModel.loadSavedHikes
   // ==========================================================================
