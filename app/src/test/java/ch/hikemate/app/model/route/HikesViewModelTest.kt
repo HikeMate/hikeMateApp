@@ -389,4 +389,79 @@ class HikesViewModelTest {
     // Check that loading was false at first, then true during the call, and false again at the end
     assertEquals(listOf(false, true, false), emissions)
   }
+
+  // ==========================================================================
+  // HikesViewModel.saveHike
+  // ==========================================================================
+
+  @Test
+  fun saveHikeFailsIfNoCorrespondingHikeIsFound() = runTest(dispatcher) {
+    // Check that no hike was loaded for now
+    assertEquals(0, hikesViewModel.hikeFlows.value.size)
+
+    // Try to save a hike that is not loaded
+    var onFailureCalled = false
+    hikesViewModel.saveHike(
+      hikeId = "nonexistent",
+      onSuccess = { fail("onSuccess should not have been called") },
+      onFailure = { onFailureCalled = true }
+    )
+
+    // The saved hikes repository should not be called
+    coVerify(exactly = 0) { savedHikesRepo.addSavedHike(any()) }
+    // The appropriate callback should be called
+    assertTrue(onFailureCalled)
+  }
+
+  @Test
+  fun saveHikeFailsIfRepoFails() = runTest(dispatcher) {
+    // Load a hike to be saved
+    loadOsmHikes(singleOsmHike1)
+    // Check that the hike was loaded
+    assertEquals(1, hikesViewModel.hikeFlows.value.size)
+
+    // Whenever asked to save a hike, the repository will throw an exception
+    coEvery { savedHikesRepo.addSavedHike(any()) } throws Exception("Failed to save hike")
+
+    // Try to save the loaded hike
+    var onFailureCalled = false
+    hikesViewModel.saveHike(
+      hikeId = singleOsmHike1[0].id,
+      onSuccess = { fail("onSuccess should not have been called") },
+      onFailure = { onFailureCalled = true }
+    )
+
+    // The saved hikes repository should be called exactly once
+    coVerify(exactly = 1) { savedHikesRepo.addSavedHike(any()) }
+    // The appropriate callback should be called
+    assertTrue(onFailureCalled)
+  }
+
+  @Test
+  fun saveHikeSucceedsIfRepoSucceeds() = runTest(dispatcher) {
+    // Load a hike to be saved
+    loadOsmHikes(singleOsmHike1)
+    // Check that the hike was loaded
+    assertEquals(1, hikesViewModel.hikeFlows.value.size)
+    // Check that the hike is not saved initially
+    assertFalse(hikesViewModel.hikeFlows.value[0].value.isSaved)
+
+    // Make sure the saved hikes repository saves the hike
+    coEvery { savedHikesRepo.addSavedHike(any()) } returns Unit
+
+    // Try to save the loaded hike
+    var onSuccessCalled = false
+    hikesViewModel.saveHike(
+      hikeId = singleOsmHike1[0].id,
+      onSuccess = { onSuccessCalled = true },
+      onFailure = { fail("onFailure should not have been called") }
+    )
+
+    // The saved hikes repository should be called exactly once
+    coVerify(exactly = 1) { savedHikesRepo.addSavedHike(any()) }
+    // The appropriate callback should be called
+    assertTrue(onSuccessCalled)
+    // The hike should now be marked as saved
+    assertTrue(hikesViewModel.hikeFlows.value[0].value.isSaved)
+  }
 }
