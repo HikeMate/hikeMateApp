@@ -118,7 +118,15 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          script: ./gradlew connectedCheck --parallel --build-cache
+          script: "./gradlew connectedCheck --parallel --build-cache; first_command_status=$?; /usr/local/lib/android/sdk/platform-tools/adb logcat -d > logcat-output.txt; exit $first_command_status"
+
+      - name: Upload logcat output
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: logcat-output
+          path: logcat-output.txt
+
             
       # Generate coverage report
       - name: Generate coverage
