@@ -163,7 +163,11 @@ class HikesViewModel(
    * @param onFailure Will be called if an error is encountered.
    */
   fun loadSavedHikes(onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}) =
-      viewModelScope.launch { loadSavedHikesAsync(onSuccess, onFailure) }
+      viewModelScope.launch {
+        _loading.value = true
+        loadSavedHikesAsync(onSuccess, onFailure)
+        _loading.value = false
+      }
 
   /**
    * Marks a hike as saved by the current user.
@@ -436,17 +440,11 @@ class HikesViewModel(
 
   private suspend fun loadSavedHikesAsync(onSuccess: () -> Unit, onFailure: () -> Unit) =
       withContext(dispatcher) {
-        // Indicate the view model is currently loading, for the UI to tell the user in some way
-        _loading.value = true
-
         // Remember that the loaded hikes list will now only hold saved hikes
         _loadedHikesType = LoadedHikes.FromSaved
 
         // Update the local cache of saved hikes and add them to _hikeFlows
         val success = refreshSavedHikesCacheAsync()
-
-        // Indicate the view model has finished the heavy loading operation
-        _loading.value = false
 
         if (success) {
           onSuccess()
