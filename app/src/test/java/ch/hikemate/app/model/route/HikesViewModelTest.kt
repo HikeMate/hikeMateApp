@@ -581,4 +581,164 @@ class HikesViewModelTest {
     // Check that the selected hike is now marked as saved
     assertTrue(hikesViewModel.selectedHike.value?.isSaved ?: false)
   }
+
+  // ==========================================================================
+  // HikesViewModel.unsaveHike
+  // ==========================================================================
+
+  @Test
+  fun `unsaveHike fails if no corresponding hike is found`() = runTest(dispatcher) {
+    // Try to unsave a hike that is not loaded (no hikes were loaded whatsoever)
+    var onFailureCalled = false
+    hikesViewModel.unsaveHike(
+      hikeId = "nonexistent",
+      onSuccess = { fail("onSuccess should not have been called") },
+      onFailure = { onFailureCalled = true }
+    )
+
+    // The saved hikes repository should not be called
+    coVerify(exactly = 0) { savedHikesRepo.removeSavedHike(any()) }
+    // The appropriate callback should be called
+    assertTrue(onFailureCalled)
+  }
+
+  @Test
+  fun `unsaveHike fails if the repository fails`() = runTest(dispatcher) {
+    // Load a hike to be unsaved
+    loadSavedHikes(singleSavedHike1)
+    // Check that the hike was loaded
+    assertEquals(1, hikesViewModel.hikeFlows.value.size)
+
+    // Whenever asked to unsave a hike, the repository will throw an exception
+    coEvery { savedHikesRepo.removeSavedHike(any()) } throws Exception("Failed to unsave hike")
+
+    // Try to unsave the loaded hike
+    var onFailureCalled = false
+    hikesViewModel.unsaveHike(
+      hikeId = singleSavedHike1[0].id,
+      onSuccess = { fail("onSuccess should not have been called") },
+      onFailure = { onFailureCalled = true }
+    )
+
+    // The saved hikes repository should be called exactly once
+    coVerify(exactly = 1) { savedHikesRepo.removeSavedHike(any()) }
+    // The appropriate callback should be called
+    assertTrue(onFailureCalled)
+  }
+
+  @Test
+  fun `unsaveHike updates hike in the loaded OSM hikes`() = runTest(dispatcher) {
+    // Make sure the loaded hike is included in the saved hikes
+    coEvery { savedHikesRepo.loadSavedHikes() } returns listOf(
+      SavedHike(id = singleOsmHike1[0].id, name = singleOsmHike1[0].name ?: "", date = firstJanuary2024)
+    )
+    hikesViewModel.refreshSavedHikesCache()
+
+    // Load a hike to be unsaved (load hikes from bounds so that the hike won't be removed from the
+    // loaded hikes list after being unsaved).
+    loadOsmHikes(singleOsmHike1)
+    // Check that the hike was loaded
+    assertEquals(singleOsmHike1.size, hikesViewModel.hikeFlows.value.size)
+    // Check that the hike is saved initially
+    assertTrue(hikesViewModel.hikeFlows.value[0].value.isSaved)
+
+    // Make sure the saved hikes repository unsaves the hike
+    coEvery { savedHikesRepo.removeSavedHike(any()) } returns Unit
+
+    // Try to unsave the loaded hike
+    var onSuccessCalled = false
+    hikesViewModel.unsaveHike(
+      hikeId = singleOsmHike1[0].id,
+      onSuccess = { onSuccessCalled = true },
+      onFailure = { fail("onFailure should not have been called") }
+    )
+
+    // The saved hikes repository should be called exactly once
+    coVerify(exactly = 1) { savedHikesRepo.removeSavedHike(any()) }
+    // The appropriate callback should be called
+    assertTrue(onSuccessCalled)
+    // The hike should now be marked as unsaved
+    assertFalse(hikesViewModel.hikeFlows.value[0].value.isSaved)
+  }
+
+  @Test
+  fun `unsaveHike removes hike from the loaded saved hikes`() = runTest(dispatcher) {
+    // Load a hike to be unsaved
+    loadSavedHikes(singleSavedHike1)
+    // Check that the hike was loaded
+    assertEquals(singleSavedHike1.size, hikesViewModel.hikeFlows.value.size)
+    // Check that the hike is initially marked as saved
+    assertTrue(hikesViewModel.hikeFlows.value[0].value.isSaved)
+
+    // Make sure the saved hikes repository unsaves the hike
+    coEvery { savedHikesRepo.removeSavedHike(any()) } returns Unit
+
+    // Try to unsave the loaded hike
+    var onSuccessCalled = false
+    hikesViewModel.unsaveHike(
+      hikeId = singleSavedHike1[0].id,
+      onSuccess = { onSuccessCalled = true },
+      onFailure = { fail("onFailure should not have been called") }
+    )
+
+    // The saved hikes repository should be called exactly once
+    coVerify(exactly = 1) { savedHikesRepo.removeSavedHike(any()) }
+    // The appropriate callback should be called
+    assertTrue(onSuccessCalled)
+    // The hike should now be removed from the loaded saved hikes
+    assertEquals(0, hikesViewModel.hikeFlows.value.size)
+  }
+
+  @Test
+  fun `unsaveHike updates selected hike if its status changes`() = runTest(dispatcher) {
+    // Make sure the loaded hike is included in the saved hikes
+    coEvery { savedHikesRepo.loadSavedHikes() } returns listOf(
+      SavedHike(id = singleOsmHike1[0].id, name = singleOsmHike1[0].name ?: "", date = firstJanuary2024)
+    )
+    hikesViewModel.refreshSavedHikesCache()
+
+    // Load a hike to be unsaved (load hikes from bounds so that the hike won't be removed from the
+    // loaded hikes list after being unsaved).
+    loadOsmHikes(singleOsmHike1)
+
+    // Select the saved hike that we will later unsave
+    val hikeId = singleOsmHike1[0].id
+    hikesViewModel.selectHike(hikeId)
+    // Check that the hike is selected
+    assertNotNull(hikesViewModel.selectedHike.value)
+    assertEquals(hikeId, hikesViewModel.selectedHike.value?.id)
+    // Check that the hike is saved
+    assertTrue(hikesViewModel.selectedHike.value?.isSaved ?: false)
+
+    // Make sure the saved hikes repository unsaves the hike
+    coEvery { savedHikesRepo.removeSavedHike(any()) } returns Unit
+
+    // Unsave the selected hike
+    hikesViewModel.unsaveHike(hikeId)
+
+    // Check that the selected hike is now marked as unsaved
+    assertFalse(hikesViewModel.selectedHike.value?.isSaved ?: true)
+  }
+
+  @Test
+  fun `unsaveHike clears selected hike if it is unloaded`() = runTest(dispatcher) {
+    // Load some hikes to be selected
+    loadSavedHikes(singleSavedHike1)
+
+    // Select the saved hike that we will later unsave
+    val hikeId = singleSavedHike1[0].id
+    hikesViewModel.selectHike(hikeId)
+    // Check that the hike is selected
+    assertNotNull(hikesViewModel.selectedHike.value)
+    assertEquals(hikeId, hikesViewModel.selectedHike.value?.id)
+
+    // Remove the selected hike from the saved hikes list
+    coEvery { savedHikesRepo.removeSavedHike(any()) } returns Unit
+
+    // Unsave the selected hike
+    hikesViewModel.unsaveHike(hikeId)
+
+    // Check that the selected hike is now unselected
+    assertNull(hikesViewModel.selectedHike.value)
+  }
 }
