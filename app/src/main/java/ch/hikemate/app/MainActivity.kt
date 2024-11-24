@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -29,6 +30,7 @@ import ch.hikemate.app.model.route.saved.SavedHikesViewModel
 import ch.hikemate.app.ui.auth.CreateAccountScreen
 import ch.hikemate.app.ui.auth.SignInScreen
 import ch.hikemate.app.ui.auth.SignInWithEmailScreen
+import ch.hikemate.app.ui.guide.GuideScreen
 import ch.hikemate.app.ui.map.HikeDetailScreen
 import ch.hikemate.app.ui.map.MapScreen
 import ch.hikemate.app.ui.navigation.NavigationActions
@@ -86,6 +88,15 @@ fun HikeMateApp() {
       viewModel(factory = ListOfHikeRoutesViewModel.Factory)
   val savedHikesViewModel: SavedHikesViewModel = viewModel(factory = SavedHikesViewModel.Factory)
 
+  val user by authViewModel.currentUser.collectAsState()
+
+  LaunchedEffect(user) {
+    if (user != null) {
+      profileViewModel.getProfileById(user!!.uid)
+      savedHikesViewModel.loadSavedHikes()
+    }
+  }
+
   NavHost(
       navController = navController,
       startDestination =
@@ -94,14 +105,12 @@ fun HikeMateApp() {
             startDestination = Screen.AUTH,
             route = Route.AUTH,
         ) {
-          composable(Screen.AUTH) {
-            SignInScreen(navigationActions, authViewModel, profileViewModel)
-          }
+          composable(Screen.AUTH) { SignInScreen(navigationActions, authViewModel) }
           composable(Screen.SIGN_IN_WITH_EMAIL) {
-            SignInWithEmailScreen(navigationActions, authViewModel, profileViewModel)
+            SignInWithEmailScreen(navigationActions, authViewModel)
           }
           composable(Screen.CREATE_ACCOUNT) {
-            CreateAccountScreen(navigationActions, authViewModel, profileViewModel)
+            CreateAccountScreen(navigationActions, authViewModel)
           }
           composable(Screen.DELETE_ACCOUNT) {
             DeleteAccountScreen(navigationActions, authViewModel)
@@ -155,6 +164,9 @@ fun HikeMateApp() {
             EditProfileScreen(
                 navigationActions = navigationActions, profileViewModel = profileViewModel)
           }
+        }
+        navigation(startDestination = Screen.TUTORIAL, route = Route.TUTORIAL) {
+          composable(Screen.TUTORIAL) { GuideScreen(navigationActions) }
         }
       }
 }

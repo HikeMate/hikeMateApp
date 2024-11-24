@@ -150,6 +150,11 @@ open class ListOfHikeRoutesViewModel(
     selectedHikeRoute_.value = hikeRoute
   }
 
+  /** Clears the selected route */
+  fun clearSelectedRoute() {
+    selectedHikeRoute_.value = null
+  }
+
   private suspend fun selectRouteByIdAsync(hikeId: String) {
     withContext(dispatcher) {
       hikeRoutesRepository.getRouteById(
