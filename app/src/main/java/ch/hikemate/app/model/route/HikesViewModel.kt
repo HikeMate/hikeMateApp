@@ -364,7 +364,7 @@ class HikesViewModel(
    *   automatically.
    */
   fun computeDetailsFor(hikeId: String, onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}) =
-      viewModelScope.launch { retrieveDetailsForAsync(hikeId, onSuccess, onFailure) }
+      viewModelScope.launch { computeDetailsForAsync(hikeId, onSuccess, onFailure) }
 
   private suspend fun selectHikeAsync(
       hikeId: String,
@@ -981,7 +981,7 @@ class HikesViewModel(
         onFailure = { exception -> continuation.resumeWithException(exception) })
   }
 
-  private suspend fun retrieveDetailsForAsync(
+  private suspend fun computeDetailsForAsync(
       hikeId: String,
       onSuccess: () -> Unit,
       onFailure: () -> Unit
@@ -1047,7 +1047,7 @@ class HikesViewModel(
       }
 
   /**
-   * Helper function for [retrieveDetailsForAsync].
+   * Helper function for [computeDetailsForAsync].
    *
    * Checks that the required data ([Hike.waypoints] and [Hike.elevation]) are available, and that a
    * request is not already ongoing. Returns the data if it is available, and indicates whether a
