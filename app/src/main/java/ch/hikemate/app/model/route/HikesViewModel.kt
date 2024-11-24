@@ -434,8 +434,44 @@ class HikesViewModel(
       }
     }
 
+    // Update the selected hike's saved status, unselect it if it's not loaded anymore
+    updateSelectedHikeSavedStatus()
+
     // Update the exposed list of hikes based on the map of hikes
     updateHikeFlowsList()
+  }
+
+  /**
+   * Helper function for [updateSavedHikesCache].
+   *
+   * Updates the saved status of the selected hike if it is currently loaded (sets it to saved if it
+   * was updated from unsaved to saved, ...).
+   *
+   * Unselects the selected hike if it was unloaded (removed from [hikeFlows]).
+   *
+   * This function does not acquire the [_hikesMutex]. It is the responsibility of the caller to
+   * call this function inside of a [Mutex.withLock] block.
+   *
+   * This function does not switch context either, it is the responsibility of the caller to call
+   * this function inside of a [withContext] block.
+   */
+  private fun updateSelectedHikeSavedStatus() {
+    val selectedHike = _selectedHike.value
+    // Only bother to update the selected hike if there is one
+    if (selectedHike != null) {
+      if (_hikeFlowsMap.containsKey(selectedHike.id)) {
+        // The selected hike is still loaded, update its saved status
+        val savedHike = _savedHikesMap[selectedHike.id]
+        val (changeNeeded, updated) = hikeNeedsSavedStatusUpdate(selectedHike, savedHike)
+        if (changeNeeded) {
+          _selectedHike.value = updated
+        }
+      } else {
+        // The selected hike was unloaded, unselect it
+        _selectedHikeId = null
+        _selectedHike.value = null
+      }
+    }
   }
 
   private suspend fun loadSavedHikesAsync(onSuccess: () -> Unit, onFailure: () -> Unit) =
