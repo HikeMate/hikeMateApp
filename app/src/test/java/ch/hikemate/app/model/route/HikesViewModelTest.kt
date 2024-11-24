@@ -82,6 +82,8 @@ class HikesViewModelTest {
     hikesViewModel.loadHikesInBounds(BoundingBox(0.0, 0.0, 0.0, 0.0), onSuccess, onFailure)
   }
 
+  private val elevationProfile1: List<Double> = listOf(0.0, 1.0, 2.0, 3.0, 2.0, 1.0, 0.0)
+
   // ==========================================================================
   // HikesViewModel.selectHike
   // ==========================================================================
@@ -1200,5 +1202,153 @@ class HikesViewModelTest {
     assertTrue(hikesViewModel.selectedHike.value?.description is DeferredData.Obtained)
     assertTrue(hikesViewModel.selectedHike.value?.bounds is DeferredData.Obtained)
     assertTrue(hikesViewModel.selectedHike.value?.waypoints is DeferredData.Obtained)
+  }
+
+  // ==========================================================================
+  // HikesViewModel.retrieveElevationDataFor
+  // ==========================================================================
+
+  @Test
+  fun `retrieveElevationDataFor fails if hike is not found`() = runTest(dispatcher) {
+    // Try to retrieve elevation data for a hike that is not loaded
+    var onFailureCalled = false
+    hikesViewModel.retrieveElevationDataFor(
+      hikeId = "nonexistent",
+      onSuccess = { fail("onSuccess should not have been called") },
+      onFailure = { onFailureCalled = true }
+    )
+
+    // The elevation repository should not be called at all
+    verify(exactly = 0) { elevationRepo.getElevation(any(), any(), any(), any()) }
+    // The appropriate callback should be called
+    assertTrue(onFailureCalled)
+  }
+
+  @Test
+  fun `retrieveElevationDataFor fails if hike has no waypoints`() = runTest(dispatcher) {
+    // Make sure there is one loaded hike but with no waypoints
+    loadSavedHikes(singleSavedHike1)
+
+    // Try to retrieve elevation data for the loaded hike
+    var onFailureCalled = false
+    hikesViewModel.retrieveElevationDataFor(
+      hikeId = singleSavedHike1[0].id,
+      onSuccess = { fail("onSuccess should not have been called") },
+      onFailure = { onFailureCalled = true }
+    )
+
+    // The elevation repository should not be called at all
+    verify(exactly = 0) { elevationRepo.getElevation(any(), any(), any(), any()) }
+    // The appropriate callback should be called
+    assertTrue(onFailureCalled)
+  }
+
+  @Test
+  fun `retrieveElevationDataFor fails if the repository fails`() = runTest(dispatcher) {
+    // Make sure there is one loaded hike with waypoints
+    loadOsmHikes(singleOsmHike1)
+
+    // Make sure the repository throws an exception when asked for elevation data
+    every { elevationRepo.getElevation(any(), any(), any(), any()) } throws Exception("Failed to load elevation data")
+
+    // Try to retrieve elevation data for the loaded hike
+    var onFailureCalled = false
+    hikesViewModel.retrieveElevationDataFor(
+      hikeId = singleOsmHike1[0].id,
+      onSuccess = { fail("onSuccess should not have been called") },
+      onFailure = { onFailureCalled = true }
+    )
+
+    // The elevation repository should be called exactly once
+    coVerify(exactly = 1) { elevationRepo.getElevation(any(), any(), any(), any()) }
+    // The appropriate callback should be called
+    assertTrue(onFailureCalled)
+  }
+
+  @Test
+  fun `retrieveElevationDataFor updates the hike with its elevation data`() = runTest(dispatcher) {
+    // Make sure there is one loaded hike with waypoints
+    loadOsmHikes(singleOsmHike1)
+    // Check that the hike was loaded
+    assertEquals(1, hikesViewModel.hikeFlows.value.size)
+    // Check that the hike does not have elevation data yet
+    assertFalse(hikesViewModel.hikeFlows.value[0].value.elevation is DeferredData.Obtained)
+
+    // Make sure the repository returns the elevation data for the loaded hike
+    coEvery { elevationRepo.getElevation(any(), any(), any(), any()) } answers {
+      val onSuccess = thirdArg<(List<Double>) -> Unit>()
+      onSuccess(elevationProfile1)
+    }
+
+    // Retrieve the elevation data for the loaded hike
+    var onSuccessCalled = false
+    hikesViewModel.retrieveElevationDataFor(
+      hikeId = singleOsmHike1[0].id,
+      onSuccess = { onSuccessCalled = true },
+      onFailure = { fail("onFailure should not have been called") }
+    )
+
+    // The elevation repository should be called exactly once
+    verify(exactly = 1) { elevationRepo.getElevation(any(), any(), any(), any()) }
+    // The appropriate callback should be called
+    assertTrue(onSuccessCalled)
+    // The view model should now contain the loaded hike with its elevation data
+    assertEquals(1, hikesViewModel.hikeFlows.value.size)
+    assertEquals(singleOsmHike1[0].id, hikesViewModel.hikeFlows.value[0].value.id)
+    assertEquals(elevationProfile1, (hikesViewModel.hikeFlows.value[0].value.elevation as DeferredData.Obtained).data)
+  }
+
+  @Test
+  fun `retrieveElevationDataFor skips if the data is already available`() = runTest(dispatcher) {
+    // Make sure there is one loaded hike with waypoints
+    loadOsmHikes(singleOsmHike1)
+
+    // Make sure the repository returns the elevation data for the loaded hike
+    coEvery { elevationRepo.getElevation(any(), any(), any(), any()) } answers {
+      val onSuccess = thirdArg<(List<Double>) -> Unit>()
+      onSuccess(elevationProfile1)
+    }
+
+    // Retrieve the elevation data for the loaded hike
+    hikesViewModel.retrieveElevationDataFor(hikeId = singleOsmHike1[0].id)
+
+    // Check that the hike has elevation data
+    assertTrue(hikesViewModel.hikeFlows.value[0].value.elevation is DeferredData.Obtained)
+
+    // Request the data again to check that the repository is not called
+    hikesViewModel.retrieveElevationDataFor(hikeId = singleOsmHike1[0].id)
+
+    // The elevation repository should only be called once
+    coVerify(exactly = 1) { elevationRepo.getElevation(any(), any(), any(), any()) }
+  }
+
+  @Test
+  fun `retrieveElevationDataFor updates the selected hike if needed`() = runTest(dispatcher) {
+    // Make sure there is one loaded hike with waypoints
+    loadOsmHikes(singleOsmHike1)
+
+    // Select the hike to be updated
+    hikesViewModel.selectHike(singleOsmHike1[0].id)
+    // Check that the hike is selected
+    assertNotNull(hikesViewModel.selectedHike.value)
+    assertEquals(singleOsmHike1[0].id, hikesViewModel.selectedHike.value?.id)
+    // Check that the hike does not have elevation data yet
+    assertFalse(hikesViewModel.selectedHike.value?.elevation is DeferredData.Obtained)
+
+    // Make sure the repository returns the elevation data for the loaded hike
+    coEvery { elevationRepo.getElevation(any(), any(), any(), any()) } answers {
+      val onSuccess = thirdArg<(List<Double>) -> Unit>()
+      onSuccess(elevationProfile1)
+    }
+
+    // Retrieve the elevation data for the loaded hike
+    hikesViewModel.retrieveElevationDataFor(hikeId = singleOsmHike1[0].id)
+
+    // Check that the selected hike is still selected
+    assertNotNull(hikesViewModel.selectedHike.value)
+    assertEquals(singleOsmHike1[0].id, hikesViewModel.selectedHike.value?.id)
+    // Check that the selected hike's elevation data has been updated
+    assertTrue(hikesViewModel.selectedHike.value?.elevation is DeferredData.Obtained)
+    assertEquals(elevationProfile1, (hikesViewModel.selectedHike.value?.elevation as DeferredData.Obtained).data)
   }
 }
