@@ -2,7 +2,7 @@ package ch.hikemate.app.ui.map
 
 import android.annotation.SuppressLint
 import android.app.DatePickerDialog
-import android.widget.Toast
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
@@ -31,7 +31,6 @@ import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,6 +44,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
 import ch.hikemate.app.R
 import ch.hikemate.app.model.route.DetailedHikeRoute
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
@@ -101,9 +101,15 @@ fun HikeDetailScreen(
 
   val context = LocalContext.current
 
+  LaunchedEffect(listOfHikeRoutesViewModel.selectedHikeRoute.collectAsState().value) {
+    if (listOfHikeRoutesViewModel.selectedHikeRoute.value == null) {
+      navigationActions.goBack()
+    }
+  }
+
   if (listOfHikeRoutesViewModel.selectedHikeRoute.collectAsState().value == null) {
-    Toast.makeText(context, "No route selected, returning to map.", Toast.LENGTH_SHORT).show()
-    navigationActions.goBack()
+    Log.e("HikeDetailScreen", "No selected hike route")
+    return
   }
 
   val route = listOfHikeRoutesViewModel.selectedHikeRoute.collectAsState().value!!
@@ -190,7 +196,8 @@ fun HikeDetailScreen(
     // Back Button at the top of the screen
     BackButton(
         navigationActions = navigationActions,
-        modifier = Modifier.padding(top = 40.dp, start = 16.dp, end = 16.dp))
+        modifier = Modifier.padding(top = 40.dp, start = 16.dp, end = 16.dp),
+        onClick = { listOfHikeRoutesViewModel.clearSelectedRoute() })
     // Zoom buttons at the bottom right of the screen
     ZoomMapButton(
         onZoomIn = { mapView.controller.zoomIn() },
@@ -211,7 +218,7 @@ fun HikeDetails(
     savedHikesViewModel: SavedHikesViewModel,
     elevationData: List<Double>
 ) {
-  val hikeDetailState by savedHikesViewModel.hikeDetailState.collectAsState(null)
+  val hikeDetailState = savedHikesViewModel.hikeDetailState.collectAsState(null).value
 
   // Handle save/unsave actions
   val isSaved = hikeDetailState?.isSaved ?: false
@@ -278,8 +285,7 @@ fun HikeDetails(
               String.format(Locale.getDefault(), "%.2f", detailedRoute.totalDistance)
           val elevationGainString = detailedRoute.elevationGain.roundToInt().toString()
           val hourString =
-              String.format(
-                  Locale.getDefault(), "%02d", (detailedRoute.estimatedTime / 60).roundToInt())
+              String.format(Locale.getDefault(), "%02d", (detailedRoute.estimatedTime / 60).toInt())
           val minuteString =
               String.format(
                   Locale.getDefault(), "%02d", (detailedRoute.estimatedTime % 60).roundToInt())
@@ -292,11 +298,17 @@ fun HikeDetails(
               value = "${elevationGainString}m")
           DetailRow(
               label = stringResource(R.string.hike_detail_screen_label_estimated_time),
-              value = "${hourString}:${minuteString}")
+              value =
+                  if (detailedRoute.estimatedTime / 60 < 1) "${minuteString}min"
+                  else "${hourString}h${minuteString}")
           DetailRow(
               label = stringResource(R.string.hike_detail_screen_label_difficulty),
               value = stringResource(detailedRoute.difficulty.nameResourceId),
-              valueColor = Color.Green)
+              valueColor =
+                  Color(
+                      ContextCompat.getColor(
+                          LocalContext.current, detailedRoute.difficulty.colorResourceId)),
+          )
           DateDetailRow(isSaved, plannedDate, updatePlannedDate)
         }
       },
@@ -394,7 +406,7 @@ fun DateDetailRow(
     DetailRow(
         label = stringResource(R.string.hike_detail_screen_label_status),
         value = stringResource(R.string.hike_detail_screen_value_not_saved),
-        valueColor = Color.Black)
+        valueColor = MaterialTheme.colorScheme.onSurface)
   }
 }
 

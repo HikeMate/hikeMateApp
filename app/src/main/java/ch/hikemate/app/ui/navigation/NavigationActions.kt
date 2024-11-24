@@ -1,6 +1,7 @@
 package ch.hikemate.app.ui.navigation
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.Bookmark
@@ -16,6 +17,7 @@ object Route {
   const val AUTH = "Auth"
   const val PROFILE = "Profile"
   const val HIKE_DETAILS = "HikeDetails"
+  const val TUTORIAL = "Guide"
 }
 
 /** Object containing screen constants. */
@@ -23,11 +25,13 @@ object Screen {
   const val AUTH = "Auth Screen"
   const val SIGN_IN_WITH_EMAIL = "Sign-in-with-email Screen"
   const val CREATE_ACCOUNT = "Create-account Screen"
+  const val DELETE_ACCOUNT = "Delete-account Screen"
   const val SAVED_HIKES = "SavedHikes Screen"
   const val MAP = "Map Screen"
   const val PROFILE = "Profile Screen"
   const val EDIT_PROFILE = "Edit-profile Screen"
   const val HIKE_DETAILS = "HikeDetails Screen"
+  const val TUTORIAL = "Guide Screen"
 }
 
 /**
@@ -45,11 +49,17 @@ object TopLevelDestinations {
   val MAP = TopLevelDestination(Route.MAP, Icons.Filled.LocationOn, "Map")
   val PROFILE = TopLevelDestination(Route.PROFILE, Icons.Filled.Person, "Profile")
   val AUTH = TopLevelDestination(Route.AUTH, Icons.Outlined.Person, "Auth")
+  val TUTORIAL =
+      TopLevelDestination(Route.TUTORIAL, Icons.AutoMirrored.Outlined.HelpOutline, "Tutorial")
 }
 
 /** List of top-level destinations. */
 val LIST_TOP_LEVEL_DESTINATIONS =
-    listOf(TopLevelDestinations.SAVED_HIKES, TopLevelDestinations.MAP, TopLevelDestinations.PROFILE)
+    listOf(
+        TopLevelDestinations.SAVED_HIKES,
+        TopLevelDestinations.MAP,
+        TopLevelDestinations.PROFILE,
+        TopLevelDestinations.TUTORIAL)
 
 /**
  * Class containing navigation actions.

@@ -54,7 +54,10 @@ object SignInWithEmailScreen {
  * @param authViewModel The authentication view model.
  */
 @Composable
-fun SignInWithEmailScreen(navigationActions: NavigationActions, authViewModel: AuthViewModel) {
+fun SignInWithEmailScreen(
+    navigationActions: NavigationActions,
+    authViewModel: AuthViewModel,
+) {
   val context = LocalContext.current
 
   // Define the colors for the input fields

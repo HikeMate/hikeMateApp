@@ -51,7 +51,10 @@ object CreateAccountScreen {
  * @param authViewModel The authentication view model.
  */
 @Composable
-fun CreateAccountScreen(navigationActions: NavigationActions, authViewModel: AuthViewModel) {
+fun CreateAccountScreen(
+    navigationActions: NavigationActions,
+    authViewModel: AuthViewModel,
+) {
   val context = LocalContext.current
 
   // Define it here because it's used in the onClick lambda which is not a composable

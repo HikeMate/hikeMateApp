@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -29,12 +30,14 @@ import ch.hikemate.app.model.route.saved.SavedHikesViewModel
 import ch.hikemate.app.ui.auth.CreateAccountScreen
 import ch.hikemate.app.ui.auth.SignInScreen
 import ch.hikemate.app.ui.auth.SignInWithEmailScreen
+import ch.hikemate.app.ui.guide.GuideScreen
 import ch.hikemate.app.ui.map.HikeDetailScreen
 import ch.hikemate.app.ui.map.MapScreen
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.navigation.TopLevelDestinations
+import ch.hikemate.app.ui.profile.DeleteAccountScreen
 import ch.hikemate.app.ui.profile.EditProfileScreen
 import ch.hikemate.app.ui.profile.ProfileScreen
 import ch.hikemate.app.ui.saved.SavedHikesScreen
@@ -74,16 +77,25 @@ class MainActivity : ComponentActivity() {
 fun HikeMateApp() {
   val navController = rememberNavController()
   val navigationActions = NavigationActions(navController)
-  val firestore = FirebaseFirestore.getInstance()
-  val profileRepository = ProfileRepositoryFirestore(firestore)
-  val profileViewModel = ProfileViewModel(profileRepository)
-  val authViewModel = AuthViewModel(FirebaseAuthRepository(), profileRepository)
+  val profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory)
+  val authViewModel =
+      AuthViewModel(
+          FirebaseAuthRepository(), ProfileRepositoryFirestore(FirebaseFirestore.getInstance()))
 
   val isUserLoggedIn = authViewModel.isUserLoggedIn()
 
   val listOfHikeRoutesViewModel: ListOfHikeRoutesViewModel =
       viewModel(factory = ListOfHikeRoutesViewModel.Factory)
   val savedHikesViewModel: SavedHikesViewModel = viewModel(factory = SavedHikesViewModel.Factory)
+
+  val user by authViewModel.currentUser.collectAsState()
+
+  LaunchedEffect(user) {
+    if (user != null) {
+      profileViewModel.getProfileById(user!!.uid)
+      savedHikesViewModel.loadSavedHikes()
+    }
+  }
 
   NavHost(
       navController = navController,
@@ -99,6 +111,9 @@ fun HikeMateApp() {
           }
           composable(Screen.CREATE_ACCOUNT) {
             CreateAccountScreen(navigationActions, authViewModel)
+          }
+          composable(Screen.DELETE_ACCOUNT) {
+            DeleteAccountScreen(navigationActions, authViewModel)
           }
         }
 
@@ -149,6 +164,9 @@ fun HikeMateApp() {
             EditProfileScreen(
                 navigationActions = navigationActions, profileViewModel = profileViewModel)
           }
+        }
+        navigation(startDestination = Screen.TUTORIAL, route = Route.TUTORIAL) {
+          composable(Screen.TUTORIAL) { GuideScreen(navigationActions) }
         }
       }
 }
