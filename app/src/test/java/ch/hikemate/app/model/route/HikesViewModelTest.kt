@@ -741,4 +741,164 @@ class HikesViewModelTest {
     // Check that the selected hike is now unselected
     assertNull(hikesViewModel.selectedHike.value)
   }
+
+  // ==========================================================================
+  // HikesViewModel.setPlannedDate
+  // ==========================================================================
+
+  @Test
+  fun `setPlannedDate fails if no corresponding hike is found`() = runTest(dispatcher) {
+    // Try to set a planned date for a hike that is not loaded
+    var onFailureCalled = false
+    hikesViewModel.setPlannedDate(
+      hikeId = "nonexistent",
+      date = firstJanuary2024,
+      onSuccess = { fail("onSuccess should not have been called") },
+      onFailure = { onFailureCalled = true }
+    )
+
+    // The saved hikes repository should not be called
+    coVerify(exactly = 0) { savedHikesRepo.addSavedHike(any()) }
+    coVerify(exactly = 0) { savedHikesRepo.removeSavedHike(any()) }
+    // The appropriate callback should be called
+    assertTrue(onFailureCalled)
+  }
+
+  @Test
+  fun `setPlannedDate fails if the repository fails`() = runTest(dispatcher) {
+    // Load a hike to set a planned date for
+    loadSavedHikes(singleSavedHike1)
+    // Check that the hike was loaded
+    assertEquals(singleSavedHike1.size, hikesViewModel.hikeFlows.value.size)
+
+    // Whenever we want to set a planned date for an already saved hike, we need to unsave it first.
+    // With the following line, we ensure the operation should fail.
+    coEvery { savedHikesRepo.removeSavedHike(any()) } throws Exception("Failed to set planned date")
+    coEvery { savedHikesRepo.addSavedHike(any()) } throws Exception("Failed to set planned date")
+
+    // Try to set a planned date for the loaded hike
+    var onFailureCalled = false
+    hikesViewModel.setPlannedDate(
+      hikeId = singleSavedHike1[0].id,
+      date = firstJanuary2024,
+      onSuccess = { fail("onSuccess should not have been called") },
+      onFailure = { onFailureCalled = true }
+    )
+
+    // The appropriate callback should be called
+    assertTrue(onFailureCalled)
+  }
+
+  @Test
+  fun `setPlannedDate saves hike if not saved yet`() = runTest(dispatcher) {
+    // Load a hike to set a planned date for
+    loadOsmHikes(singleOsmHike1)
+    // Check that the hike was loaded
+    assertEquals(singleOsmHike1.size, hikesViewModel.hikeFlows.value.size)
+    // Check that the hike is not saved initially
+    assertFalse(hikesViewModel.hikeFlows.value[0].value.isSaved)
+
+    // Make sure the saved hikes repository saves the hike
+    coEvery { savedHikesRepo.addSavedHike(any()) } returns Unit
+
+    // Try to set a planned date for the loaded hike
+    var onSuccessCalled = false
+    hikesViewModel.setPlannedDate(
+      hikeId = singleOsmHike1[0].id,
+      date = firstJanuary2024,
+      onSuccess = { onSuccessCalled = true },
+      onFailure = { fail("onFailure should not have been called") }
+    )
+
+    // The saved hikes repository should be called exactly once
+    coVerify(exactly = 1) { savedHikesRepo.addSavedHike(any()) }
+    // The appropriate callback should be called
+    assertTrue(onSuccessCalled)
+    // The hike should now be marked as saved
+    assertTrue(hikesViewModel.hikeFlows.value[0].value.isSaved)
+    // The hike should now have the planned date set
+    assertEquals(firstJanuary2024, hikesViewModel.hikeFlows.value[0].value.plannedDate)
+  }
+
+  @Test
+  fun `setPlannedDate with null date on unsaved has no effect`() = runTest(dispatcher) {
+    // Load a hike to set a planned date for
+    loadOsmHikes(singleOsmHike1)
+    // Check that the hike was loaded
+    assertEquals(singleOsmHike1.size, hikesViewModel.hikeFlows.value.size)
+    // Check that the hike is not saved initially
+    assertFalse(hikesViewModel.hikeFlows.value[0].value.isSaved)
+
+    // Try to set a null planned date for the loaded hike
+    hikesViewModel.setPlannedDate(
+      hikeId = singleOsmHike1[0].id,
+      date = null
+    )
+
+    // The saved hikes repository should not be called
+    coVerify(exactly = 0) { savedHikesRepo.addSavedHike(any()) }
+    coVerify(exactly = 0) { savedHikesRepo.removeSavedHike(any()) }
+    // The hike should not be marked as saved
+    assertFalse(hikesViewModel.hikeFlows.value[0].value.isSaved)
+    // The hike should not have the planned date set
+    assertNull(hikesViewModel.hikeFlows.value[0].value.plannedDate)
+  }
+
+  @Test
+  fun `setPlannedDate updates hike in the loaded OSM hikes`() = runTest(dispatcher) {
+    // Make sure the loaded hike is included in the saved hikes, to test with a hike that is already
+    // saved
+    coEvery { savedHikesRepo.loadSavedHikes() } returns listOf(
+      SavedHike(id = singleOsmHike1[0].id, name = singleOsmHike1[0].name ?: "", date = firstJanuary2024)
+    )
+    hikesViewModel.refreshSavedHikesCache()
+
+    // Load a hike to set a planned date for
+    loadOsmHikes(singleOsmHike1)
+    // Check that the hike was loaded
+    assertEquals(singleOsmHike1.size, hikesViewModel.hikeFlows.value.size)
+    // Check that the hike is saved initially
+    assertTrue(hikesViewModel.hikeFlows.value[0].value.isSaved)
+
+    // Make sure the saved hikes repository saves the hike
+    coEvery { savedHikesRepo.removeSavedHike(any()) } returns Unit
+    coEvery { savedHikesRepo.addSavedHike(any()) } returns Unit
+
+    // Try to set a planned date for the loaded hike (test with setting a null date, which is valid)
+    hikesViewModel.setPlannedDate(
+      hikeId = singleOsmHike1[0].id,
+      date = null
+    )
+
+    // The saved hikes repository should be called exactly once
+    coVerify(exactly = 1) { savedHikesRepo.addSavedHike(any()) }
+    // The hike should now have the planned date set (kinda, cause it's null)
+    assertNull(hikesViewModel.hikeFlows.value[0].value.plannedDate)
+  }
+
+  @Test
+  fun `setPlannedDate updates selected hike if its status changes`() = runTest(dispatcher) {
+    // Load some hikes to be selected
+    loadOsmHikes(singleOsmHike1)
+
+    // Select the hike to be updated
+    val hikeId = singleOsmHike1[0].id
+    hikesViewModel.selectHike(hikeId)
+    // Check that the hike is selected
+    assertNotNull(hikesViewModel.selectedHike.value)
+    assertEquals(hikeId, hikesViewModel.selectedHike.value?.id)
+    // Check that the hike is not marked as saved yet
+    assertFalse(hikesViewModel.selectedHike.value?.isSaved ?: true)
+
+    // Make sure the saved hikes repository saves the hike
+    coEvery { savedHikesRepo.addSavedHike(any()) } returns Unit
+
+    // Set a planned date for the selected hike
+    hikesViewModel.setPlannedDate(hikeId, firstJanuary2024)
+
+    // Check that the selected hike is now marked as saved
+    assertTrue(hikesViewModel.selectedHike.value?.isSaved ?: false)
+    // Check that the selected hike now has the planned date set
+    assertEquals(firstJanuary2024, hikesViewModel.selectedHike.value?.plannedDate)
+  }
 }
