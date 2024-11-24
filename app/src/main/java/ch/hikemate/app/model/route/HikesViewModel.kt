@@ -48,7 +48,7 @@ class HikesViewModel(
 
   private var _hikeFlowsMap = mutableMapOf<String, MutableStateFlow<Hike>>()
 
-  private val _loading = MutableStateFlow<Boolean>(false)
+  private val _loading = MutableStateFlow(false)
 
   private val _hikeFlowsList = MutableStateFlow<List<StateFlow<Hike>>>(emptyList())
 
