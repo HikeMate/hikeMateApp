@@ -1019,6 +1019,9 @@ class HikesViewModel(
                     difficulty = DeferredData.NotRequested,
                 )
             hikeFlow.value = updatedHike
+
+            // Update the selected hike if necessary
+            updateSelectedHike()
           }
 
           onFailure()
@@ -1036,6 +1039,10 @@ class HikesViewModel(
                   estimatedTime = DeferredData.Obtained(estimatedTime),
                   difficulty = DeferredData.Obtained(difficulty))
           hikeFlow.value = updatedHike
+
+          // Update the selected hike if necessary
+          updateSelectedHike()
+
           success = true
         }
 
@@ -1117,6 +1124,9 @@ class HikesViewModel(
               elevationGain = DeferredData.Requested,
           )
       hikeFlow.value = hikeWithRequestedAttributes
+
+      // Update the selected hike if necessary
+      updateSelectedHike()
 
       success = true
     }
