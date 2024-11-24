@@ -670,6 +670,10 @@ class HikesViewModel(
         // Let the user know a heavy load operation is being performed
         _loading.value = true
 
+        // We are loading hikes from bounds, remember this to avoid overriding loaded hikes with saved
+        // hikes when those get reloaded.
+        _loadedHikesType = LoadedHikes.FromBounds
+
         // Load the hikes from the repository
         val hikes: List<HikeRoute>
         try {
