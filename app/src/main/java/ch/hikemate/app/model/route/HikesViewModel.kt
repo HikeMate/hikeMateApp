@@ -388,7 +388,7 @@ class HikesViewModel(
    *
    * @param newList The list of saved hikes to update the cache with.
    */
-  private suspend fun updateSavedHikesCache(newList: List<SavedHike>) {
+  private fun updateSavedHikesCache(newList: List<SavedHike>) {
     // Clear the current saved hikes register
     _savedHikesMap.clear()
 
