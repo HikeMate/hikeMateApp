@@ -565,6 +565,9 @@ class HikesViewModel(
     val newHikeState = hikeFlow.value.copy(isSaved = true)
     hikeFlow.value = newHikeState
 
+    // Update the selected hike if necessary
+    updateSelectedHikeSavedStatus()
+
     return true
   }
 
