@@ -697,6 +697,9 @@ class HikesViewModel(
     // Update the hike's state flow
     hikeFlow.value = hike.copy(isSaved = true, plannedDate = date)
 
+    // Update the selected hike if necessary
+    updateSelectedHikeSavedStatus()
+
     return true
   }
 
