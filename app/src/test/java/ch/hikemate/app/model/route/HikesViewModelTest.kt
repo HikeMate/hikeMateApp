@@ -65,9 +65,25 @@ class HikesViewModelTest {
     hikesViewModel.loadSavedHikes(onSuccess, onFailure)
   }
 
-  private val singleOsmHike1: List<HikeRoute> = listOf(HikeRoute(id = "osm1", name = "OSM Hike 1", bounds = Bounds(0.0, 0.0, 0.0, 0.0), ways = emptyList()))
+  private val testBounds: Bounds = Bounds(
+    minLat = 45.8689061,
+    minLon = 6.4395807,
+    maxLat = 46.8283926,
+    maxLon = 7.2109599)
 
-  private val singleOsmHike2: List<HikeRoute> = listOf(HikeRoute(id = "osm2", name = "OSM Hike 2", bounds = Bounds(0.0, 0.0, 0.0, 0.0), ways = emptyList()))
+  private val testWaypoints: List<LatLong> = listOf(
+    LatLong(lat = 46.8240018, lon = 6.4395807),
+    LatLong(lat = 46.823965, lon = 6.4396698),
+    LatLong(lat = 46.8235322, lon = 6.4401168),
+    LatLong(lat = 46.8234367, lon = 6.4401715),
+    LatLong(lat = 46.8240018, lon = 6.4395807),
+    LatLong(lat = 46.823965, lon = 6.4396698),
+    LatLong(lat = 46.8235322, lon = 6.4401168)
+  )
+
+  private val singleOsmHike1: List<HikeRoute> = listOf(HikeRoute(id = "osm1", name = "OSM Hike 1", bounds = testBounds, ways = testWaypoints))
+
+  private val singleOsmHike2: List<HikeRoute> = listOf(HikeRoute(id = "osm2", name = "OSM Hike 2", bounds = testBounds, ways = testWaypoints))
 
   private val doubleOsmHikes1: List<HikeRoute> = listOf(
     singleOsmHike1[0],
@@ -83,6 +99,13 @@ class HikesViewModelTest {
   }
 
   private val elevationProfile1: List<Double> = listOf(0.0, 1.0, 2.0, 3.0, 2.0, 1.0, 0.0)
+
+  private val doubleComparisonDelta = 0.0
+
+  private val expectedDistance: Double = 0.22236057610470872
+  private val expectedEstimatedTime: Double = 2.9683269132565044
+  private val expectedElevationGain: Double = 3.0
+  private val expectedDifficulty: HikeDifficulty = HikeDifficulty.EASY
 
   // ==========================================================================
   // HikesViewModel.selectHike
@@ -1350,5 +1373,133 @@ class HikesViewModelTest {
     // Check that the selected hike's elevation data has been updated
     assertTrue(hikesViewModel.selectedHike.value?.elevation is DeferredData.Obtained)
     assertEquals(elevationProfile1, (hikesViewModel.selectedHike.value?.elevation as DeferredData.Obtained).data)
+  }
+
+  // ==========================================================================
+  // HikesViewModel.computeDetailsFor
+  // ==========================================================================
+
+  @Test
+  fun `computeDetailsFor fails if hike is not found`() = runTest(dispatcher) {
+    // Try to compute details for a hike that is not loaded
+    var onFailureCalled = false
+    hikesViewModel.computeDetailsFor(
+      hikeId = "nonexistent",
+      onSuccess = { fail("onSuccess should not have been called") },
+      onFailure = { onFailureCalled = true }
+    )
+
+    // The appropriate callback should be called
+    assertTrue(onFailureCalled)
+  }
+
+  @Test
+  fun `computeDetailsFor fails if hike has no waypoints`() = runTest(dispatcher) {
+    // Make sure there is one loaded hike but with no waypoints
+    loadSavedHikes(singleSavedHike1)
+
+    // Try to compute details for the loaded hike
+    var onFailureCalled = false
+    hikesViewModel.computeDetailsFor(
+      hikeId = singleSavedHike1[0].id,
+      onSuccess = { fail("onSuccess should not have been called") },
+      onFailure = { onFailureCalled = true }
+    )
+
+    // The appropriate callback should be called
+    assertTrue(onFailureCalled)
+  }
+
+  @Test
+  fun `computeDetailsFor fails if hike has no elevation`() = runTest(dispatcher) {
+    // Make sure there is one loaded hike but with no elevation data
+    loadOsmHikes(singleOsmHike1)
+
+    // Try to compute details for the loaded hike
+    var onFailureCalled = false
+    hikesViewModel.computeDetailsFor(
+      hikeId = singleOsmHike1[0].id,
+      onSuccess = { fail("onSuccess should not have been called") },
+      onFailure = { onFailureCalled = true }
+    )
+
+    // The appropriate callback should be called
+    assertTrue(onFailureCalled)
+  }
+
+  @Test
+  fun `computeDetailsFor updates the hike with its details`() = runTest(dispatcher) {
+    // Make sure there is one loaded hike with waypoints and elevation data
+    loadOsmHikes(singleOsmHike1)
+
+    // Make sure the elevation repository will return a valid elevation profile
+    every { elevationRepo.getElevation(any(), any(), any(), any()) } answers {
+      val onSuccess = thirdArg<(List<Double>) -> Unit>()
+      onSuccess(elevationProfile1)
+    }
+
+    // Make sure the hike has elevation
+    hikesViewModel.retrieveElevationDataFor(singleOsmHike1[0].id)
+    // Check that the hike has elevation data
+    assertTrue(hikesViewModel.hikeFlows.value[0].value.elevation is DeferredData.Obtained)
+
+    // Compute the details for the loaded hike
+    var onSuccessCalled = false
+    hikesViewModel.computeDetailsFor(
+      hikeId = singleOsmHike1[0].id,
+      onSuccess = { onSuccessCalled = true },
+      onFailure = { fail("onFailure should not have been called") }
+    )
+
+    // The appropriate callback should be called
+    assertTrue(onSuccessCalled)
+    // The view model should now contain the loaded hike with its details
+    assertEquals(1, hikesViewModel.hikeFlows.value.size)
+    assertEquals(singleOsmHike1[0].id, hikesViewModel.hikeFlows.value[0].value.id)
+    assertTrue(hikesViewModel.hikeFlows.value[0].value.distance is DeferredData.Obtained)
+    assertEquals(expectedDistance, (hikesViewModel.hikeFlows.value[0].value.distance as DeferredData.Obtained).data, doubleComparisonDelta)
+    assertTrue(hikesViewModel.hikeFlows.value[0].value.elevationGain is DeferredData.Obtained)
+    assertEquals(expectedElevationGain, (hikesViewModel.hikeFlows.value[0].value.elevationGain as DeferredData.Obtained).data, doubleComparisonDelta)
+    assertTrue(hikesViewModel.hikeFlows.value[0].value.estimatedTime is DeferredData.Obtained)
+    assertEquals(expectedEstimatedTime, (hikesViewModel.hikeFlows.value[0].value.estimatedTime as DeferredData.Obtained).data, doubleComparisonDelta)
+    assertTrue(hikesViewModel.hikeFlows.value[0].value.difficulty is DeferredData.Obtained)
+    assertEquals(expectedDifficulty, (hikesViewModel.hikeFlows.value[0].value.difficulty as DeferredData.Obtained).data)
+  }
+
+  @Test
+  fun `computeDetailsFor updates the selected hike if needed`() = runTest(dispatcher) {
+    // Make sure there is one loaded hike with waypoints
+    loadOsmHikes(singleOsmHike1)
+
+    // Make sure the elevation repository will return a valid elevation profile
+    every { elevationRepo.getElevation(any(), any(), any(), any()) } answers {
+      val onSuccess = thirdArg<(List<Double>) -> Unit>()
+      onSuccess(elevationProfile1)
+    }
+
+    // Make sure the hike has elevation
+    hikesViewModel.retrieveElevationDataFor(singleOsmHike1[0].id)
+    // Check that the hike has elevation data
+    assertTrue(hikesViewModel.hikeFlows.value[0].value.elevation is DeferredData.Obtained)
+
+    // Select the hike to be updated
+    hikesViewModel.selectHike(singleOsmHike1[0].id)
+    // Check that the hike is selected
+    assertNotNull(hikesViewModel.selectedHike.value)
+
+    // Compute the details for the loaded hike
+    hikesViewModel.computeDetailsFor(hikeId = singleOsmHike1[0].id)
+
+    // Check that the selected hike is still selected
+    assertNotNull(hikesViewModel.selectedHike.value)
+    // Check that the selected hike's details have been updated
+    assertTrue(hikesViewModel.selectedHike.value?.distance is DeferredData.Obtained)
+    assertEquals(expectedDistance, (hikesViewModel.selectedHike.value?.distance as DeferredData.Obtained).data, doubleComparisonDelta)
+    assertTrue(hikesViewModel.selectedHike.value?.elevationGain is DeferredData.Obtained)
+    assertEquals(expectedElevationGain, (hikesViewModel.selectedHike.value?.elevationGain as DeferredData.Obtained).data, doubleComparisonDelta)
+    assertTrue(hikesViewModel.selectedHike.value?.estimatedTime is DeferredData.Obtained)
+    assertEquals(expectedEstimatedTime, (hikesViewModel.selectedHike.value?.estimatedTime as DeferredData.Obtained).data, doubleComparisonDelta)
+    assertTrue(hikesViewModel.selectedHike.value?.difficulty is DeferredData.Obtained)
+    assertEquals(expectedDifficulty, (hikesViewModel.selectedHike.value?.difficulty as DeferredData.Obtained).data)
   }
 }
