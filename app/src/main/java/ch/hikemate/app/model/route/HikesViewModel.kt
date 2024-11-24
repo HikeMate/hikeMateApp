@@ -336,8 +336,11 @@ class HikesViewModel(
 
   private suspend fun unselectHikeAsync() =
       _hikesMutex.withLock {
-        _selectedHikeId = null
-        _selectedHike.value = null
+        // Only emit null as a value if the selected hike was not already null
+        if (_selectedHikeId != null) {
+          _selectedHikeId = null
+          _selectedHike.value = null
+        }
       }
 
   /**
