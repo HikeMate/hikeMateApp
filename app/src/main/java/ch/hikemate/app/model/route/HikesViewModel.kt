@@ -230,7 +230,15 @@ class HikesViewModel(
    * @param onFailure Will be called if an error is encountered.
    */
   fun loadHikesInBounds(bounds: BoundingBox, onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}) =
-      viewModelScope.launch { loadHikesInBoundsAsync(bounds, onSuccess, onFailure) }
+      viewModelScope.launch {
+        // Let the user know a heavy load operation is being performed
+        _loading.value = true
+
+        loadHikesInBoundsAsync(bounds, onSuccess, onFailure)
+
+        // The heavy loading operation is done now
+        _loading.value = false
+      }
 
   /**
    * Retrieves the bounding box and way points of the currently loaded hikes.
@@ -709,9 +717,6 @@ class HikesViewModel(
       onFailure: () -> Unit
   ) =
       withContext(dispatcher) {
-        // Let the user know a heavy load operation is being performed
-        _loading.value = true
-
         // We are loading hikes from bounds, remember this to avoid overriding loaded hikes with saved
         // hikes when those get reloaded.
         _loadedHikesType = LoadedHikes.FromBounds
@@ -779,9 +784,6 @@ class HikesViewModel(
           // Update the exposed list of hikes based on the map of hikes
           updateHikeFlowsList()
         }
-
-        // The heavy loading operation is done now
-        _loading.value = false
 
         // Call the success callback once the mutex has been released to avoid locking for too long
         onSuccess()
