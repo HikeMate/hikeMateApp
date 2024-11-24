@@ -611,6 +611,9 @@ class HikesViewModel(
             hikeFlow.value = newHikeState
           }
 
+          // Update the selected hike if necessary
+          updateSelectedHikeSavedStatus()
+
           successful = true
         }
 
