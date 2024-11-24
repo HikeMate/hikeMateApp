@@ -1,7 +1,9 @@
 package ch.hikemate.app.model.route
 
 import ch.hikemate.app.model.elevation.ElevationService
+import ch.hikemate.app.model.route.saved.SavedHike
 import ch.hikemate.app.model.route.saved.SavedHikesRepository
+import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -36,5 +38,16 @@ class HikesViewModelTest {
   @After
   fun tearDown() {
     Dispatchers.resetMain()
+  }
+
+  // ==========================================================================
+  // UTILS FOR TESTING
+  // ==========================================================================
+
+  private val singleSavedHike: List<SavedHike> = listOf(SavedHike(id = "saved", name = "Saved Hike", date = null))
+
+  private fun loadSavedHikes(savedHikes: List<SavedHike>, onSuccess: () -> Unit = {}, onFailure: () -> Unit = {})  {
+    coEvery { savedHikesRepo.loadSavedHikes() } returns savedHikes
+    hikesViewModel.loadSavedHikes(onSuccess, onFailure)
   }
 }
