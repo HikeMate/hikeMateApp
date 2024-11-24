@@ -861,6 +861,9 @@ class HikesViewModel(
                     waypoints = DeferredData.Obtained(hikeRoute.ways))
             hikeFlow.value = newHike
           }
+
+          // Update the selected hike if necessary
+          updateSelectedHike()
         }
 
         // Release the mutex before calling onSuccess to avoid deadlocks or performance issues
