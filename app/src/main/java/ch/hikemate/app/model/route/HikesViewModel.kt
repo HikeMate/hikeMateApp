@@ -136,8 +136,10 @@ class HikesViewModel(
   /**
    * Downloads the current user's saved hikes from the database and caches them locally.
    *
-   * This function DOES NOT update [hikeFlows], it simply caches saved hikes locally. To update
-   * [hikeFlows] with the list of saved hikes, see [loadSavedHikes].
+   * This function updates the saved status of the loaded hikes in [hikeFlows]. If saved hikes are
+   * currently loaded (a call to [loadSavedHikes] has been made and no other loading call has been
+   * performed since), calling this function will update the whole loaded hikes list to match it
+   * with the new saved hikes.
    *
    * @param onSuccess To be called when the saved hikes cache has been updated successfully.
    * @param onFailure Will be called if an error is encountered.
