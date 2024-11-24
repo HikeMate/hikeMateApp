@@ -826,6 +826,13 @@ class HikesViewModel(
           idsToRetrieve = _hikeFlowsMap.values.filter { !hasOsmData(it.value) }.map { it.value.id }
         }
 
+        // If all routes already have their OSM data, do nothing more
+        if (idsToRetrieve.isEmpty()) {
+          _loading.value = false
+          onSuccess()
+          return@withContext
+        }
+
         // Retrieve the OSM data of the hikes
         val hikeRoutes: List<HikeRoute>
         try {
