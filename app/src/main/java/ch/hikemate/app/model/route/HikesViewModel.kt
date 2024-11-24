@@ -122,7 +122,7 @@ class HikesViewModel(
    * @param onFailure Callback for when the operation fails, mostly the provided ID does not
    *   correspond to any loaded hike.
    */
-  fun selectHike(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) =
+  fun selectHike(hikeId: String, onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}) =
       viewModelScope.launch { selectHikeAsync(hikeId, onSuccess, onFailure) }
 
   /**
@@ -142,7 +142,7 @@ class HikesViewModel(
    * @param onSuccess To be called when the saved hikes cache has been updated successfully.
    * @param onFailure Will be called if an error is encountered.
    */
-  fun refreshSavedHikesCache(onSuccess: () -> Unit, onFailure: () -> Unit) =
+  fun refreshSavedHikesCache(onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}) =
       viewModelScope.launch {
         _loading.value = true
         refreshSavedHikesCacheAsync(onSuccess, onFailure)
@@ -160,7 +160,7 @@ class HikesViewModel(
    * @param onSuccess To be called when the saved hikes have been loaded successfully.
    * @param onFailure Will be called if an error is encountered.
    */
-  fun loadSavedHikes(onSuccess: () -> Unit, onFailure: () -> Unit) =
+  fun loadSavedHikes(onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}) =
       viewModelScope.launch { loadSavedHikesAsync(onSuccess, onFailure) }
 
   /**
@@ -174,7 +174,7 @@ class HikesViewModel(
    * @param onSuccess To be called if the hike is successfully marked as saved.
    * @param onFailure To be called if a problem is encountered and the hike cannot be saved.
    */
-  fun saveHike(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) =
+  fun saveHike(hikeId: String, onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}) =
       viewModelScope.launch { saveHikeAsync(hikeId, onSuccess, onFailure) }
 
   /**
@@ -188,7 +188,7 @@ class HikesViewModel(
    * @param onSuccess To be called if the hike is successfully unsaved.
    * @param onFailure To be called if a problem is encountered and the hike cannot be unsaved.
    */
-  fun unsaveHike(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) =
+  fun unsaveHike(hikeId: String, onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}) =
       viewModelScope.launch { unsaveHikeAsync(hikeId, onSuccess, onFailure) }
 
   /**
@@ -209,8 +209,8 @@ class HikesViewModel(
   fun setPlannedDate(
       hikeId: String,
       date: Timestamp?,
-      onSuccess: () -> Unit,
-      onFailure: () -> Unit
+      onSuccess: () -> Unit = {},
+      onFailure: () -> Unit = {}
   ) = viewModelScope.launch { setPlannedDateAsync(hikeId, date, onSuccess, onFailure) }
 
   /**
@@ -223,7 +223,7 @@ class HikesViewModel(
    * @param onSuccess To be called when hikes have been successfully loaded.
    * @param onFailure Will be called if an error is encountered.
    */
-  fun loadHikesInBounds(bounds: BoundingBox, onSuccess: () -> Unit, onFailure: () -> Unit) =
+  fun loadHikesInBounds(bounds: BoundingBox, onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}) =
       viewModelScope.launch { loadHikesInBoundsAsync(bounds, onSuccess, onFailure) }
 
   /**
@@ -244,7 +244,7 @@ class HikesViewModel(
    * @param onFailure To be called if a problem is encountered, preventing the success of the
    *   operation.
    */
-  fun retrieveLoadedHikesOsmData(onSuccess: () -> Unit, onFailure: () -> Unit) =
+  fun retrieveLoadedHikesOsmData(onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}) =
       viewModelScope.launch { retrieveLoadedHikesOsmDataAsync(onSuccess, onFailure) }
 
   /**
@@ -275,7 +275,7 @@ class HikesViewModel(
    * @param onFailure To be called if a problem is encountered and prevents the elevation from being
    *   retrieved.
    */
-  fun retrieveElevationDataFor(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) =
+  fun retrieveElevationDataFor(hikeId: String, onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}) =
       viewModelScope.launch { retrieveElevationDataForAsync(hikeId, onSuccess, onFailure) }
 
   /**
@@ -306,7 +306,7 @@ class HikesViewModel(
    *   this to retrieve the details values, rather observe the hike in [hikeFlows] to be notified
    *   automatically.
    */
-  fun computeDetailsFor(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) =
+  fun computeDetailsFor(hikeId: String, onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}) =
       viewModelScope.launch { retrieveDetailsForAsync(hikeId, onSuccess, onFailure) }
 
   private suspend fun selectHikeAsync(
