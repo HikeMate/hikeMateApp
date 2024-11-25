@@ -1,12 +1,21 @@
 package ch.hikemate.app.model.profile
 
+import ch.hikemate.app.R
 import com.google.firebase.Timestamp
 
 /** An enum class representing the hiking level of a user. */
 enum class HikingLevel {
   BEGINNER,
   INTERMEDIATE,
-  EXPERT
+  EXPERT;
+
+  fun getDisplayNameId(): Int {
+    return when (this) {
+      BEGINNER -> R.string.hiking_level_beginner
+      INTERMEDIATE -> R.string.hiking_level_intermediate
+      EXPERT -> R.string.hiking_level_expert
+    }
+  }
 }
 
 /**

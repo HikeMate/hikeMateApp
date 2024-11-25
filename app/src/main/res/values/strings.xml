@@ -112,9 +112,9 @@
 
     <!-- Edit Profile Screen -->
     <string name="edit_profile_screen_title">Edit your profile</string>
-    <string name="profile_screen_hiking_level_choice_beginner">Beginner</string>
-    <string name="profile_screen_hiking_level_choice_intermediate">Intermediate</string>
-    <string name="profile_screen_hiking_level_choice_expert">Expert</string>
+    <string name="hiking_level_beginner">Beginner</string>
+    <string name="hiking_level_intermediate">Intermediate</string>
+    <string name="hiking_level_expert">Expert</string>
     <string name="edit_profile_screen_save_button_text">Save profile</string>
 
     <!-- Authentication -->
