@@ -1,5 +1,6 @@
 package ch.hikemate.app.ui.components
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -71,7 +72,10 @@ fun HikeCard(
     styleProperties: HikeCardStyleProperties = HikeCardStyleProperties(),
     showGraph: Boolean = true,
 ) {
-  val displayMessage = false
+  val displayMessage = !elevationData.isNullOrEmpty() && messageContent != null
+  Log.i(
+      "HikeCard",
+      "displayMessage: $displayMessage, title: $title, elevationData: $elevationData, messageContent: $messageContent")
   val elevationGain = RouteUtils.calculateElevationGain(elevationData ?: emptyList())
 
   Row(

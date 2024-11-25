@@ -47,8 +47,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.hikemate.app.R
+import ch.hikemate.app.model.authentication.AuthViewModel
+import ch.hikemate.app.model.profile.HikingLevel
+import ch.hikemate.app.model.profile.ProfileViewModel
 import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
+import ch.hikemate.app.ui.components.AsyncStateHandler
 import ch.hikemate.app.ui.components.HikeCard
 import ch.hikemate.app.ui.components.HikeCardStyleProperties
 import ch.hikemate.app.ui.navigation.BottomBarNavigation
@@ -59,6 +63,7 @@ import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.utils.LocationUtils
 import ch.hikemate.app.utils.MapUtils
 import ch.hikemate.app.utils.PermissionUtils
+import ch.hikemate.app.utils.RouteUtils
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.MultiplePermissionsState
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
@@ -210,16 +215,31 @@ fun clearHikesFromMap(mapView: MapView, userLocationMarker: Marker?) {
   mapView.invalidate()
 }
 
+/**
+ * Properties to initialize the map with. These properties are used to set the initial state of the
+ * map, such as the zoom level, the center, and the limits of the zoom.
+ *
+ * @param mapInitialZoomLevel The initial zoom level of the map
+ * @param mapMaxZoomLevel The maximum zoom level of the map
+ * @param mapMinZoomLevel The minimum zoom level of the map
+ * @param mapInitialCenter The initial center of the map
+ */
+data class MapInitialValues(
+    val mapInitialZoomLevel: Double = MapScreen.MAP_INITIAL_ZOOM,
+    val mapMaxZoomLevel: Double = MapScreen.MAP_MAX_ZOOM,
+    val mapMinZoomLevel: Double = MapScreen.MAP_MIN_ZOOM,
+    val mapInitialCenter: GeoPoint = MapScreen.MAP_INITIAL_CENTER,
+)
+
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun MapScreen(
     navigationActions: NavigationActions,
     hikingRoutesViewModel: ListOfHikeRoutesViewModel =
         viewModel(factory = ListOfHikeRoutesViewModel.Factory),
-    mapInitialZoomLevel: Double = MapScreen.MAP_INITIAL_ZOOM,
-    mapMaxZoomLevel: Double = MapScreen.MAP_MAX_ZOOM,
-    mapMinZoomLevel: Double = MapScreen.MAP_MIN_ZOOM,
-    mapInitialCenter: GeoPoint = MapScreen.MAP_INITIAL_CENTER,
+    profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory),
+    authViewModel: AuthViewModel,
+    mapInitialValues: MapInitialValues = MapInitialValues()
 ) {
   val context = LocalContext.current
   val locationPermissionState =
@@ -246,17 +266,23 @@ fun MapScreen(
       // Maximum number of bytes that can be used by the tile file system cache. Default is 600MB.
       tileFileSystemCacheMaxBytes = 600L * 1024L * 1024L
     }
+
+    if (authViewModel.currentUser.value == null) {
+      Log.e("MapScreen", "User is not signed in")
+      return@LaunchedEffect
+    }
+    profileViewModel.getProfileById(authViewModel.currentUser.value!!.uid)
   }
 
   // Avoid re-creating the MapView on every recomposition
   val mapView = remember {
     MapView(context).apply {
       // Set map's initial state
-      controller.setZoom(mapInitialZoomLevel)
-      controller.setCenter(mapInitialCenter)
+      controller.setZoom(mapInitialValues.mapInitialZoomLevel)
+      controller.setCenter(mapInitialValues.mapInitialCenter)
       // Limit the zoom to avoid the user zooming out or out too much
-      minZoomLevel = mapMinZoomLevel
-      maxZoomLevel = mapMaxZoomLevel
+      minZoomLevel = mapInitialValues.mapMinZoomLevel
+      maxZoomLevel = mapInitialValues.mapMaxZoomLevel
       // Avoid repeating the map when the user reaches the edge or zooms out
       // We keep the horizontal repetition enabled to allow the user to scroll the map
       // horizontally without limits (from Asia to America, for example)
@@ -359,63 +385,83 @@ fun MapScreen(
       locationPermissionState = locationPermissionState,
       context = context)
 
-  BottomBarNavigation(
-      onTabSelect = { navigationActions.navigateTo(it) },
-      tabList = LIST_TOP_LEVEL_DESTINATIONS,
-      selectedItem = Route.MAP) {
-        Box(modifier = Modifier.fillMaxSize().testTag(Screen.MAP)) {
-          // Jetpack Compose is a relatively recent framework for implementing Android UIs.
-          // OSMDroid
-          // is
-          // an older library that uses Activities, the previous way of doing. The composable
-          // AndroidView
-          // allows us to use OSMDroid's legacy MapView in a Jetpack Compose layout.
-          AndroidView(
-              factory = { mapView },
-              modifier =
-                  Modifier.fillMaxSize()
-                      .testTag(MapScreen.TEST_TAG_MAP)
-                      .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT))
+  DisposableEffect(Unit) {
+    onDispose {
+      LocationUtils.stopUserLocationUpdates(context, locationUpdatedCallback)
+      mapView.overlays.clear()
+      mapView.onPause()
+      mapView.onDetach()
+    }
+  }
 
-          // Button to center the map on the user's location
-          MapMyLocationButton(
-              onClick = {
-                val hasLocationPermission =
-                    LocationUtils.hasLocationPermission(locationPermissionState)
-                // If the user has granted at least one of the two permissions, center the map on
-                // the user's location
-                if (hasLocationPermission) {
-                  MapUtils.centerMapOnUserLocation(context, mapView, userLocationMarker)
+  val errorMessageIdState = profileViewModel.errorMessageId.collectAsState()
+  val profileState = profileViewModel.profile.collectAsState()
+
+  AsyncStateHandler(
+      errorMessageIdState = errorMessageIdState,
+      actionContentDescriptionStringId = R.string.go_back,
+      actionOnErrorAction = { navigationActions.navigateTo(Route.MAP) },
+      valueState = profileState) { profile ->
+        BottomBarNavigation(
+            onTabSelect = { navigationActions.navigateTo(it) },
+            tabList = LIST_TOP_LEVEL_DESTINATIONS,
+            selectedItem = Route.MAP) {
+              Box(modifier = Modifier.fillMaxSize().testTag(Screen.MAP)) {
+                // Jetpack Compose is a relatively recent framework for implementing Android UIs.
+                // OSMDroid
+                // is
+                // an older library that uses Activities, the previous way of doing. The composable
+                // AndroidView
+                // allows us to use OSMDroid's legacy MapView in a Jetpack Compose layout.
+                AndroidView(
+                    factory = { mapView },
+                    modifier =
+                        Modifier.fillMaxSize()
+                            .testTag(MapScreen.TEST_TAG_MAP)
+                            .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT))
+
+                // Button to center the map on the user's location
+                MapMyLocationButton(
+                    onClick = {
+                      val hasLocationPermission =
+                          LocationUtils.hasLocationPermission(locationPermissionState)
+                      // If the user has granted at least one of the two permissions, center the map
+                      // on
+                      // the user's location
+                      if (hasLocationPermission) {
+                        MapUtils.centerMapOnUserLocation(context, mapView, userLocationMarker)
+                      }
+                      // If the user yet needs to grant the permission, show a custom educational
+                      // alert
+                      else {
+                        showLocationPermissionDialog = true
+                      }
+                    },
+                    modifier =
+                        Modifier.align(Alignment.BottomStart)
+                            .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
+                            .testTag(MapScreen.TEST_TAG_CENTER_MAP_BUTTON))
+                // Search button to request OSM for hikes in the displayed area
+                if (!isSearching.value) {
+                  MapSearchButton(
+                      onClick = {
+                        MapScreen.launchSearch(isSearching, hikingRoutesViewModel, mapView, context)
+                      },
+                      modifier =
+                          Modifier.align(Alignment.BottomCenter)
+                              .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
                 }
-                // If the user yet needs to grant the permission, show a custom educational alert
-                else {
-                  showLocationPermissionDialog = true
-                }
-              },
-              modifier =
-                  Modifier.align(Alignment.BottomStart)
-                      .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
-                      .testTag(MapScreen.TEST_TAG_CENTER_MAP_BUTTON))
-          // Search button to request OSM for hikes in the displayed area
-          if (!isSearching.value) {
-            MapSearchButton(
-                onClick = {
-                  MapScreen.launchSearch(isSearching, hikingRoutesViewModel, mapView, context)
-                },
-                modifier =
-                    Modifier.align(Alignment.BottomCenter)
-                        .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
-          }
-          // The zoom buttons are displayed on the bottom left of the screen
-          ZoomMapButton(
-              onZoomIn = { mapView.controller.zoomIn() },
-              onZoomOut = { mapView.controller.zoomOut() },
-              modifier =
-                  Modifier.align(Alignment.BottomEnd)
-                      .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
-          CollapsibleHikesList(hikingRoutesViewModel, isSearching.value)
-          // Put SideBarNavigation after to make it appear on top of the map and HikeList
-        }
+                // The zoom buttons are displayed on the bottom left of the screen
+                ZoomMapButton(
+                    onZoomIn = { mapView.controller.zoomIn() },
+                    onZoomOut = { mapView.controller.zoomOut() },
+                    modifier =
+                        Modifier.align(Alignment.BottomEnd)
+                            .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
+                CollapsibleHikesList(hikingRoutesViewModel, profile.hikingLevel, isSearching.value)
+                // Put SideBarNavigation after to make it appear on top of the map and HikeList
+              }
+            }
       }
 }
 
@@ -521,7 +567,11 @@ fun MapMyLocationButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel, isSearching: Boolean) {
+fun CollapsibleHikesList(
+    hikingRoutesViewModel: ListOfHikeRoutesViewModel,
+    userHikingLevel: HikingLevel,
+    isSearching: Boolean
+) {
   val scaffoldState = rememberBottomSheetScaffoldState()
   val routes = hikingRoutesViewModel.hikeRoutes.collectAsState()
   val context = LocalContext.current
@@ -564,7 +614,15 @@ fun CollapsibleHikesList(hikingRoutesViewModel: ListOfHikeRoutesViewModel, isSea
             LazyColumn(modifier = Modifier.fillMaxSize()) {
               items(routes.value.size, key = { routes.value[it].id }) { index: Int ->
                 val route = routes.value[index]
-                val isSuitable = index % 2 == 0
+
+                val distance = RouteUtils.computeTotalDistance(route.ways)
+                val elevation =
+                    RouteUtils.calculateElevationGain(
+                        elevationDataMappings.value[route.id] ?: emptyList())
+                val difficulty = RouteUtils.determineDifficulty(distance, elevation)
+
+                val isSuitable = difficulty.ordinal <= userHikingLevel.ordinal
+
                 hikingRoutesViewModel.getRoutesElevation(
                     route, { elevationDataMappings.value += (route.id to it) })
                 Log.d("MapScreen", "Loading hike card for route: ${route.name}")
