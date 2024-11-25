@@ -11,6 +11,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
@@ -56,10 +57,17 @@ class FacilitiesViewModelTest {
       onSuccess(facilities)
     }
 
+    var onSuccessCalled = false
+
     facilitiesViewModel.getFacilities(
         bounds = testBounds,
-        onSuccess = { result -> assertEquals(facilities, result) },
+        onSuccess = { result ->
+          assertEquals(facilities, result)
+          onSuccessCalled = true
+        },
         onFailure = { fail("Should not be called") })
+
+    assertTrue(onSuccessCalled)
   }
 
   @Test
@@ -71,17 +79,26 @@ class FacilitiesViewModelTest {
       onFailure(exception)
     }
 
+    var onFailureCalled = false
+
     facilitiesViewModel.getFacilities(
         bounds = testBounds,
         onSuccess = { fail("Should not be called") },
-        onFailure = { ex -> assertEquals(exception, ex) })
+        onFailure = { ex ->
+          assertEquals(exception, ex)
+          onFailureCalled = true
+        })
+
+    assertTrue(onFailureCalled)
   }
 
   @Test
   fun testGetFacilities_usesCache_sameBounds() = runTest {
     val facilities = listOf(Facility(FacilityType.TOILETS, LatLong(46.51, 6.61)))
 
-    var onSuccessCallCount = 0 // Used to make sure the first onSuccess callback is only called once
+    // makes sure each onSuccess is called exactly once
+    var onSuccessCalledFirstCall = 0
+    var onSuccessCalledSecondCall = 0
 
     `when`(mockFacilitiesRepository.getFacilities(any(), any(), any())).then {
       val onSuccess = it.getArgument<(List<Facility>) -> Unit>(1)
@@ -92,7 +109,7 @@ class FacilitiesViewModelTest {
         bounds = testBounds,
         onSuccess = { result ->
           assertEquals(facilities, result)
-          onSuccessCallCount++
+          onSuccessCalledFirstCall++
         },
         onFailure = { fail("Should not be called") })
 
@@ -101,20 +118,25 @@ class FacilitiesViewModelTest {
     // Second call to getFacilities should use the cache
     facilitiesViewModel.getFacilities(
         bounds = testBounds,
-        onSuccess = { result -> assertEquals(facilities, result) },
+        onSuccess = { result ->
+          assertEquals(facilities, result)
+          onSuccessCalledSecondCall++
+        },
         onFailure = { fail("Should not be called") })
 
     testDispatcher.scheduler.advanceUntilIdle()
 
     verify(mockFacilitiesRepository, times(1)).getFacilities(any(), any(), any())
-    assertEquals(1, onSuccessCallCount)
+    assertEquals(1, onSuccessCalledFirstCall)
+    assertEquals(1, onSuccessCalledSecondCall)
   }
 
   @Test
   fun testGetFacilities_usesCache_containedBounds() = runTest {
     val facilities = listOf(Facility(FacilityType.TOILETS, LatLong(46.505, 6.605)))
 
-    var onSuccessCallCount = 0 // Used to make sure the first onSuccess callback is only called once
+    var onSuccessCallCountFirstCall = 0
+    var onSuccessCallCountSecondCall = 0
 
     `when`(mockFacilitiesRepository.getFacilities(any(), any(), any())).then {
       val onSuccess = it.getArgument<(List<Facility>) -> Unit>(1)
@@ -125,7 +147,7 @@ class FacilitiesViewModelTest {
         bounds = testBounds,
         onSuccess = { result ->
           assertEquals(facilities, result)
-          onSuccessCallCount++
+          onSuccessCallCountFirstCall++
         },
         onFailure = { fail("Should not be called") })
 
@@ -135,13 +157,17 @@ class FacilitiesViewModelTest {
     // calls bounds
     facilitiesViewModel.getFacilities(
         bounds = Bounds(46.501, 6.601, 46.509, 6.619),
-        onSuccess = { result -> assertEquals(facilities, result) },
+        onSuccess = { result ->
+          assertEquals(facilities, result)
+          onSuccessCallCountSecondCall++
+        },
         onFailure = { fail("Should not be called") })
 
     testDispatcher.scheduler.advanceUntilIdle()
 
     verify(mockFacilitiesRepository, times(1)).getFacilities(any(), any(), any())
-    assertEquals(1, onSuccessCallCount)
+    assertEquals(1, onSuccessCallCountFirstCall)
+    assertEquals(1, onSuccessCallCountSecondCall)
   }
 
   @Test

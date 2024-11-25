@@ -6,8 +6,15 @@ import java.io.IOException
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.coroutines.resumeWithException
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.toJavaDuration
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.time.withTimeout
+import kotlinx.coroutines.withContext
 import okhttp3.Call
 import okhttp3.OkHttpClient
 import okhttp3.Protocol
@@ -15,6 +22,7 @@ import okhttp3.Response
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
@@ -102,31 +110,39 @@ class FacilitiesRepositoryOverpassTest {
     `when`(client.newCall(any())).thenReturn(mockCall)
   }
 
+  @OptIn(ExperimentalCoroutinesApi::class)
   @Test
-  fun testGetFacilities_integrationTest() =
-      runTest(timeout = 5.seconds) {
+  fun testGetFacilities_integrationTest() = runTest {
+    val realFacilitiesRepository = FacilitiesRepositoryOverpass(OkHttpClient())
 
-        // Calls the real API, not a mocked one
-        val realFacilitiesRepository = FacilitiesRepositoryOverpass(OkHttpClient())
-        realFacilitiesRepository.getFacilities(
-            testBoundsNormal,
-            { routes ->
-              assertNotEquals(routes.size, 0)
-              print(routes)
-            }) {
-              fail("Should not fail")
-            }
+    var onSuccessCalled = false
+    var routesSize = 0
+
+    withContext(Dispatchers.Default.limitedParallelism(1)) {
+      withTimeout(5.seconds.toJavaDuration()) { // 5 seconds timeout
+        // Convert callback-based API to suspending function
+        suspendCancellableCoroutine { continuation ->
+          realFacilitiesRepository.getFacilities(
+              bounds = testBoundsNormal,
+              onSuccess = { routes ->
+                routesSize = routes.size
+                onSuccessCalled = true
+                continuation.resume(Unit, {})
+              },
+              onFailure = { error -> continuation.resumeWithException(error) })
+        }
       }
+    }
+
+    assertTrue(onSuccessCalled)
+    assertNotEquals(0, routesSize)
+  }
 
   @Test
   fun testGetFacilities_callsClient() {
     `when`(client.newCall(any())).thenReturn(mock())
     facilitiesRepository.getFacilities(
-        testBoundsNormal,
-        { routes ->
-          assertNotEquals(routes.size, 0)
-          print(routes)
-        }) {
+        testBoundsNormal, { routes -> assertNotEquals(routes.size, 0) }) {
           fail("Failed to fetch from Overpass API")
         }
     verify(client).newCall(any())
@@ -140,6 +156,7 @@ class FacilitiesRepositoryOverpassTest {
 
     val callbackCaptor = argumentCaptor<okhttp3.Callback>()
     val latch = CountDownLatch(1)
+    var onSuccessCalled = false
 
     setupMockResponse(response)
 
@@ -148,6 +165,7 @@ class FacilitiesRepositoryOverpassTest {
         onSuccess = { facilities ->
           assertEquals(1, facilities.size)
           assertEquals(FacilityType.TOILETS, facilities[0].type)
+          onSuccessCalled = true
           latch.countDown()
           Log.d(
               "FacilitiesRepositoryTest",
@@ -158,6 +176,8 @@ class FacilitiesRepositoryOverpassTest {
     verify(mockCall).enqueue(callbackCaptor.capture())
 
     assert(latch.await(5, TimeUnit.SECONDS)) { "Test timed out" }
+
+    assertTrue(onSuccessCalled)
   }
 
   @Test
@@ -202,12 +222,18 @@ class FacilitiesRepositoryOverpassTest {
 
     setupMockResponse(response)
 
+    var onSuccessCalled = false
+
     facilitiesRepository.getFacilities(
         bounds = testBoundsNormal,
-        onSuccess = { facilities -> assertEquals(0, facilities.size) },
+        onSuccess = { facilities ->
+          assertEquals(0, facilities.size)
+          onSuccessCalled = true
+        },
         onFailure = { _ -> fail("getFacilities call with empty response failed") })
 
     verify(mockCall).enqueue(callbackCaptor.capture())
+    assertTrue(onSuccessCalled)
   }
 
   @Test
