@@ -70,12 +70,10 @@ class HikesViewModel(
    */
   private fun updateSelectedHike() {
     // If there is no selected hike, don't bother.
-    if (_selectedHikeId == null) {
+    val selectedHike = _selectedHike.value
+    if (_selectedHikeId == null || selectedHike == null) {
       return
     }
-
-    // Retrieve the selected hike from the map. If it's null, don't bother.
-    val selectedHike = _selectedHike.value ?: return
 
     // Retrieve the corresponding flow from the map.
     val selectedHikeFlow = _hikeFlowsMap[_selectedHikeId]
