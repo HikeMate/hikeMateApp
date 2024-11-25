@@ -52,39 +52,7 @@ class HikesViewModel(
 
   private val _hikeFlowsList = MutableStateFlow<List<StateFlow<Hike>>>(emptyList())
 
-  private fun updateHikeFlowsList() {
-    _hikeFlowsList.value = _hikeFlowsMap.values.toList()
-  }
-
   private val _selectedHike = MutableStateFlow<Hike?>(null)
-
-  /**
-   * Helper function to update the selected hike once (or before) [hikeFlows] has been updated.
-   *
-   * This function does not acquire the [_hikesMutex]. It is the responsibility of the caller to
-   * call this function inside of a [Mutex.withLock] block.
-   *
-   * This function does not switch context either, it is the responsibility of the caller to call
-   * this function inside of a [withContext] block.
-   */
-  private fun updateSelectedHike() {
-    // If there is no selected hike, don't bother.
-    val selectedHike = _selectedHike.value ?: return
-
-    // Retrieve the corresponding flow from the map.
-    val selectedHikeFlow = _hikeFlowsMap[selectedHike.id]
-
-    if (selectedHikeFlow == null) {
-      // The selected hike is not in the map, unselect it.
-      _selectedHike.value = null
-    } else {
-      // The selected hike is still in the map, update it.
-      val flowValue = selectedHikeFlow.value
-      if (flowValue != selectedHike) {
-        _selectedHike.value = flowValue
-      }
-    }
-  }
 
   /** Internal type used to store where the hikes in [_hikeFlowsMap] come from. */
   private enum class LoadedHikes {
@@ -364,6 +332,38 @@ class HikesViewModel(
    */
   fun computeDetailsFor(hikeId: String, onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}) =
       viewModelScope.launch { computeDetailsForAsync(hikeId, onSuccess, onFailure) }
+
+  private fun updateHikeFlowsList() {
+    _hikeFlowsList.value = _hikeFlowsMap.values.toList()
+  }
+
+  /**
+   * Helper function to update the selected hike once (or before) [hikeFlows] has been updated.
+   *
+   * This function does not acquire the [_hikesMutex]. It is the responsibility of the caller to
+   * call this function inside of a [Mutex.withLock] block.
+   *
+   * This function does not switch context either, it is the responsibility of the caller to call
+   * this function inside of a [withContext] block.
+   */
+  private fun updateSelectedHike() {
+    // If there is no selected hike, don't bother.
+    val selectedHike = _selectedHike.value ?: return
+
+    // Retrieve the corresponding flow from the map.
+    val selectedHikeFlow = _hikeFlowsMap[selectedHike.id]
+
+    if (selectedHikeFlow == null) {
+      // The selected hike is not in the map, unselect it.
+      _selectedHike.value = null
+    } else {
+      // The selected hike is still in the map, update it.
+      val flowValue = selectedHikeFlow.value
+      if (flowValue != selectedHike) {
+        _selectedHike.value = flowValue
+      }
+    }
+  }
 
   private suspend fun selectHikeAsync(
       hikeId: String,
