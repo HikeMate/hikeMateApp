@@ -250,8 +250,13 @@ class HikesViewModel(
    * The bounding box and way points are then stored in the respective hikes, the state flows are
    * updated directly, no need for a return value.
    *
-   * This is a one-time operation, the OSM data will only be retrieved for the hikes that are in the
-   * list at the time of calling this function.
+   * This is a one-time operation. Calling this function does NOT start retrieving OSM data for
+   * every new hike that gets added to [hikeFlows]. Instead, it takes a snapshot of [hikeFlows] and
+   * retrieves the data for the hikes in that snapshot.
+   *
+   * Note that the snapshot might not exactly match the current state of [hikeFlows] when the
+   * calling of this function is performed, depending on what other operations are performed by the
+   * view model at the time of calling.
    *
    * @param onSuccess To be called once the data has been retrieved successfully. Do not use this
    *   callback to retrieve the data manually. Instead, observe [hikeFlows] to be notified
