@@ -48,31 +48,47 @@ class FacilitiesViewModelTest {
     Dispatchers.resetMain()
   }
 
+  @OptIn(ExperimentalCoroutinesApi::class)
   @Test
-  fun testGetFacilities_onSuccess() {
-    val facilities = listOf(Facility(FacilityType.TOILETS, LatLong(46.51, 6.61)))
-
-    `when`(mockFacilitiesRepository.getFacilities(any(), any(), any())).then {
-      val onSuccess = it.getArgument<(List<Facility>) -> Unit>(1)
-      onSuccess(facilities)
-    }
+  fun testGetFacilities_onSuccess() = runTest {
+    val testDispatcher = StandardTestDispatcher()
+    Dispatchers.setMain(testDispatcher)
 
     var onSuccessCalled = false
 
-    facilitiesViewModel.getFacilities(
-        bounds = testBounds,
-        onSuccess = { result ->
-          assertEquals(facilities, result)
-          onSuccessCalled = true
-        },
-        onFailure = { fail("Should not be called") })
+    try {
+      val facilities = listOf(Facility(FacilityType.TOILETS, LatLong(46.51, 6.61)))
 
-    assertTrue(onSuccessCalled)
+      // Use suspending mock instead of callback-style
+      `when`(mockFacilitiesRepository.getFacilities(any(), any(), any())).then {
+        val onSuccess = it.getArgument<(List<Facility>) -> Unit>(1)
+        onSuccess(facilities)
+      }
+
+      facilitiesViewModel.getFacilities(
+          bounds = testBounds,
+          onSuccess = { result ->
+            assertEquals(facilities, result)
+            onSuccessCalled = true
+          },
+          onFailure = { fail("Should not be called") })
+
+      testDispatcher.scheduler.advanceUntilIdle()
+
+      assertTrue(onSuccessCalled)
+    } finally {
+      Dispatchers.resetMain()
+      assertTrue(onSuccessCalled)
+    }
   }
 
+  @OptIn(ExperimentalCoroutinesApi::class)
   @Test
   fun testGetFacilities_onFailure() {
     val exception = Exception("Test exception")
+
+    val testDispatcher = StandardTestDispatcher()
+    Dispatchers.setMain(testDispatcher)
 
     `when`(mockFacilitiesRepository.getFacilities(any(), any(), any())).then {
       val onFailure = it.getArgument<(Exception) -> Unit>(2)
@@ -81,15 +97,22 @@ class FacilitiesViewModelTest {
 
     var onFailureCalled = false
 
-    facilitiesViewModel.getFacilities(
-        bounds = testBounds,
-        onSuccess = { fail("Should not be called") },
-        onFailure = { ex ->
-          assertEquals(exception, ex)
-          onFailureCalled = true
-        })
+    try {
+      facilitiesViewModel.getFacilities(
+          bounds = testBounds,
+          onSuccess = { fail("Should not be called") },
+          onFailure = { ex ->
+            assertEquals(exception, ex)
+            onFailureCalled = true
+          })
 
-    assertTrue(onFailureCalled)
+      testDispatcher.scheduler.advanceUntilIdle()
+
+      assertTrue(onFailureCalled)
+    } finally {
+      Dispatchers.resetMain()
+      assertTrue(onFailureCalled)
+    }
   }
 
   @Test

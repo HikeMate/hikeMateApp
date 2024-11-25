@@ -54,12 +54,12 @@ enum class FacilityType(val type: String) {
      * @return The matching [FacilityType] enum value, or null if no match is found
      */
     fun fromString(string: String): FacilityType? {
-for (facility in FacilityType.values()) {
-  if (facility.type == string) {
-    return facility
-  }
-}
-return null
+      for (facility in FacilityType.values()) {
+        if (facility.type == string) {
+          return facility
+        }
+      }
+      return null
     }
   }
 }
