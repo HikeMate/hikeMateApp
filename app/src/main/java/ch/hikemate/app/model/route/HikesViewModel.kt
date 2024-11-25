@@ -297,9 +297,11 @@ class HikesViewModel(
    * first time and mark the data as requested (see [DeferredData] and [Hike] for more information).
    *
    * @param hikeId The ID of the hike to retrieve the elevation data for.
-   * @param onSuccess To be called once the elevation has been successfully retrieved for the hike.
-   *   Do not use this to retrieve the elevation, rather observe the hike in [hikeFlows] to be
-   *   notified automatically.
+   * @param onSuccess To be called once the elevation data have been successfully requested and/or
+   *   retrieved. To avoid multiple requests for the same data, [onSuccess] will be called if
+   *   another request is already in progress, even though the data are not yet available. Do not
+   *   use this callback to retrieve the elevation data, rather observe the hike in [hikeFlows] to
+   *   be notified automatically when it is available.
    * @param onFailure To be called if a problem is encountered and prevents the elevation from being
    *   retrieved.
    */
