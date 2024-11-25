@@ -29,13 +29,13 @@ import org.osmdroid.util.BoundingBox
  *
  * @param savedHikesRepo The repository to work with saved hikes.
  * @param osmHikesRepo The repository to work with hikes from OpenStreetMap.
- * @param elevationRepo The service to retrieve elevation data.
+ * @param elevationService The service to retrieve elevation data.
  * @param dispatcher The dispatcher to be used to launch coroutines.
  */
 class HikesViewModel(
     private val savedHikesRepo: SavedHikesRepository,
     private val osmHikesRepo: HikeRoutesRepository,
-    private val elevationRepo: ElevationService,
+    private val elevationService: ElevationService,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : ViewModel() {
   companion object {
@@ -980,7 +980,7 @@ class HikesViewModel(
       coordinates: List<LatLong>,
       hikeId: String
   ): List<Double> = suspendCoroutine { continuation ->
-    elevationRepo.getElevation(
+    elevationService.getElevation(
         coordinates = coordinates,
         hikeID = hikeId,
         onSuccess = { elevation -> continuation.resume(elevation) },
