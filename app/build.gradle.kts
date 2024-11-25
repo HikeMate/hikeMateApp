@@ -177,8 +177,6 @@ dependencies {
     implementation(libs.gson)
 
 
-
-
     // Global test dependencies
     globalTestImplementation(libs.androidx.junit)
     globalTestImplementation(libs.androidx.espresso.core)

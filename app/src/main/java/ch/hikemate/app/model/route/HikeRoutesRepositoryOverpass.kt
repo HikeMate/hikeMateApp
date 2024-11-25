@@ -3,15 +3,10 @@ package ch.hikemate.app.model.route
 import android.util.JsonReader
 import android.util.Log
 import ch.hikemate.app.R
+import ch.hikemate.app.model.overpassAPI.OverpassRepository
 import java.io.Reader
+import okhttp3.Callback
 import okhttp3.OkHttpClient
-import okhttp3.Request
-
-/** The URL of the Overpass API interpreter. */
-private const val OVERPASS_API_URL: String = "https://overpass-api.de/api/interpreter"
-
-/** The type of format to request from the Overpass API, written in OverpassQL. */
-private const val JSON_OVERPASS_FORMAT_TAG = "[out:json]"
 
 /** The maximum distance between two points to consider them as the same point. */
 private const val MAX_DISTANCE_BETWEEN_OPENED_PATH = 10 // meters
@@ -23,7 +18,8 @@ private const val MAX_DISTANCE_BETWEEN_OPENED_PATH = 10 // meters
  *
  * @see <a href="https://dev.overpass-api.de/overpass-doc/">Overpass API documentation</a>
  */
-class HikeRoutesRepositoryOverpass(private val client: OkHttpClient) : HikeRoutesRepository {
+class HikeRoutesRepositoryOverpass(private val client: OkHttpClient) :
+    HikeRoutesRepository, OverpassRepository() {
   private val cachedHikeRoutes = mutableMapOf<Bounds, List<HikeRoute>>()
 
   /** @return The size of the cache. */
@@ -53,19 +49,14 @@ class HikeRoutesRepositoryOverpass(private val client: OkHttpClient) : HikeRoute
     // See OverpassQL documentation for more information on the query format.
     val overpassRequestData =
         """
-            ${JSON_OVERPASS_FORMAT_TAG};
+            $JSON_OVERPASS_FORMAT_TAG
             nwr[route="hiking"]${boundingBoxOverpass};
-            out geom;
+            $GEOM_OUTPUT_MODIFIER
         """
             .trimIndent()
 
-    val requestBuilder = Request.Builder().url("$OVERPASS_API_URL?data=$overpassRequestData").get()
-
-    setRequestHeaders(requestBuilder)
-
-    client
-        .newCall(requestBuilder.build())
-        .enqueue(OverpassResponseHandler(bounds, onSuccess, onFailure))
+    buildAndSendRequest(
+        overpassRequestData, client, OverpassResponseHandler(bounds, onSuccess, onFailure))
   }
 
   override fun getRouteById(
@@ -76,17 +67,14 @@ class HikeRoutesRepositoryOverpass(private val client: OkHttpClient) : HikeRoute
     // Query the Overpass API for this specific route
     val overpassRequestData =
         """
-        ${JSON_OVERPASS_FORMAT_TAG};
+        $JSON_OVERPASS_FORMAT_TAG
         relation($routeId);
-        out geom;
+        $GEOM_OUTPUT_MODIFIER
       """
             .trimIndent()
 
-    val requestBuilder = Request.Builder().url("$OVERPASS_API_URL?data=$overpassRequestData").get()
-
-    setRequestHeaders(requestBuilder)
-
-    client.newCall(requestBuilder.build()).enqueue(OverpassSingleRouteHandler(onSuccess, onFailure))
+    buildAndSendRequest(
+        overpassRequestData, client, OverpassSingleRouteHandler(onSuccess, onFailure))
   }
 
   override fun getRoutesByIds(
@@ -98,26 +86,12 @@ class HikeRoutesRepositoryOverpass(private val client: OkHttpClient) : HikeRoute
     overpassRequestDataBuilder.append(JSON_OVERPASS_FORMAT_TAG)
     overpassRequestDataBuilder.append("\n(\n")
     routeIds.forEach { routeId -> overpassRequestDataBuilder.append("relation($routeId);\n") }
-    overpassRequestDataBuilder.append(");\nout geom;\n")
+    overpassRequestDataBuilder.append(");\n$GEOM_OUTPUT_MODIFIER\n")
 
     val overpassRequestData = overpassRequestDataBuilder.toString()
 
-    val requestBuilder = Request.Builder().url("$OVERPASS_API_URL?data=$overpassRequestData").get()
-
-    setRequestHeaders(requestBuilder)
-
-    client
-        .newCall(requestBuilder.build())
-        .enqueue(OverpassResponseHandler(null, onSuccess, onFailure))
-  }
-
-  /**
-   * Sets the headers for the request. Especially the user-agent.
-   *
-   * @param request The request builder to set the headers on.
-   */
-  private fun setRequestHeaders(request: Request.Builder) {
-    request.header("User-Agent", "Hikemate/1.0")
+    buildAndSendRequest(
+        overpassRequestData, client, OverpassResponseHandler(null, onSuccess, onFailure))
   }
 
   /**
@@ -131,7 +105,7 @@ class HikeRoutesRepositoryOverpass(private val client: OkHttpClient) : HikeRoute
       val requestedBounds: Bounds?,
       val onSuccess: (List<HikeRoute>) -> Unit,
       val onFailure: (Exception) -> Unit
-  ) : okhttp3.Callback {
+  ) : Callback {
     override fun onFailure(call: okhttp3.Call, e: java.io.IOException) {
       onFailure(e)
     }

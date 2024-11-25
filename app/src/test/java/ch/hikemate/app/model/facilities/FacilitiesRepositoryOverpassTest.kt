@@ -22,11 +22,9 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.timeout
-import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 
-class FacilitiesRepositoryTest {
+class FacilitiesRepositoryOverpassTest {
 
   companion object {
 
@@ -65,7 +63,7 @@ class FacilitiesRepositoryTest {
 
   private lateinit var client: OkHttpClient
   private lateinit var mockCall: Call
-  private lateinit var facilitiesRepository: FacilitiesRepository
+  private lateinit var facilitiesRepository: FacilitiesRepositoryOverpass
 
   private val callbackCaptor = argumentCaptor<okhttp3.Callback>()
 
@@ -99,7 +97,7 @@ class FacilitiesRepositoryTest {
     client = mock()
     mockCall = mock()
 
-    facilitiesRepository = FacilitiesRepository(client)
+    facilitiesRepository = FacilitiesRepositoryOverpass(client)
 
     `when`(client.newCall(any())).thenReturn(mockCall)
   }
@@ -109,7 +107,7 @@ class FacilitiesRepositoryTest {
       runTest(timeout = 5.seconds) {
 
         // Calls the real API, not a mocked one
-        val realFacilitiesRepository = FacilitiesRepository(OkHttpClient())
+        val realFacilitiesRepository = FacilitiesRepositoryOverpass(OkHttpClient())
         realFacilitiesRepository.getFacilities(
             testBoundsNormal,
             { routes ->

@@ -23,7 +23,7 @@ import org.osmdroid.util.GeoPoint
 
 class FacilitiesViewModelTest {
 
-  private lateinit var mockFacilitiesRepository: FacilitiesRepository
+  private lateinit var mockFacilitiesRepository: FacilitiesRepositoryOverpass
   private lateinit var testDispatcher: TestDispatcher
 
   private lateinit var facilitiesViewModel: FacilitiesViewModel // SUT
