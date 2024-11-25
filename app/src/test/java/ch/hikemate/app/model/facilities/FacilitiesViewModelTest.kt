@@ -1,6 +1,7 @@
 package ch.hikemate.app.model.facilities
 
 import ch.hikemate.app.model.route.Bounds
+import ch.hikemate.app.model.route.LatLong
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -19,7 +20,6 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import org.osmdroid.util.GeoPoint
 
 class FacilitiesViewModelTest {
 
@@ -29,7 +29,7 @@ class FacilitiesViewModelTest {
   private lateinit var facilitiesViewModel: FacilitiesViewModel // SUT
 
   private val testBounds = Bounds(46.5, 6.6, 46.51, 6.62)
-  private val testFacilities = listOf(Facility(FacilityType.TOILETS, GeoPoint(46.51, 6.61)))
+  private val testFacilities = listOf(Facility(FacilityType.TOILETS, LatLong(46.51, 6.61)))
 
   @OptIn(ExperimentalCoroutinesApi::class)
   @Before
@@ -49,7 +49,7 @@ class FacilitiesViewModelTest {
 
   @Test
   fun testGetFacilities_onSuccess() {
-    val facilities = listOf(Facility(FacilityType.TOILETS, GeoPoint(46.51, 6.61)))
+    val facilities = listOf(Facility(FacilityType.TOILETS, LatLong(46.51, 6.61)))
 
     `when`(mockFacilitiesRepository.getFacilities(any(), any(), any())).then {
       val onSuccess = it.getArgument<(List<Facility>) -> Unit>(1)
@@ -79,7 +79,7 @@ class FacilitiesViewModelTest {
 
   @Test
   fun testGetFacilities_usesCache_sameBounds() = runTest {
-    val facilities = listOf(Facility(FacilityType.TOILETS, GeoPoint(46.51, 6.61)))
+    val facilities = listOf(Facility(FacilityType.TOILETS, LatLong(46.51, 6.61)))
 
     var onSuccessCallCount = 0 // Used to make sure the first onSuccess callback is only called once
 
@@ -112,7 +112,7 @@ class FacilitiesViewModelTest {
 
   @Test
   fun testGetFacilities_usesCache_containedBounds() = runTest {
-    val facilities = listOf(Facility(FacilityType.TOILETS, GeoPoint(46.505, 6.605)))
+    val facilities = listOf(Facility(FacilityType.TOILETS, LatLong(46.505, 6.605)))
 
     var onSuccessCallCount = 0 // Used to make sure the first onSuccess callback is only called once
 
@@ -150,8 +150,8 @@ class FacilitiesViewModelTest {
     val otherBounds = Bounds(41.0, 7.0, 42.0, 8.0)
     val otherFacilities = // two facilities contained within "otherBounds"
         listOf(
-            Facility(FacilityType.BENCH, GeoPoint(41.1, 7.51)),
-            Facility(FacilityType.DRINKING_WATER, GeoPoint(41.2, 7.2)))
+            Facility(FacilityType.BENCH, LatLong(41.1, 7.51)),
+            Facility(FacilityType.DRINKING_WATER, LatLong(41.2, 7.2)))
 
     `when`(mockFacilitiesRepository.getFacilities(eq(testBounds), any(), any())).then {
       val onSuccess = it.getArgument<(List<Facility>) -> Unit>(1)

@@ -43,14 +43,11 @@ class HikeRoutesRepositoryOverpass(private val client: OkHttpClient) :
       }
     }
 
-    val boundingBoxOverpass =
-        "(${bounds.minLat},${bounds.minLon},${bounds.maxLat},${bounds.maxLon})"
-
     // See OverpassQL documentation for more information on the query format.
     val overpassRequestData =
         """
             $JSON_OVERPASS_FORMAT_TAG
-            nwr[route="hiking"]${boundingBoxOverpass};
+            nwr[route="hiking"](${bounds.toStringForOverpassAPI()});
             $GEOM_OUTPUT_MODIFIER
         """
             .trimIndent()
