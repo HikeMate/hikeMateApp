@@ -8,6 +8,7 @@ import ch.hikemate.app.model.elevation.ElevationService
 import ch.hikemate.app.model.elevation.ElevationServiceRepository
 import ch.hikemate.app.model.extensions.crossesDateLine
 import ch.hikemate.app.model.extensions.splitByDateLine
+import ch.hikemate.app.model.extensions.toBounds
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow

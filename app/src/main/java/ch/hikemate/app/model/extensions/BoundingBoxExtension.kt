@@ -1,5 +1,7 @@
 package ch.hikemate.app.model.extensions
 
+import android.util.Log
+import ch.hikemate.app.model.route.Bounds
 import org.osmdroid.util.BoundingBox
 
 /** Return true if the bounding box crosses the date line */
@@ -16,4 +18,11 @@ fun BoundingBox.splitByDateLine(): Pair<BoundingBox, BoundingBox> {
   } else {
     Pair(this, this)
   }
+}
+
+fun BoundingBox.toBounds(): Bounds {
+  Log.i(
+      "BoundingBox",
+      "Converting BoundingBox to Bounds(n:$latNorth, e:$lonEast, s:$latSouth, w:$lonWest)")
+  return Bounds(latSouth, lonWest, latNorth, lonEast)
 }

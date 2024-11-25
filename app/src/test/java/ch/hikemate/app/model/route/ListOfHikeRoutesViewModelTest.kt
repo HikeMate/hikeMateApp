@@ -1,6 +1,7 @@
 package ch.hikemate.app.model.route
 
 import ch.hikemate.app.model.elevation.ElevationService
+import ch.hikemate.app.model.extensions.toBounds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher

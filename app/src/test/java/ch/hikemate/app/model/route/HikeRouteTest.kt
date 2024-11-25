@@ -1,5 +1,6 @@
 package ch.hikemate.app.model.route
 
+import ch.hikemate.app.model.extensions.toBounds
 import org.junit.Assert.*
 import org.junit.Test
 import org.osmdroid.util.BoundingBox
