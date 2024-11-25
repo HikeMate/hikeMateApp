@@ -39,8 +39,7 @@ class FacilitiesViewModel(
           // Filters out facilities that are not within the requested bounds
           val filteredFacilities =
               cacheItem.value.filter { facility ->
-                bounds.containsCoordinate(
-                    facility.coordinates.latitude, facility.coordinates.longitude)
+                bounds.containsCoordinate(facility.coordinates.lat, facility.coordinates.lon)
               }
           onSuccess(filteredFacilities)
           return@withContext

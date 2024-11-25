@@ -3,11 +3,11 @@ package ch.hikemate.app.model.facilities
 import android.util.Log
 import ch.hikemate.app.model.overpassAPI.OverpassRepository
 import ch.hikemate.app.model.route.Bounds
+import ch.hikemate.app.model.route.LatLong
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import okhttp3.Callback
 import okhttp3.OkHttpClient
-import org.osmdroid.util.GeoPoint
 
 class FacilitiesRepositoryOverpass(private val client: OkHttpClient) :
     FacilitiesRepository, OverpassRepository() {
@@ -90,7 +90,7 @@ class FacilitiesRepositoryOverpass(private val client: OkHttpClient) :
         val amenity = tags?.get("amenity")?.asString?.let { FacilityType.fromString(it) }
 
         if (lat != null && lon != null && amenity != null) {
-          facilities.add(Facility(amenity, GeoPoint(lat, lon)))
+          facilities.add(Facility(amenity, LatLong(lat, lon)))
         }
       }
 

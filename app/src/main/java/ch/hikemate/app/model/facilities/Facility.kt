@@ -1,6 +1,6 @@
 package ch.hikemate.app.model.facilities
 
-import org.osmdroid.util.GeoPoint
+import ch.hikemate.app.model.route.LatLong
 
 /**
  * Represents a facility or amenity point. Each facility has a specific type (e.g., toilet, parking)
@@ -9,7 +9,7 @@ import org.osmdroid.util.GeoPoint
  * @property type The type of facility, defined in [FacilityType]
  * @property coordinates Geographic coordinates of the facility
  */
-data class Facility(val type: FacilityType, val coordinates: GeoPoint)
+data class Facility(val type: FacilityType, val coordinates: LatLong)
 
 /**
  * Enum of all supported facility types that can be found along hiking routes. Each facility type
