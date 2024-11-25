@@ -1,6 +1,7 @@
 package ch.hikemate.app.model.route
 
 import ch.hikemate.app.model.elevation.ElevationService
+import ch.hikemate.app.model.extensions.toBounds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -143,6 +144,20 @@ class ListOfHikeRoutesViewModelTest {
     listOfHikeRoutesViewModel.setArea(BoundingBox(0.0, 0.0, 0.0, 0.0))
 
     verify(hikesRepository, times(1)).getRoutes(eq(Bounds(0.0, 0.0, 0.0, 0.0)), any(), any())
+  }
+
+  @Test
+  fun setAreaCrossingDateLineCallsRepositoryTwice() {
+    // When the hike repository calls the getRoutes method, return on success
+    `when`(hikesRepository.getRoutes(any(), any(), any())).thenAnswer {
+      val onSuccess = it.getArgument<(List<HikeRoute>) -> Unit>(1)
+      onSuccess(emptyList())
+    }
+
+    // Since we use UnconfinedTestDispatcher, we don't need to wait for the coroutine to finish
+    listOfHikeRoutesViewModel.setArea(BoundingBox(50.0, -170.0, 40.0, 170.0))
+
+    verify(hikesRepository, times(2)).getRoutes(any(), any(), any())
   }
 
   @Test
