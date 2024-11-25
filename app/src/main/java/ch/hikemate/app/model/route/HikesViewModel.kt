@@ -314,6 +314,9 @@ class HikesViewModel(
   /**
    * Indicates whether all details data have been computed for the provided hike.
    *
+   * Hike details are the [Hike.distance], [Hike.estimatedTime], [Hike.elevationGain] and
+   * [Hike.difficulty].
+   *
    * This is merely a helper function and does not perform any operations on the hike.
    *
    * @param hike The hike to check.
