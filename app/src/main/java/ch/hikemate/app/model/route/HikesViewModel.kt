@@ -56,7 +56,6 @@ class HikesViewModel(
     _hikeFlowsList.value = _hikeFlowsMap.values.toList()
   }
 
-  private var _selectedHikeId: String? = null
   private val _selectedHike = MutableStateFlow<Hike?>(null)
 
   /**
@@ -70,17 +69,13 @@ class HikesViewModel(
    */
   private fun updateSelectedHike() {
     // If there is no selected hike, don't bother.
-    val selectedHike = _selectedHike.value
-    if (_selectedHikeId == null || selectedHike == null) {
-      return
-    }
+    val selectedHike = _selectedHike.value ?: return
 
     // Retrieve the corresponding flow from the map.
-    val selectedHikeFlow = _hikeFlowsMap[_selectedHikeId]
+    val selectedHikeFlow = _hikeFlowsMap[selectedHike.id]
 
     if (selectedHikeFlow == null) {
       // The selected hike is not in the map, unselect it.
-      _selectedHikeId = null
       _selectedHike.value = null
     } else {
       // The selected hike is still in the map, update it.
@@ -382,7 +377,6 @@ class HikesViewModel(
           val hike = _hikeFlowsMap[hikeId] ?: return@withLock
 
           // Mark the hike as selected
-          _selectedHikeId = hikeId
           _selectedHike.value = hike.value
           successful = true
         }
@@ -398,8 +392,7 @@ class HikesViewModel(
   private suspend fun unselectHikeAsync() =
       _hikesMutex.withLock {
         // Only emit null as a value if the selected hike was not already null
-        if (_selectedHikeId != null) {
-          _selectedHikeId = null
+        if (_selectedHike.value != null) {
           _selectedHike.value = null
         }
       }
