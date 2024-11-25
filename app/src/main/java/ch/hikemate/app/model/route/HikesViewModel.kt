@@ -331,6 +331,8 @@ class HikesViewModel(
   /**
    * Computes all details attributes of a hike.
    *
+   * See [areDetailsComputedFor] to learn what the details of a hike are.
+   *
    * Requires the hike's way points and elevation to have been loaded before. If the way points or
    * the elevation are not available, [onFailure] will be called.
    *
@@ -343,6 +345,7 @@ class HikesViewModel(
    *   another request is already in progress, even though the data are not yet available. Do not
    *   use this callback to retrieve the details values, rather observe the hike in [hikeFlows] to
    *   be notified automatically when it is available.
+   * @see [areDetailsComputedFor]
    */
   fun computeDetailsFor(hikeId: String, onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}) =
       viewModelScope.launch { computeDetailsForAsync(hikeId, onSuccess, onFailure) }
