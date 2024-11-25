@@ -71,8 +71,9 @@ class HikesViewModel(
   /**
    * Whether a new list of hikes is currently being retrieved.
    *
-   * Set to true when the view model is performing an update of the whole list. For example, this
-   * can happen when calling [loadHikesInBounds] or [loadSavedHikes].
+   * Set to true when the view model is performing an update of the whole list, or of the saved
+   * hikes cache (even without updating [hikeFlows]. For example, this can happen when calling
+   * [loadHikesInBounds], [refreshSavedHikesCache] or [loadSavedHikes].
    *
    * Individual updates to particular hikes are more frequent and will not set this value to true.
    *
