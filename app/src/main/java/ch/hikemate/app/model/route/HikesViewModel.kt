@@ -415,6 +415,11 @@ class HikesViewModel(
       }
 
   /**
+   * Loads the current user's saved hikes and updates the local cache [_savedHikesMap].
+   *
+   * If needed, updates the loaded hikes in [_hikeFlowsMap] to reflect the new saved hikes, and the
+   * [_selectedHike] as well.
+   *
    * This function performs a loading operation but DOES NOT set [_loading]. If calling it from
    * another function, please set [_loading] to true before calling the function and to false once
    * the call has ended.
