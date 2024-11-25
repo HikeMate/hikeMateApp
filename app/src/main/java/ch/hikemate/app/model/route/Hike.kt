@@ -9,6 +9,9 @@ import com.google.firebase.Timestamp
  * and should only be obtained if absolutely necessary. For example [waypoints] or [elevation]. See
  * [DeferredData] for more information about how this works.
  *
+ * See [ch.hikemate.app.utils.RouteUtils] for more information about how the hike's details
+ * ([distance], [estimatedTime], [elevationGain], [difficulty]) are computed.
+ *
  * @param id The unique ID of the hike.
  * @param isSaved Whether the hike has been saved by the user.
  * @param plannedDate The date at which the user plans to go on the hike. Null if the user did not
