@@ -1037,8 +1037,7 @@ class HikesViewModel(
           val hikeFlow = _hikeFlowsMap[hikeId] ?: return@withLock
           val hike = hikeFlow.value
 
-          val updatedHike = hike.copy(elevation = DeferredData.Obtained(elevation))
-          hikeFlow.value = updatedHike
+          hikeFlow.value = hike.copy(elevation = DeferredData.Obtained(elevation))
 
           // Update the selected hike if necessary
           updateSelectedHike()
