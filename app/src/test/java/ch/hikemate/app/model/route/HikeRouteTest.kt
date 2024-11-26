@@ -70,4 +70,120 @@ class HikeRouteTest {
       }
     }
   }
+
+  @Test
+  fun test_projection_of_point_onto_horizontal_line() {
+    val start = LatLong(0.0, 0.0)
+    val end = LatLong(0.0, 10.0)
+    val point = LatLong(1.0, 5.0)
+
+    val result = point.projectPointIntoLine(start, end)
+
+    // The projected point should be at lat=0.0 (on the line) and lon=5.0 (halfway)
+    assertLatLongEquals(LatLong(0.0, 5.0), result)
+  }
+
+  @Test
+  fun test_projection_of_point_onto_vertical_line() {
+    val start = LatLong(0.0, 0.0)
+    val end = LatLong(10.0, 0.0)
+    val point = LatLong(5.0, 1.0)
+
+    val result = point.projectPointIntoLine(start, end)
+
+    // The projected point should be at lon=0.0 (on the line) and lat=5.0 (halfway)
+    assertLatLongEquals(LatLong(5.0, 0.0), result)
+  }
+
+  @Test
+  fun test_projection_beyond_start_of_line_segment_is_clamped_to_start() {
+    val start = LatLong(0.0, 0.0)
+    val end = LatLong(10.0, 10.0)
+    val point = LatLong(-5.0, -5.0)
+
+    val result = point.projectPointIntoLine(start, end)
+
+    // The point should be clamped to the start of the line
+    assertLatLongEquals(start, result)
+  }
+
+  @Test
+  fun test_projection_beyond_end_of_line_segment_is_clamped_to_end() {
+    val start = LatLong(0.0, 0.0)
+    val end = LatLong(10.0, 10.0)
+    val point = LatLong(15.0, 15.0)
+
+    val result = point.projectPointIntoLine(start, end)
+
+    // The point should be clamped to the end of the line
+    assertLatLongEquals(end, result)
+  }
+
+  @Test
+  fun test_projection_onto_zero_length_line_returns_start_point() {
+    val start = LatLong(5.0, 5.0)
+    val end = LatLong(5.0, 5.0)
+    val point = LatLong(10.0, 10.0)
+
+    val result = point.projectPointIntoLine(start, end)
+
+    // Should return the start point when line has zero length
+    assertLatLongEquals(start, result)
+  }
+
+  @Test
+  fun test_projection_accounts_for_latitude_scaling() {
+    // Test at higher latitude where longitude distances are compressed
+    val start = LatLong(60.0, 0.0)
+    val end = LatLong(60.0, 10.0)
+    val point = LatLong(61.0, 5.0)
+
+    val result = point.projectPointIntoLine(start, end)
+
+    // The projected point should be at lat=60.0 (on the line) and lon=5.0 (halfway)
+    // but the exact position should account for the latitude scaling
+    assertLatLongEquals(LatLong(60.0, 5.0), result)
+  }
+
+  @Test
+  fun test_projection_with_exact_point_on_line() {
+    val start = LatLong(0.0, 0.0)
+    val end = LatLong(10.0, 10.0)
+    val point = LatLong(5.0, 5.0)
+
+    val result = point.projectPointIntoLine(start, end)
+
+    // Point should project to itself since it's already on the line
+    assertLatLongEquals(point, result)
+  }
+
+  @Test
+  fun test_projection_near_equator() {
+    val start = LatLong(0.0, 0.0)
+    val end = LatLong(0.0, 10.0)
+    val point = LatLong(1.0, 5.0)
+
+    val result = point.projectPointIntoLine(start, end)
+
+    // Near equator, no significant latitude scaling should occur
+    assertLatLongEquals(LatLong(0.0, 5.0), result)
+  }
+
+  @Test
+  fun test_projection_near_poles() {
+    val start = LatLong(85.0, 0.0)
+    val end = LatLong(85.0, 10.0)
+    val point = LatLong(86.0, 5.0)
+
+    val result = point.projectPointIntoLine(start, end)
+
+    // Near poles, longitude differences should be heavily compressed
+    assertEquals(85.0, result.lat, 0.0001)
+    assertEquals(5.0, result.lon, 0.0001)
+  }
+
+  private fun assertLatLongEquals(expected: LatLong, actual: LatLong, delta: Double = 0.0001) {
+    assertEquals("Latitude should match", expected.lat, actual.lat, delta)
+    assertEquals("Longitude should match", expected.lon, actual.lon, delta)
+  }
 }

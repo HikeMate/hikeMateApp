@@ -105,9 +105,9 @@ data class LatLong(val lat: Double, val lon: Double) {
   }
 
   /**
-   * Projects this point onto a line segment between two geographical coordinates.
-   * Assumes routes don't wrap around the world map edges.
-   * Accounts for longitude distance scaling based on latitude.
+   * Projects this point onto a line segment between two geographical coordinates. Assumes routes
+   * don't wrap around the world map edges. Accounts for longitude distance scaling based on
+   * latitude.
    *
    * @param start Starting point of the line segment
    * @param end Ending point of the line segment
@@ -131,10 +131,9 @@ data class LatLong(val lat: Double, val lon: Double) {
     val tClamped = t.coerceIn(0.0, 1.0)
 
     return LatLong(
-      lat = start.lat + tClamped * dy,
-      lon = start.lon + tClamped * (end.lon - start.lon)
-    )
+        lat = start.lat + tClamped * dy, lon = start.lon + tClamped * (end.lon - start.lon))
   }
+
   override fun equals(other: Any?): Boolean {
     return if (other is LatLong) {
       lat == other.lat && lon == other.lon
@@ -164,30 +163,14 @@ data class HikeRoute(
     val name: String? = null,
     val description: String? = null
 ) {
-  val length: Double
-    get() = getLength()
-
-  val segments: List<RouteSegment>
-    get() = toSegments()
 
   /** Get the color of the route from its id. The color should be the same for the same route id. */
   fun getColor(): Int {
     return hikeColors[abs(id.hashCode()) % hikeColors.size]
   }
 
-  private val segmentLengths: List<Double> by lazy {
-    ways.windowed(2).map { (p1, p2) -> p1.distanceTo(p2) }
-  }
-
-  fun toSegments(): List<RouteSegment> {
-    return this.ways.zip(this.segmentLengths).windowed(2).map { (first, second) ->
-      RouteSegment(first.first, second.first, first.second)
-    }
-  }
-
-  /** Get the length of the hike */
-  private fun getLength(): Double {
-    return segmentLengths.sum()
+  val segments: List<RouteSegment> by lazy {
+    return@lazy this.ways.windowed(2).map { (p1, p2) -> RouteSegment(p1, p2, p1.distanceTo(p2)) }
   }
 }
 
@@ -198,7 +181,7 @@ data class HikeRoute(
  * @param end The end point of the segment
  * @param length
  */
-data class RouteSegment(val start: LatLong, val end: LatLong, val length: Double)
+data class RouteSegment(val start: LatLong, val end: LatLong, val length: Double) {}
 
 /**
  * Data class used for projections from a location to the hike route this gives every necessary

@@ -2,6 +2,11 @@ package ch.hikemate.app.utils
 
 import android.content.Context
 import android.location.Location
+import ch.hikemate.app.model.route.Bounds
+import ch.hikemate.app.model.route.HikeRoute
+import ch.hikemate.app.model.route.LatLong
+import ch.hikemate.app.utils.LocationUtils.projectLocationOnStart
+import ch.hikemate.app.utils.LocationUtils.projectLocationOngoing
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -20,12 +25,17 @@ import io.mockk.slot
 import io.mockk.unmockkAll
 import io.mockk.verify
 import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 
 class LocationUtilsTest {
+  private val EPSILON = 0.0001 // For double comparisons
   private lateinit var successCallbackSlot: CapturingSlot<OnSuccessListener<Location>>
   private lateinit var failureCallbackSlot: CapturingSlot<OnFailureListener>
   private lateinit var task: Task<Location>
@@ -142,6 +152,185 @@ class LocationUtilsTest {
     // Then
     verify { MapUtils.updateUserPosition(marker, mapView, location) }
     assert(result == marker)
+  }
+
+  @Test
+  fun projectLocationOnStart_withInvalidRoute_returnsNull() {
+    val emptyRoute = HikeRoute(id = "test", bounds = Bounds(0.0, 0.0, 1.0, 1.0), ways = listOf())
+
+    val location =
+        Location("test").apply {
+          latitude = 45.0
+          longitude = 7.0
+        }
+
+    val result = projectLocationOnStart(location, emptyRoute)
+    assertNull(result)
+  }
+
+  @Test
+  fun projectLocationOnStart_withSingleSegment_projectsCorrectly() {
+    val route =
+        HikeRoute(
+            id = "test",
+            bounds = Bounds(44.0, 6.0, 46.0, 8.0),
+            ways = listOf(LatLong(45.0, 7.0), LatLong(45.0, 8.0)))
+
+    every { location.longitude } returns 7.5
+    every { location.latitude } returns 45.0
+
+    val result = projectLocationOnStart(location, route)
+    assertNotNull(result)
+    assertEquals(45.0, result!!.projectedLocation.lat, EPSILON)
+    assertEquals(7.5, result.projectedLocation.lon, EPSILON)
+    assertEquals(0, result.indexToSegment)
+    assertEquals(0.0, result.progressDistance, EPSILON)
+  }
+
+  @Test
+  fun projectLocationOngoing_withinThreshold_maintainsSegment() {
+    val route =
+        HikeRoute(
+            id = "test",
+            bounds = Bounds(44.0, 6.0, 46.0, 8.0),
+            ways = listOf(LatLong(45.0, 7.0), LatLong(45.0, 8.0)))
+
+    val currentSegment = route.segments[0]
+    val lastProjection = LatLong(45.0, 7.5)
+    val newLocation = LatLong(45.1, 7.6)
+    val threshold = 1000.0
+
+    val result =
+        projectLocationOngoing(
+            location = newLocation,
+            route = route,
+            lastProjection = lastProjection,
+            currentSegment = currentSegment,
+            indexToSegment = 0,
+            progressDistance = 50.0,
+            threshold = threshold)
+
+    assertEquals(45.0, result.projectedLocation.lat, EPSILON)
+    assertEquals(7.6, result.projectedLocation.lon, EPSILON)
+    assertEquals(0, result.indexToSegment)
+    assertEquals(50.0, result.progressDistance, EPSILON)
+  }
+
+  @Test
+  fun projectLocationOngoing_movingForward_projectsToNextSegment() {
+    val route =
+        HikeRoute(
+            id = "test",
+            bounds = Bounds(44.0, 6.0, 46.0, 8.0),
+            ways = listOf(LatLong(45.0, 7.0), LatLong(45.0, 7.5), LatLong(45.0, 8.0)))
+
+    val currentSegment = route.segments[0]
+    val lastProjection = LatLong(45.0, 7.2)
+    val newLocation = LatLong(45.1, 7.7)
+    val threshold = 100.0
+
+    val result =
+        projectLocationOngoing(
+            location = newLocation,
+            route = route,
+            lastProjection = lastProjection,
+            currentSegment = currentSegment,
+            indexToSegment = 0,
+            progressDistance = 0.0,
+            threshold = threshold)
+
+    assertEquals(1, result.indexToSegment)
+    assertTrue(result.progressDistance > 0.0)
+  }
+
+  @Test
+  fun projectLocationOngoing_movingBackward_projectsToPreviousSegment() {
+    val route =
+        HikeRoute(
+            id = "test",
+            bounds = Bounds(44.0, 6.0, 46.0, 8.0),
+            ways = listOf(LatLong(45.0, 7.0), LatLong(45.0, 7.5), LatLong(45.0, 8.0)))
+
+    val currentSegment = route.segments[1]
+    val lastProjection = LatLong(45.0, 7.7)
+    val newLocation = LatLong(45.1, 7.3)
+    val threshold = 100.0
+    val initialProgress = route.segments[0].length
+
+    val result =
+        projectLocationOngoing(
+            location = newLocation,
+            route = route,
+            lastProjection = lastProjection,
+            currentSegment = currentSegment,
+            indexToSegment = 1,
+            progressDistance = initialProgress,
+            threshold = threshold)
+
+    assertEquals(0, result.indexToSegment)
+    assertTrue(result.progressDistance < initialProgress)
+  }
+
+  @Test
+  fun projectLocationOngoing_atRouteEnds_maintainsEndSegments() {
+    val route =
+        HikeRoute(
+            id = "test",
+            bounds = Bounds(44.0, 6.0, 46.0, 8.0),
+            ways = listOf(LatLong(45.0, 7.0), LatLong(45.0, 7.5)))
+
+    // Test at start
+    val startResult =
+        projectLocationOngoing(
+            location = LatLong(45.0, 6.8),
+            route = route,
+            lastProjection = LatLong(45.0, 7.0),
+            currentSegment = route.segments[0],
+            indexToSegment = 0,
+            progressDistance = 0.0,
+            threshold = 100.0)
+    assertEquals(0, startResult.indexToSegment)
+    assertEquals(0.0, startResult.progressDistance, EPSILON)
+
+    // Test at end
+    val endResult =
+        projectLocationOngoing(
+            location = LatLong(45.0, 7.7),
+            route = route,
+            lastProjection = LatLong(45.0, 7.5),
+            currentSegment = route.segments[route.segments.lastIndex],
+            indexToSegment = route.segments.lastIndex,
+            progressDistance = route.segments[0].length,
+            threshold = 100.0)
+    assertEquals(route.segments.lastIndex, endResult.indexToSegment)
+  }
+
+  @Test
+  fun projectLocationOngoing_compareProjections_returnsClosestProjection() {
+    val route =
+        HikeRoute(
+            id = "test",
+            bounds = Bounds(44.0, 6.0, 46.0, 8.0),
+            ways = listOf(LatLong(45.0, 7.0), LatLong(45.0, 7.5), LatLong(45.0, 8.0)))
+
+    val currentSegment = route.segments[1]
+    val lastProjection = LatLong(45.0, 7.5)
+    val newLocation = LatLong(45.2, 7.5)
+
+    val result =
+        projectLocationOngoing(
+            location = newLocation,
+            route = route,
+            lastProjection = lastProjection,
+            currentSegment = currentSegment,
+            indexToSegment = 1,
+            progressDistance = route.segments[0].length,
+            threshold = 5.0)
+
+    // Should choose the projection with smallest distanceFromRoute
+    assertTrue(
+        result.distanceFromRoute ==
+            minOf(result.distanceFromRoute, newLocation.distanceTo(result.projectedLocation)))
   }
 
   @After

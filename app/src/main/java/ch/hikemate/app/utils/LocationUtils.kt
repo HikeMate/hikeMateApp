@@ -281,105 +281,103 @@ object LocationUtils {
     }
   }
 
-    /**
-     * Projects a location onto a hiking route during ongoing tracking by recursively checking nearby segments.
-     *
-     * The algorithm works as follows:
-     * 1. Projects the current location onto the current segment and checks if it's within the threshold distance.
-     *    If so, updates the projection while staying on the same segment.
-     *
-     * 2. If beyond threshold, determines movement direction by comparing distances:
-     *    - Forward movement: New point is further from segment start AND closer to segment end
-     *    - Backward movement: New point is closer to segment start AND further from segment end
-     *
-     * 3. For forward movement:
-     *    - If not at last segment, recursively checks the next segment
-     *    - Compares distances and keeps the closer projection (current or next segment)
-     *
-     * 4. For backward movement:
-     *    - If not at first segment, recursively checks the previous segment
-     *    - Compares distances and keeps the closer projection (current or previous segment)
-     *
-     * 5. If no better projection is found, maintains the previous projection
-     *
-     * @param location Current location to project onto the route
-     * @param route The hiking route containing all segments
-     * @param previousProjection The last known projection result
-     * @param threshold Maximum allowed distance (in meters) between location and projected point
-     * @return Updated RouteProjectionResponse containing the best projection found
-     */
-    fun projectLocationOngoing(
+  /**
+   * Projects a location onto a hiking route during ongoing tracking by recursively checking nearby
+   * segments.
+   *
+   * The algorithm works as follows:
+   * 1. Projects the current location onto the current segment and checks if it's within the
+   *    threshold distance. If so, updates the projection while staying on the same segment.
+   * 2. If beyond threshold, determines movement direction by comparing distances:
+   *     - Forward movement: New point is further from segment start AND closer to segment end
+   *     - Backward movement: New point is closer to segment start AND further from segment end
+   * 3. For forward movement:
+   *     - Recursively checks the next segment
+   *     - Compares distances and keeps the closer projection (current or next segment)
+   * 4. For backward movement:
+   *     - Recursively checks the previous segment
+   *     - Compares distances and keeps the closer projection (current or previous segment)
+   * 5. If no better projection is found, maintains the current projection
+   *
+   * @param location Current location to project onto the route
+   * @param route The hiking route containing all segments
+   * @param lastProjection The last known projection result
+   * @param threshold Maximum allowed distance (in meters) between location and projected point
+   * @return Updated RouteProjectionResponse containing the best projection found
+   */
+  fun projectLocationOngoing(
       location: LatLong,
       route: HikeRoute,
-      previousProjection: RouteProjectionResponse,
+      lastProjection: LatLong,
+      currentSegment: RouteSegment,
+      indexToSegment: Int,
+      progressDistance: Double,
       threshold: Double
   ): RouteProjectionResponse {
-    val currentSegment = previousProjection.segment
+
     val projected = projectPointOntoSegment(location, currentSegment)
     val distanceToProjected = location.distanceTo(projected)
 
-    // If within threshold of current segment, update progress on same segment
-    if (distanceToProjected < threshold) {
+    val currentProjection =
+        RouteProjectionResponse(
+            projectedLocation = projected,
+            segment = currentSegment,
+            progressDistance = progressDistance,
+            distanceFromRoute = distanceToProjected,
+            indexToSegment = indexToSegment)
 
-      return previousProjection.copy(
-          projectedLocation = projected,
-          progressDistance = previousProjection.progressDistance,
-          distanceFromRoute = distanceToProjected)
-    }
+    // If within threshold of current segment, update progress on same segment
+    if (distanceToProjected < threshold) return currentProjection
 
     // Check if moving forward along route
     if (projected.distanceTo(currentSegment.start) >=
-        previousProjection.projectedLocation.distanceTo(currentSegment.start) &&
-        projected.distanceTo(currentSegment.end)<=previousProjection.projectedLocation.distanceTo(currentSegment.end)) {
-
-      // Don't go past end of route
-      if (previousProjection.indexToSegment >= route.segments.lastIndex) {
-        return previousProjection
-      }
-
-      // Try next segment
-      val nextSegmentProjection =
-          previousProjection.copy(
-              progressDistance = previousProjection.progressDistance + currentSegment.length,
-              segment = route.segments[previousProjection.indexToSegment + 1],
-              indexToSegment = previousProjection.indexToSegment + 1)
-
-      val nextProjection = projectLocationOngoing(location, route, nextSegmentProjection, threshold)
+        lastProjection.distanceTo(currentSegment.start) &&
+        projected.distanceTo(currentSegment.end) <= lastProjection.distanceTo(currentSegment.end)) {
+      if (indexToSegment == route.segments.lastIndex) return currentProjection
+      val nextProjection =
+          projectLocationOngoing(
+              location,
+              route,
+              currentSegment.end,
+              route.segments[indexToSegment + 1],
+              indexToSegment + 1,
+              progressDistance + currentSegment.length,
+              threshold)
 
       // Keep whichever projection is closer
-      return if (nextProjection.distanceFromRoute < previousProjection.distanceFromRoute) {
+      return if (nextProjection.distanceFromRoute < currentProjection.distanceFromRoute) {
         nextProjection
       } else {
-        previousProjection
+        currentProjection
       }
     }
-      // Check if user moving backwards along route
-      else if (projected.distanceTo(currentSegment.start) <=
-          previousProjection.projectedLocation.distanceTo(currentSegment.start) &&
-          projected.distanceTo(currentSegment.end)>=previousProjection.projectedLocation.distanceTo(currentSegment.end)) {
 
-        // Check if moving backward along route
-        if (previousProjection.indexToSegment > 0) {
-            val prevSegmentProjection =
-                previousProjection.copy(
-                    progressDistance = previousProjection.progressDistance - currentSegment.length,
-                    segment = route.segments[previousProjection.indexToSegment - 1],
-                    indexToSegment = previousProjection.indexToSegment - 1
-                )
+    // Check if user moving backwards along route
+    else if (projected.distanceTo(currentSegment.start) <=
+        lastProjection.distanceTo(currentSegment.start) &&
+        projected.distanceTo(currentSegment.end) >= lastProjection.distanceTo(currentSegment.end)) {
 
-            val prevProjection =
-                projectLocationOngoing(location, route, prevSegmentProjection, threshold)
+      if (indexToSegment == 0) return currentProjection
 
-            // Keep whichever projection is closer
-            return if (prevProjection.distanceFromRoute < previousProjection.distanceFromRoute) {
-                prevProjection
-            } else {
-                previousProjection
-            }
-        }
+      val nextProjection =
+          projectLocationOngoing(
+              location,
+              route,
+              currentSegment.start,
+              route.segments[indexToSegment - 1],
+              indexToSegment - 1,
+              progressDistance - currentSegment.length,
+              threshold)
+
+      // Keep whichever projection is closer
+      return if (nextProjection.distanceFromRoute < currentProjection.distanceFromRoute) {
+        nextProjection
+      } else {
+        currentProjection
+      }
     }
 
-    return previousProjection
+    return currentProjection
   }
 
   /** Projects a point onto a route segment. */
