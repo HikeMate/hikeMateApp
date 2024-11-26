@@ -11,7 +11,13 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.platform.app.InstrumentationRegistry
 import ch.hikemate.app.R
+import ch.hikemate.app.model.authentication.AuthRepository
+import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.model.elevation.ElevationService
+import ch.hikemate.app.model.profile.HikingLevel
+import ch.hikemate.app.model.profile.Profile
+import ch.hikemate.app.model.profile.ProfileRepository
+import ch.hikemate.app.model.profile.ProfileViewModel
 import ch.hikemate.app.model.route.Bounds
 import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.HikeRoutesRepository
@@ -22,6 +28,7 @@ import ch.hikemate.app.ui.navigation.TEST_TAG_BOTTOM_BAR
 import ch.hikemate.app.utils.LocationUtils
 import ch.hikemate.app.utils.MapUtils
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.firebase.Timestamp
 import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
 import io.mockk.every
 import io.mockk.mockkObject
@@ -34,6 +41,7 @@ import org.junit.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.osmdroid.util.BoundingBox
@@ -43,8 +51,20 @@ class MapScreenTest : TestCase() {
   private lateinit var elevationService: ElevationService
   private lateinit var listOfHikeRoutesViewModel: ListOfHikeRoutesViewModel
   private lateinit var navigationActions: NavigationActions
+  private lateinit var authRepository: AuthRepository
+  private lateinit var authViewModel: AuthViewModel
+  private lateinit var profileRepository: ProfileRepository
+  private lateinit var profileViewModel: ProfileViewModel
 
   @get:Rule val composeTestRule = createComposeRule()
+
+  private val profile =
+      Profile(
+          id = "1",
+          name = "John Doe",
+          email = "john-doe@gmail.com",
+          hikingLevel = HikingLevel.INTERMEDIATE,
+          joinedDate = Timestamp.now())
 
   private fun setUpMap(
       mapMinZoomLevel: Double = MapScreen.MAP_MIN_ZOOM,
@@ -54,8 +74,11 @@ class MapScreenTest : TestCase() {
       MapScreen(
           hikingRoutesViewModel = listOfHikeRoutesViewModel,
           navigationActions = navigationActions,
-          mapMinZoomLevel = mapMinZoomLevel,
-          mapInitialZoomLevel = mapInitialZoomLevel)
+          authViewModel = authViewModel,
+          profileViewModel = profileViewModel,
+          mapInitialValues =
+              MapInitialValues(
+                  mapMinZoomLevel = mapMinZoomLevel, mapInitialZoomLevel = mapInitialZoomLevel))
     }
   }
 
@@ -72,8 +95,18 @@ class MapScreenTest : TestCase() {
     navigationActions = mock(NavigationActions::class.java)
     hikesRepository = mock(HikeRoutesRepository::class.java)
     elevationService = mock(ElevationService::class.java)
+    profileRepository = mock(ProfileRepository::class.java)
+    profileViewModel = ProfileViewModel(profileRepository)
+    authRepository = mock(AuthRepository::class.java)
+    authViewModel = AuthViewModel(authRepository, profileRepository)
     listOfHikeRoutesViewModel =
         ListOfHikeRoutesViewModel(hikesRepository, elevationService, UnconfinedTestDispatcher())
+
+    `when`(profileRepository.getProfileById(eq(profile.id), any(), any())).thenAnswer {
+      val onSuccess = it.getArgument<(Profile) -> Unit>(1)
+      onSuccess(profile)
+    }
+    profileViewModel.getProfileById(profile.id)
   }
 
   @Test

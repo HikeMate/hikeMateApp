@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import ch.hikemate.app.model.elevation.ElevationService
+import ch.hikemate.app.model.extensions.toBounds
 import ch.hikemate.app.model.route.saved.SavedHike
 import ch.hikemate.app.model.route.saved.SavedHikesRepository
 import ch.hikemate.app.utils.RouteUtils
