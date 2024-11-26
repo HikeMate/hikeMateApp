@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -16,8 +18,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
 import ch.hikemate.app.R
 import ch.hikemate.app.model.profile.ProfileViewModel
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
@@ -30,10 +34,13 @@ import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.utils.MapUtils
+import org.osmdroid.util.GeoPoint
 import kotlin.math.max
 import kotlin.math.min
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Marker
+
 
 @Composable
 fun RunHikeScreen(
@@ -57,7 +64,6 @@ fun RunHikeScreen(
       controller.setCenter(MapUtils.getGeographicalCenter(route.bounds))
       // Limit the zoom to avoid the user zooming out or out too much
       minZoomLevel = routeZoomLevel
-      maxZoomLevel = MAP_MAX_ZOOM
       // Avoid repeating the map when the user reaches the edge or zooms out
       // We keep the horizontal repetition enabled to allow the user to scroll the map
       // horizontally without limits (from Asia to America, for example)
@@ -85,6 +91,22 @@ fun RunHikeScreen(
           HikeDetailScreen.MAP_BOUNDS_MARGIN)
     }
   }
+
+  val marker = Marker(mapView).apply {
+    position = GeoPoint(46.57876571785863, 6.551381450987971)
+    setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+    this.title = title
+    icon?.let { this.icon = ContextCompat.getDrawable(context, R.drawable.my_location) }
+
+    setOnMarkerClickListener { marker, mapView ->
+      marker.showInfoWindow()
+      true
+    }
+  }
+
+  mapView.overlays.add(marker)
+  mapView.invalidate()
+
 
   val hikeLineColor = route.getColor()
   MapUtils.showHikeOnMap(mapView = mapView, hike = route, color = hikeLineColor, onLineClick = {})
