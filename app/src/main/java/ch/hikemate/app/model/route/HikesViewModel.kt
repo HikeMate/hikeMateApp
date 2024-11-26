@@ -840,8 +840,10 @@ class HikesViewModel(
                     } else {
                       // The hike is already in the map, update it
                       val existingHike = existingFlow.value
-                      // Assume bounds and waypoints don't change for a hike. If they are already
-                      // loaded, don't update them
+                      // Assume a user session won't last long enough for a hike to change its
+                      // bounds and/or waypoints. If they are already loaded, don't update them.
+                      // OSM might update bounds and waypoints, but we decided it is sufficient to
+                      // have the new values loaded the next time the user opens the app.
                       if (existingHike.bounds !is DeferredData.Obtained ||
                           existingHike.waypoints !is DeferredData.Obtained) {
                         val newHike =
