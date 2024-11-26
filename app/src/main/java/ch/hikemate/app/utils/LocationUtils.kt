@@ -280,7 +280,15 @@ object LocationUtils {
         indexToSegment = closestSegmentIndex)
   }
 
-  /** Function to call the main function with the correct attributes. */
+  /**
+   * Wrapping function to call the projectLocationOnGoingHelper with the correct attributes.
+   *
+   * @param location
+   * @param route
+   * @param lastProjectionResponse
+   * @param threshold
+   * @return the RouteProjectionResponse containing the best projection found
+   */
   fun projectLocationOngoing(
       location: LatLong,
       route: HikeRoute,

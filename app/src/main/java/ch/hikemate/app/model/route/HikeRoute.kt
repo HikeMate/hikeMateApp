@@ -189,8 +189,8 @@ data class RouteSegment(val start: LatLong, val end: LatLong, val length: Double
  * information for the UI to handle the projection.
  *
  * @param projectedLocation the projected point in the route
- * @param progressDistance the distance up to the nearest start point of a RouteSegment.
- * @param distanceFromRoute the distance from the Location to the projectedLocation
+ * @param progressDistance the total distance traveled up to the projectedLocation
+ * @param distanceFromRoute the distance from the location to the projectedLocation
  * @param segment the RouteSegment the Location is projected in
  * @param indexToSegment the index of the segment in the list of segments
  */
