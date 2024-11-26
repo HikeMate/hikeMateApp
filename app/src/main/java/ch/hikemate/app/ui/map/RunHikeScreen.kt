@@ -46,12 +46,13 @@ fun RunHikeScreen(
   val context = LocalContext.current
 
   val route = listOfHikeRoutesViewModel.selectedHikeRoute.collectAsState().value!!
+
+  // This will need to be changed when the "run" feature of this screen is implemented
   val routeZoomLevel = MapUtils.calculateBestZoomLevel(route.bounds).toDouble()
 
   // Avoid re-creating the MapView on every recomposition
   val mapView = remember {
     MapView(context).apply {
-      // Set map's initial state
       controller.setZoom(routeZoomLevel)
       controller.setCenter(MapUtils.getGeographicalCenter(route.bounds))
       // Limit the zoom to avoid the user zooming out or out too much
@@ -131,5 +132,6 @@ fun RunHikeBottomSheet() {
   BottomSheetScaffold(
       scaffoldState = scaffoldState,
       sheetContainerColor = MaterialTheme.colorScheme.surface,
+      sheetPeekHeight = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT,
       sheetContent = { Text("Empty Bottom Sheet") }) {}
 }

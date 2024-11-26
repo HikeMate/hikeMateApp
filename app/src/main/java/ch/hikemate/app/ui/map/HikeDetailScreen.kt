@@ -232,7 +232,8 @@ fun HikeDetailScreen(
                   .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
 
       // Hike Details bottom sheet
-      HikeDetails(detailedRoute, savedHikesViewModel, elevationData, profile.hikingLevel)
+      HikeDetails(
+          detailedRoute, savedHikesViewModel, elevationData, profile.hikingLevel, navigationActions)
     }
   }
 }
@@ -243,7 +244,8 @@ fun HikeDetails(
     detailedRoute: DetailedHikeRoute,
     savedHikesViewModel: SavedHikesViewModel,
     elevationData: List<Double>,
-    userHikingLevel: HikingLevel
+    userHikingLevel: HikingLevel,
+    navigationActions: NavigationActions
 ) {
   val hikeDetailState = savedHikesViewModel.hikeDetailState.collectAsState(null).value
 
@@ -339,6 +341,12 @@ fun HikeDetails(
                           LocalContext.current, detailedRoute.difficulty.colorResourceId)),
           )
           DateDetailRow(isSaved, plannedDate, updatePlannedDate)
+
+          Button(
+              onClick = { navigationActions.navigateTo(Screen.RUN_HIKE) },
+              modifier = Modifier.padding(top = 16.dp)) {
+                Text(text = "Test")
+              }
         }
       },
       sheetPeekHeight = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT) {}
