@@ -37,6 +37,8 @@ abstract class OverpassRepository {
   ) {
     val requestBuilder = Request.Builder().url("$OVERPASS_API_URL?data=$requestData").get()
 
+    setRequestHeaders(requestBuilder)
+
     client.newCall(requestBuilder.build()).enqueue(callback)
   }
 }
