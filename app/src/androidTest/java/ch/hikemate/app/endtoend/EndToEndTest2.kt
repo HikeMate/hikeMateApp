@@ -2,6 +2,7 @@ package ch.hikemate.app.endtoend
 
 import android.content.Context
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -109,7 +110,11 @@ class EndToEndTest2 {
     composeTestRule
         .onNodeWithTag(CreateAccountScreen.TEST_TAG_CONFIRM_PASSWORD_INPUT)
         .performTextInput(password)
-    composeTestRule.onNodeWithTag(CreateAccountScreen.TEST_TAG_SIGN_UP_BUTTON).performClick()
+    composeTestRule
+        .onNodeWithTag(CreateAccountScreen.TEST_TAG_SIGN_UP_BUTTON)
+        .assertHasClickAction()
+        .assertIsDisplayed()
+        .performClick()
 
     composeTestRule.waitForIdle()
 

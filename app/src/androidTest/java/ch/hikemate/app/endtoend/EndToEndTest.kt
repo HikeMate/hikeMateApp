@@ -106,7 +106,11 @@ class EndToEndTest : TestCase() {
     composeTestRule
         .onNodeWithTag(CreateAccountScreen.TEST_TAG_CONFIRM_PASSWORD_INPUT)
         .performTextInput(password)
-    composeTestRule.onNodeWithTag(CreateAccountScreen.TEST_TAG_SIGN_UP_BUTTON).performClick()
+    composeTestRule
+        .onNodeWithTag(CreateAccountScreen.TEST_TAG_SIGN_UP_BUTTON)
+        .assertHasClickAction()
+        .assertIsDisplayed()
+        .performClick()
 
     composeTestRule.waitForIdle()
 
