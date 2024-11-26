@@ -17,7 +17,7 @@ import ch.hikemate.app.ui.auth.CreateAccountScreen
 import ch.hikemate.app.ui.auth.SignInScreen
 import ch.hikemate.app.ui.auth.SignInWithEmailScreen
 import ch.hikemate.app.ui.components.CenteredLoadingAnimation
-import ch.hikemate.app.ui.map.MapScreen.TEST_TAG_MAP
+import ch.hikemate.app.ui.map.MapScreen
 import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.navigation.Screen.PROFILE
@@ -109,10 +109,11 @@ class EndToEndTest : TestCase() {
     composeTestRule.onNodeWithTag(CreateAccountScreen.TEST_TAG_SIGN_UP_BUTTON).performClick()
 
     // Wait for the map to load
-    composeTestRule.waitUntilExactlyOneExists(hasTestTag(TEST_TAG_MAP), timeoutMillis = 10000)
+    composeTestRule.waitUntilExactlyOneExists(
+        hasTestTag(MapScreen.TEST_TAG_MAP), timeoutMillis = 10000)
 
     // Check that we are on the map
-    composeTestRule.onNodeWithTag(TEST_TAG_MAP).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_MAP).assertIsDisplayed()
 
     // Check that the menu is displayed
     composeTestRule.onNodeWithTag(TEST_TAG_BOTTOM_BAR).assertIsDisplayed()
@@ -132,7 +133,7 @@ class EndToEndTest : TestCase() {
     composeTestRule
         .onNodeWithTag(TEST_TAG_MENU_ITEM_PREFIX + TopLevelDestinations.SAVED_HIKES.route)
         .performClick()
-    composeTestRule.onNodeWithTag(TEST_TAG_MAP).assertIsNotDisplayed()
+    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_MAP).assertIsNotDisplayed()
     composeTestRule
         .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_SECTION_CONTAINER)
         .assertIsDisplayed()
@@ -141,7 +142,7 @@ class EndToEndTest : TestCase() {
     composeTestRule
         .onNodeWithTag(TEST_TAG_MENU_ITEM_PREFIX + TopLevelDestinations.MAP.route)
         .performClick()
-    composeTestRule.onNodeWithTag(TEST_TAG_MAP).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_MAP).assertIsDisplayed()
     composeTestRule
         .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_SECTION_CONTAINER)
         .assertIsNotDisplayed()
@@ -150,7 +151,7 @@ class EndToEndTest : TestCase() {
     composeTestRule
         .onNodeWithTag(TEST_TAG_MENU_ITEM_PREFIX + TopLevelDestinations.PROFILE.route)
         .performClick()
-    composeTestRule.onNodeWithTag(TEST_TAG_MAP).assertIsNotDisplayed()
+    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_MAP).assertIsNotDisplayed()
 
     composeTestRule.waitUntilDoesNotExist(
         hasTestTag(CenteredLoadingAnimation.TEST_TAG_CENTERED_LOADING_ANIMATION),
@@ -162,6 +163,6 @@ class EndToEndTest : TestCase() {
     composeTestRule
         .onNodeWithTag(TEST_TAG_MENU_ITEM_PREFIX + TopLevelDestinations.MAP.route)
         .performClick()
-    composeTestRule.onNodeWithTag(TEST_TAG_MAP).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_MAP).assertIsDisplayed()
   }
 }
