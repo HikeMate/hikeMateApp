@@ -436,7 +436,9 @@ fun DateDetailRow(
             modifier = Modifier.testTag(TEST_TAG_DETAIL_ROW_TAG))
         Box(
             modifier =
-                Modifier.border(BorderStroke(1.dp, Color.Black), shape = RoundedCornerShape(4.dp))
+                Modifier.border(
+                        BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                        shape = RoundedCornerShape(4.dp))
                     .padding(horizontal = 8.dp, vertical = 4.dp)) {
               Text(
                   text = plannedDate.toFormattedString(),
