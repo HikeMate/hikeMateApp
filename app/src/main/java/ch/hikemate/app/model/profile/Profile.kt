@@ -1,5 +1,6 @@
 package ch.hikemate.app.model.profile
 
+import android.content.Context
 import ch.hikemate.app.R
 import com.google.firebase.Timestamp
 
@@ -9,11 +10,11 @@ enum class HikingLevel {
   INTERMEDIATE,
   EXPERT;
 
-  fun getDisplayNameId(): Int {
+  fun getDisplayString(context: Context): String {
     return when (this) {
-      BEGINNER -> R.string.hiking_level_beginner
-      INTERMEDIATE -> R.string.hiking_level_intermediate
-      EXPERT -> R.string.hiking_level_expert
+      BEGINNER -> context.getString(R.string.hiking_level_beginner)
+      INTERMEDIATE -> context.getString(R.string.hiking_level_intermediate)
+      EXPERT -> context.getString(R.string.hiking_level_expert)
     }
   }
 }

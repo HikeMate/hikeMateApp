@@ -160,7 +160,7 @@ fun EditProfileScreen(
                     onClick = { hikingLevel = index },
                     selected = hikingLevel == index,
                 ) {
-                  Text(context.getString(fitLevel.getDisplayNameId()))
+                  Text(fitLevel.getDisplayString(context))
                 }
               }
             }
