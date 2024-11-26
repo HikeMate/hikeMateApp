@@ -303,7 +303,7 @@ class HikesViewModelTest {
    * implementation.
    */
   @Test
-  fun refreshSavedHikesCacheSucceedsWhenSavedHikesWereLoadedButNotAnymore() =
+  fun `refreshSavedHikesCache remembers where hikes are loaded from`() =
       runTest(dispatcher) {
         // Load a first version of the saved hikes (to mark the saved hikes as currently loaded)
         loadSavedHikes(singleSavedHike1)
