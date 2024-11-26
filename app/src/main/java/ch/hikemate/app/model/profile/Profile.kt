@@ -10,6 +10,11 @@ enum class HikingLevel {
   INTERMEDIATE,
   EXPERT;
 
+  /**
+   * Returns the display string of the hiking level.
+   *
+   * @param context The context to get the string from.
+   */
   fun getDisplayString(context: Context): String {
     return when (this) {
       BEGINNER -> context.getString(R.string.hiking_level_beginner)
