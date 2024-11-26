@@ -10,6 +10,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -18,39 +19,68 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.ContextCompat
 import ch.hikemate.app.R
 import ch.hikemate.app.model.profile.ProfileViewModel
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
-import ch.hikemate.app.model.route.saved.SavedHikesViewModel
 import ch.hikemate.app.ui.components.AsyncStateHandler
 import ch.hikemate.app.ui.components.BackButton
-import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_MAP
+import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_RUN_HIKE_SCREEN_BACK_BUTTON
+import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_RUN_HIKE_SCREEN_BOTTOM_SHEET
+import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_RUN_HIKE_SCREEN_MAP
+import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_RUN_HIKE_SCREEN_ZOOM_BUTTONS
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.utils.MapUtils
 import kotlin.math.max
 import kotlin.math.min
-import org.osmdroid.util.GeoPoint
+import org.osmdroid.config.Configuration
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
-import org.osmdroid.views.overlay.Marker
+
+object RunHikeScreen {
+  const val TEST_TAG_RUN_HIKE_SCREEN_MAP = "runHikeScreenMap"
+  const val TEST_TAG_RUN_HIKE_SCREEN_BACK_BUTTON = "runHikeScreenBackButton"
+  const val TEST_TAG_RUN_HIKE_SCREEN_ZOOM_BUTTONS = "runHikeScreenZoomInButton"
+  const val TEST_TAG_RUN_HIKE_SCREEN_BOTTOM_SHEET = "runHikeScreenBottomSheet"
+}
 
 @Composable
 fun RunHikeScreen(
     listOfHikeRoutesViewModel: ListOfHikeRoutesViewModel,
-    savedHikesViewModel: SavedHikesViewModel,
     profileViewModel: ProfileViewModel,
-    navigationActions: NavigationActions
+    navigationActions: NavigationActions,
 ) {
 
   val context = LocalContext.current
+
+  LaunchedEffect(listOfHikeRoutesViewModel.selectedHikeRoute.collectAsState().value) {
+    if (listOfHikeRoutesViewModel.selectedHikeRoute.value == null) {
+      navigationActions.goBack()
+    }
+  }
 
   val route = listOfHikeRoutesViewModel.selectedHikeRoute.collectAsState().value!!
 
   // This will need to be changed when the "run" feature of this screen is implemented
   val routeZoomLevel = MapUtils.calculateBestZoomLevel(route.bounds).toDouble()
+
+  // Only do the configuration on the first composition, not on every recomposition
+  LaunchedEffect(Unit) {
+    Configuration.getInstance().apply {
+      // Set user-agent to avoid rejected requests
+      userAgentValue = context.packageName
+
+      // Allow for faster loading of tiles. Default OSMDroid value is 2.
+      tileDownloadThreads = 4
+
+      // Maximum number of tiles that can be downloaded at once. Default is 40.
+      tileDownloadMaxQueueSize = 40
+
+      // Maximum number of bytes that can be used by the tile file system cache. Default is 600MB.
+      tileFileSystemCacheMaxBytes = 600L * 1024L * 1024L
+    }
+  }
 
   // Avoid re-creating the MapView on every recomposition
   val mapView = remember {
@@ -87,22 +117,6 @@ fun RunHikeScreen(
     }
   }
 
-  val marker =
-      Marker(mapView).apply {
-        position = GeoPoint(46.57876571785863, 6.551381450987971)
-        setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-        this.title = title
-        icon?.let { this.icon = ContextCompat.getDrawable(context, R.drawable.my_location) }
-
-        setOnMarkerClickListener { marker, mapView ->
-          marker.showInfoWindow()
-          true
-        }
-      }
-
-  mapView.overlays.add(marker)
-  mapView.invalidate()
-
   val hikeLineColor = route.getColor()
   MapUtils.showHikeOnMap(mapView = mapView, hike = route, color = hikeLineColor, onLineClick = {})
 
@@ -114,7 +128,7 @@ fun RunHikeScreen(
       actionContentDescriptionStringId = R.string.go_back,
       actionOnErrorAction = { navigationActions.navigateTo(Route.MAP) },
       valueState = profileState,
-  ) { profile ->
+  ) { _ ->
     Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {
       // Map
       AndroidView(
@@ -122,19 +136,22 @@ fun RunHikeScreen(
           modifier =
               Modifier.fillMaxWidth()
                   .padding(bottom = 300.dp) // Reserve space for the scaffold at the bottom
-                  .testTag(TEST_TAG_MAP))
+                  .testTag(TEST_TAG_RUN_HIKE_SCREEN_MAP))
       // Back Button at the top of the screen
       BackButton(
           navigationActions = navigationActions,
-          modifier = Modifier.padding(top = 40.dp, start = 16.dp, end = 16.dp),
-          onClick = { listOfHikeRoutesViewModel.clearSelectedRoute() })
+          modifier =
+              Modifier.padding(top = 40.dp, start = 16.dp, end = 16.dp)
+                  .testTag(TEST_TAG_RUN_HIKE_SCREEN_BACK_BUTTON),
+          onClick = { navigationActions.goBack() })
       // Zoom buttons at the bottom right of the screen
       ZoomMapButton(
           onZoomIn = { mapView.controller.zoomIn() },
           onZoomOut = { mapView.controller.zoomOut() },
           modifier =
               Modifier.align(Alignment.BottomEnd)
-                  .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
+                  .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
+                  .testTag(TEST_TAG_RUN_HIKE_SCREEN_ZOOM_BUTTONS))
 
       RunHikeBottomSheet()
     }
@@ -150,5 +167,6 @@ fun RunHikeBottomSheet() {
       scaffoldState = scaffoldState,
       sheetContainerColor = MaterialTheme.colorScheme.surface,
       sheetPeekHeight = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT,
+      modifier = Modifier.testTag(TEST_TAG_RUN_HIKE_SCREEN_BOTTOM_SHEET),
       sheetContent = { Text("Empty Bottom Sheet") }) {}
 }

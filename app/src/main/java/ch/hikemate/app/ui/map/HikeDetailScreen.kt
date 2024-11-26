@@ -191,6 +191,7 @@ fun HikeDetailScreen(
   // Show the selected hike on the map
   // OnLineClick does nothing, the line should not be clickable
   val hikeLineColor = route.getColor()
+  Log.d("HikeDetailScreen", "Drawing hike on map: ${route.bounds}")
   MapUtils.showHikeOnMap(mapView = mapView, hike = route, color = hikeLineColor, onLineClick = {})
 
   LaunchedEffect(Unit) {
@@ -232,8 +233,7 @@ fun HikeDetailScreen(
                   .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
 
       // Hike Details bottom sheet
-      HikeDetails(
-          detailedRoute, savedHikesViewModel, elevationData, profile.hikingLevel, navigationActions)
+      HikeDetails(detailedRoute, savedHikesViewModel, elevationData, profile.hikingLevel)
     }
   }
 }
@@ -245,7 +245,6 @@ fun HikeDetails(
     savedHikesViewModel: SavedHikesViewModel,
     elevationData: List<Double>,
     userHikingLevel: HikingLevel,
-    navigationActions: NavigationActions
 ) {
   val hikeDetailState = savedHikesViewModel.hikeDetailState.collectAsState(null).value
 
@@ -342,11 +341,11 @@ fun HikeDetails(
           )
           DateDetailRow(isSaved, plannedDate, updatePlannedDate)
 
-          Button(
-              onClick = { navigationActions.navigateTo(Screen.RUN_HIKE) },
-              modifier = Modifier.padding(top = 16.dp)) {
-                Text(text = "Test")
-              }
+          /*Button(
+          onClick = { navigationActions.navigateTo(Screen.RUN_HIKE) },
+          modifier = Modifier.padding(top = 16.dp)) {
+            Text(text = "Test")
+          }*/
         }
       },
       sheetPeekHeight = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT) {}
