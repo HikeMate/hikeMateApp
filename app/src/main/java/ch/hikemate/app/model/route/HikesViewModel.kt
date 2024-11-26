@@ -637,8 +637,7 @@ class HikesViewModel(
     _savedHikesMap[hikeId] = savedHike
 
     // Update the hike's state flow
-    val newHikeState = hikeFlow.value.copy(isSaved = true)
-    hikeFlow.value = newHikeState
+    hikeFlow.value = hikeFlow.value.copy(isSaved = true)
 
     // Update the selected hike if necessary
     updateSelectedHike()
@@ -687,8 +686,7 @@ class HikesViewModel(
             updateHikeFlowsList()
           } else {
             // The hike can stay even if it is not saved, so update it
-            val newHikeState = hikeFlow.value.copy(isSaved = false, plannedDate = null)
-            hikeFlow.value = newHikeState
+            hikeFlow.value = hikeFlow.value.copy(isSaved = false, plannedDate = null)
           }
 
           // Update the selected hike if necessary
