@@ -887,6 +887,14 @@ class HikesViewModel(
             onFailure = { exception -> continuation.resumeWithException(exception) })
       }
 
+  /**
+   * Helper function to determine whether a hike has all its OSM data loaded.
+   *
+   * OSM data includes [Hike.description], [Hike.bounds] and [Hike.waypoints].
+   *
+   * @param hike The hike to check.
+   * @return True if the hike has all its OSM data loaded, false otherwise.
+   */
   private fun hasOsmData(hike: Hike): Boolean =
       hike.description is DeferredData.Obtained &&
           hike.bounds is DeferredData.Obtained &&
