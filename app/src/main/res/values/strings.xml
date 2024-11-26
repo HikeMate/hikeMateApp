@@ -63,6 +63,10 @@
     <string name="hike_detail_screen_value_planned">Planned</string>
     <string name="hike_detail_screen_add_a_date_button_text">Add a date</string>
 
+    <!-- Hike Details Screen - Date Picker -->
+    <string name="hike_detail_screen_date_picker_cancel_button">Cancel</string>
+    <string name="hike_detail_screen_date_picker_confirm_button">Plan my hike!</string>
+
     <!-- Hike Difficulty Levels -->
     <string name="hike_difficulty_easy">Easy</string>
     <string name="hike_difficulty_moderate">Moderate</string>

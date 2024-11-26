@@ -1,7 +1,6 @@
 package ch.hikemate.app.ui.map
 
 import android.annotation.SuppressLint
-import android.app.DatePickerDialog
 import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -23,14 +22,18 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -70,10 +73,9 @@ import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.utils.MapUtils
-import ch.hikemate.app.utils.from
 import ch.hikemate.app.utils.toFormattedString
 import com.google.firebase.Timestamp
-import java.util.Calendar
+import java.util.Date
 import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
@@ -344,6 +346,7 @@ fun HikeDetails(
       sheetPeekHeight = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT) {}
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("StateFlowValueCalledInComposition")
 @Composable
 fun DateDetailRow(
@@ -351,28 +354,42 @@ fun DateDetailRow(
     plannedDate: Timestamp?,
     updatePlannedDate: (Timestamp?) -> Unit
 ) {
-  // Row to display and change the date
+  val showingDatePicker = remember { mutableStateOf(false) }
+  val datePickerState = rememberDatePickerState()
 
-  val context = LocalContext.current
-
-  // Needed for the pop-up that allows the user to show the date
-  fun showDatePickerDialog() {
-    val calendar = Calendar.getInstance()
-    val year = calendar[Calendar.YEAR]
-    val month = calendar[Calendar.MONTH]
-    val day = calendar[Calendar.DAY_OF_MONTH]
-
-    DatePickerDialog(
-            context,
-            { _, selectedYear, selectedMonth, selectedDay ->
-              val timestamp = Timestamp.from(selectedYear, selectedMonth + 1, selectedDay)
-              updatePlannedDate(timestamp)
-            },
-            year,
-            month,
-            day)
-        .show()
+  fun showDatePicker() {
+    showingDatePicker.value = true
   }
+
+  fun dismissDatePicker() {
+    showingDatePicker.value = false
+  }
+
+  if (showingDatePicker.value) {
+    DatePickerDialog(
+        onDismissRequest = { dismissDatePicker() },
+        dismissButton = {
+          Button(onClick = { dismissDatePicker() }) {
+            Text(text = stringResource(R.string.hike_detail_screen_date_picker_cancel_button))
+          }
+        },
+        confirmButton = {
+          Button(
+              onClick = {
+                if (datePickerState.selectedDateMillis != null) {
+                  updatePlannedDate(Timestamp(Date(datePickerState.selectedDateMillis!!)))
+                }
+
+                dismissDatePicker()
+              }) {
+                Text(text = stringResource(R.string.hike_detail_screen_date_picker_confirm_button))
+              }
+        },
+    ) {
+      DatePicker(state = datePickerState)
+    }
+  }
+
   if (isSaved) {
     if (plannedDate == null) {
       DetailRow(
@@ -395,7 +412,7 @@ fun DateDetailRow(
                 ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF4285F4), // Blue color to match the image
                     contentColor = Color.White),
-            onClick = { showDatePickerDialog() },
+            onClick = { showDatePicker() },
         ) {
           Text(
               text = stringResource(R.string.hike_detail_screen_add_a_date_button_text),
@@ -426,7 +443,7 @@ fun DateDetailRow(
                   // saved Date
                   style = MaterialTheme.typography.bodySmall,
                   modifier =
-                      Modifier.clickable { showDatePickerDialog() }
+                      Modifier.clickable { showDatePicker() }
                           .testTag(TEST_TAG_PLANNED_DATE_TEXT_BOX))
             }
       }
