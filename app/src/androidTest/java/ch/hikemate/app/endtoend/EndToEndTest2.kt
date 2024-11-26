@@ -111,6 +111,8 @@ class EndToEndTest2 {
         .performTextInput(password)
     composeTestRule.onNodeWithTag(CreateAccountScreen.TEST_TAG_SIGN_UP_BUTTON).performClick()
 
+    composeTestRule.waitForIdle()
+
     // Wait for the sign-in to be performed and the map to load
     composeTestRule.waitUntilExactlyOneExists(
         hasTestTag(MapScreen.TEST_TAG_MAP), timeoutMillis = 10000)
