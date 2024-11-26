@@ -1076,6 +1076,41 @@ class HikesViewModelTest {
       }
 
   @Test
+  fun `loadHikesInBounds updates hikes who have no OSM data yet`() =
+      runTest(dispatcher) {
+        // Load some hike to be updated later with its OSM data
+        loadSavedHikes(singleSavedHike1)
+
+        // Make sure the hike was loaded and has no OSM data yet
+        assertEquals(1, hikesViewModel.hikeFlows.value.size)
+        assertEquals(singleSavedHike1[0].id, hikesViewModel.hikeFlows.value[0].value.id)
+        assertFalse(hikesViewModel.hikeFlows.value[0].value.bounds is DeferredData.Obtained)
+        assertFalse(hikesViewModel.hikeFlows.value[0].value.waypoints is DeferredData.Obtained)
+
+        // Call loadHikesInBounds with the hike's OSM data
+        loadOsmHikes(listOf(singleOsmHike1[0].copy(id = singleSavedHike1[0].id)))
+
+        // Make sure the hike was updated with its OSM data
+        assertEquals(1, hikesViewModel.hikeFlows.value.size)
+        assertEquals(singleSavedHike1[0].id, hikesViewModel.hikeFlows.value[0].value.id)
+        // Description should have been obtained and updated with the right value
+        assertTrue(hikesViewModel.hikeFlows.value[0].value.description is DeferredData.Obtained)
+        assertEquals(
+            singleOsmHike1[0].description,
+            (hikesViewModel.hikeFlows.value[0].value.description as DeferredData.Obtained).data)
+        // Bounds should have been obtained and updated with the right values
+        assertTrue(hikesViewModel.hikeFlows.value[0].value.bounds is DeferredData.Obtained)
+        assertEquals(
+            singleOsmHike1[0].bounds,
+            (hikesViewModel.hikeFlows.value[0].value.bounds as DeferredData.Obtained).data)
+        // Waypoints should have been obtained and updated with the right values
+        assertTrue(hikesViewModel.hikeFlows.value[0].value.waypoints is DeferredData.Obtained)
+        assertEquals(
+            singleOsmHike1[0].ways,
+            (hikesViewModel.hikeFlows.value[0].value.waypoints as DeferredData.Obtained).data)
+      }
+
+  @Test
   fun `loadHikesInBounds sets loading to true then false`() =
       runTest(dispatcher) {
         // Listen to the changes made to loading during the call
