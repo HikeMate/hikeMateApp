@@ -3,12 +3,16 @@ package ch.hikemate.app.model.route
 import ch.hikemate.app.model.elevation.ElevationService
 import ch.hikemate.app.model.route.saved.SavedHike
 import ch.hikemate.app.model.route.saved.SavedHikesRepository
+import ch.hikemate.app.utils.RouteUtils
 import ch.hikemate.app.utils.from
 import com.google.firebase.Timestamp
+import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkObject
+import io.mockk.unmockkAll
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -48,6 +52,9 @@ class HikesViewModelTest {
   @After
   fun tearDown() {
     Dispatchers.resetMain()
+    // Clears all mocks and resets the global state to avoid interference between tests
+    clearAllMocks()
+    unmockkAll()
   }
 
   // ==========================================================================
@@ -1591,6 +1598,49 @@ class HikesViewModelTest {
 
         // The appropriate callback should be called
         assertTrue(onFailureCalled)
+      }
+
+  @Test
+  fun `computeDetailsFor resets data to NotRequested if computation fails`() =
+      runTest(dispatcher) {
+        // Load a hike with its OSM data and elevation
+        loadOsmHikes(singleOsmHike1)
+
+        // Make sure the elevation repository will return a valid elevation profile
+        every { elevationRepo.getElevation(any(), any(), any(), any()) } answers
+            {
+              val onSuccess = thirdArg<(List<Double>) -> Unit>()
+              onSuccess(elevationProfile1)
+            }
+
+        // Make sure the hike has elevation
+        hikesViewModel.retrieveElevationDataFor(singleOsmHike1[0].id)
+        // Check that the hike has elevation data
+        assertTrue(hikesViewModel.hikeFlows.value[0].value.elevation is DeferredData.Obtained)
+
+        // Make sure the computations fail by mocking one of the util functions
+        mockkObject(RouteUtils)
+        every { RouteUtils.computeTotalDistance(any()) } throws
+            Exception("Failed to compute distance")
+
+        // Compute the details for the loaded hike
+        var onFailureCalled = false
+        hikesViewModel.computeDetailsFor(
+            hikeId = singleOsmHike1[0].id,
+            onSuccess = { fail("onSuccess should not have been called") },
+            onFailure = { onFailureCalled = true })
+
+        // The appropriate callback should be called
+        assertTrue(onFailureCalled)
+        // The view model should now contain the loaded hike with its details reset to NotRequested
+        assertEquals(1, hikesViewModel.hikeFlows.value.size)
+        assertEquals(singleOsmHike1[0].id, hikesViewModel.hikeFlows.value[0].value.id)
+        assertTrue(hikesViewModel.hikeFlows.value[0].value.distance is DeferredData.NotRequested)
+        assertTrue(
+            hikesViewModel.hikeFlows.value[0].value.elevationGain is DeferredData.NotRequested)
+        assertTrue(
+            hikesViewModel.hikeFlows.value[0].value.estimatedTime is DeferredData.NotRequested)
+        assertTrue(hikesViewModel.hikeFlows.value[0].value.difficulty is DeferredData.NotRequested)
       }
 
   @Test
