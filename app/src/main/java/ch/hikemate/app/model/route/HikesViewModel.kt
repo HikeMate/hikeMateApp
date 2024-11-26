@@ -625,15 +625,16 @@ class HikesViewModel(
     }
 
     // Save the hike using the repository
+    val savedHike = hike.toSavedHike()
     try {
-      savedHikesRepo.addSavedHike(SavedHike(hike.id, hike.name ?: "", hike.plannedDate))
+      savedHikesRepo.addSavedHike(savedHike)
     } catch (e: Exception) {
       Log.e(LOG_TAG, "Error encountered while saving hike", e)
       return false
     }
 
     // Update the saved hikes map
-    _savedHikesMap[hikeId] = SavedHike(hike.id, hike.name ?: "", hike.plannedDate)
+    _savedHikesMap[hikeId] = savedHike
 
     // Update the hike's state flow
     val newHikeState = hikeFlow.value.copy(isSaved = true)
@@ -670,7 +671,7 @@ class HikesViewModel(
 
           // Unsave the hike using the repository
           try {
-            savedHikesRepo.removeSavedHike(SavedHike(hike.id, hike.name ?: "", hike.plannedDate))
+            savedHikesRepo.removeSavedHike(hike.toSavedHike())
           } catch (e: Exception) {
             Log.e(LOG_TAG, "Error encountered while unsaving hike", e)
             successful = false
@@ -767,7 +768,7 @@ class HikesViewModel(
     }
 
     // Set the hike's planned date to the right one
-    val newSavedHike = SavedHike(id = hike.id, name = hike.name ?: "", date = date)
+    val newSavedHike = hike.toSavedHike()
     try {
       savedHikesRepo.addSavedHike(newSavedHike)
     } catch (e: Exception) {

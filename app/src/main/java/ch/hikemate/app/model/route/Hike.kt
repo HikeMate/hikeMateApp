@@ -1,5 +1,6 @@
 package ch.hikemate.app.model.route
 
+import ch.hikemate.app.model.route.saved.SavedHike
 import com.google.firebase.Timestamp
 
 /**
@@ -43,4 +44,7 @@ data class Hike(
     val estimatedTime: DeferredData<Double> = DeferredData.NotRequested,
     val elevationGain: DeferredData<Double> = DeferredData.NotRequested,
     val difficulty: DeferredData<HikeDifficulty> = DeferredData.NotRequested
-)
+) {
+  /** Helper to convert this [Hike] to a [SavedHike] object. */
+  fun toSavedHike() = SavedHike(id, name ?: "", plannedDate)
+}
