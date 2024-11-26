@@ -1103,14 +1103,13 @@ class HikesViewModel(
           // Set the detail properties back to NotRequested
           _hikesMutex.withLock {
             val hikeFlow = _hikeFlowsMap[hikeId] ?: return@withLock
-            val updatedHike =
+            hikeFlow.value =
                 hikeFlow.value.copy(
                     distance = DeferredData.NotRequested,
                     elevationGain = DeferredData.NotRequested,
                     estimatedTime = DeferredData.NotRequested,
                     difficulty = DeferredData.NotRequested,
                 )
-            hikeFlow.value = updatedHike
 
             // Update the selected hike if necessary
             updateSelectedHike()
@@ -1124,13 +1123,12 @@ class HikesViewModel(
         var success = false
         _hikesMutex.withLock {
           val hikeFlow = _hikeFlowsMap[hikeId] ?: return@withLock
-          val updatedHike =
+          hikeFlow.value =
               hikeFlow.value.copy(
                   distance = DeferredData.Obtained(distance),
                   elevationGain = DeferredData.Obtained(elevationGain),
                   estimatedTime = DeferredData.Obtained(estimatedTime),
                   difficulty = DeferredData.Obtained(difficulty))
-          hikeFlow.value = updatedHike
 
           // Update the selected hike if necessary
           updateSelectedHike()
@@ -1208,14 +1206,13 @@ class HikesViewModel(
       nullableElevation = hike.elevation.data
 
       // Set the details of the hike to have been requested
-      val hikeWithRequestedAttributes =
+      hikeFlow.value =
           hike.copy(
               distance = DeferredData.Requested,
               estimatedTime = DeferredData.Requested,
               difficulty = DeferredData.Requested,
               elevationGain = DeferredData.Requested,
           )
-      hikeFlow.value = hikeWithRequestedAttributes
 
       // Update the selected hike if necessary
       updateSelectedHike()
