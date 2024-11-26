@@ -1020,6 +1020,61 @@ class HikesViewModelTest {
         assertEquals(doubleOsmHikes1[1].id, hikesViewModel.hikeFlows.value[1].value.id)
       }
 
+  /**
+   * We made the internal decision that [HikesViewModel.loadHikesInBounds]` should not replace old
+   * data with new data, even if OSM has updated this data.
+   *
+   * This is because updating it would require to retrieve the elevation and compute the details
+   * again, which is not necessary given the probability that the data have actually changed.
+   *
+   * Moreover, the data will be refreshed anyways when the app is restarted or the cache cleared.
+   *
+   * If future us decide to update the data, remove this test, as it is only valid with our decision
+   * of not updating the OSM data.
+   */
+  @Test
+  fun `loadHikesInBounds does not replace already loaded data`() =
+      runTest(dispatcher) {
+        // Load a hike with its OSM data, but with different data
+        loadOsmHikes(
+            listOf(
+                singleOsmHike1[0].copy(
+                    description = "Different description",
+                    ways = emptyList(),
+                    bounds = Bounds(0.0, 0.0, 0.0, 0.0))))
+
+        // Make sure the hike has been loaded correctly and contains different data
+        assertEquals(1, hikesViewModel.hikeFlows.value.size)
+        assertEquals(singleOsmHike1[0].id, hikesViewModel.hikeFlows.value[0].value.id)
+        assertTrue(hikesViewModel.hikeFlows.value[0].value.bounds is DeferredData.Obtained)
+        assertNotEquals(
+            singleOsmHike1[0].bounds,
+            (hikesViewModel.hikeFlows.value[0].value.bounds as DeferredData.Obtained).data)
+        assertTrue(hikesViewModel.hikeFlows.value[0].value.waypoints is DeferredData.Obtained)
+        assertNotEquals(
+            singleOsmHike1[0].ways,
+            (hikesViewModel.hikeFlows.value[0].value.waypoints as DeferredData.Obtained).data)
+
+        // Load the same hike with different data
+        loadOsmHikes(singleOsmHike1)
+
+        // Make sure the hike has been loaded correctly but the data was not updated
+        assertEquals(1, hikesViewModel.hikeFlows.value.size)
+        assertEquals(singleOsmHike1[0].id, hikesViewModel.hikeFlows.value[0].value.id)
+        assertTrue(hikesViewModel.hikeFlows.value[0].value.description is DeferredData.Obtained)
+        assertNotEquals(
+            singleOsmHike1[0].description,
+            (hikesViewModel.hikeFlows.value[0].value.description as DeferredData.Obtained).data)
+        assertTrue(hikesViewModel.hikeFlows.value[0].value.bounds is DeferredData.Obtained)
+        assertNotEquals(
+            singleOsmHike1[0].bounds,
+            (hikesViewModel.hikeFlows.value[0].value.bounds as DeferredData.Obtained).data)
+        assertTrue(hikesViewModel.hikeFlows.value[0].value.waypoints is DeferredData.Obtained)
+        assertNotEquals(
+            singleOsmHike1[0].ways,
+            (hikesViewModel.hikeFlows.value[0].value.waypoints as DeferredData.Obtained).data)
+      }
+
   @Test
   fun `loadHikesInBounds sets loading to true then false`() =
       runTest(dispatcher) {
