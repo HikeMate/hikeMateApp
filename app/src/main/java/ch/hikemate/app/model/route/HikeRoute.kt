@@ -169,19 +169,20 @@ data class HikeRoute(
     return hikeColors[abs(id.hashCode()) % hikeColors.size]
   }
 
+  /** The list of segments of the Route */
   val segments: List<RouteSegment> by lazy {
     return@lazy this.ways.windowed(2).map { (p1, p2) -> RouteSegment(p1, p2, p1.distanceTo(p2)) }
   }
 }
 
 /**
- * Represents two points in a hike route
+ * Represents the line defined by two points in a hike route
  *
  * @param start The start point of the segment
  * @param end The end point of the segment
  * @param length
  */
-data class RouteSegment(val start: LatLong, val end: LatLong, val length: Double) {}
+data class RouteSegment(val start: LatLong, val end: LatLong, val length: Double)
 
 /**
  * Data class used for projections from a location to the hike route this gives every necessary

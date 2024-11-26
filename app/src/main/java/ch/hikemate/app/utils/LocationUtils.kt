@@ -228,57 +228,76 @@ object LocationUtils {
    *
    * @param location The current location to project
    * @param route The hiking route to project onto
-   * @return RouteProjectionResponse containing projection details or null if route is invalid
+   * @return RouteProjectionResponse containing projection details
    */
-  fun projectLocationOnStart(location: Location, route: HikeRoute): RouteProjectionResponse? {
+  fun projectLocationOnStart(location: LatLong, route: HikeRoute): RouteProjectionResponse? {
     // Validate input
     if (route.ways.size < 2) return null
 
-    val locationPoint = LatLong(location.latitude, location.longitude)
     val segments = route.segments
 
     // Handle simple case of just 2 points
     if (segments.size == 1) {
       val segment = segments[0]
-      val projected = projectPointOntoSegment(locationPoint, segment)
+      val projected = projectPointOntoSegment(location, segment)
       return RouteProjectionResponse(
           projectedLocation = projected,
-          progressDistance = 0.0,
-          distanceFromRoute = locationPoint.distanceTo(projected),
+          progressDistance = projected.distanceTo(segment.start),
+          distanceFromRoute = location.distanceTo(projected),
           segment = segment,
           indexToSegment = 0)
     }
 
-    // Find closest segment by checking all segments
-    var closestSegment: RouteSegment? = null
-    var closestSegmentIndex = -1
+    // Find closest segment by checking all segment
+    var closestSegment = segments[0]
+    var closestSegmentIndex = 0
     var minDistance = Double.MAX_VALUE
     var projectedPoint = route.ways[0]
+    // The distance that has been traveled according to the projection
     var progressDistance = 0.0
     var distanceCovered = 0.0
 
     segments.forEachIndexed { index, segment ->
-      val projected = projectPointOntoSegment(locationPoint, segment)
-      val distance = locationPoint.distanceTo(projected)
+      val projected = projectPointOntoSegment(location, segment)
+      val distance = location.distanceTo(projected)
 
+      // If the distance to that projection is smaller than update the projection for the new one.
       if (distance < minDistance) {
         minDistance = distance
         projectedPoint = projected
-        progressDistance = distanceCovered
+        progressDistance = distanceCovered + projected.distanceTo(segment.start)
         closestSegment = segment
         closestSegmentIndex = index
       }
       distanceCovered += segment.length
     }
 
-    return closestSegment?.let { segment ->
-      RouteProjectionResponse(
-          projectedLocation = projectedPoint,
-          progressDistance = progressDistance,
-          distanceFromRoute = minDistance,
-          segment = segment,
-          indexToSegment = closestSegmentIndex)
-    }
+    return RouteProjectionResponse(
+        projectedLocation = projectedPoint,
+        progressDistance = progressDistance,
+        distanceFromRoute = minDistance,
+        segment = closestSegment,
+        indexToSegment = closestSegmentIndex)
+  }
+
+  /** Function to call the main function with the correct attributes. */
+  fun projectLocationOngoing(
+      location: LatLong,
+      route: HikeRoute,
+      lastProjectionResponse: RouteProjectionResponse,
+      threshold: Double
+  ): RouteProjectionResponse {
+    val segment = lastProjectionResponse.segment
+    val projection = lastProjectionResponse.projectedLocation
+    val distanceInSegment = projection.distanceTo(segment.start)
+    return projectLocationOngoingHelper(
+        location,
+        route,
+        projection,
+        segment,
+        lastProjectionResponse.indexToSegment,
+        lastProjectionResponse.progressDistance - distanceInSegment,
+        threshold)
   }
 
   /**
@@ -302,16 +321,20 @@ object LocationUtils {
    * @param location Current location to project onto the route
    * @param route The hiking route containing all segments
    * @param lastProjection The last known projection result
+   * @param currentSegment The segment for the point to be projected
+   * @param indexToSegment The index of the segment in the list.
+   * @param distanceToLastSegmentStart The distance of all the summed segments from the start of the
+   *   route
    * @param threshold Maximum allowed distance (in meters) between location and projected point
    * @return Updated RouteProjectionResponse containing the best projection found
    */
-  fun projectLocationOngoing(
+  private fun projectLocationOngoingHelper(
       location: LatLong,
       route: HikeRoute,
       lastProjection: LatLong,
       currentSegment: RouteSegment,
       indexToSegment: Int,
-      progressDistance: Double,
+      distanceToLastSegmentStart: Double,
       threshold: Double
   ): RouteProjectionResponse {
 
@@ -322,26 +345,30 @@ object LocationUtils {
         RouteProjectionResponse(
             projectedLocation = projected,
             segment = currentSegment,
-            progressDistance = progressDistance,
+            progressDistance =
+                distanceToLastSegmentStart + projected.distanceTo(currentSegment.start),
             distanceFromRoute = distanceToProjected,
             indexToSegment = indexToSegment)
 
-    // If within threshold of current segment, update progress on same segment
+    // If within the threshold return the projection
     if (distanceToProjected < threshold) return currentProjection
 
-    // Check if moving forward along route
+    // Check if the user is moving forward along route according to the current projection
     if (projected.distanceTo(currentSegment.start) >=
         lastProjection.distanceTo(currentSegment.start) &&
         projected.distanceTo(currentSegment.end) <= lastProjection.distanceTo(currentSegment.end)) {
+      // If it's the last segment there will not be better projections
       if (indexToSegment == route.segments.lastIndex) return currentProjection
+
+      // Recursive call
       val nextProjection =
-          projectLocationOngoing(
+          projectLocationOngoingHelper(
               location,
               route,
               currentSegment.end,
               route.segments[indexToSegment + 1],
               indexToSegment + 1,
-              progressDistance + currentSegment.length,
+              distanceToLastSegmentStart + currentSegment.length,
               threshold)
 
       // Keep whichever projection is closer
@@ -352,21 +379,23 @@ object LocationUtils {
       }
     }
 
-    // Check if user moving backwards along route
+    // Check if user moving backwards along route according to the current projection.
     else if (projected.distanceTo(currentSegment.start) <=
         lastProjection.distanceTo(currentSegment.start) &&
         projected.distanceTo(currentSegment.end) >= lastProjection.distanceTo(currentSegment.end)) {
 
+      // If it's the first segment there will not be better projections
       if (indexToSegment == 0) return currentProjection
 
+      // Recursive call
       val nextProjection =
-          projectLocationOngoing(
+          projectLocationOngoingHelper(
               location,
               route,
               currentSegment.start,
               route.segments[indexToSegment - 1],
               indexToSegment - 1,
-              progressDistance - currentSegment.length,
+              distanceToLastSegmentStart - currentSegment.length,
               threshold)
 
       // Keep whichever projection is closer
@@ -380,7 +409,13 @@ object LocationUtils {
     return currentProjection
   }
 
-  /** Projects a point onto a route segment. */
+  /**
+   * Projects a point onto a route segment.
+   *
+   * @param point
+   * @param segment
+   * @return projection
+   */
   private fun projectPointOntoSegment(point: LatLong, segment: RouteSegment): LatLong {
     return point.projectPointIntoLine(segment.start, segment.end)
   }
