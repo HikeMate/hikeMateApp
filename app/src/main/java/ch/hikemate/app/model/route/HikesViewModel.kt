@@ -815,9 +815,10 @@ class HikesViewModel(
         // Wait for the lock to avoid concurrent modifications
         _hikesMutex.withLock {
           // Keep already loaded hikes, discard the ones that do not appear in the given bounds
+          val keysToKeep = hikes.map { it.id }
           _hikeFlowsMap =
               _hikeFlowsMap
-                  .filterKeys { key -> hikes.none { hike -> hike.id == key } }
+                  .filterKeys { key -> keysToKeep.contains(key) }
                   .toMutableMap()
 
           // Add the new hikes to the map of hikes
