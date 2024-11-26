@@ -24,6 +24,9 @@ import ch.hikemate.app.model.route.saved.SavedHikesViewModel
 import ch.hikemate.app.ui.components.BackButton.BACK_BUTTON_TEST_TAG
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_ADD_DATE_BUTTON
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_BOOKMARK_ICON
+import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DATE_PICKER
+import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DATE_PICKER_CANCEL_BUTTON
+import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DATE_PICKER_CONFIRM_BUTTON
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DETAIL_ROW_TAG
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DETAIL_ROW_VALUE
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_ELEVATION_GRAPH
@@ -305,6 +308,65 @@ class HikeDetailScreenTest {
     }
 
     composeTestRule.onNodeWithTag(TEST_TAG_ADD_DATE_BUTTON).assertHasClickAction().performClick()
+    composeTestRule.onNodeWithTag(TEST_TAG_DATE_PICKER).assertIsDisplayed()
+  }
+
+  @Test
+  fun hikeDetails_datePickerDismisses_whenClickedOnCancel() = runTest {
+    listOfHikeRoutesViewModel.selectRoute(route)
+
+    // Mock the necessary functions
+    whenever(mockSavedHikesRepository.loadSavedHikes()).thenReturn(emptyList())
+    whenever(mockSavedHikesRepository.addSavedHike(any())).thenReturn(Unit)
+    whenever(mockSavedHikesRepository.removeSavedHike(any())).thenReturn(Unit)
+
+    // Update the hike detail state
+    savedHikesViewModel.updateHikeDetailState(route)
+    savedHikesViewModel.toggleSaveState()
+
+    composeTestRule.setContent {
+      HikeDetails(
+          detailedRoute = detailedRoute,
+          savedHikesViewModel = savedHikesViewModel,
+          emptyList(),
+          HikingLevel.BEGINNER)
+    }
+
+    composeTestRule.onNodeWithTag(TEST_TAG_ADD_DATE_BUTTON).assertHasClickAction().performClick()
+    composeTestRule.onNodeWithTag(TEST_TAG_DATE_PICKER).assertIsDisplayed()
+
+    composeTestRule.onNodeWithTag(TEST_TAG_DATE_PICKER_CANCEL_BUTTON).performClick()
+
+    composeTestRule.onNodeWithTag(TEST_TAG_DATE_PICKER).assertIsNotDisplayed()
+  }
+
+  @Test
+  fun hikeDetails_datePickerDismisses_whenClickedOnConfirm() = runTest {
+    listOfHikeRoutesViewModel.selectRoute(route)
+
+    // Mock the necessary functions
+    whenever(mockSavedHikesRepository.loadSavedHikes()).thenReturn(emptyList())
+    whenever(mockSavedHikesRepository.addSavedHike(any())).thenReturn(Unit)
+    whenever(mockSavedHikesRepository.removeSavedHike(any())).thenReturn(Unit)
+
+    // Update the hike detail state
+    savedHikesViewModel.updateHikeDetailState(route)
+    savedHikesViewModel.toggleSaveState()
+
+    composeTestRule.setContent {
+      HikeDetails(
+          detailedRoute = detailedRoute,
+          savedHikesViewModel = savedHikesViewModel,
+          emptyList(),
+          HikingLevel.BEGINNER)
+    }
+
+    composeTestRule.onNodeWithTag(TEST_TAG_ADD_DATE_BUTTON).assertHasClickAction().performClick()
+    composeTestRule.onNodeWithTag(TEST_TAG_DATE_PICKER).assertIsDisplayed()
+
+    composeTestRule.onNodeWithTag(TEST_TAG_DATE_PICKER_CONFIRM_BUTTON).performClick()
+
+    composeTestRule.onNodeWithTag(TEST_TAG_DATE_PICKER).assertIsNotDisplayed()
   }
 
   @Test

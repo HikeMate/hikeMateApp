@@ -63,6 +63,9 @@ import ch.hikemate.app.ui.components.ElevationGraphStyleProperties
 import ch.hikemate.app.ui.map.HikeDetailScreen.MAP_MAX_ZOOM
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_ADD_DATE_BUTTON
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_BOOKMARK_ICON
+import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DATE_PICKER
+import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DATE_PICKER_CANCEL_BUTTON
+import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DATE_PICKER_CONFIRM_BUTTON
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DETAIL_ROW_TAG
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DETAIL_ROW_VALUE
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_ELEVATION_GRAPH
@@ -98,6 +101,9 @@ object HikeDetailScreen {
   const val TEST_TAG_DETAIL_ROW_VALUE = "detailRowValue"
   const val TEST_TAG_ADD_DATE_BUTTON = "addDateButton"
   const val TEST_TAG_PLANNED_DATE_TEXT_BOX = "plannedDateTextBox"
+  const val TEST_TAG_DATE_PICKER = "datePicker"
+  const val TEST_TAG_DATE_PICKER_CANCEL_BUTTON = "datePickerCancelButton"
+  const val TEST_TAG_DATE_PICKER_CONFIRM_BUTTON = "datePickerConfirmButton"
 }
 
 @Composable
@@ -367,14 +373,18 @@ fun DateDetailRow(
 
   if (showingDatePicker.value) {
     DatePickerDialog(
+        modifier = Modifier.testTag(TEST_TAG_DATE_PICKER),
         onDismissRequest = { dismissDatePicker() },
         dismissButton = {
-          Button(onClick = { dismissDatePicker() }) {
-            Text(text = stringResource(R.string.hike_detail_screen_date_picker_cancel_button))
-          }
+          Button(
+              modifier = Modifier.testTag(TEST_TAG_DATE_PICKER_CANCEL_BUTTON),
+              onClick = { dismissDatePicker() }) {
+                Text(text = stringResource(R.string.hike_detail_screen_date_picker_cancel_button))
+              }
         },
         confirmButton = {
           Button(
+              modifier = Modifier.testTag(TEST_TAG_DATE_PICKER_CONFIRM_BUTTON),
               onClick = {
                 if (datePickerState.selectedDateMillis != null) {
                   updatePlannedDate(Timestamp(Date(datePickerState.selectedDateMillis!!)))
