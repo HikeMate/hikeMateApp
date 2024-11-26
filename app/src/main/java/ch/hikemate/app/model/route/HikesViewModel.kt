@@ -393,6 +393,11 @@ class HikesViewModel(
     }
   }
 
+  /**
+   * See the documentation of [selectHike].
+   *
+   * This function is called by [selectHike] to perform its work asynchronously.
+   */
   private suspend fun selectHikeAsync(
       hikeId: String,
       onSuccess: () -> Unit,
@@ -417,6 +422,11 @@ class HikesViewModel(
         }
       }
 
+  /**
+   * See the documentation of [unselectHike].
+   *
+   * This function is called by [unselectHike] to perform its work asynchronously.
+   */
   private suspend fun unselectHikeAsync() =
       _hikesMutex.withLock {
         // Only emit null as a value if the selected hike was not already null
@@ -528,6 +538,11 @@ class HikesViewModel(
     updateHikeFlowsList()
   }
 
+  /**
+   * See the documentation of [loadSavedHikes].
+   *
+   * This function is called by [loadSavedHikes] to perform its work asynchronously.
+   */
   private suspend fun loadSavedHikesAsync(onSuccess: () -> Unit, onFailure: () -> Unit) =
       withContext(dispatcher) {
         // Remember that the loaded hikes list will now only hold saved hikes
@@ -572,6 +587,11 @@ class HikesViewModel(
     }
   }
 
+  /**
+   * See the documentation of [saveHike].
+   *
+   * This function is called by [saveHike] to perform its work asynchronously.
+   */
   private suspend fun saveHikeAsync(hikeId: String, onSuccess: () -> Unit, onFailure: () -> Unit) =
       withContext(dispatcher) {
         val successful: Boolean
@@ -625,6 +645,11 @@ class HikesViewModel(
     return true
   }
 
+  /**
+   * See the documentation of [unsaveHike].
+   *
+   * This function is called by [unsaveHike] to perform its work asynchronously.
+   */
   private suspend fun unsaveHikeAsync(
       hikeId: String,
       onSuccess: () -> Unit,
@@ -679,6 +704,11 @@ class HikesViewModel(
         }
       }
 
+  /**
+   * See the documentation of [setPlannedDate].
+   *
+   * This function is called by [setPlannedDate] to perform its work asynchronously.
+   */
   private suspend fun setPlannedDateAsync(
       hikeId: String,
       date: Timestamp?,
@@ -757,6 +787,11 @@ class HikesViewModel(
     return true
   }
 
+  /**
+   * See the documentation of [loadHikesInBounds].
+   *
+   * This function is called by [loadHikesInBounds] to perform its work asynchronously.
+   */
   private suspend fun loadHikesInBoundsAsync(
       boundingBox: BoundingBox,
       onSuccess: () -> Unit,
@@ -857,6 +892,11 @@ class HikesViewModel(
           hike.bounds is DeferredData.Obtained &&
           hike.waypoints is DeferredData.Obtained
 
+  /**
+   * See the documentation of [retrieveLoadedHikesOsmData].
+   *
+   * This function is called by [retrieveLoadedHikesOsmData] to perform its work asynchronously.
+   */
   private suspend fun retrieveLoadedHikesOsmDataAsync(
       onSuccess: () -> Unit,
       onFailure: () -> Unit
@@ -920,6 +960,11 @@ class HikesViewModel(
             onFailure = { exception -> continuation.resumeWithException(exception) })
       }
 
+  /**
+   * See the documentation of [retrieveElevationDataFor].
+   *
+   * This function is called by [retrieveElevationDataFor] to perform its work asynchronously.
+   */
   private suspend fun retrieveElevationDataForAsync(
       hikeId: String,
       onSuccess: () -> Unit,
@@ -1018,6 +1063,11 @@ class HikesViewModel(
         onFailure = { exception -> continuation.resumeWithException(exception) })
   }
 
+  /**
+   * See the documentation of [computeDetailsFor].
+   *
+   * This function is called by [computeDetailsFor] to perform its work asynchronously.
+   */
   private suspend fun computeDetailsForAsync(
       hikeId: String,
       onSuccess: () -> Unit,
