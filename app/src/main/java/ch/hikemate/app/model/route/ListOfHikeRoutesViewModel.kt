@@ -6,6 +6,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import ch.hikemate.app.model.elevation.ElevationService
 import ch.hikemate.app.model.elevation.ElevationServiceRepository
+import ch.hikemate.app.model.extensions.crossesDateLine
+import ch.hikemate.app.model.extensions.splitByDateLine
+import ch.hikemate.app.model.extensions.toBounds
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -51,6 +54,25 @@ open class ListOfHikeRoutesViewModel(
   private suspend fun getRoutesAsync(onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}) {
     withContext(dispatcher) {
       val area = area_.value ?: return@withContext
+
+      // Check if the area is on the date line
+      if (area.crossesDateLine()) {
+        val (bounds1, bounds2) = area.splitByDateLine()
+        hikeRoutesRepository.getRoutes(
+            bounds = bounds1.toBounds(),
+            onSuccess = { routes1 ->
+              hikeRoutesRepository.getRoutes(
+                  bounds = bounds2.toBounds(),
+                  onSuccess = { routes2 ->
+                    hikeRoutes_.value = routes1 + routes2
+                    onSuccess()
+                  },
+                  onFailure = { _ -> onFailure() })
+            },
+            onFailure = { _ -> onFailure() })
+        return@withContext
+      }
+
       hikeRoutesRepository.getRoutes(
           bounds = area.toBounds(),
           onSuccess = { routes ->
