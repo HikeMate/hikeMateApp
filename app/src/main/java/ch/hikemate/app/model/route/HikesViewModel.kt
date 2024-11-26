@@ -1081,7 +1081,7 @@ class HikesViewModel(
       withContext(dispatcher) {
         // Retrieve the current value of the hike and note what computations are required
         val (performRequest, waypoints, elevation) =
-            checkDetailsCanBeRetrievedForAsync(hikeId, onSuccess, onFailure)
+            detailsPreRequestOperations(hikeId, onSuccess, onFailure)
 
         if (!performRequest) {
           return@withContext
@@ -1169,7 +1169,7 @@ class HikesViewModel(
    * - The `List` of elevation data of the hike, if available. If not available, the list will be
    *   empty and the boolean will be false.
    */
-  private suspend fun checkDetailsCanBeRetrievedForAsync(
+  private suspend fun detailsPreRequestOperations(
       hikeId: String,
       onSuccess: () -> Unit,
       onFailure: () -> Unit
