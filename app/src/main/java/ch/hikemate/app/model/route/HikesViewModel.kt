@@ -453,6 +453,8 @@ class HikesViewModel(
    *
    * Takes a list of saved hikes and updates the local cache of saved hikes with that list.
    *
+   * Also updates [hikeFlows] to reflect the changes, and updates the selected hike if necessary.
+   *
    * It is the caller's responsibility to ensure the saved hikes list is up-to-date and to acquire
    * [_hikesMutex] before calling this function.
    *
@@ -465,17 +467,40 @@ class HikesViewModel(
     // Build the new saved hikes register
     newList.forEach { savedHike -> _savedHikesMap[savedHike.id] = savedHike }
 
-    // Update the map of hikes to reflect the changes
-    val toRemove: MutableSet<String> = mutableSetOf()
-    _hikeFlowsMap.values.forEach { hikeFlow ->
-      val hike = hikeFlow.value
-      val savedHike = _savedHikesMap[hike.id]
-      // If the list currently only contains saved hikes and this hike was unsaved, remove it
-      if (_loadedHikesType == LoadedHikes.FromSaved && savedHike == null) {
-        toRemove.add(hike.id)
+    // Now the saved hikes cache was updated, but we still need to update the hike flows list
+
+    if (_loadedHikesType == LoadedHikes.FromSaved) {
+      // Saved hikes are loaded, remove the ones that were unsaved and add the new saved ones
+
+      // First, remove the hikes that were unsaved
+      _hikeFlowsMap = _hikeFlowsMap.filterKeys { _savedHikesMap.containsKey(it) }.toMutableMap()
+
+      // Update the hikes already in the list (their planned date). We assume all those hikes are
+      // saved.
+      _hikeFlowsMap.forEach { (hikeId, hikeFlow) ->
+        val savedHike = _savedHikesMap[hikeId]
+        val hike = hikeFlow.value
+        val (changeNeeded, updated) = hikeNeedsSavedStatusUpdate(hike, savedHike)
+        if (changeNeeded) {
+          hikeFlow.value = updated
+        }
       }
-      // Otherwise, check if a change actually happened to avoid unnecessary updates
-      else {
+
+      // Add the saved hikes that are not in the list yet
+      _savedHikesMap.minus(_hikeFlowsMap.keys).forEach { (hikeId, savedHike) ->
+        _hikeFlowsMap[hikeId] =
+            MutableStateFlow(
+                Hike(
+                    id = savedHike.id,
+                    isSaved = true,
+                    plannedDate = savedHike.date,
+                    name = savedHike.name))
+      }
+    } else if (_loadedHikesType == LoadedHikes.FromBounds) {
+      // Hikes were loaded from bounds, do not remove nor add any hikes, just update existing ones
+      _hikeFlowsMap.forEach { (hikeId, hikeFlow) ->
+        val savedHike = _savedHikesMap[hikeId]
+        val hike = hikeFlow.value
         val (changeNeeded, updated) = hikeNeedsSavedStatusUpdate(hike, savedHike)
         if (changeNeeded) {
           hikeFlow.value = updated
@@ -483,25 +508,7 @@ class HikesViewModel(
       }
     }
 
-    // Remove the hikes that need to be removed
-    for (hikeId in toRemove) {
-      _hikeFlowsMap.remove(hikeId)
-    }
-
-    // Add the saved hikes that were not in the list yet
-    if (_loadedHikesType == LoadedHikes.FromSaved) {
-      _savedHikesMap.forEach { (hikeId, savedHike) ->
-        if (!_hikeFlowsMap.containsKey(hikeId)) {
-          _hikeFlowsMap[hikeId] =
-              MutableStateFlow(
-                  Hike(
-                      id = savedHike.id,
-                      isSaved = true,
-                      plannedDate = savedHike.date,
-                      name = savedHike.name))
-        }
-      }
-    }
+    // Do nothing if no hikes are loaded
 
     // Update the selected hike's saved status, unselect it if it's not loaded anymore
     updateSelectedHike()
