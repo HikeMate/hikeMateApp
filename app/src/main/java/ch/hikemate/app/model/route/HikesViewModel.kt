@@ -1001,8 +1001,7 @@ class HikesViewModel(
           mutableWaypoints = hike.waypoints.data
 
           // The elevation has not been requested yet, mark it as requested
-          val hikeMarkedAsRequested = hike.copy(elevation = DeferredData.Requested)
-          hikeFlow.value = hikeMarkedAsRequested
+          hikeFlow.value = hike.copy(elevation = DeferredData.Requested)
           success = true
         }
 
