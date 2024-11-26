@@ -350,6 +350,17 @@ class HikesViewModel(
   fun computeDetailsFor(hikeId: String, onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}) =
       viewModelScope.launch { computeDetailsForAsync(hikeId, onSuccess, onFailure) }
 
+  /**
+   * Internal helper function.
+   *
+   * The exposed [hikeFlows] list directly mirrors the private mutable state flow [_hikeFlowsList].
+   * However, for the view model to work with the hikes in an easier way, it uses [_hikeFlowsMap]
+   * internally, which maps hike IDs to their corresponding state flows.
+   *
+   * [_hikeFlowsMap] is the one that actually gets updated during operations. Once it has been
+   * updated, we need to update [_hikeFlowsList] to reflect the changes. This is what this helper
+   * function does.
+   */
   private fun updateHikeFlowsList() {
     _hikeFlowsList.value = _hikeFlowsMap.values.toList()
   }
