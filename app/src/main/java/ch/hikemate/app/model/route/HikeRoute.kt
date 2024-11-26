@@ -68,14 +68,14 @@ data class Bounds(val minLat: Double, val minLon: Double, val maxLat: Double, va
       return this
     }
 
+    fun isCrossingDateLine(): Boolean {
+      return minLon > maxLon
+    }
+
     fun build(): Bounds {
       return Bounds(minLat, minLon, maxLat, maxLon)
     }
   }
-}
-
-fun BoundingBox.toBounds(): Bounds {
-  return Bounds(latSouth, lonWest, latNorth, lonEast)
 }
 
 fun Bounds.toBoundingBox(): BoundingBox {

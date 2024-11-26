@@ -1,5 +1,6 @@
 package ch.hikemate.app.model.route
 
+import ch.hikemate.app.model.extensions.toBounds
 import org.junit.Assert.*
 import org.junit.Test
 import org.osmdroid.util.BoundingBox
@@ -49,6 +50,17 @@ class HikeRouteTest {
     assertEquals(157249.38, distance23, HikeRouteTest.DELTA_LATLONG)
     assertEquals(111194.93, distance24, HikeRouteTest.DELTA_LATLONG)
     assertEquals(111177.99, distance34, HikeRouteTest.DELTA_LATLONG)
+  }
+
+  @Test
+  fun boundsBuilderIsCrossingDateLine() {
+    val bounds = Bounds.Builder().setMinLat(0.0).setMinLon(170.0).setMaxLat(0.0).setMaxLon(-170.0)
+
+    assertTrue(bounds.isCrossingDateLine())
+
+    val bounds2 = Bounds.Builder().setMinLat(0.0).setMinLon(-170.0).setMaxLat(0.0).setMaxLon(170.0)
+
+    assertFalse(bounds2.isCrossingDateLine())
   }
 
   @Test

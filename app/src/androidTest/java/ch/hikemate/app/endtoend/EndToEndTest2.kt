@@ -12,6 +12,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.hikemate.app.MainActivity
+import ch.hikemate.app.ui.auth.CreateAccountScreen
 import ch.hikemate.app.ui.auth.SignInScreen
 import ch.hikemate.app.ui.auth.SignInWithEmailScreen
 import ch.hikemate.app.ui.components.BackButton
@@ -46,8 +47,6 @@ class EndToEndTest2 {
   fun setUpFirebase() {
     val context = ApplicationProvider.getApplicationContext<Context>()
     FirebaseApp.initializeApp(context)
-
-    auth.createUserWithEmailAndPassword(email, password)
 
     var signedOut = false
 
@@ -94,14 +93,23 @@ class EndToEndTest2 {
 
     // Perform sign in with email and password
     composeTestRule.onNodeWithTag(SignInScreen.TEST_TAG_SIGN_IN_WITH_EMAIL).performClick()
-    composeTestRule.onNodeWithTag(Screen.SIGN_IN_WITH_EMAIL).assertIsDisplayed()
+
     composeTestRule
-        .onNodeWithTag(SignInWithEmailScreen.TEST_TAG_EMAIL_INPUT)
-        .performTextInput(email)
+        .onNodeWithTag(SignInWithEmailScreen.TEST_TAG_GO_TO_SIGN_UP_BUTTON)
+        .performClick()
+    composeTestRule.onNodeWithTag(Screen.CREATE_ACCOUNT).assertIsDisplayed()
+
     composeTestRule
-        .onNodeWithTag(SignInWithEmailScreen.TEST_TAG_PASSWORD_INPUT)
+        .onNodeWithTag(CreateAccountScreen.TEST_TAG_NAME_INPUT)
+        .performTextInput(myUuidAsString)
+    composeTestRule.onNodeWithTag(CreateAccountScreen.TEST_TAG_EMAIL_INPUT).performTextInput(email)
+    composeTestRule
+        .onNodeWithTag(CreateAccountScreen.TEST_TAG_PASSWORD_INPUT)
         .performTextInput(password)
-    composeTestRule.onNodeWithTag(SignInWithEmailScreen.TEST_TAG_SIGN_IN_BUTTON).performClick()
+    composeTestRule
+        .onNodeWithTag(CreateAccountScreen.TEST_TAG_CONFIRM_PASSWORD_INPUT)
+        .performTextInput(password)
+    composeTestRule.onNodeWithTag(CreateAccountScreen.TEST_TAG_SIGN_UP_BUTTON).performClick()
 
     // Wait for the sign-in to be performed and the map to load
     composeTestRule.waitUntilExactlyOneExists(

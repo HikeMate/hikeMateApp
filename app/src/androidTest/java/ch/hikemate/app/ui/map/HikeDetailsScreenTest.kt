@@ -5,7 +5,13 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import ch.hikemate.app.model.authentication.AuthRepository
+import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.model.elevation.ElevationService
+import ch.hikemate.app.model.profile.HikingLevel
+import ch.hikemate.app.model.profile.Profile
+import ch.hikemate.app.model.profile.ProfileRepository
+import ch.hikemate.app.model.profile.ProfileViewModel
 import ch.hikemate.app.model.route.Bounds
 import ch.hikemate.app.model.route.DetailedHikeRoute
 import ch.hikemate.app.model.route.HikeDifficulty
@@ -37,7 +43,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.doNothing
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
@@ -46,6 +54,10 @@ class HikeDetailScreenTest {
   @get:Rule val composeTestRule = createComposeRule()
 
   private lateinit var mockNavigationActions: NavigationActions
+  private lateinit var authRepository: AuthRepository
+  private lateinit var authViewModel: AuthViewModel
+  private lateinit var profileRepository: ProfileRepository
+  private lateinit var profileViewModel: ProfileViewModel
   private lateinit var savedHikesViewModel: SavedHikesViewModel
   private lateinit var mockSavedHikesRepository: SavedHikesRepository
   private lateinit var hikesRepository: HikeRoutesRepository
@@ -68,10 +80,22 @@ class HikeDetailScreenTest {
           estimatedTime = 169.3169307105514,
           difficulty = HikeDifficulty.DIFFICULT)
 
+  private val profile =
+      Profile(
+          id = "1",
+          name = "John Doe",
+          email = "john-doe@gmail.com",
+          hikingLevel = HikingLevel.INTERMEDIATE,
+          joinedDate = Timestamp.now())
+
   @OptIn(ExperimentalCoroutinesApi::class)
   @Before
   fun setUp() {
     mockNavigationActions = mock(NavigationActions::class.java)
+    profileRepository = mock(ProfileRepository::class.java)
+    profileViewModel = ProfileViewModel(profileRepository)
+    authRepository = mock(AuthRepository::class.java)
+    authViewModel = AuthViewModel(authRepository, profileRepository)
     hikesRepository = mock(HikeRoutesRepository::class.java)
     elevationService = mock(ElevationService::class.java)
     mockSavedHikesRepository = mock(SavedHikesRepository::class.java)
@@ -81,6 +105,12 @@ class HikeDetailScreenTest {
         ListOfHikeRoutesViewModel(hikesRepository, elevationService, UnconfinedTestDispatcher())
 
     listOfHikeRoutesViewModel.selectRoute(route)
+
+    `when`(profileRepository.getProfileById(eq(profile.id), any(), any())).thenAnswer {
+      val onSuccess = it.getArgument<(Profile) -> Unit>(1)
+      onSuccess(profile)
+    }
+    profileViewModel.getProfileById(profile.id)
   }
 
   @Test
@@ -91,6 +121,8 @@ class HikeDetailScreenTest {
       HikeDetailScreen(
           listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
           savedHikesViewModel = savedHikesViewModel,
+          profileViewModel = profileViewModel,
+          authViewModel = authViewModel,
           navigationActions = mockNavigationActions)
     }
 
@@ -103,7 +135,10 @@ class HikeDetailScreenTest {
 
     composeTestRule.setContent {
       HikeDetails(
-          detailedRoute = detailedRoute, savedHikesViewModel = savedHikesViewModel, emptyList())
+          detailedRoute = detailedRoute,
+          savedHikesViewModel = savedHikesViewModel,
+          emptyList(),
+          HikingLevel.BEGINNER)
     }
 
     composeTestRule.onNodeWithTag(TEST_TAG_HIKE_NAME).assertTextEquals(route.name!!)
@@ -116,7 +151,10 @@ class HikeDetailScreenTest {
 
     composeTestRule.setContent {
       HikeDetails(
-          detailedRoute = detailedRoute, savedHikesViewModel = savedHikesViewModel, emptyList())
+          detailedRoute = detailedRoute,
+          savedHikesViewModel = savedHikesViewModel,
+          emptyList(),
+          HikingLevel.BEGINNER)
     }
 
     composeTestRule.onNodeWithTag(TEST_TAG_ELEVATION_GRAPH).assertIsDisplayed()
@@ -141,7 +179,10 @@ class HikeDetailScreenTest {
 
     composeTestRule.setContent {
       HikeDetails(
-          detailedRoute = detailedRoute, savedHikesViewModel = savedHikesViewModel, emptyList())
+          detailedRoute = detailedRoute,
+          savedHikesViewModel = savedHikesViewModel,
+          emptyList(),
+          HikingLevel.BEGINNER)
     }
 
     composeTestRule.onNodeWithTag(TEST_TAG_PLANNED_DATE_TEXT_BOX).assertIsDisplayed()
@@ -153,7 +194,10 @@ class HikeDetailScreenTest {
 
     composeTestRule.setContent {
       HikeDetails(
-          detailedRoute = detailedRoute, savedHikesViewModel = savedHikesViewModel, emptyList())
+          detailedRoute = detailedRoute,
+          savedHikesViewModel = savedHikesViewModel,
+          emptyList(),
+          HikingLevel.BEGINNER)
     }
 
     composeTestRule.onAllNodesWithTag(TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(5)
@@ -175,7 +219,10 @@ class HikeDetailScreenTest {
 
     composeTestRule.setContent {
       HikeDetails(
-          detailedRoute = detailedRoute, savedHikesViewModel = savedHikesViewModel, emptyList())
+          detailedRoute = detailedRoute,
+          savedHikesViewModel = savedHikesViewModel,
+          emptyList(),
+          HikingLevel.BEGINNER)
     }
 
     composeTestRule.onAllNodesWithTag(TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(6)
@@ -202,7 +249,10 @@ class HikeDetailScreenTest {
 
     composeTestRule.setContent {
       HikeDetails(
-          detailedRoute = detailedRoute, savedHikesViewModel = savedHikesViewModel, emptyList())
+          detailedRoute = detailedRoute,
+          savedHikesViewModel = savedHikesViewModel,
+          emptyList(),
+          HikingLevel.BEGINNER)
     }
 
     composeTestRule.onAllNodesWithTag(TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(6)
@@ -218,6 +268,8 @@ class HikeDetailScreenTest {
       HikeDetailScreen(
           listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
           savedHikesViewModel = savedHikesViewModel,
+          profileViewModel = profileViewModel,
+          authViewModel = authViewModel,
           navigationActions = mockNavigationActions)
     }
 
@@ -246,7 +298,10 @@ class HikeDetailScreenTest {
 
     composeTestRule.setContent {
       HikeDetails(
-          detailedRoute = detailedRoute, savedHikesViewModel = savedHikesViewModel, emptyList())
+          detailedRoute = detailedRoute,
+          savedHikesViewModel = savedHikesViewModel,
+          emptyList(),
+          HikingLevel.BEGINNER)
     }
 
     composeTestRule.onNodeWithTag(TEST_TAG_ADD_DATE_BUTTON).assertHasClickAction().performClick()
@@ -256,7 +311,10 @@ class HikeDetailScreenTest {
   fun hikeDetails_showsCorrectDetailedHikesValues() {
     composeTestRule.setContent {
       HikeDetails(
-          detailedRoute = detailedRoute, savedHikesViewModel = savedHikesViewModel, emptyList())
+          detailedRoute = detailedRoute,
+          savedHikesViewModel = savedHikesViewModel,
+          emptyList(),
+          HikingLevel.BEGINNER)
     }
 
     val distanceString = String.format(Locale.ENGLISH, "%.2f", detailedRoute.totalDistance)
@@ -289,7 +347,10 @@ class HikeDetailScreenTest {
 
     composeTestRule.setContent {
       HikeDetails(
-          detailedRoute = detailedRoute, savedHikesViewModel = savedHikesViewModel, emptyList())
+          detailedRoute = detailedRoute,
+          savedHikesViewModel = savedHikesViewModel,
+          emptyList(),
+          HikingLevel.BEGINNER)
     }
 
     val minuteString =
