@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Home
@@ -113,11 +114,10 @@ fun EditProfileScreen(
       modifier =
           Modifier.testTag(Screen.EDIT_PROFILE)
               .padding(
-                  // Add for the status bar
                   start = 16.dp,
                   end = 16.dp,
-                  top = 16.dp,
-              ),
+              )
+              .safeDrawingPadding(),
       verticalArrangement = Arrangement.spacedBy(16.dp)) {
         BackButton(navigationActions)
         Text(
@@ -140,7 +140,8 @@ fun EditProfileScreen(
                             )),
             value = name,
             onValueChange = { name = it },
-            label = { Text(context.getString(R.string.profile_screen_name_label)) })
+            label = { Text(context.getString(R.string.profile_screen_name_label)) },
+            singleLine = true)
 
         Column(
             verticalArrangement = Arrangement.spacedBy(2.dp),

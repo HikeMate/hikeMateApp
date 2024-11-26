@@ -11,6 +11,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.hikemate.app.MainActivity
 import ch.hikemate.app.ui.auth.CreateAccountScreen
@@ -106,13 +107,14 @@ class EndToEndTest : TestCase() {
     composeTestRule
         .onNodeWithTag(CreateAccountScreen.TEST_TAG_CONFIRM_PASSWORD_INPUT)
         .performTextInput(password)
+
+    Espresso.closeSoftKeyboard()
+
     composeTestRule
         .onNodeWithTag(CreateAccountScreen.TEST_TAG_SIGN_UP_BUTTON)
         .assertHasClickAction()
         .assertIsDisplayed()
         .performClick()
-
-    composeTestRule.waitForIdle()
 
     // Wait for the map to load
     composeTestRule.waitUntilExactlyOneExists(

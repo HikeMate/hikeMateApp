@@ -5,10 +5,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.TextSelectionColors
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -60,6 +63,8 @@ fun SignInWithEmailScreen(
 ) {
   val context = LocalContext.current
 
+  val scrollState = rememberScrollState()
+
   // Define the colors for the input fields
   val inputColors =
       OutlinedTextFieldDefaults.colors()
@@ -84,7 +89,9 @@ fun SignInWithEmailScreen(
                   start = 16.dp,
                   end = 16.dp,
               )
-              .safeDrawingPadding(),
+              .safeDrawingPadding()
+              .verticalScroll(scrollState)
+              .imePadding(),
       verticalArrangement = Arrangement.spacedBy(16.dp)) {
         BackButton(navigationActions)
         Text(
@@ -98,7 +105,8 @@ fun SignInWithEmailScreen(
             colors = inputColors,
             value = email,
             onValueChange = { email = it },
-            label = { Text(stringResource(R.string.sign_in_with_email_email_label)) })
+            label = { Text(stringResource(R.string.sign_in_with_email_email_label)) },
+            singleLine = true)
 
         OutlinedTextField(
             modifier =
@@ -107,7 +115,8 @@ fun SignInWithEmailScreen(
             colors = inputColors,
             value = password,
             onValueChange = { password = it },
-            label = { Text(stringResource(R.string.sign_in_with_email_password_label)) })
+            label = { Text(stringResource(R.string.sign_in_with_email_password_label)) },
+            singleLine = true)
 
         BigButton(
             modifier =
@@ -129,7 +138,7 @@ fun SignInWithEmailScreen(
             })
 
         Column(
-            modifier = Modifier.fillMaxSize().padding(bottom = 16.dp),
+            modifier = Modifier.fillMaxSize().padding(bottom = 16.dp).weight(1f),
             verticalArrangement = Arrangement.Bottom,
             horizontalAlignment = Alignment.CenterHorizontally) {
               TextButton(
