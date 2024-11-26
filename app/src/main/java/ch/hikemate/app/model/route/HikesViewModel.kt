@@ -808,7 +808,6 @@ class HikesViewModel(
           hikes = loadHikesInBoundsRepoWrapper(boundingBox.toBounds())
         } catch (e: Exception) {
           Log.e(LOG_TAG, "Error encountered while loading hikes in bounds", e)
-          _loading.value = false
           onFailure()
           return@withContext
         }
