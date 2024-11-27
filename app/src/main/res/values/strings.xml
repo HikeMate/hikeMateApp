@@ -63,6 +63,10 @@
     <string name="hike_detail_screen_value_planned">Planned</string>
     <string name="hike_detail_screen_add_a_date_button_text">Add a date</string>
 
+    <!-- Hike Details Screen - Date Picker -->
+    <string name="hike_detail_screen_date_picker_cancel_button">Cancel</string>
+    <string name="hike_detail_screen_date_picker_confirm_button">Plan this hike!</string>
+
     <!-- Hike Difficulty Levels -->
     <string name="hike_difficulty_easy">Easy</string>
     <string name="hike_difficulty_moderate">Moderate</string>
@@ -94,6 +98,11 @@
     <string name="hike_name_from_prefix">Starting from</string>
     <string name="hike_name_to_prefix">Going to</string>
 
+    <!-- Profile -->
+    <string name="hiking_level_beginner">Beginner</string>
+    <string name="hiking_level_intermediate">Intermediate</string>
+    <string name="hiking_level_expert">Expert</string>
+
     <!-- Profile Screen -->
     <string name="profile_screen_title">Your profile</string>
     <string name="profile_screen_name_label">Name</string>
@@ -109,12 +118,8 @@
     <string name="an_error_occurred_while_updating_the_profile">An error occurred while updating the profile.</string>
     <string name="an_error_occurred_while_deleting_the_profile">An error occurred while deleting the profile</string>
 
-
     <!-- Edit Profile Screen -->
     <string name="edit_profile_screen_title">Edit your profile</string>
-    <string name="profile_screen_hiking_level_choice_beginner">Beginner</string>
-    <string name="profile_screen_hiking_level_choice_intermediate">Intermediate</string>
-    <string name="profile_screen_hiking_level_choice_expert">Expert</string>
     <string name="edit_profile_screen_save_button_text">Save profile</string>
 
     <!-- Authentication -->
