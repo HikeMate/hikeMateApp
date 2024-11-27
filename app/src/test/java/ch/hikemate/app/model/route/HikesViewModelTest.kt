@@ -1783,4 +1783,43 @@ class HikesViewModelTest {
     val hikeWithWaypoints = completeHike.copy(elevation = DeferredData.NotRequested)
     assertTrue(hikesViewModel.canElevationDataBeRetrievedFor(hikeWithWaypoints))
   }
+
+  // ==========================================================================
+  // HikesViewModel.areDetailsComputedFor
+  // ==========================================================================
+
+  @Test
+  fun `areDetailsComputedFor returns false with unrequested details`() {
+    val hikeWithoutDistance = completeHike.copy(distance = DeferredData.NotRequested)
+    assertFalse(hikesViewModel.areDetailsComputedFor(hikeWithoutDistance))
+
+    val hikeWithoutElevationGain = completeHike.copy(elevationGain = DeferredData.NotRequested)
+    assertFalse(hikesViewModel.areDetailsComputedFor(hikeWithoutElevationGain))
+
+    val hikeWithoutEstimatedTime = completeHike.copy(estimatedTime = DeferredData.NotRequested)
+    assertFalse(hikesViewModel.areDetailsComputedFor(hikeWithoutEstimatedTime))
+
+    val hikeWithoutDifficulty = completeHike.copy(difficulty = DeferredData.NotRequested)
+    assertFalse(hikesViewModel.areDetailsComputedFor(hikeWithoutDifficulty))
+  }
+
+  @Test
+  fun `areDetailsComputedFor returns false with requested details`() {
+    val hikeWithoutDistance = completeHike.copy(distance = DeferredData.Requested)
+    assertFalse(hikesViewModel.areDetailsComputedFor(hikeWithoutDistance))
+
+    val hikeWithoutElevationGain = completeHike.copy(elevationGain = DeferredData.Requested)
+    assertFalse(hikesViewModel.areDetailsComputedFor(hikeWithoutElevationGain))
+
+    val hikeWithoutEstimatedTime = completeHike.copy(estimatedTime = DeferredData.Requested)
+    assertFalse(hikesViewModel.areDetailsComputedFor(hikeWithoutEstimatedTime))
+
+    val hikeWithoutDifficulty = completeHike.copy(difficulty = DeferredData.Requested)
+    assertFalse(hikesViewModel.areDetailsComputedFor(hikeWithoutDifficulty))
+  }
+
+  @Test
+  fun `areDetailsComputedFor returns true with obtained details`() {
+    assertTrue(hikesViewModel.areDetailsComputedFor(completeHike))
+  }
 }
