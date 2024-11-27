@@ -39,3 +39,7 @@ upload-keystore.jks
 
 # MacOS
 **/.DS_Store
+app/src/main/java/ch/hikemate/app/utils/codebase.md
+app/src/codebase.md
+.aidigestignore
+codebase.md

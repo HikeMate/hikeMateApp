@@ -29,6 +29,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.osmdroid.views.MapView
@@ -405,6 +406,139 @@ class LocationUtilsTest {
     val endDistanceFromSegmentStart =
         endResult.projectedLocation.distanceTo(endResult.segment.start)
     assertEquals(endDistanceToProjection, endResult.distanceFromRoute, EPSILON)
+  }
+
+  @Test
+  fun full_route_tracking_scenario() {
+    // Create a zigzag route to test different directions
+    val route =
+        HikeRoute(
+            id = "test-route",
+            bounds = Bounds(45.0, 7.0, 47.0, 9.0),
+            ways =
+                listOf(
+                    LatLong(46.0, 7.0), // Start
+                    LatLong(46.0, 7.5), // Turn 1
+                    LatLong(46.5, 7.5), // Turn 2
+                    LatLong(46.5, 8.0), // Turn 3
+                    LatLong(46.0, 8.0), // Turn 4
+                    LatLong(46.0, 8.5) // End
+                    ))
+
+    // Initial projection when starting the hike
+    val startLocation = LatLong(46.1, 7.0) // Slightly off from start
+    val initialProjection = projectLocationOnStart(startLocation, route)
+    assertNotNull(initialProjection)
+    assertEquals(0, initialProjection!!.indexToSegment)
+    assertTrue(initialProjection.progressDistance < route.segments[0].length)
+
+    // Simulate user movement with various scenarios
+    val movements =
+        listOf(
+            // Moving along first segment
+            LatLong(46.0, 7.2), // On path
+            LatLong(46.1, 7.3), // Slightly off path but within threshold
+            LatLong(46.0, 7.4), // Back on path
+
+            // Approaching first turn
+            LatLong(46.0, 7.48), // Near turn 1
+            LatLong(46.05, 7.5), // At turn 1
+
+            // Moving along second segment
+            LatLong(46.2, 7.5), // On vertical segment
+            LatLong(46.3, 7.48), // Slightly off
+            LatLong(46.4, 7.5), // Back on path
+
+            // Large deviation and return
+            LatLong(46.4, 7.3), // Far off path
+            LatLong(46.5, 7.5), // Back to route at turn 2
+
+            // Moving along third segment
+            LatLong(46.5, 7.7), // Moving towards turn 3
+            LatLong(46.48, 7.85), // Slight deviation
+            LatLong(46.5, 8.0), // At turn 3
+
+            // Moving along fourth segment
+            LatLong(46.3, 8.0), // Moving down
+            LatLong(46.15, 8.0), // Continue down
+            LatLong(46.0, 8.0), // At turn 4
+
+            // Final segment
+            LatLong(46.0, 8.2), // Moving towards end
+            LatLong(46.1, 8.3), // Slight deviation
+            LatLong(46.0, 8.5) // Reaching end
+            )
+
+    val threshold = 200.0 // Meters
+    var lastProjection = initialProjection
+
+    movements.forEachIndexed { index, location ->
+      if (index == 9) {
+        val yo = 1
+      }
+      val projection =
+          projectLocationOngoing(
+              location = location,
+              route = route,
+              lastProjectionResponse = lastProjection!!,
+              threshold = threshold)
+
+      // Common assertions for all projections
+      assertNotNull(projection)
+      assertTrue(projection.indexToSegment >= 0)
+      assertTrue(projection.indexToSegment < route.segments.size)
+      assertTrue(projection.progressDistance >= 0.0)
+      assertTrue(location.distanceTo(projection.projectedLocation) >= 0.0)
+
+      // Verify progress is monotonic when moving forward
+      if (index > 0) {
+        val movingForward =
+            location.distanceTo(route.ways.last()) <
+                movements[index - 1].distanceTo(route.ways.last())
+        if (movingForward) {
+          assertTrue(projection.progressDistance >= lastProjection!!.progressDistance)
+        }
+      }
+
+      // Verify segment transitions
+      when (location) {
+        movements[4] -> assertEquals(1, projection.indexToSegment) // At turn 1
+        movements[9] -> assertEquals(1, projection.indexToSegment) // At turn 2
+        movements[12] -> assertEquals(2, projection.indexToSegment) // At turn 3
+        movements[15] -> assertEquals(3, projection.indexToSegment) // At turn 4
+      }
+
+      // Verify specific cases
+      when (location) {
+        // Check on-path cases
+        movements[0],
+        movements[3],
+        movements[5],
+        movements[7] -> {
+          assertTrue(projection.distanceFromRoute < 10.0) // Should be very close to path
+        }
+
+        // Check deviation cases
+        movements[8],
+        movements[17] -> {
+          assertTrue(projection.distanceFromRoute > 10.0) // Should be noticeably off path
+        }
+
+        // Check return-to-path cases
+        movements[9],
+        movements[18] -> {
+          assertTrue(projection.distanceFromRoute < lastProjection!!.distanceFromRoute)
+        }
+      }
+
+      lastProjection = projection
+    }
+
+    // Verify final state
+    assertEquals(route.segments.lastIndex, lastProjection!!.indexToSegment)
+    assertTrue(lastProjection!!.distanceFromRoute < threshold)
+    val expectedTotalDistance = route.segments.sumOf { it.length }
+    assertEquals(expectedTotalDistance, lastProjection!!.progressDistance, EPSILON)
   }
 
   @After
