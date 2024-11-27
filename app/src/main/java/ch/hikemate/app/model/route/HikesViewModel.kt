@@ -143,8 +143,17 @@ class HikesViewModel(
    */
   fun refreshSavedHikesCache(onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}) =
       viewModelScope.launch {
+        // Let the user know a heavy load operation is being performed
         _loading.value = true
-        refreshSavedHikesCacheAsync(onSuccess, onFailure)
+
+        val success = refreshSavedHikesCacheAsync()
+        if (success) {
+          onSuccess()
+        } else {
+          onFailure()
+        }
+
+        // The heavy loading operation is done now
         _loading.value = false
       }
 
@@ -448,10 +457,7 @@ class HikesViewModel(
    *
    * @return True if the operation is successful, false otherwise.
    */
-  private suspend fun refreshSavedHikesCacheAsync(
-      onSuccess: () -> Unit = {},
-      onFailure: () -> Unit = {}
-  ): Boolean =
+  private suspend fun refreshSavedHikesCacheAsync(): Boolean =
       withContext(dispatcher) {
         val savedHikes: List<SavedHike>
         try {
@@ -459,14 +465,12 @@ class HikesViewModel(
           savedHikes = savedHikesRepo.loadSavedHikes()
         } catch (e: Exception) {
           Log.e(LOG_TAG, "Error encountered while loading saved hikes", e)
-          onFailure()
           return@withContext false
         }
 
         // Wait for the lock to avoid concurrent modifications
         _hikesMutex.withLock { updateSavedHikesCache(savedHikes) }
 
-        onSuccess()
         return@withContext true
       }
 
