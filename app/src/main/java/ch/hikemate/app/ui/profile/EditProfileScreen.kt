@@ -1,13 +1,10 @@
 package ch.hikemate.app.ui.profile
 
-import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.selection.TextSelectionColors
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SegmentedButton
@@ -34,10 +31,10 @@ import ch.hikemate.app.R
 import ch.hikemate.app.model.profile.HikingLevel
 import ch.hikemate.app.model.profile.Profile
 import ch.hikemate.app.model.profile.ProfileViewModel
+import ch.hikemate.app.ui.components.AsyncStateHandler
 import ch.hikemate.app.ui.components.BackButton
 import ch.hikemate.app.ui.components.BigButton
 import ch.hikemate.app.ui.components.ButtonType
-import ch.hikemate.app.ui.components.CenteredErrorAction
 import ch.hikemate.app.ui.components.CenteredLoadingAnimation
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
@@ -71,138 +68,119 @@ fun EditProfileScreen(
   val errorMessageIdState = profileViewModel.errorMessageId.collectAsState()
   val profileState = profileViewModel.profile.collectAsState()
 
-  if (errorMessageIdState.value != null) {
-    // Display an error message if an error occurred
-    return CenteredErrorAction(
-        errorMessageId = errorMessageIdState.value!!,
-        actionIcon = Icons.Outlined.Home,
-        actionContentDescriptionStringId = R.string.go_back,
-        onAction = { navigationActions.navigateTo(Route.MAP) })
-  }
+  AsyncStateHandler(
+      errorMessageIdState = errorMessageIdState,
+      actionContentDescriptionStringId = R.string.go_back,
+      actionOnErrorAction = { navigationActions.navigateTo(Route.MAP) },
+      valueState = profileState,
+  ) { profile ->
+    var name by remember { mutableStateOf(profile.name) }
+    var hikingLevel by remember {
+      mutableIntStateOf(HikingLevel.values().indexOf(profile.hikingLevel))
+    }
 
-  if (profileState.value == null) {
-    Log.e("ProfileScreen", "Profile is null")
-    return CenteredLoadingAnimation()
-  }
+    var savedProfile by remember { mutableStateOf<Profile?>(null) }
 
-  // profileState.value is not null, we checked it before
-  val profile: Profile = profileState.value!!
+    var isLoading by remember { mutableStateOf(false) }
 
-  var name by remember { mutableStateOf(profile.name) }
-  var hikingLevel by remember {
-    mutableIntStateOf(HikingLevel.values().indexOf(profile.hikingLevel))
-  }
+    if (savedProfile == profile) {
+      isLoading = false
+      savedProfile = null
+      navigationActions.goBack()
+      return@AsyncStateHandler
+    }
 
-  var savedProfile by remember { mutableStateOf<Profile?>(null) }
+    if (isLoading) {
+      // Display a loading animation while the profile is being saved
+      CenteredLoadingAnimation()
+    }
 
-  var isLoading by remember { mutableStateOf(false) }
-
-  if (savedProfile == profile) {
-    isLoading = false
-    savedProfile = null
-    navigationActions.goBack()
-    return
-  }
-
-  if (isLoading) {
-    // Display a loading animation while the profile is being saved
-    CenteredLoadingAnimation()
-  }
-
-  Column(
-      modifier =
-          Modifier.testTag(Screen.EDIT_PROFILE)
-              .padding(
-                  // Add for the status bar
-                  start = 16.dp,
-                  end = 16.dp,
-                  top = 16.dp,
-              ),
-      verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        BackButton(navigationActions)
-        Text(
-            context.getString(R.string.edit_profile_screen_title),
-            style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 32.sp),
-            modifier = Modifier.testTag(EditProfileScreen.TEST_TAG_TITLE))
-
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().testTag(EditProfileScreen.TEST_TAG_NAME_INPUT),
-            colors =
-                OutlinedTextFieldDefaults.colors()
-                    .copy(
-                        focusedLabelColor = primaryColor,
-                        focusedIndicatorColor = primaryColor,
-                        cursorColor = primaryColor,
-                        textSelectionColors =
-                            TextSelectionColors(
-                                handleColor = primaryColor,
-                                backgroundColor = primaryColor,
-                            )),
-            value = name,
-            onValueChange = { name = it },
-            label = { Text(context.getString(R.string.profile_screen_name_label)) })
-
-        Column(
-            verticalArrangement = Arrangement.spacedBy(2.dp),
-        ) {
+    Column(
+        modifier =
+            Modifier.testTag(Screen.EDIT_PROFILE)
+                .padding(
+                    // Add for the status bar
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = 16.dp,
+                ),
+        verticalArrangement = Arrangement.spacedBy(16.dp)) {
+          BackButton(navigationActions)
           Text(
-              context.getString(R.string.profile_screen_hiking_level_label),
-              style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 20.sp),
-              modifier = Modifier.testTag(EditProfileScreen.TEST_TAG_HIKING_LEVEL_LABEL))
-          SingleChoiceSegmentedButtonRow {
-            HikingLevel.values().forEachIndexed { index, fitLevel ->
-              SegmentedButton(
-                  modifier =
-                      Modifier.testTag(
-                          when (fitLevel) {
-                            HikingLevel.BEGINNER ->
-                                EditProfileScreen.TEST_TAG_HIKING_LEVEL_CHOICE_BEGINNER
-                            HikingLevel.INTERMEDIATE ->
-                                EditProfileScreen.TEST_TAG_HIKING_LEVEL_CHOICE_INTERMEDIATE
-                            HikingLevel.EXPERT ->
-                                EditProfileScreen.TEST_TAG_HIKING_LEVEL_CHOICE_EXPERT
-                          }),
-                  shape =
-                      SegmentedButtonDefaults.itemShape(
-                          index = index, count = HikingLevel.values().size),
-                  colors =
-                      SegmentedButtonDefaults.colors()
-                          .copy(
-                              activeContainerColor = primaryColor,
-                              activeContentColor = Color.White,
-                          ),
-                  onClick = { hikingLevel = index },
-                  selected = hikingLevel == index,
-              ) {
-                Text(
-                    when (fitLevel) {
-                      HikingLevel.BEGINNER ->
-                          context.getString(R.string.profile_screen_hiking_level_choice_beginner)
-                      HikingLevel.INTERMEDIATE ->
-                          context.getString(
-                              R.string.profile_screen_hiking_level_choice_intermediate)
-                      HikingLevel.EXPERT ->
-                          context.getString(R.string.profile_screen_hiking_level_choice_expert)
-                    })
+              context.getString(R.string.edit_profile_screen_title),
+              style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 32.sp),
+              modifier = Modifier.testTag(EditProfileScreen.TEST_TAG_TITLE))
+
+          OutlinedTextField(
+              modifier = Modifier.fillMaxWidth().testTag(EditProfileScreen.TEST_TAG_NAME_INPUT),
+              colors =
+                  OutlinedTextFieldDefaults.colors()
+                      .copy(
+                          focusedLabelColor = primaryColor,
+                          focusedIndicatorColor = primaryColor,
+                          cursorColor = primaryColor,
+                          textSelectionColors =
+                              TextSelectionColors(
+                                  handleColor = primaryColor,
+                                  backgroundColor = primaryColor,
+                              )),
+              value = name,
+              onValueChange = { name = it },
+              label = { Text(context.getString(R.string.profile_screen_name_label)) })
+
+          Column(
+              verticalArrangement = Arrangement.spacedBy(2.dp),
+          ) {
+            Text(
+                context.getString(R.string.profile_screen_hiking_level_label),
+                style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 20.sp),
+                modifier = Modifier.testTag(EditProfileScreen.TEST_TAG_HIKING_LEVEL_LABEL))
+            SingleChoiceSegmentedButtonRow {
+              HikingLevel.values().forEachIndexed { index, fitLevel ->
+                SegmentedButton(
+                    modifier =
+                        Modifier.testTag(
+                            when (fitLevel) {
+                              HikingLevel.BEGINNER ->
+                                  EditProfileScreen.TEST_TAG_HIKING_LEVEL_CHOICE_BEGINNER
+                              HikingLevel.INTERMEDIATE ->
+                                  EditProfileScreen.TEST_TAG_HIKING_LEVEL_CHOICE_INTERMEDIATE
+                              HikingLevel.EXPERT ->
+                                  EditProfileScreen.TEST_TAG_HIKING_LEVEL_CHOICE_EXPERT
+                            }),
+                    shape =
+                        SegmentedButtonDefaults.itemShape(
+                            index = index, count = HikingLevel.values().size),
+                    colors =
+                        SegmentedButtonDefaults.colors()
+                            .copy(
+                                activeContainerColor = primaryColor,
+                                activeContentColor = Color.White,
+                            ),
+                    onClick = { hikingLevel = index },
+                    selected = hikingLevel == index,
+                ) {
+                  Text(fitLevel.getDisplayString(context))
+                }
               }
             }
           }
-        }
 
-        BigButton(
-            modifier = Modifier.fillMaxWidth().testTag(EditProfileScreen.TEST_TAG_SAVE_BUTTON),
-            buttonType = ButtonType.PRIMARY,
-            label = context.getString(R.string.edit_profile_screen_save_button_text),
-            onClick = {
-              savedProfile =
-                  Profile(
-                      profile.id,
-                      name,
-                      profile.email,
-                      HikingLevel.values()[hikingLevel],
-                      profile.joinedDate)
-              profileViewModel.updateProfile(profile = savedProfile!!)
-              isLoading = true
-            })
-      }
+          BigButton(
+              modifier = Modifier.fillMaxWidth().testTag(EditProfileScreen.TEST_TAG_SAVE_BUTTON),
+              buttonType = ButtonType.PRIMARY,
+              label = context.getString(R.string.edit_profile_screen_save_button_text),
+              onClick = {
+                savedProfile =
+                    Profile(
+                        profile.id,
+                        name,
+                        profile.email,
+                        HikingLevel.values()[hikingLevel],
+                        profile.joinedDate)
+                profileViewModel.updateProfile(profile = savedProfile!!)
+                isLoading = true
+              })
+        }
+  }
 }
