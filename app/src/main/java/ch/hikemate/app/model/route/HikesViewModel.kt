@@ -1155,7 +1155,13 @@ class HikesViewModel(
    * request is not already ongoing. Returns the data if it is available, and indicates whether a
    * request should be performed.
    *
-   * If a request should be performed, this function will also mark the data as requested.
+   * If no request should be performed (can be either because of an error or because the data are
+   * already requested/obtained), this function ([detailsPreRequestOperations]) is responsible for
+   * calling the right callback ([onSuccess] or [onFailure]).
+   *
+   * If a request should be performed, this function will mark the data as requested (see
+   * [DeferredData.Requested]). The caller is responsible for calling the right callback
+   * ([onSuccess] or [onFailure]) once the request is done.
    *
    * Note: this function does not set its context to [dispatcher], it is the responsibility of the
    * caller to do so.
