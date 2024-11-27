@@ -950,13 +950,20 @@ class HikesViewModelTest {
         // Check that the hike is saved initially
         assertTrue(hikesViewModel.hikeFlows.value[0].value.isSaved)
 
-        // Make sure the saved hikes repository saves the hike
+        // Make sure the saved hikes repository saves the hike with the right date
+        val dateToSet = null
         coEvery { savedHikesRepo.removeSavedHike(any()) } returns Unit
-        coEvery { savedHikesRepo.addSavedHike(any()) } returns Unit
+        coEvery { savedHikesRepo.addSavedHike(any()) } answers
+            {
+              assertEquals(
+                  "The planned date passed to the repository is different from the date that should have been set.",
+                  dateToSet,
+                  firstArg<SavedHike>().date)
+            }
 
         // Try to set a planned date for the loaded hike (test with setting a null date, which is
         // valid)
-        hikesViewModel.setPlannedDate(hikeId = singleOsmHike1[0].id, date = null)
+        hikesViewModel.setPlannedDate(hikeId = singleOsmHike1[0].id, date = dateToSet)
 
         // The saved hikes repository should be called exactly once
         coVerify(exactly = 1) { savedHikesRepo.addSavedHike(any()) }
@@ -979,11 +986,18 @@ class HikesViewModelTest {
         // Check that the hike is not marked as saved yet
         assertFalse(hikesViewModel.selectedHike.value?.isSaved ?: true)
 
-        // Make sure the saved hikes repository saves the hike
-        coEvery { savedHikesRepo.addSavedHike(any()) } returns Unit
+        // Make sure the saved hikes repository saves the hike with the right date
+        val dateToSet = firstJanuary2024
+        coEvery { savedHikesRepo.addSavedHike(any()) } answers
+            {
+              assertEquals(
+                  "The planned date passed to the repository is different from the date that should have been set.",
+                  dateToSet,
+                  firstArg<SavedHike>().date)
+            }
 
         // Set a planned date for the selected hike
-        hikesViewModel.setPlannedDate(hikeId, firstJanuary2024)
+        hikesViewModel.setPlannedDate(hikeId, dateToSet)
 
         // Check that the selected hike is now marked as saved
         assertTrue(hikesViewModel.selectedHike.value?.isSaved ?: false)
