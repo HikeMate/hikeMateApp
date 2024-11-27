@@ -726,12 +726,8 @@ class HikesViewModel(
       onFailure: () -> Unit
   ) =
       withContext(dispatcher) {
-        var successful = false
-        _hikesMutex.withLock {
-          // Retrieve the hike to update from the loaded hikes
-          val hikeFlow = _hikeFlowsMap[hikeId] ?: return@withLock
-          successful = updateHikePlannedDateAsync(hikeFlow, date)
-        }
+        val successful: Boolean
+        _hikesMutex.withLock { successful = updateHikePlannedDateAsync(hikeId, date) }
 
         if (successful) {
           onSuccess()
@@ -749,10 +745,9 @@ class HikesViewModel(
    * @param hikeFlow The flow of the hike to update.
    * @return True if the operation was successful, false otherwise.
    */
-  private suspend fun updateHikePlannedDateAsync(
-      hikeFlow: MutableStateFlow<Hike>,
-      date: Timestamp?
-  ): Boolean {
+  private suspend fun updateHikePlannedDateAsync(hikeId: String, date: Timestamp?): Boolean {
+    // Retrieve the hike to update from the loaded hikes
+    val hikeFlow = _hikeFlowsMap[hikeId] ?: return false
     val hike = hikeFlow.value
 
     // If the hike is already saved with the provided date, don't do anything
