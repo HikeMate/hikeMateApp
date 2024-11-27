@@ -121,6 +121,21 @@ class HikesViewModelTest {
   private val expectedElevationGain: Double = 3.0
   private val expectedDifficulty: HikeDifficulty = HikeDifficulty.EASY
 
+  private val completeHike =
+      Hike(
+          id = "complete",
+          isSaved = false,
+          plannedDate = null,
+          name = "Hike",
+          description = DeferredData.Obtained("Hike Description"),
+          bounds = DeferredData.Obtained(testBounds),
+          waypoints = DeferredData.Obtained(testWaypoints),
+          elevation = DeferredData.Obtained(elevationProfile1),
+          distance = DeferredData.Obtained(expectedDistance),
+          estimatedTime = DeferredData.Obtained(expectedEstimatedTime),
+          elevationGain = DeferredData.Obtained(expectedElevationGain),
+          difficulty = DeferredData.Obtained(expectedDifficulty))
+
   // ==========================================================================
   // HikesViewModel.selectHike
   // ==========================================================================
@@ -1743,4 +1758,29 @@ class HikesViewModelTest {
             expectedDifficulty,
             (hikesViewModel.selectedHike.value?.difficulty as DeferredData.Obtained).data)
       }
+
+  // ==========================================================================
+  // HikesViewModel.canElevationDataBeRetrievedFor
+  // ==========================================================================
+
+  @Test
+  fun `canElevationDataBeRetrievedFor returns false with unrequested waypoints`() {
+    val hikeWithNoWaypoints =
+        completeHike.copy(
+            waypoints = DeferredData.NotRequested, elevation = DeferredData.NotRequested)
+    assertFalse(hikesViewModel.canElevationDataBeRetrievedFor(hikeWithNoWaypoints))
+  }
+
+  @Test
+  fun `canElevationDataBeRetrievedFor returns false with requested waypoints`() {
+    val hikeWithNoWaypoints =
+        completeHike.copy(waypoints = DeferredData.Requested, elevation = DeferredData.NotRequested)
+    assertFalse(hikesViewModel.canElevationDataBeRetrievedFor(hikeWithNoWaypoints))
+  }
+
+  @Test
+  fun `canElevationDataBeRetrievedFor returns true with waypoints`() {
+    val hikeWithWaypoints = completeHike.copy(elevation = DeferredData.NotRequested)
+    assertTrue(hikesViewModel.canElevationDataBeRetrievedFor(hikeWithWaypoints))
+  }
 }
