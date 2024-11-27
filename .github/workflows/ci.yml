@@ -27,16 +27,17 @@ jobs:
           submodules: recursive
           fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of Sonar analysis (if we use Sonar Later)
 
-      # Load google-services.json from the secrets
+      # Load google-services.json and Maptiler API Key (might be unnecessary) from the secrets
       - name: Decode secrets
         env:
           GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
           KEYSTORE_PROPERTIES: ${{ secrets.KEYSTORE_PROPERTIES }}
           KEYSTORE: ${{ secrets.KEYSTORE }}
+          MAPTILER_API_KEY: ${{ secrets.MAPTILER_API_KEY }}
         run: |
           echo "$GOOGLE_SERVICES" | base64 --decode > ./app/google-services.json
           echo "$KEYSTORE_PROPERTIES" | base64 --decode > ./keystore.properties
-          echo "$KEYSTORE" | base64 --decode > ./keystore.jks
+          echo "$KEYSTORE" | base64 --decode > ./keystore.jks      
 
       # Kernel-based Virtual Machine (KVM) is an open source virtualization technology built into Linux. Enabling it allows the Android emulator to run faster.
       - name: Enable KVM group perms

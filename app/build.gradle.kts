@@ -37,6 +37,8 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        //buildConfigField("String", "MAPTILER_API_KEY", "${MAPTILER_API_KEY}")
     }
 
     signingConfigs {
@@ -70,6 +72,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     composeOptions {
@@ -144,6 +147,8 @@ fun DependencyHandlerScope.globalTestImplementation(dep: Any) {
 
 dependencies {
 
+    implementation(libs.androidx.activity)
+    implementation(libs.androidx.constraintlayout)
     val composeBom = platform(libs.compose.bom)
 
     // Dependencies
@@ -175,6 +180,7 @@ dependencies {
     implementation(libs.accompanist.permissions)
     implementation(libs.play.services.location)
     implementation(libs.gson)
+    implementation(libs.android.sdk)
 
 
     // Global test dependencies

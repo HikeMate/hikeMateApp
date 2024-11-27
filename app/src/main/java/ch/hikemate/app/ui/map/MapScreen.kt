@@ -294,6 +294,8 @@ fun MapScreen(
       setMultiTouchControls(true)
       // Limit the vertical scrollable area to avoid the user scrolling too far
       setScrollableAreaLimitLatitude(MapScreen.MAP_MAX_LATITUDE, MapScreen.MAP_MIN_LATITUDE, 0)
+
+      Configuration.getInstance().userAgentValue = context.packageName
     }
   }
   var userLocationMarker: Marker? by remember { mutableStateOf(null) }
