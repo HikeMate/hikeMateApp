@@ -865,8 +865,7 @@ class HikesViewModel(
                       }
                     }
                   }
-                  .toMap()
-                  .toMutableMap()
+                  .toMap(mutableMapOf())
 
           // Update the selected hike if necessary
           updateSelectedHike()
