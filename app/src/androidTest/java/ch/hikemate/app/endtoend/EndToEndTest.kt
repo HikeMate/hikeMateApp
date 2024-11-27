@@ -6,14 +6,14 @@ import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.hasTestTag
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import ch.hikemate.app.MainActivity
+import ch.hikemate.app.HikeMateApp
 import ch.hikemate.app.ui.auth.CreateAccountScreen
 import ch.hikemate.app.ui.auth.SignInScreen
 import ch.hikemate.app.ui.auth.SignInWithEmailScreen
@@ -39,7 +39,7 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class EndToEndTest : TestCase() {
-  @get:Rule val composeTestRule = createAndroidComposeRule<MainActivity>()
+  @get:Rule val composeTestRule = createComposeRule()
   private val auth = FirebaseAuth.getInstance()
   private val myUuid = UUID.randomUUID()
   private val myUuidAsString = myUuid.toString()
@@ -70,6 +70,9 @@ class EndToEndTest : TestCase() {
     if (!signedOut) {
       throw Exception("Failed to sign out")
     }
+
+    // Make sure the log out is considered in the MainActivity
+    composeTestRule.setContent { HikeMateApp() }
   }
 
   @After
@@ -90,22 +93,43 @@ class EndToEndTest : TestCase() {
     composeTestRule.onNodeWithTag(SignInScreen.TEST_TAG_SIGN_IN_WITH_EMAIL).assertIsDisplayed()
     composeTestRule.onNodeWithTag(SignInScreen.TEST_TAG_SIGN_IN_WITH_GOOGLE).assertIsDisplayed()
 
+    // Perform sign in with email and password
     composeTestRule.onNodeWithTag(SignInScreen.TEST_TAG_SIGN_IN_WITH_EMAIL).performClick()
-    composeTestRule.onNodeWithTag(Screen.SIGN_IN_WITH_EMAIL).assertIsDisplayed()
+
+    composeTestRule.waitUntilExactlyOneExists(
+        hasTestTag(Screen.SIGN_IN_WITH_EMAIL), timeoutMillis = 10000)
+
     composeTestRule
         .onNodeWithTag(SignInWithEmailScreen.TEST_TAG_GO_TO_SIGN_UP_BUTTON)
+        .assertIsDisplayed()
+        .assertHasClickAction()
         .performClick()
     composeTestRule.onNodeWithTag(Screen.CREATE_ACCOUNT).assertIsDisplayed()
 
     composeTestRule
         .onNodeWithTag(CreateAccountScreen.TEST_TAG_NAME_INPUT)
+        .assertIsDisplayed()
         .performTextInput(myUuidAsString)
-    composeTestRule.onNodeWithTag(CreateAccountScreen.TEST_TAG_EMAIL_INPUT).performTextInput(email)
+
+    Espresso.closeSoftKeyboard()
+
+    composeTestRule
+        .onNodeWithTag(CreateAccountScreen.TEST_TAG_EMAIL_INPUT)
+        .assertIsDisplayed()
+        .performTextInput(email)
+
+    Espresso.closeSoftKeyboard()
+
     composeTestRule
         .onNodeWithTag(CreateAccountScreen.TEST_TAG_PASSWORD_INPUT)
+        .assertIsDisplayed()
         .performTextInput(password)
+
+    Espresso.closeSoftKeyboard()
+
     composeTestRule
         .onNodeWithTag(CreateAccountScreen.TEST_TAG_CONFIRM_PASSWORD_INPUT)
+        .assertIsDisplayed()
         .performTextInput(password)
 
     Espresso.closeSoftKeyboard()

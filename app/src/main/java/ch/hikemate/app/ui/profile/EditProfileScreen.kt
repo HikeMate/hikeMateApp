@@ -5,7 +5,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.TextSelectionColors
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SegmentedButton
@@ -66,6 +68,8 @@ fun EditProfileScreen(
 ) {
   val context = LocalContext.current
 
+  val scrollState = rememberScrollState()
+
   val errorMessageIdState = profileViewModel.errorMessageId.collectAsState()
   val profileState = profileViewModel.profile.collectAsState()
 
@@ -103,7 +107,8 @@ fun EditProfileScreen(
                     start = 16.dp,
                     end = 16.dp,
                 )
-                .safeDrawingPadding(),
+                .safeDrawingPadding()
+                .verticalScroll(scrollState),
         verticalArrangement = Arrangement.spacedBy(16.dp)) {
           BackButton(navigationActions)
           Text(
