@@ -3,8 +3,10 @@ package ch.hikemate.app.ui.auth
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
@@ -91,7 +93,8 @@ fun SignInWithEmailScreen(
               )
               .safeDrawingPadding()
               .verticalScroll(scrollState)
-              .imePadding(),
+              .imePadding()
+              .height(IntrinsicSize.Max),
       verticalArrangement = Arrangement.spacedBy(16.dp)) {
         BackButton(navigationActions)
         Text(
@@ -138,7 +141,7 @@ fun SignInWithEmailScreen(
             })
 
         Column(
-            modifier = Modifier.fillMaxSize().padding(bottom = 16.dp).weight(1f),
+            modifier = Modifier.padding(bottom = 16.dp).fillMaxSize(),
             verticalArrangement = Arrangement.Bottom,
             horizontalAlignment = Alignment.CenterHorizontally) {
               TextButton(
