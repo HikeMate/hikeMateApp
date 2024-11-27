@@ -78,7 +78,6 @@ import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
-import org.osmdroid.config.Configuration
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 
@@ -124,32 +123,6 @@ fun HikeDetailScreen(
   val elevationData = remember { mutableListOf<Double>() }
   val detailedRoute = DetailedHikeRoute.create(route)
   val routeZoomLevel = MapUtils.calculateBestZoomLevel(route.bounds).toDouble()
-
-  // Only do the configuration on the first composition, not on every recomposition
-  LaunchedEffect(Unit) {
-    savedHikesViewModel.loadSavedHikes()
-    savedHikesViewModel.updateHikeDetailState(route)
-    listOfHikeRoutesViewModel.getRoutesElevation(
-        route,
-        {
-          elevationData.clear()
-          elevationData.addAll(it)
-        })
-
-    Configuration.getInstance().apply {
-      // Set user-agent to avoid rejected requests
-      userAgentValue = context.packageName
-
-      // Allow for faster loading of tiles. Default OSMDroid value is 2.
-      tileDownloadThreads = 4
-
-      // Maximum number of tiles that can be downloaded at once. Default is 40.
-      tileDownloadMaxQueueSize = 40
-
-      // Maximum number of bytes that can be used by the tile file system cache. Default is 600MB.
-      tileFileSystemCacheMaxBytes = 600L * 1024L * 1024L
-    }
-  }
 
   // Avoid re-creating the MapView on every recomposition
   val mapView = remember {
@@ -231,6 +204,11 @@ fun HikeDetailScreen(
           modifier =
               Modifier.align(Alignment.BottomEnd)
                   .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
+      Button(
+          onClick = { navigationActions.navigateTo(Screen.RUN_HIKE) },
+          modifier = Modifier.padding(top = 16.dp)) {
+            Text(text = "Test")
+          }
 
       // Hike Details bottom sheet
       HikeDetails(detailedRoute, savedHikesViewModel, elevationData, profile.hikingLevel)
@@ -340,12 +318,6 @@ fun HikeDetails(
                           LocalContext.current, detailedRoute.difficulty.colorResourceId)),
           )
           DateDetailRow(isSaved, plannedDate, updatePlannedDate)
-
-          /*Button(
-          onClick = { navigationActions.navigateTo(Screen.RUN_HIKE) },
-          modifier = Modifier.padding(top = 16.dp)) {
-            Text(text = "Test")
-          }*/
         }
       },
       sheetPeekHeight = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT) {}

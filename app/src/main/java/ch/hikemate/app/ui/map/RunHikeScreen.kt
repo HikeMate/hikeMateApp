@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -29,12 +28,10 @@ import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_RUN_HIKE_SCREEN_BOTTOM_SHEE
 import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_RUN_HIKE_SCREEN_MAP
 import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_RUN_HIKE_SCREEN_ZOOM_BUTTONS
 import ch.hikemate.app.ui.navigation.NavigationActions
-import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.utils.MapUtils
 import kotlin.math.max
 import kotlin.math.min
-import org.osmdroid.config.Configuration
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 
@@ -64,23 +61,6 @@ fun RunHikeScreen(
 
   // This will need to be changed when the "run" feature of this screen is implemented
   val routeZoomLevel = MapUtils.calculateBestZoomLevel(route.bounds).toDouble()
-
-  // Only do the configuration on the first composition, not on every recomposition
-  LaunchedEffect(Unit) {
-    Configuration.getInstance().apply {
-      // Set user-agent to avoid rejected requests
-      userAgentValue = context.packageName
-
-      // Allow for faster loading of tiles. Default OSMDroid value is 2.
-      tileDownloadThreads = 4
-
-      // Maximum number of tiles that can be downloaded at once. Default is 40.
-      tileDownloadMaxQueueSize = 40
-
-      // Maximum number of bytes that can be used by the tile file system cache. Default is 600MB.
-      tileFileSystemCacheMaxBytes = 600L * 1024L * 1024L
-    }
-  }
 
   // Avoid re-creating the MapView on every recomposition
   val mapView = remember {
@@ -126,7 +106,7 @@ fun RunHikeScreen(
   AsyncStateHandler(
       errorMessageIdState = errorMessageIdState,
       actionContentDescriptionStringId = R.string.go_back,
-      actionOnErrorAction = { navigationActions.navigateTo(Route.MAP) },
+      actionOnErrorAction = { navigationActions.goBack() },
       valueState = profileState,
   ) { _ ->
     Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {
@@ -168,5 +148,5 @@ fun RunHikeBottomSheet() {
       sheetContainerColor = MaterialTheme.colorScheme.surface,
       sheetPeekHeight = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT,
       modifier = Modifier.testTag(TEST_TAG_RUN_HIKE_SCREEN_BOTTOM_SHEET),
-      sheetContent = { Text("Empty Bottom Sheet") }) {}
+      sheetContent = {}) {}
 }
