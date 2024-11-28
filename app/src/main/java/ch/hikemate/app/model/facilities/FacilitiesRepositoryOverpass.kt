@@ -62,7 +62,6 @@ class FacilitiesRepositoryOverpass(private val client: OkHttpClient) :
           Log.d("FacilitiesRepository", "Got ${facilities.size} facilities")
           onSuccess(facilities)
         }
-
       } catch (e: Exception) {
         onFailure(e)
       } finally {
