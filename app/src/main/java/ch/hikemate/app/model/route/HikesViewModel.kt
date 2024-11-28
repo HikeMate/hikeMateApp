@@ -742,7 +742,7 @@ class HikesViewModel(
    * This function requires [_hikesMutex]'s lock to be acquired before being called. It is the
    * caller's responsibility to acquire the lock.
    *
-   * @param hikeFlow The flow of the hike to update.
+   * @param hikeId The unique ID of the hike to set the planned date for.
    * @return True if the operation was successful, false otherwise.
    */
   private suspend fun updateHikePlannedDateAsync(hikeId: String, date: Timestamp?): Boolean {
