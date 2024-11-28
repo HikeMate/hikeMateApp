@@ -6,12 +6,15 @@ import ch.hikemate.app.model.route.saved.SavedHikesRepository
 import ch.hikemate.app.utils.RouteUtils
 import ch.hikemate.app.utils.from
 import com.google.firebase.Timestamp
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
+import io.mockk.mockkStatic
 import io.mockk.unmockkAll
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
@@ -135,6 +138,24 @@ class HikesViewModelTest {
           estimatedTime = DeferredData.Obtained(expectedEstimatedTime),
           elevationGain = DeferredData.Obtained(expectedElevationGain),
           difficulty = DeferredData.Obtained(expectedDifficulty))
+
+  // ==========================================================================
+  // CREATION OF AN INSTANCE USING THE FACTORY
+  // ==========================================================================
+
+  @Test
+  fun canBeCreatedAsFactory() {
+    val firebaseFirestore: FirebaseFirestore = mockk()
+    mockkStatic(FirebaseFirestore::class)
+    every { FirebaseFirestore.getInstance() } returns firebaseFirestore
+    val firebaseAuth: FirebaseAuth = mockk()
+    mockkStatic(FirebaseAuth::class)
+    every { FirebaseAuth.getInstance() } returns firebaseAuth
+
+    val factory = HikesViewModel.Factory
+    val viewModel = factory.create(HikesViewModel::class.java)
+    assertNotNull(viewModel)
+  }
 
   // ==========================================================================
   // HikesViewModel.selectHike

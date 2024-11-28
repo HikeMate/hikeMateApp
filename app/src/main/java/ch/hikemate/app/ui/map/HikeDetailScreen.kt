@@ -76,7 +76,7 @@ import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.utils.MapUtils
-import ch.hikemate.app.utils.toFormattedString
+import ch.hikemate.app.utils.humanReadableFormat
 import com.google.firebase.Timestamp
 import java.util.Date
 import java.util.Locale
@@ -451,7 +451,7 @@ fun DateDetailRow(
                         shape = RoundedCornerShape(4.dp))
                     .padding(horizontal = 8.dp, vertical = 4.dp)) {
               Text(
-                  text = plannedDate.toFormattedString(),
+                  text = plannedDate.humanReadableFormat(),
                   // saved Date
                   style = MaterialTheme.typography.bodySmall,
                   modifier =
