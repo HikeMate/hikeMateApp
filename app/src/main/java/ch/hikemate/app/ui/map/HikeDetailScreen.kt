@@ -132,6 +132,18 @@ fun HikeDetailScreen(
   val detailedRoute = DetailedHikeRoute.create(route)
   val routeZoomLevel = MapUtils.calculateBestZoomLevel(route.bounds).toDouble()
 
+  // Only do the configuration on the first composition, not on every recomposition
+  LaunchedEffect(Unit) {
+    savedHikesViewModel.loadSavedHikes()
+    savedHikesViewModel.updateHikeDetailState(route)
+    listOfHikeRoutesViewModel.getRoutesElevation(
+        route,
+        {
+          elevationData.clear()
+          elevationData.addAll(it)
+        })
+  }
+
   // Avoid re-creating the MapView on every recomposition
   val mapView = remember {
     MapView(context).apply {

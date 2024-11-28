@@ -11,6 +11,7 @@ import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -19,7 +20,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import ch.hikemate.app.R
+import ch.hikemate.app.model.elevation.ElevationServiceRepository
 import ch.hikemate.app.model.profile.ProfileViewModel
+import ch.hikemate.app.model.route.DetailedHikeRoute
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
 import ch.hikemate.app.ui.components.AsyncStateHandler
 import ch.hikemate.app.ui.components.BackButton
@@ -32,6 +35,7 @@ import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.utils.MapUtils
 import kotlin.math.max
 import kotlin.math.min
+import okhttp3.OkHttpClient
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 
@@ -51,13 +55,14 @@ fun RunHikeScreen(
 
   val context = LocalContext.current
 
-  LaunchedEffect(listOfHikeRoutesViewModel.selectedHikeRoute.collectAsState().value) {
-    if (listOfHikeRoutesViewModel.selectedHikeRoute.value == null) {
+  val selectedRoute by listOfHikeRoutesViewModel.selectedHikeRoute.collectAsState()
+
+  LaunchedEffect(selectedRoute) {
+    if (selectedRoute == null) {
       navigationActions.goBack()
     }
   }
-
-  val route = listOfHikeRoutesViewModel.selectedHikeRoute.collectAsState().value!!
+  val route = selectedRoute!!
 
   // This will need to be changed when the "run" feature of this screen is implemented
   val routeZoomLevel = MapUtils.calculateBestZoomLevel(route.bounds).toDouble()
@@ -133,14 +138,18 @@ fun RunHikeScreen(
                   .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
                   .testTag(TEST_TAG_RUN_HIKE_SCREEN_ZOOM_BUTTONS))
 
-      RunHikeBottomSheet()
+      RunHikeBottomSheet(
+          DetailedHikeRoute.create(route, ElevationServiceRepository(OkHttpClient())), {})
     }
   }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RunHikeBottomSheet() {
+fun RunHikeBottomSheet(
+    hikeRoute: DetailedHikeRoute,
+    onStopTheRun: () -> Unit,
+) {
   val scaffoldState = rememberBottomSheetScaffoldState()
 
   BottomSheetScaffold(
