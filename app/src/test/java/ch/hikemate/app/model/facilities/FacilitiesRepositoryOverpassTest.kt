@@ -63,6 +63,18 @@ class FacilitiesRepositoryOverpassTest {
           "amenity": "toilets"
         }
       }"""
+
+    private const val VALID_RESPONSE_ELEMENT_WITH_MULTIPLE_TAGS =
+        """
+      {
+        "type": "node",
+        "id": 313827518,
+        "lat": 50.9620,
+        "lon": 5.12740,
+        "tags": {
+          "amenity": "parking"
+        }
+      }"""
   }
 
   private lateinit var client: OkHttpClient
@@ -140,6 +152,40 @@ class FacilitiesRepositoryOverpassTest {
               "getFacilities with normal parameters succeeded. Got: ${facilities.size} facilities")
         },
         onFailure = { fail("getFacilities call failed") })
+
+    verify(mockCall).enqueue(callbackCaptor.capture())
+
+    assert(latch.await(5, TimeUnit.SECONDS)) { "Test timed out" }
+
+    assertTrue(onSuccessCalled)
+  }
+
+  @Test
+  fun testGetFacilitiesWithMultipleAmenities() {
+    val response =
+        buildResponse(
+            VALID_RESPONSE_HEADER +
+                VALID_RESPONSE_ELEMENT +
+                "," +
+                VALID_RESPONSE_ELEMENT_WITH_MULTIPLE_TAGS +
+                VALID_RESPONSE_FOOTER)
+
+    val callbackCaptor = argumentCaptor<okhttp3.Callback>()
+    val latch = CountDownLatch(1)
+    var onSuccessCalled = false
+
+    setupMockResponse(response)
+
+    facilitiesRepository.getFacilities(
+        bounds = testBoundsNormal,
+        onSuccess = { facilities ->
+          assertEquals(2, facilities.size)
+          assertEquals(FacilityType.TOILETS, facilities[0].type)
+          assertEquals(FacilityType.PARKING, facilities[1].type)
+          onSuccessCalled = true
+          latch.countDown()
+        },
+        onFailure = { fail("Should not fail") })
 
     verify(mockCall).enqueue(callbackCaptor.capture())
 
