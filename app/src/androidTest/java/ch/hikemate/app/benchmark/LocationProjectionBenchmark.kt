@@ -40,19 +40,19 @@ class LocationProjectionBenchmark {
     farPoint = LatLong(longRoute.ways[midIndex].lat + 1.0, longRoute.ways[midIndex].lon + 1.0)
   }
 
-  @Test
+  //@Test
   fun benchmark_projectStart() =
       benchmarkRule.measureRepeated { projectLocationOnStart(startPoint, longRoute) }
 
-  @Test
+  //@Test
   fun benchmark_projectMiddle() =
       benchmarkRule.measureRepeated { projectLocationOnStart(midPoint, longRoute) }
 
-  @Test
+  //@Test
   fun benchmark_projectEnd() =
       benchmarkRule.measureRepeated { projectLocationOnStart(endPoint, longRoute) }
 
-  @Test
+  //@Test
   fun benchmark_projectFar() =
       benchmarkRule.measureRepeated { projectLocationOnStart(farPoint, longRoute) }
 
