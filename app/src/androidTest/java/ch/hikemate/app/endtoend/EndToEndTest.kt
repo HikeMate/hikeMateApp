@@ -6,14 +6,15 @@ import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.hasTestTag
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import ch.hikemate.app.HikeMateApp
+import ch.hikemate.app.MainActivity
 import ch.hikemate.app.ui.auth.CreateAccountScreen
 import ch.hikemate.app.ui.auth.SignInScreen
 import ch.hikemate.app.ui.auth.SignInWithEmailScreen
@@ -39,7 +40,8 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class EndToEndTest : TestCase() {
-  @get:Rule val composeTestRule = createComposeRule()
+  @get:Rule val composeTestRule = createEmptyComposeRule()
+  private var scenario: ActivityScenario<MainActivity>? = null
   private val auth = FirebaseAuth.getInstance()
   private val myUuid = UUID.randomUUID()
   private val myUuidAsString = myUuid.toString()
@@ -72,7 +74,7 @@ class EndToEndTest : TestCase() {
     }
 
     // Make sure the log out is considered in the MainActivity
-    composeTestRule.setContent { HikeMateApp() }
+    scenario = ActivityScenario.launch(MainActivity::class.java)
   }
 
   @After
@@ -82,6 +84,11 @@ class EndToEndTest : TestCase() {
     auth.currentUser?.reauthenticate(credential)
     auth.currentUser?.delete()
     auth.signOut()
+  }
+
+  @After
+  public override fun tearDown() {
+    scenario?.close()
   }
 
   @OptIn(ExperimentalTestApi::class)
