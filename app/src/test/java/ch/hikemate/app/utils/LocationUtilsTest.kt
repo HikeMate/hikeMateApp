@@ -153,7 +153,7 @@ class LocationUtilsTest {
   }
 
   @Test
-  fun projectLocationOnStart_withInvalidRoute_returnsNull() {
+  fun projectLocationOnHike_withInvalidRoute_returnsNull() {
     val emptyRoute = HikeRoute(id = "test", bounds = Bounds(0.0, 0.0, 1.0, 1.0), ways = listOf())
     val location = LatLong(45.0, 7.0)
     assertNull(projectLocationOnHike(location, emptyRoute))
@@ -165,7 +165,7 @@ class LocationUtilsTest {
   }
 
   @Test
-  fun projectLocationOnStart_withSingleSegment_projectsCorrectly() {
+  fun projectLocationOnHike_withSingleSegment_projectsCorrectly() {
     val route =
         HikeRoute(
             id = "test",
@@ -192,6 +192,64 @@ class LocationUtilsTest {
 
     // Progress should be distance from start to projection
     assertEquals(distanceFromSegmentStart, result.progressDistance, EPSILON)
+  }
+  @Test
+  fun projectLocationOnHike_selectsClosestSegmentFromThree() {
+    val route = HikeRoute(
+      id = "test",
+      bounds = Bounds(44.0, 6.0, 46.0, 8.0),
+      ways = listOf(
+        LatLong(45.0, 7.0),    // Start
+        LatLong(45.0, 7.5),    // End of first segment (horizontal)
+        LatLong(45.5, 7.5),    // End of second segment (vertical)
+        LatLong(45.5, 8.0)     // End of third segment (horizontal)
+      )
+    )
+
+    run {
+      val point = LatLong(45.1, 7.2)
+      val result = projectLocationOnHike(point, route)
+      assertNotNull(result)
+
+      assertEquals(0, result!!.indexToSegment)
+      assertEquals(route.segments[0], result.segment)
+      assertEquals(45.0, result.projectedLocation.lat, EPSILON)
+      assertEquals(7.2, result.projectedLocation.lon, EPSILON)
+
+      // Progress should only be distance from start of first segment
+      val expectedProgress = result.projectedLocation.distanceTo(route.segments[0].start)
+      assertEquals(expectedProgress, result.progressDistance, EPSILON)
+    }
+
+    run {
+      val point = LatLong(45.3, 7.5)
+      val result = projectLocationOnHike(point, route)
+      assertNotNull(result)
+
+      assertEquals(1, result!!.indexToSegment)
+      assertEquals(route.segments[1], result.segment)
+      assertEquals(45.3, result.projectedLocation.lat, EPSILON)
+      assertEquals(7.5, result.projectedLocation.lon, EPSILON)
+
+      val expectedProgress = route.segments[0].length +
+              result.projectedLocation.distanceTo(result.segment.start)
+      assertEquals(expectedProgress, result.progressDistance, EPSILON)
+    }
+
+    run {
+      val point = LatLong(45.5, 7.8)
+      val result = projectLocationOnHike(point, route)
+      assertNotNull(result)
+
+      assertEquals(2, result!!.indexToSegment)
+      assertEquals(route.segments[2], result.segment)
+      assertEquals(45.5, result.projectedLocation.lat, EPSILON)
+      assertEquals(7.8, result.projectedLocation.lon, EPSILON)
+
+      val expectedProgress = route.segments[0].length + route.segments[1].length +
+              result.projectedLocation.distanceTo(result.segment.start)
+      assertEquals(expectedProgress, result.progressDistance, EPSILON)
+    }
   }
 
   @After
