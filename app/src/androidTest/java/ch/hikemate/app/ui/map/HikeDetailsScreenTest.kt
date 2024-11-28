@@ -22,17 +22,18 @@ import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
 import ch.hikemate.app.model.route.saved.SavedHikesRepository
 import ch.hikemate.app.model.route.saved.SavedHikesViewModel
 import ch.hikemate.app.ui.components.BackButton.BACK_BUTTON_TEST_TAG
-import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_ADD_DATE_BUTTON
-import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_BOOKMARK_ICON
-import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DATE_PICKER
-import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DATE_PICKER_CANCEL_BUTTON
-import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DATE_PICKER_CONFIRM_BUTTON
-import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DETAIL_ROW_TAG
-import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DETAIL_ROW_VALUE
-import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_ELEVATION_GRAPH
-import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_HIKE_NAME
-import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_MAP
-import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_PLANNED_DATE_TEXT_BOX
+import ch.hikemate.app.ui.map.HikeDetailScreen.HIKE_DETAILS_TEST_TAG_ADD_DATE_BUTTON
+import ch.hikemate.app.ui.map.HikeDetailScreen.HIKE_DETAILS_TEST_TAG_BOOKMARK_ICON
+import ch.hikemate.app.ui.map.HikeDetailScreen.HIKE_DETAILS_TEST_TAG_DATE_PICKER
+import ch.hikemate.app.ui.map.HikeDetailScreen.HIKE_DETAILS_TEST_TAG_DATE_PICKER_CANCEL_BUTTON
+import ch.hikemate.app.ui.map.HikeDetailScreen.HIKE_DETAILS_TEST_TAG_DATE_PICKER_CONFIRM_BUTTON
+import ch.hikemate.app.ui.map.HikeDetailScreen.HIKE_DETAILS_TEST_TAG_DETAIL_ROW_TAG
+import ch.hikemate.app.ui.map.HikeDetailScreen.HIKE_DETAILS_TEST_TAG_DETAIL_ROW_VALUE
+import ch.hikemate.app.ui.map.HikeDetailScreen.HIKE_DETAILS_TEST_TAG_ELEVATION_GRAPH
+import ch.hikemate.app.ui.map.HikeDetailScreen.HIKE_DETAILS_TEST_TAG_HIKE_NAME
+import ch.hikemate.app.ui.map.HikeDetailScreen.HIKE_DETAILS_TEST_TAG_MAP
+import ch.hikemate.app.ui.map.HikeDetailScreen.HIKE_DETAILS_TEST_TAG_PLANNED_DATE_TEXT_BOX
+import ch.hikemate.app.ui.map.HikeDetailScreen.HIKE_DETAILS_TEST_TAG_RUN_HIKE_BUTTON
 import ch.hikemate.app.ui.navigation.NavigationActions
 import com.google.firebase.Timestamp
 import java.util.Locale
@@ -129,7 +130,7 @@ class HikeDetailScreenTest {
           navigationActions = mockNavigationActions)
     }
 
-    composeTestRule.onNodeWithTag(TEST_TAG_MAP).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(HIKE_DETAILS_TEST_TAG_MAP).assertIsDisplayed()
   }
 
   @Test
@@ -141,11 +142,12 @@ class HikeDetailScreenTest {
           detailedRoute = detailedRoute,
           savedHikesViewModel = savedHikesViewModel,
           emptyList(),
-          HikingLevel.BEGINNER)
+          HikingLevel.BEGINNER,
+          {})
     }
 
-    composeTestRule.onNodeWithTag(TEST_TAG_HIKE_NAME).assertTextEquals(route.name!!)
-    composeTestRule.onNodeWithTag(TEST_TAG_BOOKMARK_ICON).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(HIKE_DETAILS_TEST_TAG_HIKE_NAME).assertTextEquals(route.name!!)
+    composeTestRule.onNodeWithTag(HIKE_DETAILS_TEST_TAG_BOOKMARK_ICON).assertIsDisplayed()
   }
 
   @Test
@@ -157,10 +159,11 @@ class HikeDetailScreenTest {
           detailedRoute = detailedRoute,
           savedHikesViewModel = savedHikesViewModel,
           emptyList(),
-          HikingLevel.BEGINNER)
+          HikingLevel.BEGINNER,
+          {})
     }
 
-    composeTestRule.onNodeWithTag(TEST_TAG_ELEVATION_GRAPH).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(HIKE_DETAILS_TEST_TAG_ELEVATION_GRAPH).assertIsDisplayed()
   }
 
   @Test
@@ -185,10 +188,11 @@ class HikeDetailScreenTest {
           detailedRoute = detailedRoute,
           savedHikesViewModel = savedHikesViewModel,
           emptyList(),
-          HikingLevel.BEGINNER)
+          HikingLevel.BEGINNER,
+          {})
     }
 
-    composeTestRule.onNodeWithTag(TEST_TAG_PLANNED_DATE_TEXT_BOX).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(HIKE_DETAILS_TEST_TAG_PLANNED_DATE_TEXT_BOX).assertIsDisplayed()
   }
 
   @Test
@@ -200,11 +204,12 @@ class HikeDetailScreenTest {
           detailedRoute = detailedRoute,
           savedHikesViewModel = savedHikesViewModel,
           emptyList(),
-          HikingLevel.BEGINNER)
+          HikingLevel.BEGINNER,
+          {})
     }
 
-    composeTestRule.onAllNodesWithTag(TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(5)
-    composeTestRule.onAllNodesWithTag(TEST_TAG_DETAIL_ROW_VALUE).assertCountEquals(5)
+    composeTestRule.onAllNodesWithTag(HIKE_DETAILS_TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(5)
+    composeTestRule.onAllNodesWithTag(HIKE_DETAILS_TEST_TAG_DETAIL_ROW_VALUE).assertCountEquals(5)
   }
 
   @Test
@@ -225,12 +230,13 @@ class HikeDetailScreenTest {
           detailedRoute = detailedRoute,
           savedHikesViewModel = savedHikesViewModel,
           emptyList(),
-          HikingLevel.BEGINNER)
+          HikingLevel.BEGINNER,
+          {})
     }
 
-    composeTestRule.onAllNodesWithTag(TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(6)
-    composeTestRule.onAllNodesWithTag(TEST_TAG_DETAIL_ROW_VALUE).assertCountEquals(5)
-    composeTestRule.onNodeWithTag(TEST_TAG_ADD_DATE_BUTTON).assertIsDisplayed()
+    composeTestRule.onAllNodesWithTag(HIKE_DETAILS_TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(6)
+    composeTestRule.onAllNodesWithTag(HIKE_DETAILS_TEST_TAG_DETAIL_ROW_VALUE).assertCountEquals(5)
+    composeTestRule.onNodeWithTag(HIKE_DETAILS_TEST_TAG_ADD_DATE_BUTTON).assertIsDisplayed()
   }
 
   @Test
@@ -255,12 +261,13 @@ class HikeDetailScreenTest {
           detailedRoute = detailedRoute,
           savedHikesViewModel = savedHikesViewModel,
           emptyList(),
-          HikingLevel.BEGINNER)
+          HikingLevel.BEGINNER,
+          {})
     }
 
-    composeTestRule.onAllNodesWithTag(TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(6)
-    composeTestRule.onAllNodesWithTag(TEST_TAG_DETAIL_ROW_VALUE).assertCountEquals(5)
-    composeTestRule.onNodeWithTag(TEST_TAG_PLANNED_DATE_TEXT_BOX).assertIsDisplayed()
+    composeTestRule.onAllNodesWithTag(HIKE_DETAILS_TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(6)
+    composeTestRule.onAllNodesWithTag(HIKE_DETAILS_TEST_TAG_DETAIL_ROW_VALUE).assertCountEquals(5)
+    composeTestRule.onNodeWithTag(HIKE_DETAILS_TEST_TAG_PLANNED_DATE_TEXT_BOX).assertIsDisplayed()
   }
 
   @Test
@@ -304,11 +311,15 @@ class HikeDetailScreenTest {
           detailedRoute = detailedRoute,
           savedHikesViewModel = savedHikesViewModel,
           emptyList(),
-          HikingLevel.BEGINNER)
+          HikingLevel.BEGINNER,
+          {})
     }
 
-    composeTestRule.onNodeWithTag(TEST_TAG_ADD_DATE_BUTTON).assertHasClickAction().performClick()
-    composeTestRule.onNodeWithTag(TEST_TAG_DATE_PICKER).assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(HIKE_DETAILS_TEST_TAG_ADD_DATE_BUTTON)
+        .assertHasClickAction()
+        .performClick()
+    composeTestRule.onNodeWithTag(HIKE_DETAILS_TEST_TAG_DATE_PICKER).assertIsDisplayed()
   }
 
   @Test
@@ -329,15 +340,19 @@ class HikeDetailScreenTest {
           detailedRoute = detailedRoute,
           savedHikesViewModel = savedHikesViewModel,
           emptyList(),
-          HikingLevel.BEGINNER)
+          HikingLevel.BEGINNER,
+          {})
     }
 
-    composeTestRule.onNodeWithTag(TEST_TAG_ADD_DATE_BUTTON).assertHasClickAction().performClick()
-    composeTestRule.onNodeWithTag(TEST_TAG_DATE_PICKER).assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(HIKE_DETAILS_TEST_TAG_ADD_DATE_BUTTON)
+        .assertHasClickAction()
+        .performClick()
+    composeTestRule.onNodeWithTag(HIKE_DETAILS_TEST_TAG_DATE_PICKER).assertIsDisplayed()
 
-    composeTestRule.onNodeWithTag(TEST_TAG_DATE_PICKER_CANCEL_BUTTON).performClick()
+    composeTestRule.onNodeWithTag(HIKE_DETAILS_TEST_TAG_DATE_PICKER_CANCEL_BUTTON).performClick()
 
-    composeTestRule.onNodeWithTag(TEST_TAG_DATE_PICKER).assertIsNotDisplayed()
+    composeTestRule.onNodeWithTag(HIKE_DETAILS_TEST_TAG_DATE_PICKER).assertIsNotDisplayed()
   }
 
   @Test
@@ -358,15 +373,19 @@ class HikeDetailScreenTest {
           detailedRoute = detailedRoute,
           savedHikesViewModel = savedHikesViewModel,
           emptyList(),
-          HikingLevel.BEGINNER)
+          HikingLevel.BEGINNER,
+          {})
     }
 
-    composeTestRule.onNodeWithTag(TEST_TAG_ADD_DATE_BUTTON).assertHasClickAction().performClick()
-    composeTestRule.onNodeWithTag(TEST_TAG_DATE_PICKER).assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(HIKE_DETAILS_TEST_TAG_ADD_DATE_BUTTON)
+        .assertHasClickAction()
+        .performClick()
+    composeTestRule.onNodeWithTag(HIKE_DETAILS_TEST_TAG_DATE_PICKER).assertIsDisplayed()
 
-    composeTestRule.onNodeWithTag(TEST_TAG_DATE_PICKER_CONFIRM_BUTTON).performClick()
+    composeTestRule.onNodeWithTag(HIKE_DETAILS_TEST_TAG_DATE_PICKER_CONFIRM_BUTTON).performClick()
 
-    composeTestRule.onNodeWithTag(TEST_TAG_DATE_PICKER).assertIsNotDisplayed()
+    composeTestRule.onNodeWithTag(HIKE_DETAILS_TEST_TAG_DATE_PICKER).assertIsNotDisplayed()
   }
 
   @Test
@@ -376,7 +395,8 @@ class HikeDetailScreenTest {
           detailedRoute = detailedRoute,
           savedHikesViewModel = savedHikesViewModel,
           emptyList(),
-          HikingLevel.BEGINNER)
+          HikingLevel.BEGINNER,
+          {})
     }
 
     val distanceString = String.format(Locale.ENGLISH, "%.2f", detailedRoute.totalDistance)
@@ -387,16 +407,16 @@ class HikeDetailScreenTest {
         String.format(Locale.getDefault(), "%02d", (detailedRoute.estimatedTime % 60).roundToInt())
 
     composeTestRule
-        .onAllNodesWithTag(TEST_TAG_DETAIL_ROW_VALUE)
+        .onAllNodesWithTag(HIKE_DETAILS_TEST_TAG_DETAIL_ROW_VALUE)
         .assertAny(hasText("${distanceString}km"))
     composeTestRule
-        .onAllNodesWithTag(TEST_TAG_DETAIL_ROW_VALUE)
+        .onAllNodesWithTag(HIKE_DETAILS_TEST_TAG_DETAIL_ROW_VALUE)
         .assertAny(hasText("${elevationGainString}m"))
     composeTestRule
-        .onAllNodesWithTag(TEST_TAG_DETAIL_ROW_VALUE)
+        .onAllNodesWithTag(HIKE_DETAILS_TEST_TAG_DETAIL_ROW_VALUE)
         .assertAny(hasText("${hourString}h${minuteString}"))
     composeTestRule
-        .onAllNodesWithTag(TEST_TAG_DETAIL_ROW_VALUE)
+        .onAllNodesWithTag(HIKE_DETAILS_TEST_TAG_DETAIL_ROW_VALUE)
         .assertAny(
             hasText(
                 ApplicationProvider.getApplicationContext<Context>()
@@ -412,14 +432,35 @@ class HikeDetailScreenTest {
           detailedRoute = detailedRoute,
           savedHikesViewModel = savedHikesViewModel,
           emptyList(),
-          HikingLevel.BEGINNER)
+          HikingLevel.BEGINNER,
+          {})
     }
 
     val minuteString =
         String.format(Locale.getDefault(), "%02d", (detailedRoute.estimatedTime % 60).roundToInt())
 
     composeTestRule
-        .onAllNodesWithTag(TEST_TAG_DETAIL_ROW_VALUE)
+        .onAllNodesWithTag(HIKE_DETAILS_TEST_TAG_DETAIL_ROW_VALUE)
         .assertAny(hasText("${minuteString}min"))
+  }
+
+  @Test
+  fun hikeDetails_showsRunThisHikeButton_andTriggersOnRunThisHike() {
+    val onRunThisHike = mock<() -> Unit>()
+    composeTestRule.setContent {
+      HikeDetails(
+          detailedRoute = detailedRoute,
+          savedHikesViewModel = savedHikesViewModel,
+          emptyList(),
+          HikingLevel.BEGINNER,
+          { onRunThisHike() })
+    }
+
+    composeTestRule
+        .onNodeWithTag(HIKE_DETAILS_TEST_TAG_RUN_HIKE_BUTTON)
+        .assertIsDisplayed()
+        .performClick()
+
+    verify(onRunThisHike).invoke()
   }
 }

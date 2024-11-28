@@ -59,20 +59,23 @@ import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
 import ch.hikemate.app.model.route.saved.SavedHikesViewModel
 import ch.hikemate.app.ui.components.AsyncStateHandler
 import ch.hikemate.app.ui.components.BackButton
+import ch.hikemate.app.ui.components.BigButton
+import ch.hikemate.app.ui.components.ButtonType
 import ch.hikemate.app.ui.components.ElevationGraph
 import ch.hikemate.app.ui.components.ElevationGraphStyleProperties
+import ch.hikemate.app.ui.map.HikeDetailScreen.HIKE_DETAILS_TEST_TAG_ADD_DATE_BUTTON
+import ch.hikemate.app.ui.map.HikeDetailScreen.HIKE_DETAILS_TEST_TAG_BOOKMARK_ICON
+import ch.hikemate.app.ui.map.HikeDetailScreen.HIKE_DETAILS_TEST_TAG_DATE_PICKER
+import ch.hikemate.app.ui.map.HikeDetailScreen.HIKE_DETAILS_TEST_TAG_DATE_PICKER_CANCEL_BUTTON
+import ch.hikemate.app.ui.map.HikeDetailScreen.HIKE_DETAILS_TEST_TAG_DATE_PICKER_CONFIRM_BUTTON
+import ch.hikemate.app.ui.map.HikeDetailScreen.HIKE_DETAILS_TEST_TAG_DETAIL_ROW_TAG
+import ch.hikemate.app.ui.map.HikeDetailScreen.HIKE_DETAILS_TEST_TAG_DETAIL_ROW_VALUE
+import ch.hikemate.app.ui.map.HikeDetailScreen.HIKE_DETAILS_TEST_TAG_ELEVATION_GRAPH
+import ch.hikemate.app.ui.map.HikeDetailScreen.HIKE_DETAILS_TEST_TAG_HIKE_NAME
+import ch.hikemate.app.ui.map.HikeDetailScreen.HIKE_DETAILS_TEST_TAG_MAP
+import ch.hikemate.app.ui.map.HikeDetailScreen.HIKE_DETAILS_TEST_TAG_PLANNED_DATE_TEXT_BOX
+import ch.hikemate.app.ui.map.HikeDetailScreen.HIKE_DETAILS_TEST_TAG_RUN_HIKE_BUTTON
 import ch.hikemate.app.ui.map.HikeDetailScreen.MAP_MAX_ZOOM
-import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_ADD_DATE_BUTTON
-import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_BOOKMARK_ICON
-import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DATE_PICKER
-import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DATE_PICKER_CANCEL_BUTTON
-import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DATE_PICKER_CONFIRM_BUTTON
-import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DETAIL_ROW_TAG
-import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DETAIL_ROW_VALUE
-import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_ELEVATION_GRAPH
-import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_HIKE_NAME
-import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_MAP
-import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_PLANNED_DATE_TEXT_BOX
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
@@ -93,17 +96,18 @@ object HikeDetailScreen {
   const val MAP_MIN_LONGITUDE = -180.0
   const val MAP_BOUNDS_MARGIN: Int = 100
 
-  const val TEST_TAG_MAP = "HikeDetailScreenMap"
-  const val TEST_TAG_HIKE_NAME = "HikeDetailScreenHikeName"
-  const val TEST_TAG_BOOKMARK_ICON = "HikeDetailScreenBookmarkIcon"
-  const val TEST_TAG_ELEVATION_GRAPH = "HikeDetailScreenElevationGraph"
-  const val TEST_TAG_DETAIL_ROW_TAG = "HikeDetailScreenDetailRowTag"
-  const val TEST_TAG_DETAIL_ROW_VALUE = "HikeDetailScreenDetailRowValue"
-  const val TEST_TAG_ADD_DATE_BUTTON = "HikeDetailScreenAddDateButton"
-  const val TEST_TAG_PLANNED_DATE_TEXT_BOX = "HikeDetailScreenPlannedDateTextBox"
-  const val TEST_TAG_DATE_PICKER = "HikeDetailDatePicker"
-  const val TEST_TAG_DATE_PICKER_CANCEL_BUTTON = "HikeDetailDatePickerCancelButton"
-  const val TEST_TAG_DATE_PICKER_CONFIRM_BUTTON = "HikeDetailDatePickerConfirmButton"
+  const val HIKE_DETAILS_TEST_TAG_MAP = "HikeDetailScreenMap"
+  const val HIKE_DETAILS_TEST_TAG_HIKE_NAME = "HikeDetailScreenHikeName"
+  const val HIKE_DETAILS_TEST_TAG_BOOKMARK_ICON = "HikeDetailScreenBookmarkIcon"
+  const val HIKE_DETAILS_TEST_TAG_ELEVATION_GRAPH = "HikeDetailScreenElevationGraph"
+  const val HIKE_DETAILS_TEST_TAG_DETAIL_ROW_TAG = "HikeDetailScreenDetailRowTag"
+  const val HIKE_DETAILS_TEST_TAG_DETAIL_ROW_VALUE = "HikeDetailScreenDetailRowValue"
+  const val HIKE_DETAILS_TEST_TAG_ADD_DATE_BUTTON = "HikeDetailScreenAddDateButton"
+  const val HIKE_DETAILS_TEST_TAG_PLANNED_DATE_TEXT_BOX = "HikeDetailScreenPlannedDateTextBox"
+  const val HIKE_DETAILS_TEST_TAG_DATE_PICKER = "HikeDetailDatePicker"
+  const val HIKE_DETAILS_TEST_TAG_DATE_PICKER_CANCEL_BUTTON = "HikeDetailDatePickerCancelButton"
+  const val HIKE_DETAILS_TEST_TAG_DATE_PICKER_CONFIRM_BUTTON = "HikeDetailDatePickerConfirmButton"
+  const val HIKE_DETAILS_TEST_TAG_RUN_HIKE_BUTTON = "HikeDetailRunHikeButton"
 }
 
 @Composable
@@ -212,7 +216,7 @@ fun HikeDetailScreen(
           modifier =
               Modifier.fillMaxWidth()
                   .padding(bottom = 300.dp) // Reserve space for the scaffold at the bottom
-                  .testTag(TEST_TAG_MAP))
+                  .testTag(HIKE_DETAILS_TEST_TAG_MAP))
       // Back Button at the top of the screen
       BackButton(
           navigationActions = navigationActions,
@@ -227,11 +231,26 @@ fun HikeDetailScreen(
                   .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
 
       // Hike Details bottom sheet
-      HikeDetails(detailedRoute, savedHikesViewModel, elevationData, profile.hikingLevel)
+      HikeDetails(
+          detailedRoute = detailedRoute,
+          savedHikesViewModel = savedHikesViewModel,
+          elevationData = elevationData,
+          userHikingLevel = profile.hikingLevel,
+          onRunThisHike = { navigationActions.navigateTo(Screen.RUN_HIKE) },
+      )
     }
   }
 }
 
+/**
+ * A composable that displays details about a hike in a bottom sheet.
+ *
+ * @param detailedRoute The route for which information is displayed
+ * @param savedHikesViewModel ViewModel managing saved hikes state
+ * @param elevationData List of elevation points for the elevation graph
+ * @param userHikingLevel The user's hiking experience level
+ * @param onRunThisHike Callback triggered when "Run This Hike" button is clicked
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HikeDetails(
@@ -239,6 +258,7 @@ fun HikeDetails(
     savedHikesViewModel: SavedHikesViewModel,
     elevationData: List<Double>,
     userHikingLevel: HikingLevel,
+    onRunThisHike: () -> Unit
 ) {
   val hikeDetailState = savedHikesViewModel.hikeDetailState.collectAsState(null).value
 
@@ -276,7 +296,7 @@ fun HikeDetails(
                           ?: stringResource(R.string.map_screen_hike_title_default),
                   style = MaterialTheme.typography.titleLarge,
                   textAlign = TextAlign.Left,
-                  modifier = Modifier.testTag(TEST_TAG_HIKE_NAME))
+                  modifier = Modifier.testTag(HIKE_DETAILS_TEST_TAG_HIKE_NAME))
               AppropriatenessMessage(isSuitable)
             }
 
@@ -287,9 +307,9 @@ fun HikeDetails(
                         stringResource(R.string.hike_detail_screen_bookmark_hint_on_isSaved_true)
                     else stringResource(R.string.hike_detail_screen_bookmark_hint_on_isSaved_false),
                 modifier =
-                    Modifier.size(60.dp, 80.dp).testTag(TEST_TAG_BOOKMARK_ICON).clickable {
-                      toggleSaveState()
-                    },
+                    Modifier.size(60.dp, 80.dp)
+                        .testTag(HIKE_DETAILS_TEST_TAG_BOOKMARK_ICON)
+                        .clickable { toggleSaveState() },
                 contentScale = ContentScale.FillBounds,
             )
           }
@@ -300,7 +320,7 @@ fun HikeDetails(
                   Modifier.fillMaxWidth()
                       .height(60.dp)
                       .padding(4.dp)
-                      .testTag(TEST_TAG_ELEVATION_GRAPH),
+                      .testTag(HIKE_DETAILS_TEST_TAG_ELEVATION_GRAPH),
               styleProperties =
                   ElevationGraphStyleProperties(
                       strokeColor = hikeColor, fillColor = hikeColor.copy(0.1f)))
@@ -334,6 +354,16 @@ fun HikeDetails(
                           LocalContext.current, detailedRoute.difficulty.colorResourceId)),
           )
           DateDetailRow(isSaved, plannedDate, updatePlannedDate)
+
+          // "Run This Hike" button
+          BigButton(
+              buttonType = ButtonType.PRIMARY,
+              label = stringResource(R.string.hike_detail_screen_run_this_hike_button_label),
+              onClick = { onRunThisHike() },
+              modifier =
+                  Modifier.padding(top = 16.dp)
+                      .fillMaxWidth()
+                      .testTag(HIKE_DETAILS_TEST_TAG_RUN_HIKE_BUTTON))
         }
       },
       sheetPeekHeight = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT) {}
@@ -360,18 +390,18 @@ fun DateDetailRow(
 
   if (showingDatePicker.value) {
     DatePickerDialog(
-        modifier = Modifier.testTag(TEST_TAG_DATE_PICKER),
+        modifier = Modifier.testTag(HIKE_DETAILS_TEST_TAG_DATE_PICKER),
         onDismissRequest = { dismissDatePicker() },
         dismissButton = {
           Button(
-              modifier = Modifier.testTag(TEST_TAG_DATE_PICKER_CANCEL_BUTTON),
+              modifier = Modifier.testTag(HIKE_DETAILS_TEST_TAG_DATE_PICKER_CANCEL_BUTTON),
               onClick = { dismissDatePicker() }) {
                 Text(text = stringResource(R.string.hike_detail_screen_date_picker_cancel_button))
               }
         },
         confirmButton = {
           Button(
-              modifier = Modifier.testTag(TEST_TAG_DATE_PICKER_CONFIRM_BUTTON),
+              modifier = Modifier.testTag(HIKE_DETAILS_TEST_TAG_DATE_PICKER_CONFIRM_BUTTON),
               onClick = {
                 if (datePickerState.selectedDateMillis != null) {
                   updatePlannedDate(Timestamp(Date(datePickerState.selectedDateMillis!!)))
@@ -400,10 +430,11 @@ fun DateDetailRow(
         Text(
             text = stringResource(R.string.hike_detail_screen_label_planned_for),
             style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.testTag(TEST_TAG_DETAIL_ROW_TAG))
+            modifier = Modifier.testTag(HIKE_DETAILS_TEST_TAG_DETAIL_ROW_TAG))
 
         Button(
-            modifier = Modifier.width(90.dp).height(25.dp).testTag(TEST_TAG_ADD_DATE_BUTTON),
+            modifier =
+                Modifier.width(90.dp).height(25.dp).testTag(HIKE_DETAILS_TEST_TAG_ADD_DATE_BUTTON),
             contentPadding = PaddingValues(0.dp),
             colors =
                 ButtonDefaults.buttonColors(
@@ -430,7 +461,7 @@ fun DateDetailRow(
         Text(
             text = stringResource(R.string.hike_detail_screen_label_planned_for),
             style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.testTag(TEST_TAG_DETAIL_ROW_TAG))
+            modifier = Modifier.testTag(HIKE_DETAILS_TEST_TAG_DETAIL_ROW_TAG))
         Box(
             modifier =
                 Modifier.border(
@@ -443,7 +474,7 @@ fun DateDetailRow(
                   style = MaterialTheme.typography.bodySmall,
                   modifier =
                       Modifier.clickable { showDatePicker() }
-                          .testTag(TEST_TAG_PLANNED_DATE_TEXT_BOX))
+                          .testTag(HIKE_DETAILS_TEST_TAG_PLANNED_DATE_TEXT_BOX))
             }
       }
     }
@@ -467,12 +498,12 @@ fun DetailRow(
         Text(
             text = label,
             style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.testTag(TEST_TAG_DETAIL_ROW_TAG))
+            modifier = Modifier.testTag(HIKE_DETAILS_TEST_TAG_DETAIL_ROW_TAG))
         Text(
             text = value,
             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
             color = valueColor,
-            modifier = Modifier.testTag(TEST_TAG_DETAIL_ROW_VALUE))
+            modifier = Modifier.testTag(HIKE_DETAILS_TEST_TAG_DETAIL_ROW_VALUE))
       }
 }
 
