@@ -138,6 +138,8 @@ data class LatLong(val lat: Double, val lon: Double) {
    */
   fun projectPointOntoLine(start: LatLong, end: LatLong): LatLong {
     // Scale longitude differences based on latitude (at middle latitude of segment)
+    // This is an acceptable approximation in our use case since longitude is not expected to change much on a single segment,
+    // plus we do not need perfect accuracy.
     val midLat = (start.lat + end.lat) / 2.0
     val lonScaleFactor = cos(Math.toRadians(midLat))
 
