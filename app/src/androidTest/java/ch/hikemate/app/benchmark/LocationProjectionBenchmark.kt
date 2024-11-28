@@ -28,6 +28,8 @@ class LocationProjectionBenchmark {
         HikeRoute(
             id = "benchmark",
             bounds = Bounds(45.0, 6.0, 47.0, 8.0),
+            // The most waypoints we observed for now were in the thousands. By going 100 times more, we ensure
+            // the benchmark provides relevant results for our use case.
             ways = generateRealisticWaypoints(100000))
 
     startPoint = LatLong(longRoute.ways.first().lat + 0.001, longRoute.ways.first().lon + 0.001)
