@@ -287,7 +287,7 @@ object LocationUtils {
    * @param segment
    * @return projection
    */
-  private fun projectPointOntoSegment(point: LatLong, segment: RouteSegment): LatLong {
+  private inline fun projectPointOntoSegment(point: LatLong, segment: RouteSegment): LatLong {
     return point.projectPointOntoLine(segment.start, segment.end)
   }
 }
