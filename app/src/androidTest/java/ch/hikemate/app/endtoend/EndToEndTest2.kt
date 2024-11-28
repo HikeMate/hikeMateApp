@@ -184,25 +184,19 @@ class EndToEndTest2 : TestCase() {
 
     // Wait for the transition to complete
     composeTestRule.waitUntilExactlyOneExists(
-        hasTestTag(HikeDetailScreen.HIKE_DETAILS_TEST_TAG_MAP), timeoutMillis = 10000)
+        hasTestTag(HikeDetailScreen.TEST_TAG_MAP), timeoutMillis = 10000)
 
     // ==========================================
     // DETAILS SCREENS
     // ==========================================
 
     // Check we are on the hike details screen
-    composeTestRule.onNodeWithTag(HikeDetailScreen.HIKE_DETAILS_TEST_TAG_MAP).assertIsDisplayed()
-    composeTestRule
-        .onNodeWithTag(HikeDetailScreen.HIKE_DETAILS_TEST_TAG_HIKE_NAME)
-        .assertIsDisplayed()
-    composeTestRule
-        .onNodeWithTag(HikeDetailScreen.HIKE_DETAILS_TEST_TAG_BOOKMARK_ICON)
-        .assertIsDisplayed()
+    composeTestRule.onNodeWithTag(HikeDetailScreen.TEST_TAG_MAP).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(HikeDetailScreen.TEST_TAG_HIKE_NAME).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(HikeDetailScreen.TEST_TAG_BOOKMARK_ICON).assertIsDisplayed()
 
     // Click on the bookmark icon
-    composeTestRule
-        .onNodeWithTag(HikeDetailScreen.HIKE_DETAILS_TEST_TAG_BOOKMARK_ICON)
-        .performClick()
+    composeTestRule.onNodeWithTag(HikeDetailScreen.TEST_TAG_BOOKMARK_ICON).performClick()
 
     // Wait for the bookmark to be saved
     composeTestRule.waitForIdle()
