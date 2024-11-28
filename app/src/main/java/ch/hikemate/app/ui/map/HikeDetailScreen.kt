@@ -204,11 +204,6 @@ fun HikeDetailScreen(
           modifier =
               Modifier.align(Alignment.BottomEnd)
                   .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
-      Button(
-          onClick = { navigationActions.navigateTo(Screen.RUN_HIKE) },
-          modifier = Modifier.padding(top = 16.dp)) {
-            Text(text = "Test")
-          }
 
       // Hike Details bottom sheet
       HikeDetails(detailedRoute, savedHikesViewModel, elevationData, profile.hikingLevel)
