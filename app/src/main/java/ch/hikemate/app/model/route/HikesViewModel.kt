@@ -2,13 +2,18 @@ package ch.hikemate.app.model.route
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import ch.hikemate.app.model.elevation.ElevationService
+import ch.hikemate.app.model.elevation.ElevationServiceRepository
 import ch.hikemate.app.model.extensions.toBounds
 import ch.hikemate.app.model.route.saved.SavedHike
 import ch.hikemate.app.model.route.saved.SavedHikesRepository
+import ch.hikemate.app.model.route.saved.SavedHikesRepositoryFirestore
 import ch.hikemate.app.utils.RouteUtils
 import com.google.firebase.Timestamp
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
@@ -21,6 +26,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
 import org.osmdroid.util.BoundingBox
 
 /**
@@ -40,6 +46,21 @@ class HikesViewModel(
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : ViewModel() {
   companion object {
+    val Factory: ViewModelProvider.Factory =
+        object : ViewModelProvider.Factory {
+          @Suppress("UNCHECKED_CAST")
+          override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            val client = OkHttpClient()
+            return HikesViewModel(
+                savedHikesRepo =
+                    SavedHikesRepositoryFirestore(
+                        FirebaseFirestore.getInstance(), FirebaseAuth.getInstance()),
+                osmHikesRepo = HikeRoutesRepositoryOverpass(client),
+                elevationService = ElevationServiceRepository(client))
+                as T
+          }
+        }
+
     private const val LOG_TAG = "HikesViewModel"
   }
 
