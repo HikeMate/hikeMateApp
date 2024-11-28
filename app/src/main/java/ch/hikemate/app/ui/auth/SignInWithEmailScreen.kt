@@ -3,11 +3,12 @@ package ch.hikemate.app.ui.auth
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.imeNestedScroll
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
@@ -58,6 +59,7 @@ object SignInWithEmailScreen {
  * @param navigationActions The navigation actions.
  * @param authViewModel The authentication view model.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SignInWithEmailScreen(
     navigationActions: NavigationActions,
@@ -91,9 +93,9 @@ fun SignInWithEmailScreen(
                   start = 16.dp,
                   end = 16.dp,
               )
+              .imeNestedScroll()
               .safeDrawingPadding()
               .verticalScroll(scrollState)
-              .imePadding()
               .height(IntrinsicSize.Max),
       verticalArrangement = Arrangement.spacedBy(16.dp)) {
         BackButton(navigationActions)

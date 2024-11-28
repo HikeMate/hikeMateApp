@@ -3,8 +3,9 @@ package ch.hikemate.app.ui.auth
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.imeNestedScroll
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
@@ -54,6 +55,7 @@ object CreateAccountScreen {
  * @param navigationActions The navigation actions.
  * @param authViewModel The authentication view model.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun CreateAccountScreen(
     navigationActions: NavigationActions,
@@ -123,9 +125,9 @@ fun CreateAccountScreen(
                   start = 16.dp,
                   end = 16.dp,
               )
-              .safeDrawingPadding()
               .verticalScroll(scrollState)
-              .imePadding(),
+              .imeNestedScroll()
+              .safeDrawingPadding(),
       verticalArrangement = Arrangement.spacedBy(16.dp)) {
         BackButton(navigationActions)
         Text(

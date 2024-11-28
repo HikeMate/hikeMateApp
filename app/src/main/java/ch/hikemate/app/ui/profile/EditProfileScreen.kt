@@ -2,7 +2,9 @@ package ch.hikemate.app.ui.profile
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imeNestedScroll
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
@@ -61,6 +63,7 @@ object EditProfileScreen {
  * @param navigationActions The navigation actions.
  * @param profileViewModel The profile view model.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun EditProfileScreen(
     navigationActions: NavigationActions,
@@ -107,6 +110,7 @@ fun EditProfileScreen(
                     start = 16.dp,
                     end = 16.dp,
                 )
+                .imeNestedScroll()
                 .safeDrawingPadding()
                 .verticalScroll(scrollState),
         verticalArrangement = Arrangement.spacedBy(16.dp)) {
