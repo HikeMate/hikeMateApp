@@ -8,9 +8,9 @@ import android.widget.Toast
 import ch.hikemate.app.R
 import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.LatLong
-import ch.hikemate.app.model.route.RouteProjectionResponse
 import ch.hikemate.app.model.route.RouteSegment
 import ch.hikemate.app.ui.map.MapScreen
+import ch.hikemate.app.utils.RouteUtils.RouteProjectionResponse
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.MultiplePermissionsState
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -425,6 +425,6 @@ object LocationUtils {
    * @return projection
    */
   private fun projectPointOntoSegment(point: LatLong, segment: RouteSegment): LatLong {
-    return point.projectPointIntoLine(segment.start, segment.end)
+    return point.projectPointOntoLine(segment.start, segment.end)
   }
 }

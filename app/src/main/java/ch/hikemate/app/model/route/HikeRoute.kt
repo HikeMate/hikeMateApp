@@ -138,7 +138,8 @@ data class LatLong(val lat: Double, val lon: Double) {
    */
   fun projectPointOntoLine(start: LatLong, end: LatLong): LatLong {
     // Scale longitude differences based on latitude (at middle latitude of segment)
-    // This is an acceptable approximation in our use case since longitude is not expected to change much on a single segment,
+    // This is an acceptable approximation in our use case since longitude is not expected to change
+    // much on a single segment,
     // plus we do not need perfect accuracy.
     val midLat = (start.lat + end.lat) / 2.0
     val lonScaleFactor = cos(Math.toRadians(midLat))
@@ -199,32 +200,5 @@ data class HikeRoute(
     return@lazy this.ways.zipWithNext { p1, p2 -> RouteSegment(p1, p2, p1.distanceTo(p2)) }
   }
 }
-
-/**
- * Represents the line defined by two points in a hike route
- *
- * @param start The start point of the segment
- * @param end The end point of the segment
- * @param length
- */
-data class RouteSegment(val start: LatLong, val end: LatLong, val length: Double)
-
-/**
- * Data class used for projections from a location to the hike route this gives every necessary
- * information for the UI to handle the projection.
- *
- * @param projectedLocation the projected point in the route
- * @param progressDistance the total distance traveled up to the projectedLocation
- * @param distanceFromRoute the distance from the location to the projectedLocation
- * @param segment the RouteSegment the Location is projected in
- * @param indexToSegment the index of the segment in the list of segments
- */
-data class RouteProjectionResponse(
-    val projectedLocation: LatLong,
-    val progressDistance: Double,
-    val distanceFromRoute: Double,
-    val segment: RouteSegment,
-    val indexToSegment: Int
-)
 
 typealias HikeWay = List<LatLong>

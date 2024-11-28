@@ -5,9 +5,9 @@ import android.location.Location
 import ch.hikemate.app.model.route.Bounds
 import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.LatLong
-import ch.hikemate.app.model.route.RouteProjectionResponse
 import ch.hikemate.app.utils.LocationUtils.projectLocationOnStart
 import ch.hikemate.app.utils.LocationUtils.projectLocationOngoing
+import ch.hikemate.app.utils.RouteUtils.RouteProjectionResponse
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -409,7 +409,7 @@ class LocationUtilsTest {
   }
 
   @Test
-  fun full_route_tracking_scenario() {
+  fun fullRouteTracking() {
     // Create a zigzag route to test different directions
     val route =
         HikeRoute(
