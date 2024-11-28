@@ -2,16 +2,14 @@ package ch.hikemate.app.benchmark
 
 import androidx.benchmark.junit4.BenchmarkRule
 import androidx.benchmark.junit4.measureRepeated
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.hikemate.app.model.route.Bounds
 import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.LatLong
 import ch.hikemate.app.utils.LocationUtils.projectLocationOnHike
 import kotlin.random.Random
 import org.junit.Rule
-import org.junit.runner.RunWith
 
-@RunWith(AndroidJUnit4::class)
+// @RunWith(AndroidJUnit4::class)
 class LocationProjectionBenchmark {
   @get:Rule val benchmarkRule = BenchmarkRule()
 
