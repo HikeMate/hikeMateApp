@@ -223,8 +223,8 @@ object LocationUtils {
   }
 
   /**
-   * Projects a location onto the nearest point of a hiking route. This
-   * is a greedy approach that finds the closest segment.
+   * Projects a location onto the nearest point of a hiking route. This is a greedy approach that
+   * finds the closest segment.
    *
    * @param location The current location to project
    * @param route The hiking route to project onto

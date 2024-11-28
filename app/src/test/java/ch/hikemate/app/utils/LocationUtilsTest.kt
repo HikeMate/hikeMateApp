@@ -193,18 +193,20 @@ class LocationUtilsTest {
     // Progress should be distance from start to projection
     assertEquals(distanceFromSegmentStart, result.progressDistance, EPSILON)
   }
+
   @Test
   fun projectLocationOnHike_selectsClosestSegmentFromThree() {
-    val route = HikeRoute(
-      id = "test",
-      bounds = Bounds(44.0, 6.0, 46.0, 8.0),
-      ways = listOf(
-        LatLong(45.0, 7.0),    // Start
-        LatLong(45.0, 7.5),    // End of first segment (horizontal)
-        LatLong(45.5, 7.5),    // End of second segment (vertical)
-        LatLong(45.5, 8.0)     // End of third segment (horizontal)
-      )
-    )
+    val route =
+        HikeRoute(
+            id = "test",
+            bounds = Bounds(44.0, 6.0, 46.0, 8.0),
+            ways =
+                listOf(
+                    LatLong(45.0, 7.0), // Start
+                    LatLong(45.0, 7.5), // End of first segment (horizontal)
+                    LatLong(45.5, 7.5), // End of second segment (vertical)
+                    LatLong(45.5, 8.0) // End of third segment (horizontal)
+                    ))
 
     run {
       val point = LatLong(45.1, 7.2)
@@ -231,8 +233,8 @@ class LocationUtilsTest {
       assertEquals(45.3, result.projectedLocation.lat, EPSILON)
       assertEquals(7.5, result.projectedLocation.lon, EPSILON)
 
-      val expectedProgress = route.segments[0].length +
-              result.projectedLocation.distanceTo(result.segment.start)
+      val expectedProgress =
+          route.segments[0].length + result.projectedLocation.distanceTo(result.segment.start)
       assertEquals(expectedProgress, result.progressDistance, EPSILON)
     }
 
@@ -246,7 +248,9 @@ class LocationUtilsTest {
       assertEquals(45.5, result.projectedLocation.lat, EPSILON)
       assertEquals(7.8, result.projectedLocation.lon, EPSILON)
 
-      val expectedProgress = route.segments[0].length + route.segments[1].length +
+      val expectedProgress =
+          route.segments[0].length +
+              route.segments[1].length +
               result.projectedLocation.distanceTo(result.segment.start)
       assertEquals(expectedProgress, result.progressDistance, EPSILON)
     }
