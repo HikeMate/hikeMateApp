@@ -50,12 +50,13 @@ class HikesViewModel(
         object : ViewModelProvider.Factory {
           @Suppress("UNCHECKED_CAST")
           override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            val client = OkHttpClient()
             return HikesViewModel(
                 savedHikesRepo =
                     SavedHikesRepositoryFirestore(
                         FirebaseFirestore.getInstance(), FirebaseAuth.getInstance()),
-                osmHikesRepo = HikeRoutesRepositoryOverpass(OkHttpClient()),
-                elevationService = ElevationServiceRepository(OkHttpClient()))
+                osmHikesRepo = HikeRoutesRepositoryOverpass(client),
+                elevationService = ElevationServiceRepository(client))
                 as T
           }
         }
