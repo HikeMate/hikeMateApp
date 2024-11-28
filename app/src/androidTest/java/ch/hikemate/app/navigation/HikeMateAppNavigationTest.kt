@@ -1,5 +1,6 @@
 package ch.hikemate.app.navigation
 
+import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -37,6 +38,8 @@ class HikeMateAppNavigationTest {
     composeTestRule.onNodeWithTag(Screen.SIGN_IN_WITH_EMAIL).assertIsDisplayed()
     composeTestRule
         .onNodeWithTag(SignInWithEmailScreen.TEST_TAG_GO_TO_SIGN_UP_BUTTON)
+        .assertHasClickAction()
+        .assertIsDisplayed()
         .performClick()
     composeTestRule.onNodeWithTag(Screen.CREATE_ACCOUNT).assertIsDisplayed()
 

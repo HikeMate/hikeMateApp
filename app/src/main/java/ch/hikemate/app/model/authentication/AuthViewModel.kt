@@ -3,6 +3,7 @@ package ch.hikemate.app.model.authentication
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.result.ActivityResult
 import androidx.lifecycle.ViewModel
@@ -96,12 +97,17 @@ class AuthViewModel(
                       user,
                       onSuccess = {
                         _currentUser.value = user
+                        Log.d("AuthViewModel", "User profile created")
                         onSuccess()
                       },
-                      onFailure = onErrorAction,
+                      onFailure = {
+                        Log.e("AuthViewModel", "Error creating user profile", it)
+                        onErrorAction(it)
+                      },
                       context = context)
                 } else {
                   // TODO handle errors in a unanimous way
+                  Log.e("AuthViewModel", "Error updating user profile")
                   onErrorAction(Exception("Error updating user profile"))
                 }
               }

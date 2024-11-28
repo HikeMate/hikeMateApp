@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -83,7 +84,6 @@ import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
-import org.osmdroid.config.Configuration
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 
@@ -93,17 +93,17 @@ object HikeDetailScreen {
   const val MAP_MIN_LONGITUDE = -180.0
   const val MAP_BOUNDS_MARGIN: Int = 100
 
-  const val TEST_TAG_MAP = "map"
-  const val TEST_TAG_HIKE_NAME = "hikeName"
-  const val TEST_TAG_BOOKMARK_ICON = "bookmarkIcon"
-  const val TEST_TAG_ELEVATION_GRAPH = "elevationGraph"
-  const val TEST_TAG_DETAIL_ROW_TAG = "detailRowTag"
-  const val TEST_TAG_DETAIL_ROW_VALUE = "detailRowValue"
-  const val TEST_TAG_ADD_DATE_BUTTON = "addDateButton"
-  const val TEST_TAG_PLANNED_DATE_TEXT_BOX = "plannedDateTextBox"
-  const val TEST_TAG_DATE_PICKER = "datePicker"
-  const val TEST_TAG_DATE_PICKER_CANCEL_BUTTON = "datePickerCancelButton"
-  const val TEST_TAG_DATE_PICKER_CONFIRM_BUTTON = "datePickerConfirmButton"
+  const val TEST_TAG_MAP = "HikeDetailScreenMap"
+  const val TEST_TAG_HIKE_NAME = "HikeDetailScreenHikeName"
+  const val TEST_TAG_BOOKMARK_ICON = "HikeDetailScreenBookmarkIcon"
+  const val TEST_TAG_ELEVATION_GRAPH = "HikeDetailScreenElevationGraph"
+  const val TEST_TAG_DETAIL_ROW_TAG = "HikeDetailScreenDetailRowTag"
+  const val TEST_TAG_DETAIL_ROW_VALUE = "HikeDetailScreenDetailRowValue"
+  const val TEST_TAG_ADD_DATE_BUTTON = "HikeDetailScreenAddDateButton"
+  const val TEST_TAG_PLANNED_DATE_TEXT_BOX = "HikeDetailScreenPlannedDateTextBox"
+  const val TEST_TAG_DATE_PICKER = "HikeDetailDatePicker"
+  const val TEST_TAG_DATE_PICKER_CANCEL_BUTTON = "HikeDetailDatePickerCancelButton"
+  const val TEST_TAG_DATE_PICKER_CONFIRM_BUTTON = "HikeDetailDatePickerConfirmButton"
 }
 
 @Composable
@@ -143,20 +143,6 @@ fun HikeDetailScreen(
           elevationData.clear()
           elevationData.addAll(it)
         })
-
-    Configuration.getInstance().apply {
-      // Set user-agent to avoid rejected requests
-      userAgentValue = context.packageName
-
-      // Allow for faster loading of tiles. Default OSMDroid value is 2.
-      tileDownloadThreads = 4
-
-      // Maximum number of tiles that can be downloaded at once. Default is 40.
-      tileDownloadMaxQueueSize = 40
-
-      // Maximum number of bytes that can be used by the tile file system cache. Default is 600MB.
-      tileFileSystemCacheMaxBytes = 600L * 1024L * 1024L
-    }
   }
 
   // Avoid re-creating the MapView on every recomposition
@@ -199,6 +185,7 @@ fun HikeDetailScreen(
   // Show the selected hike on the map
   // OnLineClick does nothing, the line should not be clickable
   val hikeLineColor = route.getColor()
+  Log.d("HikeDetailScreen", "Drawing hike on map: ${route.bounds}")
   MapUtils.showHikeOnMap(mapView = mapView, hike = route, color = hikeLineColor, onLineClick = {})
 
   LaunchedEffect(Unit) {
@@ -229,7 +216,7 @@ fun HikeDetailScreen(
       // Back Button at the top of the screen
       BackButton(
           navigationActions = navigationActions,
-          modifier = Modifier.padding(top = 40.dp, start = 16.dp, end = 16.dp),
+          modifier = Modifier.padding(start = 16.dp, end = 16.dp).safeDrawingPadding(),
           onClick = { listOfHikeRoutesViewModel.clearSelectedRoute() })
       // Zoom buttons at the bottom right of the screen
       ZoomMapButton(
@@ -251,7 +238,7 @@ fun HikeDetails(
     detailedRoute: DetailedHikeRoute,
     savedHikesViewModel: SavedHikesViewModel,
     elevationData: List<Double>,
-    userHikingLevel: HikingLevel
+    userHikingLevel: HikingLevel,
 ) {
   val hikeDetailState = savedHikesViewModel.hikeDetailState.collectAsState(null).value
 

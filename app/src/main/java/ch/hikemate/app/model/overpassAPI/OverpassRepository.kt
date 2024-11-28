@@ -1,5 +1,6 @@
 package ch.hikemate.app.model.overpassAPI
 
+import android.util.Log
 import okhttp3.Callback
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -38,6 +39,8 @@ abstract class OverpassRepository {
     val requestBuilder = Request.Builder().url("$OVERPASS_API_URL?data=$requestData").get()
 
     setRequestHeaders(requestBuilder)
+
+    Log.d("OverpassRepository", "Sending request to Overpass API: ${requestBuilder.build()}")
 
     client.newCall(requestBuilder.build()).enqueue(callback)
   }

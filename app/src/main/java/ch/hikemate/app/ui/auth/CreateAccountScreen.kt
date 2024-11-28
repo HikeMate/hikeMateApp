@@ -3,10 +3,15 @@ package ch.hikemate.app.ui.auth
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imeNestedScroll
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.TextSelectionColors
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -50,12 +55,15 @@ object CreateAccountScreen {
  * @param navigationActions The navigation actions.
  * @param authViewModel The authentication view model.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun CreateAccountScreen(
     navigationActions: NavigationActions,
     authViewModel: AuthViewModel,
 ) {
   val context = LocalContext.current
+
+  val scrollState = rememberScrollState()
 
   // Define it here because it's used in the onClick lambda which is not a composable
   val mismatchErrorMessage = stringResource(R.string.create_account_password_mismatch_error)
@@ -114,11 +122,12 @@ fun CreateAccountScreen(
       modifier =
           Modifier.testTag(Screen.CREATE_ACCOUNT)
               .padding(
-                  // Add for the status bar
                   start = 16.dp,
                   end = 16.dp,
-                  top = 40.dp,
-              ),
+              )
+              .verticalScroll(scrollState)
+              .imeNestedScroll()
+              .safeDrawingPadding(),
       verticalArrangement = Arrangement.spacedBy(16.dp)) {
         BackButton(navigationActions)
         Text(
@@ -131,7 +140,8 @@ fun CreateAccountScreen(
             colors = inputColors,
             value = name,
             onValueChange = { name = it },
-            label = { Text(stringResource(R.string.create_account_name_label)) })
+            label = { Text(stringResource(R.string.create_account_name_label)) },
+            singleLine = true)
 
         OutlinedTextField(
             modifier = Modifier.fillMaxWidth().testTag(CreateAccountScreen.TEST_TAG_EMAIL_INPUT),
@@ -139,7 +149,8 @@ fun CreateAccountScreen(
             colors = inputColors,
             value = email,
             onValueChange = { email = it },
-            label = { Text(stringResource(R.string.create_account_email_label)) })
+            label = { Text(stringResource(R.string.create_account_email_label)) },
+            singleLine = true)
 
         OutlinedTextField(
             modifier = Modifier.fillMaxWidth().testTag(CreateAccountScreen.TEST_TAG_PASSWORD_INPUT),
@@ -147,7 +158,8 @@ fun CreateAccountScreen(
             colors = inputColors,
             value = password,
             onValueChange = { password = it },
-            label = { Text(stringResource(R.string.create_account_password_label)) })
+            label = { Text(stringResource(R.string.create_account_password_label)) },
+            singleLine = true)
 
         OutlinedTextField(
             modifier =
@@ -157,7 +169,8 @@ fun CreateAccountScreen(
             colors = inputColors,
             value = confirmPassword,
             onValueChange = { confirmPassword = it },
-            label = { Text(stringResource(R.string.create_account_repeat_password_label)) })
+            label = { Text(stringResource(R.string.create_account_repeat_password_label)) },
+            singleLine = true)
 
         BigButton(
             modifier = Modifier.fillMaxWidth().testTag(CreateAccountScreen.TEST_TAG_SIGN_UP_BUTTON),
