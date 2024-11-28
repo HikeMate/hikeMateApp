@@ -84,7 +84,6 @@ import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
-import org.osmdroid.config.Configuration
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 
@@ -144,20 +143,6 @@ fun HikeDetailScreen(
           elevationData.clear()
           elevationData.addAll(it)
         })
-
-    Configuration.getInstance().apply {
-      // Set user-agent to avoid rejected requests
-      userAgentValue = context.packageName
-
-      // Allow for faster loading of tiles. Default OSMDroid value is 2.
-      tileDownloadThreads = 4
-
-      // Maximum number of tiles that can be downloaded at once. Default is 40.
-      tileDownloadMaxQueueSize = 40
-
-      // Maximum number of bytes that can be used by the tile file system cache. Default is 600MB.
-      tileFileSystemCacheMaxBytes = 600L * 1024L * 1024L
-    }
   }
 
   // Avoid re-creating the MapView on every recomposition
@@ -200,6 +185,7 @@ fun HikeDetailScreen(
   // Show the selected hike on the map
   // OnLineClick does nothing, the line should not be clickable
   val hikeLineColor = route.getColor()
+  Log.d("HikeDetailScreen", "Drawing hike on map: ${route.bounds}")
   MapUtils.showHikeOnMap(mapView = mapView, hike = route, color = hikeLineColor, onLineClick = {})
 
   LaunchedEffect(Unit) {
@@ -252,7 +238,7 @@ fun HikeDetails(
     detailedRoute: DetailedHikeRoute,
     savedHikesViewModel: SavedHikesViewModel,
     elevationData: List<Double>,
-    userHikingLevel: HikingLevel
+    userHikingLevel: HikingLevel,
 ) {
   val hikeDetailState = savedHikesViewModel.hikeDetailState.collectAsState(null).value
 

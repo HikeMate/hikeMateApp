@@ -31,6 +31,7 @@ object Screen {
   const val PROFILE = "Profile Screen"
   const val EDIT_PROFILE = "Edit-profile Screen"
   const val HIKE_DETAILS = "HikeDetails Screen"
+  const val RUN_HIKE = "RunHike Screen"
   const val TUTORIAL = "Guide Screen"
 }
 
