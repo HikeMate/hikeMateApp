@@ -127,6 +127,39 @@ data class LatLong(val lat: Double, val lon: Double) {
     return 2 * earthRadius * asin(sqrt(a))
   }
 
+  /**
+   * Projects this point onto a line segment between two geographical coordinates. Assumes routes
+   * don't wrap around the world map edges. Accounts for longitude distance scaling based on
+   * latitude.
+   *
+   * @param start Starting point of the line segment
+   * @param end Ending point of the line segment
+   * @return Projected point as LatLong
+   */
+  fun projectPointOntoLine(start: LatLong, end: LatLong): LatLong {
+    // Scale longitude differences based on latitude (at middle latitude of segment)
+    // This is an acceptable approximation in our use case since longitude is not expected to change
+    // much on a single segment,
+    // plus we do not need perfect accuracy.
+    val midLat = (start.lat + end.lat) / 2.0
+    val lonScaleFactor = cos(Math.toRadians(midLat))
+
+    // Calculate scaled vectors
+    val dx = (end.lon - start.lon) * lonScaleFactor
+    val dy = end.lat - start.lat
+
+    val l2 = dx * dx + dy * dy
+
+    if (l2 == 0.0) return start
+
+    // Calculate projection with scaled coordinates
+    val t = ((this.lon - start.lon) * lonScaleFactor * dx + (this.lat - start.lat) * dy) / l2
+    val tClamped = t.coerceIn(0.0, 1.0)
+
+    return LatLong(
+        lat = start.lat + tClamped * dy, lon = start.lon + tClamped * (end.lon - start.lon))
+  }
+
   override fun equals(other: Any?): Boolean {
     return if (other is LatLong) {
       lat == other.lat && lon == other.lon
@@ -156,9 +189,15 @@ data class HikeRoute(
     val name: String? = null,
     val description: String? = null
 ) {
+
   /** Get the color of the route from its id. The color should be the same for the same route id. */
   fun getColor(): Int {
     return hikeColors[abs(id.hashCode()) % hikeColors.size]
+  }
+
+  /** The list of segments of the Route */
+  val segments: List<RouteSegment> by lazy {
+    return@lazy this.ways.zipWithNext { p1, p2 -> RouteSegment(p1, p2, p1.distanceTo(p2)) }
   }
 }
 
