@@ -2,13 +2,19 @@ package ch.hikemate.app.ui.auth
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imeNestedScroll
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.TextSelectionColors
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -53,12 +59,15 @@ object SignInWithEmailScreen {
  * @param navigationActions The navigation actions.
  * @param authViewModel The authentication view model.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SignInWithEmailScreen(
     navigationActions: NavigationActions,
     authViewModel: AuthViewModel,
 ) {
   val context = LocalContext.current
+
+  val scrollState = rememberScrollState()
 
   // Define the colors for the input fields
   val inputColors =
@@ -81,11 +90,13 @@ fun SignInWithEmailScreen(
       modifier =
           Modifier.testTag(Screen.SIGN_IN_WITH_EMAIL)
               .padding(
-                  // Add for the status bar
                   start = 16.dp,
                   end = 16.dp,
-                  top = 40.dp,
-              ),
+              )
+              .imeNestedScroll()
+              .safeDrawingPadding()
+              .verticalScroll(scrollState)
+              .height(IntrinsicSize.Max),
       verticalArrangement = Arrangement.spacedBy(16.dp)) {
         BackButton(navigationActions)
         Text(
@@ -99,7 +110,8 @@ fun SignInWithEmailScreen(
             colors = inputColors,
             value = email,
             onValueChange = { email = it },
-            label = { Text(stringResource(R.string.sign_in_with_email_email_label)) })
+            label = { Text(stringResource(R.string.sign_in_with_email_email_label)) },
+            singleLine = true)
 
         OutlinedTextField(
             modifier =
@@ -108,7 +120,8 @@ fun SignInWithEmailScreen(
             colors = inputColors,
             value = password,
             onValueChange = { password = it },
-            label = { Text(stringResource(R.string.sign_in_with_email_password_label)) })
+            label = { Text(stringResource(R.string.sign_in_with_email_password_label)) },
+            singleLine = true)
 
         BigButton(
             modifier =
@@ -129,12 +142,10 @@ fun SignInWithEmailScreen(
                   })
             })
 
-        // Push the sign up button to the bottom of the screen by adding a spacer
-        Spacer(modifier = Modifier.weight(1f))
-
-        Box(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-            contentAlignment = Alignment.Center) {
+        Column(
+            modifier = Modifier.padding(bottom = 16.dp).fillMaxSize(),
+            verticalArrangement = Arrangement.Bottom,
+            horizontalAlignment = Alignment.CenterHorizontally) {
               TextButton(
                   onClick = {
                     // Navigate to the sign up screen

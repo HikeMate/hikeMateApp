@@ -2,9 +2,14 @@ package ch.hikemate.app.ui.profile
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imeNestedScroll
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.TextSelectionColors
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SegmentedButton
@@ -58,12 +63,15 @@ object EditProfileScreen {
  * @param navigationActions The navigation actions.
  * @param profileViewModel The profile view model.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun EditProfileScreen(
     navigationActions: NavigationActions,
     profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory)
 ) {
   val context = LocalContext.current
+
+  val scrollState = rememberScrollState()
 
   val errorMessageIdState = profileViewModel.errorMessageId.collectAsState()
   val profileState = profileViewModel.profile.collectAsState()
@@ -99,11 +107,12 @@ fun EditProfileScreen(
         modifier =
             Modifier.testTag(Screen.EDIT_PROFILE)
                 .padding(
-                    // Add for the status bar
                     start = 16.dp,
                     end = 16.dp,
-                    top = 16.dp,
-                ),
+                )
+                .imeNestedScroll()
+                .safeDrawingPadding()
+                .verticalScroll(scrollState),
         verticalArrangement = Arrangement.spacedBy(16.dp)) {
           BackButton(navigationActions)
           Text(
@@ -126,7 +135,8 @@ fun EditProfileScreen(
                               )),
               value = name,
               onValueChange = { name = it },
-              label = { Text(context.getString(R.string.profile_screen_name_label)) })
+              label = { Text(context.getString(R.string.profile_screen_name_label)) },
+              singleLine = true)
 
           Column(
               verticalArrangement = Arrangement.spacedBy(2.dp),
