@@ -1,11 +1,11 @@
 package ch.hikemate.app.model.facilities
 
+import android.util.JsonReader
 import android.util.Log
 import ch.hikemate.app.model.overpassAPI.OverpassRepository
 import ch.hikemate.app.model.route.Bounds
 import ch.hikemate.app.model.route.LatLong
-import com.google.gson.Gson
-import com.google.gson.JsonObject
+import java.io.Reader
 import okhttp3.Callback
 import okhttp3.OkHttpClient
 
@@ -56,9 +56,9 @@ class FacilitiesRepositoryOverpass(private val client: OkHttpClient) :
               Exception(
                   "Failed to fetch facilities from Overpass API. Response code: ${response.code}"))
         } else {
-          val responseJsonString =
-              response.body?.string() ?: throw Exception("Response body is null")
-          val facilities = parseAmenities(responseJsonString)
+          val responseJsonReader =
+              response.body?.charStream() ?: throw Exception("Response body is null")
+          val facilities = parseAmenities(responseJsonReader)
           Log.d("FacilitiesRepository", "Got ${facilities.size} facilities")
           onSuccess(facilities)
         }
@@ -73,31 +73,76 @@ class FacilitiesRepositoryOverpass(private val client: OkHttpClient) :
      * Parses and filters JSON response from Overpass API into a list of Facility objects. Filters
      * out amenities that have an invalid latitude, longitude or facility type.
      *
-     * @param jsonString JSON response string from Overpass API
+     * @param responseReader The Reader object to parse the JSON response from
      * @return List of parsed Facility objects
      */
-    fun parseAmenities(jsonString: String): List<Facility> {
-      val gson = Gson()
-      val facilities = mutableListOf<Facility>()
+    fun parseAmenities(responseReader: Reader): List<Facility> {
+      val facilities = mutableListOf<Facility?>()
+      val jsonReader = JsonReader(responseReader)
+      jsonReader.beginObject() // We're in the root object
+      while (jsonReader.hasNext()) {
+        val name = jsonReader.nextName()
+        if (name == "elements") {
+          // Parse the elements array
+          jsonReader.beginArray()
+          while (jsonReader.hasNext()) {
+            jsonReader.beginObject() // We're in an element object
 
-      // Parse the root JSON object
-      val rootObject = gson.fromJson(jsonString, JsonObject::class.java)
-      val elements = rootObject.getAsJsonArray("elements") ?: return facilities
+            facilities.add(parseAmenity(jsonReader))
 
-      // Process each element in the "elements" array
-      elements.forEach { element ->
-        val obj = element.asJsonObject
-        val lat = obj["lat"]?.asDouble
-        val lon = obj["lon"]?.asDouble
-        val tags = obj.getAsJsonObject("tags")
-        val amenity = tags?.get("amenity")?.asString?.let { FacilityType.fromString(it) }
+            jsonReader.endObject()
+          }
+          jsonReader.endArray()
+        } else {
+          jsonReader.skipValue()
+        }
+      }
+      jsonReader.endObject()
+      return facilities.filterNotNull()
+    }
 
-        if (lat != null && lon != null && amenity != null) {
-          facilities.add(Facility(amenity, LatLong(lat, lon)))
+    /**
+     * Parses a single amenity element from the JSON response.
+     *
+     * @param jsonReader The JsonReader object to parse the amenity from
+     * @return The Facility object parsed from the JSON response, or null if the amenity is invalid
+     */
+    fun parseAmenity(jsonReader: JsonReader): Facility? {
+      var lat = 0.0
+      var lon = 0.0
+      var amenity: FacilityType? = null
+
+      while (jsonReader.hasNext()) {
+        val name = jsonReader.nextName()
+        when (name) {
+          "lat" -> lat = jsonReader.nextDouble()
+          "lon" -> lon = jsonReader.nextDouble()
+          "tags" -> {
+            jsonReader.beginObject() // We're in the tags object of the element
+
+            while (jsonReader.hasNext()) {
+              val typeName = jsonReader.nextName()
+
+              when (typeName) {
+                "amenity" -> {
+                  val amenityName = jsonReader.nextString()
+                  amenity = FacilityType.fromString(amenityName)
+                }
+                else -> jsonReader.skipValue()
+              }
+            }
+
+            jsonReader.endObject()
+          }
+          else -> jsonReader.skipValue()
         }
       }
 
-      return facilities
+      if (lat != 0.0 && lon != 0.0 && amenity != null) {
+        return Facility(amenity, LatLong(lat, lon))
+      }
+
+      return null
     }
   }
 }
