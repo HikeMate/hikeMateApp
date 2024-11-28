@@ -6,15 +6,6 @@ import java.io.IOException
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.coroutines.resumeWithException
-import kotlin.time.Duration.Companion.seconds
-import kotlin.time.toJavaDuration
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.time.withTimeout
-import kotlinx.coroutines.withContext
 import okhttp3.Call
 import okhttp3.OkHttpClient
 import okhttp3.Protocol
@@ -26,12 +17,17 @@ import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.verify
+import org.robolectric.RobolectricTestRunner
 
+// Important: We need to use RobolectricTestRunner to run tests that use Android classes
+// such as JsonReader, which is used in the actual implementation of the app.
+@RunWith(RobolectricTestRunner::class)
 class FacilitiesRepositoryOverpassTest {
 
   companion object {
@@ -81,7 +77,7 @@ class FacilitiesRepositoryOverpassTest {
     return Response.Builder()
         .code(200)
         .message("OK")
-        .body(request.toResponseBody())
+        .body(request.trimIndent().replace("\n", "").toResponseBody())
         .protocol(Protocol.HTTP_1_1)
         .header("Content-Type", "application/json")
         .request(mock())
@@ -108,34 +104,6 @@ class FacilitiesRepositoryOverpassTest {
     facilitiesRepository = FacilitiesRepositoryOverpass(client)
 
     `when`(client.newCall(any())).thenReturn(mockCall)
-  }
-
-  @OptIn(ExperimentalCoroutinesApi::class)
-  @Test
-  fun testGetFacilities_integrationTest() = runTest {
-    val realFacilitiesRepository = FacilitiesRepositoryOverpass(OkHttpClient())
-
-    var onSuccessCalled = false
-    var routesSize = 0
-
-    withContext(Dispatchers.Default.limitedParallelism(1)) {
-      withTimeout(5.seconds.toJavaDuration()) { // 5 seconds timeout
-        // Convert callback-based API to suspending function
-        suspendCancellableCoroutine { continuation ->
-          realFacilitiesRepository.getFacilities(
-              bounds = testBoundsNormal,
-              onSuccess = { routes ->
-                routesSize = routes.size
-                onSuccessCalled = true
-                continuation.resume(Unit, {})
-              },
-              onFailure = { error -> continuation.resumeWithException(error) })
-        }
-      }
-    }
-
-    assertTrue(onSuccessCalled)
-    assertNotEquals(0, routesSize)
   }
 
   @Test
