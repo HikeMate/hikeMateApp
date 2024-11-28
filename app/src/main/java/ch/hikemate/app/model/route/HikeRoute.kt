@@ -196,7 +196,7 @@ data class HikeRoute(
 
   /** The list of segments of the Route */
   val segments: List<RouteSegment> by lazy {
-    return@lazy this.ways.windowed(2).map { (p1, p2) -> RouteSegment(p1, p2, p1.distanceTo(p2)) }
+    return@lazy this.ways.zipWithNext { p1, p2 -> RouteSegment(p1, p2, p1.distanceTo(p2)) }
   }
 }
 
