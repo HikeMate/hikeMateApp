@@ -101,7 +101,7 @@ class AuthViewModel(
                         onSuccess()
                       },
                       onFailure = {
-                        Log.e("AuthViewModel", "Error creating user profile")
+                        Log.e("AuthViewModel", "Error creating user profile", it)
                         onErrorAction(it)
                       },
                       context = context)
