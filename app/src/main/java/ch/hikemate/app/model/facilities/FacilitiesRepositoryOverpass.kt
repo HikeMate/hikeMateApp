@@ -29,6 +29,7 @@ class FacilitiesRepositoryOverpass(private val client: OkHttpClient) :
         );
         out geom;
     """
+            .trimIndent()
 
     buildAndSendRequest(requestData, client, ResponseHandler(onSuccess, onFailure))
   }
@@ -54,16 +55,18 @@ class FacilitiesRepositoryOverpass(private val client: OkHttpClient) :
           onFailure(
               Exception(
                   "Failed to fetch facilities from Overpass API. Response code: ${response.code}"))
-          return
+        } else {
+          val responseJsonReader =
+              response.body?.charStream() ?: throw Exception("Response body is null")
+          val facilities = parseAmenities(responseJsonReader)
+          Log.d("FacilitiesRepository", "Got ${facilities.size} facilities")
+          onSuccess(facilities)
         }
 
-        val responseJsonReader =
-            response.body?.charStream() ?: throw Exception("Response body is null")
-        val facilities = parseAmenities(responseJsonReader)
-        Log.d("FacilitiesRepository", "Got ${facilities.size} facilities")
-        onSuccess(facilities)
       } catch (e: Exception) {
         onFailure(e)
+      } finally {
+        response.close()
       }
     }
 
