@@ -2,7 +2,6 @@
 accompanistPermissions = "0.36.0"
 agp = "8.7.0"
 firebaseBom = "33.4.0"
-gson = "2.11.0"
 kotlin =  "1.8.10"
 coreKtx = "1.13.1"
 kotlinxSerializationJson = "1.6.3"
@@ -54,7 +53,6 @@ accompanist-permissions = { module = "com.google.accompanist:accompanist-permiss
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "materialIconsExtended" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
-gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }

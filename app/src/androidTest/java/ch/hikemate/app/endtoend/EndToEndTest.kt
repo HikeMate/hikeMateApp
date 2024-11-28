@@ -6,18 +6,20 @@ import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.hasTestTag
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.hikemate.app.MainActivity
 import ch.hikemate.app.ui.auth.CreateAccountScreen
 import ch.hikemate.app.ui.auth.SignInScreen
 import ch.hikemate.app.ui.auth.SignInWithEmailScreen
 import ch.hikemate.app.ui.components.CenteredLoadingAnimation
-import ch.hikemate.app.ui.map.MapScreen.TEST_TAG_MAP
+import ch.hikemate.app.ui.map.MapScreen
 import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.navigation.Screen.PROFILE
@@ -38,7 +40,8 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class EndToEndTest : TestCase() {
-  @get:Rule val composeTestRule = createAndroidComposeRule<MainActivity>()
+  @get:Rule val composeTestRule = createEmptyComposeRule()
+  private var scenario: ActivityScenario<MainActivity>? = null
   private val auth = FirebaseAuth.getInstance()
   private val myUuid = UUID.randomUUID()
   private val myUuidAsString = myUuid.toString()
@@ -69,6 +72,9 @@ class EndToEndTest : TestCase() {
     if (!signedOut) {
       throw Exception("Failed to sign out")
     }
+
+    // Make sure the log out is considered in the MainActivity
+    scenario = ActivityScenario.launch(MainActivity::class.java)
   }
 
   @After
@@ -80,6 +86,11 @@ class EndToEndTest : TestCase() {
     auth.signOut()
   }
 
+  @After
+  public override fun tearDown() {
+    scenario?.close()
+  }
+
   @OptIn(ExperimentalTestApi::class)
   @Test
   fun test() {
@@ -89,30 +100,59 @@ class EndToEndTest : TestCase() {
     composeTestRule.onNodeWithTag(SignInScreen.TEST_TAG_SIGN_IN_WITH_EMAIL).assertIsDisplayed()
     composeTestRule.onNodeWithTag(SignInScreen.TEST_TAG_SIGN_IN_WITH_GOOGLE).assertIsDisplayed()
 
+    // Perform sign in with email and password
     composeTestRule.onNodeWithTag(SignInScreen.TEST_TAG_SIGN_IN_WITH_EMAIL).performClick()
-    composeTestRule.onNodeWithTag(Screen.SIGN_IN_WITH_EMAIL).assertIsDisplayed()
+
+    composeTestRule.waitUntilExactlyOneExists(
+        hasTestTag(Screen.SIGN_IN_WITH_EMAIL), timeoutMillis = 10000)
+
     composeTestRule
         .onNodeWithTag(SignInWithEmailScreen.TEST_TAG_GO_TO_SIGN_UP_BUTTON)
+        .assertIsDisplayed()
+        .assertHasClickAction()
         .performClick()
     composeTestRule.onNodeWithTag(Screen.CREATE_ACCOUNT).assertIsDisplayed()
 
     composeTestRule
         .onNodeWithTag(CreateAccountScreen.TEST_TAG_NAME_INPUT)
+        .assertIsDisplayed()
         .performTextInput(myUuidAsString)
-    composeTestRule.onNodeWithTag(CreateAccountScreen.TEST_TAG_EMAIL_INPUT).performTextInput(email)
+
+    Espresso.closeSoftKeyboard()
+
+    composeTestRule
+        .onNodeWithTag(CreateAccountScreen.TEST_TAG_EMAIL_INPUT)
+        .assertIsDisplayed()
+        .performTextInput(email)
+
+    Espresso.closeSoftKeyboard()
+
     composeTestRule
         .onNodeWithTag(CreateAccountScreen.TEST_TAG_PASSWORD_INPUT)
+        .assertIsDisplayed()
         .performTextInput(password)
+
+    Espresso.closeSoftKeyboard()
+
     composeTestRule
         .onNodeWithTag(CreateAccountScreen.TEST_TAG_CONFIRM_PASSWORD_INPUT)
+        .assertIsDisplayed()
         .performTextInput(password)
-    composeTestRule.onNodeWithTag(CreateAccountScreen.TEST_TAG_SIGN_UP_BUTTON).performClick()
+
+    Espresso.closeSoftKeyboard()
+
+    composeTestRule
+        .onNodeWithTag(CreateAccountScreen.TEST_TAG_SIGN_UP_BUTTON)
+        .assertHasClickAction()
+        .assertIsDisplayed()
+        .performClick()
 
     // Wait for the map to load
-    composeTestRule.waitUntilExactlyOneExists(hasTestTag(TEST_TAG_MAP), timeoutMillis = 10000)
+    composeTestRule.waitUntilExactlyOneExists(
+        hasTestTag(MapScreen.TEST_TAG_MAP), timeoutMillis = 10000)
 
     // Check that we are on the map
-    composeTestRule.onNodeWithTag(TEST_TAG_MAP).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_MAP).assertIsDisplayed()
 
     // Check that the menu is displayed
     composeTestRule.onNodeWithTag(TEST_TAG_BOTTOM_BAR).assertIsDisplayed()
@@ -132,7 +172,7 @@ class EndToEndTest : TestCase() {
     composeTestRule
         .onNodeWithTag(TEST_TAG_MENU_ITEM_PREFIX + TopLevelDestinations.SAVED_HIKES.route)
         .performClick()
-    composeTestRule.onNodeWithTag(TEST_TAG_MAP).assertIsNotDisplayed()
+    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_MAP).assertIsNotDisplayed()
     composeTestRule
         .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_SECTION_CONTAINER)
         .assertIsDisplayed()
@@ -141,7 +181,7 @@ class EndToEndTest : TestCase() {
     composeTestRule
         .onNodeWithTag(TEST_TAG_MENU_ITEM_PREFIX + TopLevelDestinations.MAP.route)
         .performClick()
-    composeTestRule.onNodeWithTag(TEST_TAG_MAP).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_MAP).assertIsDisplayed()
     composeTestRule
         .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_SECTION_CONTAINER)
         .assertIsNotDisplayed()
@@ -150,7 +190,7 @@ class EndToEndTest : TestCase() {
     composeTestRule
         .onNodeWithTag(TEST_TAG_MENU_ITEM_PREFIX + TopLevelDestinations.PROFILE.route)
         .performClick()
-    composeTestRule.onNodeWithTag(TEST_TAG_MAP).assertIsNotDisplayed()
+    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_MAP).assertIsNotDisplayed()
 
     composeTestRule.waitUntilDoesNotExist(
         hasTestTag(CenteredLoadingAnimation.TEST_TAG_CENTERED_LOADING_ANIMATION),
@@ -162,6 +202,6 @@ class EndToEndTest : TestCase() {
     composeTestRule
         .onNodeWithTag(TEST_TAG_MENU_ITEM_PREFIX + TopLevelDestinations.MAP.route)
         .performClick()
-    composeTestRule.onNodeWithTag(TEST_TAG_MAP).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_MAP).assertIsDisplayed()
   }
 }

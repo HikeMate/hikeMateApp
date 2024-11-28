@@ -75,10 +75,10 @@ class FirebaseAuthRepository : AuthRepository {
         // Sign in with the Firebase credential (async task)
         auth.signInWithCredential(firebaseCredential).addOnCompleteListener { task ->
           if (task.isSuccessful) {
-            Log.d("SignInButton", "signInWithCredential:success")
+            Log.d("FirebaseAuthRepository", "signInWithCredential:success")
             onSuccess(auth.currentUser)
           } else {
-            Log.d("SignInButton", "signInWithCredential:failure")
+            Log.d("FirebaseAuthRepository", "signInWithCredential:failure")
             onErrorAction(task.exception ?: Exception())
           }
         }
@@ -108,8 +108,10 @@ class FirebaseAuthRepository : AuthRepository {
     val auth = FirebaseAuth.getInstance()
     auth.createUserWithEmailAndPassword(email, password).addOnCompleteListener { task ->
       if (task.isSuccessful) {
+        Log.d("FirebaseAuthRepository", "createAccountWithEmailAndPassword:success")
         onSuccess(auth.currentUser)
       } else {
+        Log.e("FirebaseAuthRepository", "createAccountWithEmailAndPassword:failure", task.exception)
         onErrorAction(task.exception ?: Exception())
       }
     }
@@ -124,8 +126,10 @@ class FirebaseAuthRepository : AuthRepository {
     val auth = FirebaseAuth.getInstance()
     auth.signInWithEmailAndPassword(email, password).addOnCompleteListener { task ->
       if (task.isSuccessful) {
+        Log.d("FirebaseAuthRepository", "signInWithEmailAndPassword:success")
         onSuccess(auth.currentUser)
       } else {
+        Log.e("FirebaseAuthRepository", "signInWithEmailAndPassword:failure", task.exception)
         onErrorAction(task.exception ?: Exception())
       }
     }

@@ -2,14 +2,17 @@ package ch.hikemate.app.endtoend
 
 import android.content.Context
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasTestTag
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.hikemate.app.MainActivity
 import ch.hikemate.app.ui.auth.CreateAccountScreen
@@ -28,6 +31,7 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import java.util.UUID
+import junit.framework.TestCase
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -35,8 +39,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class EndToEndTest2 {
-  @get:Rule val composeTestRule = createAndroidComposeRule<MainActivity>()
+class EndToEndTest2 : TestCase() {
+  @get:Rule val composeTestRule = createEmptyComposeRule()
+  private var scenario: ActivityScenario<MainActivity>? = null
   private val auth = FirebaseAuth.getInstance()
   private val myUuid = UUID.randomUUID()
   private val myUuidAsString = myUuid.toString()
@@ -67,6 +72,9 @@ class EndToEndTest2 {
     if (!signedOut) {
       throw Exception("Failed to sign out")
     }
+
+    // Make sure the log out is considered in the MainActivity
+    scenario = ActivityScenario.launch(MainActivity::class.java)
   }
 
   @After
@@ -76,6 +84,11 @@ class EndToEndTest2 {
     auth.currentUser?.reauthenticate(credential)
     auth.currentUser?.delete()
     auth.signOut()
+  }
+
+  @After
+  public override fun tearDown() {
+    scenario?.close()
   }
 
   @OptIn(ExperimentalTestApi::class)
@@ -94,22 +107,49 @@ class EndToEndTest2 {
     // Perform sign in with email and password
     composeTestRule.onNodeWithTag(SignInScreen.TEST_TAG_SIGN_IN_WITH_EMAIL).performClick()
 
+    composeTestRule.waitUntilExactlyOneExists(
+        hasTestTag(Screen.SIGN_IN_WITH_EMAIL), timeoutMillis = 10000)
+
     composeTestRule
         .onNodeWithTag(SignInWithEmailScreen.TEST_TAG_GO_TO_SIGN_UP_BUTTON)
+        .assertIsDisplayed()
+        .assertHasClickAction()
         .performClick()
     composeTestRule.onNodeWithTag(Screen.CREATE_ACCOUNT).assertIsDisplayed()
 
     composeTestRule
         .onNodeWithTag(CreateAccountScreen.TEST_TAG_NAME_INPUT)
+        .assertIsDisplayed()
         .performTextInput(myUuidAsString)
-    composeTestRule.onNodeWithTag(CreateAccountScreen.TEST_TAG_EMAIL_INPUT).performTextInput(email)
+
+    Espresso.closeSoftKeyboard()
+
+    composeTestRule
+        .onNodeWithTag(CreateAccountScreen.TEST_TAG_EMAIL_INPUT)
+        .assertIsDisplayed()
+        .performTextInput(email)
+
+    Espresso.closeSoftKeyboard()
+
     composeTestRule
         .onNodeWithTag(CreateAccountScreen.TEST_TAG_PASSWORD_INPUT)
+        .assertIsDisplayed()
         .performTextInput(password)
+
+    Espresso.closeSoftKeyboard()
+
     composeTestRule
         .onNodeWithTag(CreateAccountScreen.TEST_TAG_CONFIRM_PASSWORD_INPUT)
+        .assertIsDisplayed()
         .performTextInput(password)
-    composeTestRule.onNodeWithTag(CreateAccountScreen.TEST_TAG_SIGN_UP_BUTTON).performClick()
+
+    Espresso.closeSoftKeyboard()
+
+    composeTestRule
+        .onNodeWithTag(CreateAccountScreen.TEST_TAG_SIGN_UP_BUTTON)
+        .assertHasClickAction()
+        .assertIsDisplayed()
+        .performClick()
 
     // Wait for the sign-in to be performed and the map to load
     composeTestRule.waitUntilExactlyOneExists(

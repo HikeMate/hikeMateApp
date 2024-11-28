@@ -33,6 +33,7 @@ import ch.hikemate.app.ui.auth.SignInWithEmailScreen
 import ch.hikemate.app.ui.guide.GuideScreen
 import ch.hikemate.app.ui.map.HikeDetailScreen
 import ch.hikemate.app.ui.map.MapScreen
+import ch.hikemate.app.ui.map.RunHikeScreen
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
@@ -150,6 +151,13 @@ fun HikeMateApp() {
                 authViewModel = authViewModel,
                 navigationActions = navigationActions,
             )
+          }
+
+          composable(Screen.RUN_HIKE) {
+            RunHikeScreen(
+                listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
+                profileViewModel = profileViewModel,
+                navigationActions = navigationActions)
           }
         }
 
