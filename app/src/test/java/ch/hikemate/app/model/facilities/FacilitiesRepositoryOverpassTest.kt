@@ -64,7 +64,7 @@ class FacilitiesRepositoryOverpassTest {
         }
       }"""
 
-    private const val VALID_RESPONSE_ELEMENT_WITH_MULTIPLE_TAGS =
+    private const val VALID_RESPONSE_ELEMENT_2 =
         """
       {
         "type": "node",
@@ -167,7 +167,7 @@ class FacilitiesRepositoryOverpassTest {
             VALID_RESPONSE_HEADER +
                 VALID_RESPONSE_ELEMENT +
                 "," +
-                VALID_RESPONSE_ELEMENT_WITH_MULTIPLE_TAGS +
+                VALID_RESPONSE_ELEMENT_2 +
                 VALID_RESPONSE_FOOTER)
 
     val callbackCaptor = argumentCaptor<okhttp3.Callback>()
