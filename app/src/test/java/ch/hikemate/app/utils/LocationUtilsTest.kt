@@ -5,7 +5,7 @@ import android.location.Location
 import ch.hikemate.app.model.route.Bounds
 import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.LatLong
-import ch.hikemate.app.utils.LocationUtils.projectLocationOnStart
+import ch.hikemate.app.utils.LocationUtils.projectLocationOnHike
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -156,12 +156,12 @@ class LocationUtilsTest {
   fun projectLocationOnStart_withInvalidRoute_returnsNull() {
     val emptyRoute = HikeRoute(id = "test", bounds = Bounds(0.0, 0.0, 1.0, 1.0), ways = listOf())
     val location = LatLong(45.0, 7.0)
-    assertNull(projectLocationOnStart(location, emptyRoute))
+    assertNull(projectLocationOnHike(location, emptyRoute))
 
     val singlePointRoute =
         HikeRoute(
             id = "test", bounds = Bounds(44.0, 6.0, 46.0, 8.0), ways = listOf(LatLong(45.0, 7.0)))
-    assertNull(projectLocationOnStart(location, singlePointRoute))
+    assertNull(projectLocationOnHike(location, singlePointRoute))
   }
 
   @Test
@@ -174,7 +174,7 @@ class LocationUtilsTest {
 
     val location = LatLong(45.1, 7.5) // Should project exactly at mid-segment
 
-    val result = projectLocationOnStart(location, route)
+    val result = projectLocationOnHike(location, route)
     assertNotNull(result)
 
     // Check projected location

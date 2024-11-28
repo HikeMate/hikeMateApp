@@ -223,14 +223,14 @@ object LocationUtils {
   }
 
   /**
-   * Projects a location onto the nearest point of a hiking route when first starting tracking. This
+   * Projects a location onto the nearest point of a hiking route. This
    * is a greedy approach that finds the closest segment.
    *
    * @param location The current location to project
    * @param route The hiking route to project onto
    * @return RouteProjectionResponse containing projection details
    */
-  fun projectLocationOnStart(location: LatLong, route: HikeRoute): RouteProjectionResponse? {
+  fun projectLocationOnHike(location: LatLong, route: HikeRoute): RouteProjectionResponse? {
     // Validate input
     if (route.ways.size < 2) return null
 

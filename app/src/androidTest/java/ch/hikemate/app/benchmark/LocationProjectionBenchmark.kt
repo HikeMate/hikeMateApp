@@ -6,9 +6,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.hikemate.app.model.route.Bounds
 import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.LatLong
-import ch.hikemate.app.utils.LocationUtils.projectLocationOnStart
+import ch.hikemate.app.utils.LocationUtils.projectLocationOnHike
 import kotlin.random.Random
-import org.junit.Before
 import org.junit.Rule
 import org.junit.runner.RunWith
 
@@ -22,7 +21,7 @@ class LocationProjectionBenchmark {
   private lateinit var endPoint: LatLong
   private lateinit var farPoint: LatLong
 
-  @Before
+  //@Before
   fun setup() {
     longRoute =
         HikeRoute(
@@ -43,19 +42,19 @@ class LocationProjectionBenchmark {
 
   // @Test
   fun benchmark_projectStart() =
-      benchmarkRule.measureRepeated { projectLocationOnStart(startPoint, longRoute) }
+      benchmarkRule.measureRepeated { projectLocationOnHike(startPoint, longRoute) }
 
   // @Test
   fun benchmark_projectMiddle() =
-      benchmarkRule.measureRepeated { projectLocationOnStart(midPoint, longRoute) }
+      benchmarkRule.measureRepeated { projectLocationOnHike(midPoint, longRoute) }
 
   // @Test
   fun benchmark_projectEnd() =
-      benchmarkRule.measureRepeated { projectLocationOnStart(endPoint, longRoute) }
+      benchmarkRule.measureRepeated { projectLocationOnHike(endPoint, longRoute) }
 
   // @Test
   fun benchmark_projectFar() =
-      benchmarkRule.measureRepeated { projectLocationOnStart(farPoint, longRoute) }
+      benchmarkRule.measureRepeated { projectLocationOnHike(farPoint, longRoute) }
 
   private fun generateRealisticWaypoints(count: Int): List<LatLong> {
     val waypoints = mutableListOf<LatLong>()
