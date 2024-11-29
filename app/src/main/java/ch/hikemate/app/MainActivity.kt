@@ -26,7 +26,6 @@ import ch.hikemate.app.model.authentication.FirebaseAuthRepository
 import ch.hikemate.app.model.profile.ProfileRepositoryFirestore
 import ch.hikemate.app.model.profile.ProfileViewModel
 import ch.hikemate.app.model.route.HikesViewModel
-import ch.hikemate.app.model.route.saved.SavedHikesViewModel
 import ch.hikemate.app.ui.auth.CreateAccountScreen
 import ch.hikemate.app.ui.auth.SignInScreen
 import ch.hikemate.app.ui.auth.SignInWithEmailScreen
@@ -84,7 +83,6 @@ fun HikeMateApp() {
 
   val isUserLoggedIn = authViewModel.isUserLoggedIn()
 
-  val savedHikesViewModel: SavedHikesViewModel = viewModel(factory = SavedHikesViewModel.Factory)
   val hikesViewModel: HikesViewModel = viewModel(factory = HikesViewModel.Factory)
 
   val user by authViewModel.currentUser.collectAsState()
@@ -92,7 +90,7 @@ fun HikeMateApp() {
   LaunchedEffect(user) {
     if (user != null) {
       profileViewModel.getProfileById(user!!.uid)
-      savedHikesViewModel.loadSavedHikes()
+      hikesViewModel.refreshSavedHikesCache()
     }
   }
 
