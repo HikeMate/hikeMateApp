@@ -76,6 +76,7 @@ data class Hike(
             difficulty.obtained())
     return DetailedHike(
         id,
+        getColor(),
         isSaved,
         plannedDate,
         name,
@@ -99,6 +100,7 @@ data class Hike(
  */
 data class DetailedHike(
     val id: String,
+    val color: Int,
     val isSaved: Boolean,
     val plannedDate: Timestamp?,
     val name: String?,
