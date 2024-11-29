@@ -182,22 +182,19 @@ fun HikeDetailScreen(
     // Details have not been computed yet, but the elevation has been retrieved
     selectedHike!!.elevation.obtained() -> {
       hikesViewModel.computeDetailsFor(selectedHike!!.id)
-      // TODO : Have a message such as "Crunching the data of the hike for you"
-      CenteredLoadingAnimation()
+      CenteredLoadingAnimation(stringResource(R.string.hike_details_screen_computing_details))
     }
 
     // Waypoints are available, but elevation hasn't been retrieved yet. Retrieve it
     hikesViewModel.canElevationDataBeRetrievedFor(selectedHike!!) -> {
       hikesViewModel.retrieveElevationDataFor(selectedHike!!.id)
-      // TODO : Have a message such as "Crunching the data of the hike for you"
-      CenteredLoadingAnimation()
+      CenteredLoadingAnimation(stringResource(R.string.hike_details_screen_obtaining_elevation))
     }
 
     // Waypoints are not available, retrieve them
     else -> {
       hikesViewModel.retrieveLoadedHikesOsmData()
-      // TODO : Have a message such as "Crunching the data of the hike for you"
-      CenteredLoadingAnimation()
+      CenteredLoadingAnimation(stringResource(R.string.hike_details_screen_obtaining_osm_data))
     }
   }
 }
