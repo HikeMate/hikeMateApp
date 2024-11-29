@@ -2,6 +2,7 @@ package ch.hikemate.app.ui.map
 
 import android.annotation.SuppressLint
 import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
@@ -208,6 +209,8 @@ fun HikeDetailsContent(
     hikesViewModel: HikesViewModel,
     userHikingLevel: HikingLevel
 ) {
+  BackHandler { hikesViewModel.unselectHike() }
+
   Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {
     // Display the map and the zoom buttons
     val mapView = hikeDetailsMap(hike)
