@@ -199,7 +199,8 @@ fun HikeDetailScreen(
   // Show the selected hike on the map
   // OnLineClick does nothing, the line should not be clickable
   val hikeLineColor = route.getColor()
-  MapUtils.showHikeOnMap(mapView = mapView, hike = route, color = hikeLineColor, onLineClick = {})
+  MapUtils.showHikeOnMap(
+      mapView = mapView, waypoints = route.ways, color = hikeLineColor, onLineClick = {})
 
   LaunchedEffect(Unit) {
     if (authViewModel.currentUser.value == null) {

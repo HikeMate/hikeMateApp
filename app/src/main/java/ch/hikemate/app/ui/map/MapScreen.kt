@@ -50,8 +50,8 @@ import ch.hikemate.app.R
 import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.model.profile.HikingLevel
 import ch.hikemate.app.model.profile.ProfileViewModel
-import ch.hikemate.app.model.route.HikeRoute
-import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
+import ch.hikemate.app.model.route.DeferredData
+import ch.hikemate.app.model.route.HikesViewModel
 import ch.hikemate.app.ui.components.AsyncStateHandler
 import ch.hikemate.app.ui.components.HikeCard
 import ch.hikemate.app.ui.components.HikeCardStyleProperties
@@ -63,7 +63,6 @@ import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.utils.LocationUtils
 import ch.hikemate.app.utils.MapUtils
 import ch.hikemate.app.utils.PermissionUtils
-import ch.hikemate.app.utils.RouteUtils
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.MultiplePermissionsState
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
@@ -172,21 +171,21 @@ object MapScreen {
    * is not already ongoing.
    *
    * @param isSearching Whether a search is already ongoing
-   * @param hikingRoutesViewModel The view model to use to search for hikes
+   * @param hikesViewModel The view model to use to search for hikes
    * @param mapView The map view where the search area is defined
    * @param context The context where the search is launched
    */
   fun launchSearch(
       isSearching: MutableState<Boolean>,
-      hikingRoutesViewModel: ListOfHikeRoutesViewModel,
+      hikesViewModel: HikesViewModel,
       mapView: MapView,
       context: Context
   ) {
     if (isSearching.value) return
     isSearching.value = true
     val startTime = System.currentTimeMillis()
-    hikingRoutesViewModel.setArea(
-        mapView.boundingBox,
+    hikesViewModel.loadHikesInBounds(
+        bounds = mapView.boundingBox,
         onSuccess = {
           if (System.currentTimeMillis() - startTime < MINIMAL_SEARCH_TIME_IN_MS) {
             Thread.sleep(MINIMAL_SEARCH_TIME_IN_MS - (System.currentTimeMillis() - startTime))
@@ -235,8 +234,7 @@ data class MapInitialValues(
 @Composable
 fun MapScreen(
     navigationActions: NavigationActions,
-    hikingRoutesViewModel: ListOfHikeRoutesViewModel =
-        viewModel(factory = ListOfHikeRoutesViewModel.Factory),
+    hikesViewModel: HikesViewModel = viewModel(factory = HikesViewModel.Factory),
     profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory),
     authViewModel: AuthViewModel,
     mapInitialValues: MapInitialValues = MapInitialValues()
@@ -327,35 +325,47 @@ fun MapScreen(
   val isSearching = remember { mutableStateOf(false) }
 
   // Show hikes on the map
-  val routes by hikingRoutesViewModel.hikeRoutes.collectAsState()
-  val selectedRoute = hikingRoutesViewModel.selectedHikeRoute.collectAsState().value
+  val hikes by hikesViewModel.hikeFlows.collectAsState()
+  val selectedHike by hikesViewModel.selectedHike.collectAsState()
 
-  LaunchedEffect(routes, isSearching) {
+  LaunchedEffect(hikes, isSearching) {
+    // Don't update the map if a search is ongoing
     if (isSearching.value) return@LaunchedEffect
+
+    // Clear all hikes drawn on the map previously
     clearHikesFromMap(mapView, userLocationMarker)
-    if (routes.size <= MapScreen.MAX_HIKES_DRAWN_ON_MAP) {
-      routes.forEach {
+
+    // Draw the hikes on the map, avoid drawing too many of them for performance concerns
+    hikes.take(MapScreen.MAX_HIKES_DRAWN_ON_MAP).forEach {
+      val hike = it.value
+      val waypoints = if (hike.waypoints is DeferredData.Obtained) hike.waypoints.data else null
+      if (waypoints != null) {
         MapUtils.showHikeOnMap(
-            mapView, it, it.getColor(), onLineClick = { hikingRoutesViewModel.selectRoute(it) })
+            mapView,
+            waypoints,
+            hike.getColor(),
+            onLineClick = { hikesViewModel.selectHike(hike.id) })
+      } else {
+        Log.e(
+            MapScreen.LOG_TAG,
+            "[CRITICAL] Hike ${hike.id} has no waypoints on the map screen. This is never supposed to happen.")
       }
-      Log.d(MapScreen.LOG_TAG, "Displayed ${routes.size} hikes on the map")
-    } else {
-      routes.subList(0, MapScreen.MAX_HIKES_DRAWN_ON_MAP).forEach {
-        MapUtils.showHikeOnMap(
-            mapView, it, it.getColor(), onLineClick = { hikingRoutesViewModel.selectRoute(it) })
-      }
+    }
+
+    // If there are too many hikes, show a toast to inform the user
+    if (hikes.size > MapScreen.MAX_HIKES_DRAWN_ON_MAP) {
       Toast.makeText(
               context,
               context.getString(
                   R.string.map_screen_too_many_hikes_message, MapScreen.MAX_HIKES_DRAWN_ON_MAP),
               Toast.LENGTH_LONG)
           .show()
-      Log.d(MapScreen.LOG_TAG, "Too many hikes (${routes.size}) to display on the map")
+      Log.d(MapScreen.LOG_TAG, "Too many hikes (${hikes.size}) to display on the map")
     }
   }
 
-  LaunchedEffect(selectedRoute) {
-    if (selectedRoute != null) {
+  LaunchedEffect(selectedHike) {
+    if (selectedHike != null) {
       navigationActions.navigateTo(Screen.HIKE_DETAILS)
     }
   }
@@ -445,7 +455,7 @@ fun MapScreen(
                 if (!isSearching.value) {
                   MapSearchButton(
                       onClick = {
-                        MapScreen.launchSearch(isSearching, hikingRoutesViewModel, mapView, context)
+                        MapScreen.launchSearch(isSearching, hikesViewModel, mapView, context)
                       },
                       modifier =
                           Modifier.align(Alignment.BottomCenter)
@@ -458,7 +468,7 @@ fun MapScreen(
                     modifier =
                         Modifier.align(Alignment.BottomEnd)
                             .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
-                CollapsibleHikesList(hikingRoutesViewModel, profile.hikingLevel, isSearching.value)
+                CollapsibleHikesList(hikesViewModel, profile.hikingLevel, isSearching.value)
                 // Put SideBarNavigation after to make it appear on top of the map and HikeList
               }
             }
@@ -568,16 +578,13 @@ fun MapMyLocationButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CollapsibleHikesList(
-    hikingRoutesViewModel: ListOfHikeRoutesViewModel,
+    hikesViewModel: HikesViewModel,
     userHikingLevel: HikingLevel,
     isSearching: Boolean
 ) {
   val scaffoldState = rememberBottomSheetScaffoldState()
-  val routes = hikingRoutesViewModel.hikeRoutes.collectAsState()
+  val hikes by hikesViewModel.hikeFlows.collectAsState()
   val context = LocalContext.current
-
-  // Map of route ID to the elevation data of the route
-  val elevationDataMappings = remember { mutableStateOf(emptyMap<String, List<Double>>()) }
 
   // BottomSheetScaffold adds a layout at the bottom of the screen that the user can expand to view
   // the list of hikes
@@ -600,7 +607,7 @@ fun CollapsibleHikesList(
                   CircularProgressIndicator(
                       modifier = Modifier.testTag(MapScreen.TEST_TAG_SEARCH_LOADING_ANIMATION))
                 }
-          } else if (routes.value.isEmpty()) {
+          } else if (hikes.isEmpty()) {
             // Use a box to center the Text composable of the empty list message
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
               Text(
@@ -612,22 +619,35 @@ fun CollapsibleHikesList(
             }
           } else {
             LazyColumn(modifier = Modifier.fillMaxSize()) {
-              items(routes.value.size, key = { routes.value[it].id }) { index: Int ->
-                val route = routes.value[index]
-
-                val distance = RouteUtils.computeTotalDistance(route.ways)
-                val elevation =
-                    RouteUtils.calculateElevationGain(
-                        elevationDataMappings.value[route.id] ?: emptyList())
-                val difficulty = RouteUtils.determineDifficulty(distance, elevation)
-
-                val isSuitable = difficulty.ordinal <= userHikingLevel.ordinal
-
-                hikingRoutesViewModel.getRoutesElevation(
-                    route, { elevationDataMappings.value += (route.id to it) })
-                Log.d("MapScreen", "Loading hike card for route: ${route.name}")
-                HikeCardFor(
-                    route, isSuitable, hikingRoutesViewModel, elevationDataMappings.value[route.id])
+              items(hikes.size, key = { hikes[it].value.id }) { index: Int ->
+                val hike by hikes[index].collectAsState()
+                if (!hike.elevation.obtained()) {
+                  hikesViewModel.retrieveElevationDataFor(hike.id)
+                  HikeCardFor(
+                      name = hike.name,
+                      isSuitable = false,
+                      color = hike.getColor(),
+                      elevationData = null,
+                      onClick = { hikesViewModel.selectHike(hike.id) })
+                } else if (!hikesViewModel.areDetailsComputedFor(hike)) {
+                  hikesViewModel.computeDetailsFor(hike.id)
+                  val elevation = hike.elevation.getOrThrow()
+                  HikeCardFor(
+                      name = hike.name,
+                      isSuitable = false,
+                      color = hike.getColor(),
+                      elevationData = elevation,
+                      onClick = { hikesViewModel.selectHike(hike.id) })
+                } else {
+                  // The hike has elevation data and details computed
+                  val detailed = hike.withDetailsOrThrow()
+                  HikeCardFor(
+                      name = detailed.name,
+                      isSuitable = detailed.difficulty.ordinal <= userHikingLevel.ordinal,
+                      color = hike.getColor(),
+                      elevationData = detailed.elevation,
+                      onClick = { hikesViewModel.selectHike(hike.id) })
+                }
               }
             }
           }
@@ -638,10 +658,12 @@ fun CollapsibleHikesList(
 
 @Composable
 fun HikeCardFor(
-    route: HikeRoute,
-    isSuitable: Boolean,
-    viewModel: ListOfHikeRoutesViewModel,
+    name: String?,
+    isSuitable:
+        Boolean, // TODO : Make isSuitable nullable for when the difficulty is not yet available
+    color: Int,
     elevationData: List<Double>?,
+    onClick: () -> Unit
 ) {
   // The color of the card's message is chosen based on whether the hike is suitable or not
   val suitableLabelColor = if (isSuitable) Color(0xFF4CAF50) else Color(0xFFFFC107)
@@ -655,16 +677,13 @@ fun HikeCardFor(
   val suitableLabelIcon = if (isSuitable) R.drawable.check_circle else R.drawable.warning
 
   HikeCard(
-      title = route.name ?: stringResource(R.string.map_screen_hike_title_default),
+      title = name ?: stringResource(R.string.map_screen_hike_title_default),
       elevationData = elevationData,
-      onClick = {
-        // The user clicked on the route to select it
-        viewModel.selectRoute(route)
-      },
+      onClick = onClick,
       messageContent = suitableLabelText,
       styleProperties =
           HikeCardStyleProperties(
               messageIcon = painterResource(suitableLabelIcon),
               messageColor = suitableLabelColor,
-              graphColor = Color(route.getColor())))
+              graphColor = Color(color)))
 }
