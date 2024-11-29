@@ -659,22 +659,32 @@ fun CollapsibleHikesList(
 @Composable
 fun HikeCardFor(
     name: String?,
-    isSuitable:
-        Boolean, // TODO : Make isSuitable nullable for when the difficulty is not yet available
+    isSuitable: Boolean?,
     color: Int,
     elevationData: List<Double>?,
     onClick: () -> Unit
 ) {
   // The color of the card's message is chosen based on whether the hike is suitable or not
-  val suitableLabelColor = if (isSuitable) Color(0xFF4CAF50) else Color(0xFFFFC107)
-
-  // The text and icon of the card's message are chosen based on whether the hike is suitable or not
-  val suitableLabelText =
-      if (isSuitable) LocalContext.current.getString(R.string.map_screen_suitable_hike_label)
-      else LocalContext.current.getString(R.string.map_screen_challenging_hike_label)
-
-  // The icon of the card's message is chosen based on whether the hike is suitable or not
-  val suitableLabelIcon = if (isSuitable) R.drawable.check_circle else R.drawable.warning
+  val suitableLabelColor: Color?
+  val suitableLabelText: String?
+  val suitableLabelIcon: Int?
+  when (isSuitable) {
+    true -> {
+      suitableLabelColor = Color(0xFF4CAF50)
+      suitableLabelText = LocalContext.current.getString(R.string.map_screen_suitable_hike_label)
+      suitableLabelIcon = R.drawable.check_circle
+    }
+    false -> {
+      suitableLabelColor = Color(0xFFFFC107)
+      suitableLabelText = LocalContext.current.getString(R.string.map_screen_challenging_hike_label)
+      suitableLabelIcon = R.drawable.warning
+    }
+    else -> {
+      suitableLabelColor = null
+      suitableLabelText = null
+      suitableLabelIcon = null
+    }
+  }
 
   HikeCard(
       title = name ?: stringResource(R.string.map_screen_hike_title_default),
@@ -683,7 +693,7 @@ fun HikeCardFor(
       messageContent = suitableLabelText,
       styleProperties =
           HikeCardStyleProperties(
-              messageIcon = painterResource(suitableLabelIcon),
+              messageIcon = painterResource(suitableLabelIcon!!),
               messageColor = suitableLabelColor,
               graphColor = Color(color)))
 }
