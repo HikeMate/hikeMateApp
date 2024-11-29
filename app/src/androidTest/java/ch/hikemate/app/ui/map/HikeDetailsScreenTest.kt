@@ -137,7 +137,7 @@ class HikeDetailScreenTest {
     listOfHikeRoutesViewModel.selectRoute(route)
 
     composeTestRule.setContent {
-      HikeDetails(
+      HikesDetailsBottomScaffold(
           detailedRoute = detailedRoute,
           savedHikesViewModel = savedHikesViewModel,
           emptyList(),
@@ -153,7 +153,7 @@ class HikeDetailScreenTest {
     listOfHikeRoutesViewModel.selectRoute(route)
 
     composeTestRule.setContent {
-      HikeDetails(
+      HikesDetailsBottomScaffold(
           detailedRoute = detailedRoute,
           savedHikesViewModel = savedHikesViewModel,
           emptyList(),
@@ -181,7 +181,7 @@ class HikeDetailScreenTest {
     savedHikesViewModel.updatePlannedDate(plannedDate)
 
     composeTestRule.setContent {
-      HikeDetails(
+      HikesDetailsBottomScaffold(
           detailedRoute = detailedRoute,
           savedHikesViewModel = savedHikesViewModel,
           emptyList(),
@@ -196,7 +196,7 @@ class HikeDetailScreenTest {
     listOfHikeRoutesViewModel.selectRoute(route)
 
     composeTestRule.setContent {
-      HikeDetails(
+      HikesDetailsBottomScaffold(
           detailedRoute = detailedRoute,
           savedHikesViewModel = savedHikesViewModel,
           emptyList(),
@@ -221,7 +221,7 @@ class HikeDetailScreenTest {
     savedHikesViewModel.toggleSaveState()
 
     composeTestRule.setContent {
-      HikeDetails(
+      HikesDetailsBottomScaffold(
           detailedRoute = detailedRoute,
           savedHikesViewModel = savedHikesViewModel,
           emptyList(),
@@ -251,7 +251,7 @@ class HikeDetailScreenTest {
     savedHikesViewModel.updatePlannedDate(plannedDate)
 
     composeTestRule.setContent {
-      HikeDetails(
+      HikesDetailsBottomScaffold(
           detailedRoute = detailedRoute,
           savedHikesViewModel = savedHikesViewModel,
           emptyList(),
@@ -300,7 +300,7 @@ class HikeDetailScreenTest {
     savedHikesViewModel.toggleSaveState()
 
     composeTestRule.setContent {
-      HikeDetails(
+      HikesDetailsBottomScaffold(
           detailedRoute = detailedRoute,
           savedHikesViewModel = savedHikesViewModel,
           emptyList(),
@@ -325,7 +325,7 @@ class HikeDetailScreenTest {
     savedHikesViewModel.toggleSaveState()
 
     composeTestRule.setContent {
-      HikeDetails(
+      HikesDetailsBottomScaffold(
           detailedRoute = detailedRoute,
           savedHikesViewModel = savedHikesViewModel,
           emptyList(),
@@ -354,7 +354,7 @@ class HikeDetailScreenTest {
     savedHikesViewModel.toggleSaveState()
 
     composeTestRule.setContent {
-      HikeDetails(
+      HikesDetailsBottomScaffold(
           detailedRoute = detailedRoute,
           savedHikesViewModel = savedHikesViewModel,
           emptyList(),
@@ -372,7 +372,7 @@ class HikeDetailScreenTest {
   @Test
   fun hikeDetails_showsCorrectDetailedHikesValues() {
     composeTestRule.setContent {
-      HikeDetails(
+      HikesDetailsBottomScaffold(
           detailedRoute = detailedRoute,
           savedHikesViewModel = savedHikesViewModel,
           emptyList(),
@@ -408,7 +408,7 @@ class HikeDetailScreenTest {
     val detailedRoute = detailedRoute.copy(estimatedTime = 45.0) // test hike that takes just 45 min
 
     composeTestRule.setContent {
-      HikeDetails(
+      HikesDetailsBottomScaffold(
           detailedRoute = detailedRoute,
           savedHikesViewModel = savedHikesViewModel,
           emptyList(),
