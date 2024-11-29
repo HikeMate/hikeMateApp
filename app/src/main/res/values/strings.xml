@@ -77,6 +77,7 @@
 
 
     <!-- Saved Hikes Screen -->
+    <string name="saved_hikes_screen_loading_message">Loading saved hikes…</string>
     <string name="saved_hikes_screen_generic_error">
         An error occurred while loading saved hikes.
         Please check your Internet connection and try again.
