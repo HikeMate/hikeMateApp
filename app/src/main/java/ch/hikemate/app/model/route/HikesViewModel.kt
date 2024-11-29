@@ -70,6 +70,8 @@ class HikesViewModel(
 
   private var _hikeFlowsMap = mutableMapOf<String, MutableStateFlow<Hike>>()
 
+  private val _allOsmDataLoaded = MutableStateFlow(true)
+
   private val _loading = MutableStateFlow(false)
 
   private val _hikeFlowsList = MutableStateFlow<List<StateFlow<Hike>>>(emptyList())
@@ -89,6 +91,17 @@ class HikesViewModel(
   }
 
   private var _loadedHikesType: LoadedHikes = LoadedHikes.None
+
+  /**
+   * Indicates whether all the hikes in [hikeFlows] have their OSM data loaded.
+   *
+   * Note that if [hikeFlows] is empty, this value will be true, because there are no hikes that
+   * need to be updated with their OSM data.
+   *
+   * This value is a state flow, so it can be observed for the UI to update directly when the value
+   * changes.
+   */
+  val allOsmDataLoaded: StateFlow<Boolean> = _allOsmDataLoaded.asStateFlow()
 
   /**
    * Whether a new list of hikes is currently being retrieved.
@@ -391,9 +404,13 @@ class HikesViewModel(
    * [_hikeFlowsMap] is the one that actually gets updated during operations. Once it has been
    * updated, we need to update [_hikeFlowsList] to reflect the changes. This is what this helper
    * function does.
+   *
+   * Because [_hikeFlowsList] is updated, this function also updates [_allOsmDataLoaded] to reflect
+   * whether all hikes in [_hikeFlowsList] have their OSM data loaded.
    */
-  private fun updateHikeFlowsList() {
+  private fun updateHikeFlowsListAndOsmDataStatus() {
     _hikeFlowsList.value = _hikeFlowsMap.values.toList()
+    _allOsmDataLoaded.value = _hikeFlowsMap.values.all { it.value.hasOsmData() }
   }
 
   /**
@@ -550,7 +567,7 @@ class HikesViewModel(
     updateSelectedHike()
 
     // Update the exposed list of hikes based on the map of hikes
-    updateHikeFlowsList()
+    updateHikeFlowsListAndOsmDataStatus()
   }
 
   /**
@@ -715,7 +732,7 @@ class HikesViewModel(
           if (_loadedHikesType == LoadedHikes.FromSaved) {
             // Only saved hikes may stay in the list, delete the unsaved hike from the list
             _hikeFlowsMap.remove(hikeId)
-            updateHikeFlowsList()
+            updateHikeFlowsListAndOsmDataStatus()
           } else {
             // The hike can stay even if it is not saved, so update it
             hikeFlow.value = hikeFlow.value.copy(isSaved = false, plannedDate = null)
@@ -892,7 +909,7 @@ class HikesViewModel(
           updateSelectedHike()
 
           // Update the exposed list of hikes based on the map of hikes
-          updateHikeFlowsList()
+          updateHikeFlowsListAndOsmDataStatus()
         }
 
         // Call the success callback once the mutex has been released to avoid locking for too long
