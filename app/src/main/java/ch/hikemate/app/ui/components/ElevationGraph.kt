@@ -2,6 +2,7 @@ package ch.hikemate.app.ui.components
 
 import android.graphics.Paint
 import android.util.Log
+import androidx.annotation.FloatRange
 import androidx.compose.foundation.Canvas
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -13,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ClipOp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
@@ -22,6 +24,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.math.MathUtils
 import ch.hikemate.app.R
+import ch.hikemate.app.utils.MapUtils
 import kotlin.math.ceil
 
 /**
@@ -35,6 +38,7 @@ data class ElevationGraphStyleProperties(
     val strokeColor: Color = Color.Black,
     val fillColor: Color = Color.Black,
     val strokeWidth: Float = 3f,
+    val locationMarkerSize: Float = 24f // Size for the location marker drawable
 )
 
 /**
@@ -54,6 +58,8 @@ data class ElevationGraphStyleProperties(
  * @param graphInnerPaddingPercentage The padding inside the graph, defined as a percentage of the
  *   canvas height, used so that the minimal point doesn't overlap the bottom line of the graph
  *   (default to 20.0f)
+ * @param progressThroughHike the progress the user has made in the hike from 0.0 to 1.0
+ *   (normalized)
  */
 @Composable
 fun ElevationGraph(
@@ -61,43 +67,35 @@ fun ElevationGraph(
     modifier: Modifier = Modifier,
     maxNumberOfPoints: Int = 40,
     styleProperties: ElevationGraphStyleProperties = ElevationGraphStyleProperties(),
-    graphInnerPaddingPercentage: Float = 10.0f
+    graphInnerPaddingPercentage: Float = 10.0f,
+    @FloatRange(from = 0.0, to = 1.0) progressThroughHike: Float? = null
 ) {
   val context = LocalContext.current
-
   val textColor = MaterialTheme.colorScheme.onSurface.toArgb()
 
   val elevationData = if (elevations.isNullOrEmpty()) listOf(0.0) else elevations
   Log.d("ElevationGraph", "Elevation data for the graph: $elevationData")
 
-  // Averaging the elevation data to reduce the number of points
   val averageSize = ceil(elevationData.size.toDouble() / maxNumberOfPoints).toInt()
   val elevationDataAveraged = elevationData.chunked(averageSize) { chunk -> chunk.average() }
 
   var height by remember { mutableFloatStateOf(0.0f) }
   var width by remember { mutableFloatStateOf(0.0f) }
 
-  // Bunch of variables to scale the graph in height
   val maxElevation = elevationDataAveraged.maxOrNull() ?: 0.0
   val minElevation = elevationDataAveraged.minOrNull() ?: 0.0
   val elevationRange = maxElevation - minElevation
   val elevationStep = if (elevationRange == 0.0) 1.0 else elevationRange / height
 
   val widthStep = width / (elevationDataAveraged.size - 1)
-
   val graphInnerPadding = height * graphInnerPaddingPercentage / 100
 
-  // Build (x, y) tuples to draw the path
-  // Scale the points width to fit the whole width
-  // Scale the points height to fit the whole height, but keeping the scale.
-  // The height is inverted because the origin of the canvas is at the top left corner
   val scaledData =
       elevationDataAveraged
           .mapIndexed { index, elevation ->
             Pair(index * widthStep, (height - (elevation - minElevation) / elevationStep).toFloat())
           }
           .map {
-            // We clamp the points to ensure they are not outside the canvas
             Pair(
                 it.first,
                 MathUtils.clamp(
@@ -123,7 +121,6 @@ fun ElevationGraph(
         width = coordinates.size.width.toFloat()
       }) {
         if (elevations == null) {
-          // If there is no data, we draw a text in the middle of the canvas
           drawIntoCanvas {
             it.nativeCanvas.drawText(
                 context.getString(R.string.elevation_graph_loading_label),
@@ -135,7 +132,6 @@ fun ElevationGraph(
                 })
           }
         } else if (elevations.isEmpty()) {
-          // If there is no data, we draw a text in the middle of the canvas
           drawIntoCanvas {
             it.nativeCanvas.drawText(
                 context.getString(R.string.hike_card_no_data_label),
@@ -152,6 +148,41 @@ fun ElevationGraph(
               styleProperties.strokeColor,
               style = Stroke(width = styleProperties.strokeWidth))
           clipPath(path, clipOp = ClipOp.Intersect) { drawRect(color = styleProperties.fillColor) }
+
+          progressThroughHike?.let { progress ->
+            val clampedProgress = progress.coerceIn(0f, 1f)
+            val markerX = width * clampedProgress
+
+            val pointIndex = (clampedProgress * (scaledData.size - 1)).toInt()
+            val pointProgress = (clampedProgress * (scaledData.size - 1)) % 1
+
+            val y =
+                if (pointIndex < scaledData.size - 1) {
+                  val y1 = scaledData[pointIndex].second
+                  val y2 = scaledData[pointIndex + 1].second
+                  y1 + (y2 - y1) * pointProgress
+                } else {
+                  scaledData.last().second
+                }
+
+            val markerDrawable = MapUtils.getUserLocationMarkerIcon(context)
+            val originalBitmap = (markerDrawable as android.graphics.drawable.BitmapDrawable).bitmap
+            val scaledBitmap =
+                android.graphics.Bitmap.createScaledBitmap(
+                    originalBitmap,
+                    styleProperties.locationMarkerSize.toInt(),
+                    styleProperties.locationMarkerSize.toInt(),
+                    true)
+            val bitmap = scaledBitmap.asImageBitmap()
+
+            drawImage(
+                image = bitmap,
+                topLeft =
+                    androidx.compose.ui.geometry.Offset(
+                        x = markerX - styleProperties.locationMarkerSize / 2,
+                        y = y - styleProperties.locationMarkerSize / 2),
+                alpha = 1.0f)
+          }
         }
       }
 }
