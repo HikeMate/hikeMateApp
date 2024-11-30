@@ -173,14 +173,12 @@ private fun PlannedHikes(hikes: List<SavedHike>?) {
 }
 
 @Composable
-private fun SavedHikes(hikes: List<SavedHike>?) {
+private fun SavedHikes(savedHikes: List<SavedHike>?) {
   val context = LocalContext.current
   Text(
       context.getString(R.string.saved_hikes_screen_saved_section_title),
       style = MaterialTheme.typography.titleLarge,
       modifier = Modifier.padding(16.dp).testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_SAVED_TITLE))
-
-  val savedHikes = hikes?.filter { it.date == null }
 
   if (savedHikes.isNullOrEmpty()) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

@@ -190,7 +190,7 @@ class SavedHikesScreenTest : TestCase() {
             .assertIsNotDisplayed()
         composeTestRule
             .onAllNodesWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_HIKE_CARD)
-            .assertCountEquals(2)
+            .assertCountEquals(3)
       }
 
   @Test
