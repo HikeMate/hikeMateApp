@@ -48,4 +48,12 @@ sealed class DeferredData<out T> {
 
   /** Returns `true` if the data has been obtained, `false` otherwise. */
   fun obtained(): Boolean = this is Obtained
+
+  /** Returns the data if it has been obtained, otherwise returns `null`. */
+  fun getOrNull(): T? {
+    return when (this) {
+      is Obtained -> data
+      else -> null
+    }
+  }
 }
