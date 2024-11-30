@@ -21,7 +21,8 @@ import ch.hikemate.app.model.profile.ProfileViewModel
 import ch.hikemate.app.model.route.Bounds
 import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.HikeRoutesRepository
-import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
+import ch.hikemate.app.model.route.HikesViewModel
+import ch.hikemate.app.model.route.saved.SavedHikesRepository
 import ch.hikemate.app.ui.components.HikeCard
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.TEST_TAG_BOTTOM_BAR
@@ -35,6 +36,7 @@ import io.mockk.mockkObject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -47,9 +49,10 @@ import org.mockito.kotlin.verify
 import org.osmdroid.util.BoundingBox
 
 class MapScreenTest : TestCase() {
+  private lateinit var savedHikesRepository: SavedHikesRepository
   private lateinit var hikesRepository: HikeRoutesRepository
   private lateinit var elevationService: ElevationService
-  private lateinit var listOfHikeRoutesViewModel: ListOfHikeRoutesViewModel
+  private lateinit var hikesViewModel: HikesViewModel
   private lateinit var navigationActions: NavigationActions
   private lateinit var authRepository: AuthRepository
   private lateinit var authViewModel: AuthViewModel
@@ -72,7 +75,7 @@ class MapScreenTest : TestCase() {
   ) {
     composeTestRule.setContent {
       MapScreen(
-          hikingRoutesViewModel = listOfHikeRoutesViewModel,
+          hikesViewModel = hikesViewModel,
           navigationActions = navigationActions,
           authViewModel = authViewModel,
           profileViewModel = profileViewModel,
@@ -93,14 +96,19 @@ class MapScreenTest : TestCase() {
     // Hence, do not set the main dispatcher, only the view model's one.
 
     navigationActions = mock(NavigationActions::class.java)
+    savedHikesRepository = mock(SavedHikesRepository::class.java)
     hikesRepository = mock(HikeRoutesRepository::class.java)
     elevationService = mock(ElevationService::class.java)
     profileRepository = mock(ProfileRepository::class.java)
     profileViewModel = ProfileViewModel(profileRepository)
     authRepository = mock(AuthRepository::class.java)
     authViewModel = AuthViewModel(authRepository, profileRepository)
-    listOfHikeRoutesViewModel =
-        ListOfHikeRoutesViewModel(hikesRepository, elevationService, UnconfinedTestDispatcher())
+    hikesViewModel =
+        HikesViewModel(
+            savedHikesRepo = savedHikesRepository,
+            osmHikesRepo = hikesRepository,
+            elevationService = elevationService,
+            UnconfinedTestDispatcher())
 
     `when`(profileRepository.getProfileById(eq(profile.id), any(), any())).thenAnswer {
       val onSuccess = it.getArgument<(Profile) -> Unit>(1)
@@ -193,7 +201,7 @@ class MapScreenTest : TestCase() {
       onSuccess(listOf(hikeRoute))
     }
     // Have an initial list of routes with a single route to display on the map
-    listOfHikeRoutesViewModel.setArea(BoundingBox(0.0, 0.0, 0.0, 0.0))
+    hikesViewModel.loadHikesInBounds(BoundingBox(0.0, 0.0, 0.0, 0.0))
 
     // Click on the route item in the list
     composeTestRule
@@ -201,7 +209,8 @@ class MapScreenTest : TestCase() {
         .performClick()
 
     // Check that the selected route is the one that was clicked
-    assert(listOfHikeRoutesViewModel.selectedHikeRoute.value == hikeRoute)
+    assertNotNull(hikesViewModel.selectedHike.value)
+    assertEquals(hikeRoute.id, hikesViewModel.selectedHike.value?.id)
   }
 
   @Test
@@ -227,7 +236,7 @@ class MapScreenTest : TestCase() {
 
     // When
     setUpMap()
-    listOfHikeRoutesViewModel.setArea(BoundingBox(0.0, 0.0, 0.0, 0.0))
+    hikesViewModel.loadHikesInBounds(BoundingBox(0.0, 0.0, 0.0, 0.0))
 
     // Then
     composeTestRule
@@ -250,7 +259,7 @@ class MapScreenTest : TestCase() {
 
     // When
     setUpMap()
-    listOfHikeRoutesViewModel.setArea(BoundingBox(0.0, 0.0, 0.0, 0.0))
+    hikesViewModel.loadHikesInBounds(BoundingBox(0.0, 0.0, 0.0, 0.0))
 
     // Then
     composeTestRule
@@ -331,6 +340,7 @@ class MapScreenTest : TestCase() {
     composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_CENTER_MAP_BUTTON).performClick()
 
     // Then an alert will be shown to ask for the permission
+
     composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_LOCATION_PERMISSION_ALERT).assertIsDisplayed()
 
     // When the user clicks on the "No thanks" button
