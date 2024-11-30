@@ -115,9 +115,9 @@ fun SavedHikesScreen(hikesViewModel: HikesViewModel, navigationActions: Navigati
                   SavedHikesSection.values()[pageIndex].let {
                     when (it) {
                       SavedHikesSection.Planned ->
-                          PlannedHikes(savedHikes) { hike -> hikesViewModel.selectHike(hike.id) }
+                          PlannedHikes(hikes = savedHikes, hikesViewModel = hikesViewModel)
                       SavedHikesSection.Saved ->
-                          SavedHikes(savedHikes) { hike -> hikesViewModel.selectHike(hike.id) }
+                          SavedHikes(hikes = savedHikes, hikesViewModel = hikesViewModel)
                     }
                   }
                 }
@@ -135,7 +135,7 @@ fun SavedHikesScreen(hikesViewModel: HikesViewModel, navigationActions: Navigati
 }
 
 @Composable
-private fun PlannedHikes(hikes: List<StateFlow<Hike>>?, onHikeClick: (Hike) -> Unit) {
+private fun PlannedHikes(hikes: List<StateFlow<Hike>>?, hikesViewModel: HikesViewModel) {
   val context = LocalContext.current
   Text(
       context.getString(R.string.saved_hikes_screen_planned_section_title),
@@ -159,27 +159,38 @@ private fun PlannedHikes(hikes: List<StateFlow<Hike>>?, onHikeClick: (Hike) -> U
     LazyColumn {
       items(plannedHikes.size, key = { plannedHikes[it].value.id }) { index ->
         val hike by plannedHikes[index].collectAsState()
-        HikeCard(
-            title = hike.name ?: stringResource(R.string.map_screen_hike_title_default),
-            // This generates a random list of elevation data for the hike
-            // with a random number of points and altitude between 0 and 1000
-            // TODO : Have actual elevation data loaded
-            elevationData = (0..(0..1000).random()).map { it.toDouble() }.shuffled(),
-            showGraph = false,
-            onClick = { onHikeClick(hike) },
-            messageContent = hike.plannedDate!!.humanReadablePlannedLabel(LocalContext.current),
-            modifier = Modifier.testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_HIKE_CARD),
-            styleProperties =
-                HikeCardStyleProperties(
-                    messageIcon = painterResource(R.drawable.calendar_today),
-                    messageColor = Color(0xFF3B82F6)))
+        if (!hike.elevation.obtained()) {
+          hikesViewModel.retrieveElevationDataFor(hike.id)
+          HikeCard(
+              title = hike.name ?: stringResource(R.string.map_screen_hike_title_default),
+              elevationData = null,
+              onClick = { hikesViewModel.selectHike(hike.id) },
+              messageContent = hike.plannedDate!!.humanReadablePlannedLabel(LocalContext.current),
+              modifier = Modifier.testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_HIKE_CARD),
+              styleProperties =
+                  HikeCardStyleProperties(
+                      messageIcon = painterResource(R.drawable.calendar_today),
+                      messageColor = Color(0xFF3B82F6)))
+        } else {
+          HikeCard(
+              title = hike.name ?: stringResource(R.string.map_screen_hike_title_default),
+              elevationData = hike.elevation.getOrThrow(),
+              onClick = { hikesViewModel.selectHike(hike.id) },
+              messageContent = hike.plannedDate!!.humanReadablePlannedLabel(LocalContext.current),
+              modifier = Modifier.testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_HIKE_CARD),
+              styleProperties =
+                  HikeCardStyleProperties(
+                      messageIcon = painterResource(R.drawable.calendar_today),
+                      messageColor = Color(0xFF3B82F6),
+                      graphColor = Color(hike.getColor())))
+        }
       }
     }
   }
 }
 
 @Composable
-private fun SavedHikes(hikes: List<StateFlow<Hike>>?, onHikeClick: (Hike) -> Unit) {
+private fun SavedHikes(hikes: List<StateFlow<Hike>>?, hikesViewModel: HikesViewModel) {
   val context = LocalContext.current
   Text(
       context.getString(R.string.saved_hikes_screen_saved_section_title),
@@ -201,15 +212,22 @@ private fun SavedHikes(hikes: List<StateFlow<Hike>>?, onHikeClick: (Hike) -> Uni
     LazyColumn {
       items(savedHikes.size, key = { savedHikes[it].value.id }) { index ->
         val hike by savedHikes[index].collectAsState()
-        HikeCard(
-            title = hike.name ?: stringResource(R.string.map_screen_hike_title_default),
-            onClick = { onHikeClick(hike) },
-            // This generates a random list of elevation data for the hike
-            // with a random number of points and altitude between 0 and 1000
-            // TODO : Have actual elevation data loaded
-            elevationData = (0..(0..1000).random()).map { it.toDouble() }.shuffled(),
-            showGraph = false,
-            modifier = Modifier.testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_HIKE_CARD))
+        if (!hike.elevation.obtained()) {
+          hikesViewModel.retrieveElevationDataFor(hike.id)
+          HikeCard(
+              title = hike.name ?: stringResource(R.string.map_screen_hike_title_default),
+              elevationData = null,
+              onClick = { hikesViewModel.selectHike(hike.id) },
+              modifier = Modifier.testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_HIKE_CARD),
+          )
+        } else {
+          HikeCard(
+              title = hike.name ?: stringResource(R.string.map_screen_hike_title_default),
+              elevationData = hike.elevation.getOrThrow(),
+              onClick = { hikesViewModel.selectHike(hike.id) },
+              modifier = Modifier.testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_HIKE_CARD),
+              styleProperties = HikeCardStyleProperties(graphColor = Color(hike.getColor())))
+        }
       }
     }
   }
