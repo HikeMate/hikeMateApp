@@ -45,4 +45,7 @@ sealed class DeferredData<out T> {
    * job of [DeferredData].
    */
   data class Obtained<out T>(val data: T) : DeferredData<T>()
+
+  /** Returns `true` if the data has been obtained, `false` otherwise. */
+  fun obtained(): Boolean = this is Obtained
 }
