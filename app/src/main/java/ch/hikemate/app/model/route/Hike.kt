@@ -66,4 +66,62 @@ data class Hike(
   fun hasOsmData(): Boolean {
     return description.obtained() && bounds.obtained() && waypoints.obtained()
   }
+
+  /**
+   * If all attributes of the hike are computed, casts everything to their respective data type and
+   * returns a [DetailedHike] with the values to work with them directly without needing to perform
+   * null checks.
+   *
+   * If one or more attribute is missing, throws an [IllegalStateException].
+   *
+   * @throws IllegalStateException If one or more attribute of the hike has not been computed yet.
+   */
+  fun withDetailsOrThrow(): DetailedHike {
+    check(
+        description.obtained() &&
+            bounds.obtained() &&
+            waypoints.obtained() &&
+            elevation.obtained() &&
+            distance.obtained() &&
+            estimatedTime.obtained() &&
+            elevationGain.obtained() &&
+            difficulty.obtained())
+    return DetailedHike(
+        id,
+        getColor(),
+        isSaved,
+        plannedDate,
+        name,
+        description.getOrThrow(),
+        bounds.getOrThrow(),
+        waypoints.getOrThrow(),
+        elevation.getOrThrow(),
+        distance.getOrThrow(),
+        estimatedTime.getOrThrow(),
+        elevationGain.getOrThrow(),
+        difficulty.getOrThrow())
+  }
 }
+
+/**
+ * A [Hike] equivalent where all data are guaranteed to be available.
+ *
+ * See [Hike]'s documentation for more information about the fields.
+ *
+ * Used in [Hike.withDetailsOrThrow] to provide a [Hike] instance with all its details.
+ */
+data class DetailedHike(
+    val id: String,
+    val color: Int,
+    val isSaved: Boolean,
+    val plannedDate: Timestamp?,
+    val name: String?,
+    val description: String?,
+    val bounds: Bounds,
+    val waypoints: List<LatLong>,
+    val elevation: List<Double>,
+    val distance: Double,
+    val estimatedTime: Double,
+    val elevationGain: Double,
+    val difficulty: HikeDifficulty
+)
