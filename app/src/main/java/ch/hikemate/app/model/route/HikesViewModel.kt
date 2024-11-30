@@ -84,19 +84,32 @@ class HikesViewModel(
 
   private val _selectedHike = MutableStateFlow<Hike?>(null)
 
-  /** Internal type used to store where the hikes in [_hikeFlowsMap] come from. */
-  private enum class LoadedHikes {
+  /**
+   * Enum used to designate where the hikes loaded in [hikeFlows] come from semantically.
+   *
+   * See the possible values for this enum along with [loadedHikesType] for more information.
+   */
+  enum class LoadedHikes {
     /** No hikes have been loaded yet. */
     None,
 
-    /** The hikes loaded in [_hikeFlowsMap] are the saved hikes. */
+    /** The hikes loaded in [hikeFlows] are the saved hikes of the user. */
     FromSaved,
 
-    /** The hikes loaded in [_hikeFlowsMap] were fetched from within a geographical rectangle. */
+    /** The hikes loaded in [hikeFlows] were fetched from within a geographical rectangle. */
     FromBounds
   }
 
-  private var _loadedHikesType: LoadedHikes = LoadedHikes.None
+  private val _loadedHikesType = MutableStateFlow(LoadedHikes.None)
+
+  /**
+   * Indicates what type of hikes are currently loaded inside of [hikeFlows].
+   * - [LoadedHikes.None] if no hikes have been loaded yet.
+   * - [LoadedHikes.FromSaved] if [hikeFlows] contains a list of the user's saved hikes.
+   * - [LoadedHikes.FromBounds] if [hikeFlows] contains hikes fetched from within a geographical
+   *   rectangle.
+   */
+  val loadedHikesType: StateFlow<LoadedHikes> = _loadedHikesType.asStateFlow()
 
   /**
    * Indicates whether all the hikes in [hikeFlows] have their OSM data loaded.
@@ -174,9 +187,8 @@ class HikesViewModel(
    * Downloads the current user's saved hikes from the database and caches them locally.
    *
    * This function updates the saved status of the loaded hikes in [hikeFlows]. If saved hikes are
-   * currently loaded (a call to [loadSavedHikes] has been made and no other loading call has been
-   * performed since), calling this function will update the whole loaded hikes list to match it
-   * with the new saved hikes.
+   * currently loaded (see [loadedHikesType]), calling this function will update the whole loaded
+   * hikes list to match it with the new saved hikes.
    *
    * @param onSuccess To be called when the saved hikes cache has been updated successfully.
    * @param onFailure Will be called if an error is encountered.
@@ -186,7 +198,7 @@ class HikesViewModel(
         // Let the user know a heavy load operation is being performed
         setLoading(true)
 
-        val success = refreshSavedHikesCacheAsync()
+        val success = refreshSavedHikesCacheAsync(forceOverwriteHikesList = false)
         if (success) {
           onSuccess()
         } else {
@@ -462,6 +474,19 @@ class HikesViewModel(
   }
 
   /**
+   * Internal helper function.
+   *
+   * Sets [_loadedHikesType] with the new provided value if not already equal to that value.
+   *
+   * Requires [_hikesMutex] to have been acquired by the caller.
+   */
+  private fun setLoadedHikesType(value: LoadedHikes) {
+    if (_loadedHikesType.value != value) {
+      _loadedHikesType.value = value
+    }
+  }
+
+  /**
    * Helper function to update the selected hike once (or before) [hikeFlows] has been updated.
    *
    * This function does not acquire the [_hikesMutex]. It is the responsibility of the caller to
@@ -543,7 +568,7 @@ class HikesViewModel(
    *
    * @return True if the operation is successful, false otherwise.
    */
-  private suspend fun refreshSavedHikesCacheAsync(): Boolean =
+  private suspend fun refreshSavedHikesCacheAsync(forceOverwriteHikesList: Boolean): Boolean =
       withContext(dispatcher) {
         val savedHikes: List<SavedHike>
         try {
@@ -555,7 +580,12 @@ class HikesViewModel(
         }
 
         // Wait for the lock to avoid concurrent modifications
-        _hikesMutex.withLock { updateSavedHikesCache(savedHikes) }
+        _hikesMutex.withLock {
+          updateSavedHikesCache(savedHikes, forceOverwriteHikesList)
+          if (forceOverwriteHikesList) {
+            setLoadedHikesType(LoadedHikes.FromSaved)
+          }
+        }
 
         return@withContext true
       }
@@ -572,7 +602,7 @@ class HikesViewModel(
    *
    * @param newList The list of saved hikes to update the cache with.
    */
-  private fun updateSavedHikesCache(newList: List<SavedHike>) {
+  private fun updateSavedHikesCache(newList: List<SavedHike>, forceOverwriteHikesList: Boolean) {
     // Clear the current saved hikes register
     _savedHikesMap.clear()
 
@@ -581,16 +611,9 @@ class HikesViewModel(
 
     // Now the saved hikes cache was updated, but we still need to update the hike flows list
 
-    when (_loadedHikesType) {
-      // No hikes were loaded yet, do nothing
-      LoadedHikes.None -> return
-      LoadedHikes.FromBounds -> {
-        // Hikes were loaded from bounds, do not remove nor add any hikes, just update existing ones
-        updateExistingHikesSavedStatus()
-      }
-      LoadedHikes.FromSaved -> {
-        // Saved hikes are loaded, remove the ones that were unsaved and add the new saved ones
-
+    when {
+      // Saved hikes are loaded or should be loaded. Remove the unsaved and add the new saved ones.
+      forceOverwriteHikesList || _loadedHikesType.value == LoadedHikes.FromSaved -> {
         // First, remove the hikes that were unsaved
         _hikeFlowsMap = _hikeFlowsMap.filterKeys { _savedHikesMap.containsKey(it) }.toMutableMap()
 
@@ -608,6 +631,14 @@ class HikesViewModel(
                       plannedDate = savedHike.date,
                       name = savedHike.name))
         }
+      }
+
+      // No hikes were loaded yet, do nothing
+      _loadedHikesType.value == LoadedHikes.None -> return
+
+      // Hikes were loaded from bounds, do not remove nor add any hikes, just update existing ones
+      _loadedHikesType.value == LoadedHikes.FromBounds -> {
+        updateExistingHikesSavedStatus()
       }
     }
 
@@ -642,11 +673,8 @@ class HikesViewModel(
    */
   private suspend fun loadSavedHikesAsync(onSuccess: () -> Unit, onFailure: () -> Unit) =
       withContext(dispatcher) {
-        // Remember that the loaded hikes list will now only hold saved hikes
-        _loadedHikesType = LoadedHikes.FromSaved
-
         // Update the local cache of saved hikes and add them to _hikeFlows
-        val success = refreshSavedHikesCacheAsync()
+        val success = refreshSavedHikesCacheAsync(forceOverwriteHikesList = true)
 
         if (success) {
           onSuccess()
@@ -777,7 +805,7 @@ class HikesViewModel(
           // Update the saved hikes map
           _savedHikesMap.remove(hikeId)
 
-          if (_loadedHikesType == LoadedHikes.FromSaved) {
+          if (_loadedHikesType.value == LoadedHikes.FromSaved) {
             // Only saved hikes may stay in the list, delete the unsaved hike from the list
             _hikeFlowsMap.remove(hikeId)
             updateHikeFlowsListAndOsmDataStatus()
@@ -889,11 +917,6 @@ class HikesViewModel(
       onFailure: () -> Unit
   ) =
       withContext(dispatcher) {
-        // We are loading hikes from bounds, remember this to avoid overriding loaded hikes with
-        // saved
-        // hikes when those get reloaded.
-        _loadedHikesType = LoadedHikes.FromBounds
-
         // Load the hikes from the repository
         val hikes: List<HikeRoute>
         try {
@@ -958,6 +981,10 @@ class HikesViewModel(
 
           // Update the exposed list of hikes based on the map of hikes
           updateHikeFlowsListAndOsmDataStatus()
+
+          // We are loading hikes from bounds, remember this to avoid overriding loaded hikes with
+          // saved hikes when those get refreshed.
+          setLoadedHikesType(LoadedHikes.FromBounds)
         }
 
         // Call the success callback once the mutex has been released to avoid locking for too long
