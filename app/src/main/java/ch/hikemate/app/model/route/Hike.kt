@@ -1,7 +1,9 @@
 package ch.hikemate.app.model.route
 
 import ch.hikemate.app.model.route.saved.SavedHike
+import ch.hikemate.app.ui.theme.hikeColors
 import com.google.firebase.Timestamp
+import kotlin.math.abs
 
 /**
  * Represents a hike route with associated information.
@@ -47,4 +49,9 @@ data class Hike(
 ) {
   /** Helper to convert this [Hike] to a [SavedHike] object. */
   fun toSavedHike() = SavedHike(id, name ?: "", plannedDate)
+
+  /** Get the color of the route from its id. The color should be the same for the same route id. */
+  fun getColor(): Int {
+    return hikeColors[abs(id.hashCode()) % hikeColors.size]
+  }
 }
