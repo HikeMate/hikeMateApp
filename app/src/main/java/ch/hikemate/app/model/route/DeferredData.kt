@@ -56,4 +56,14 @@ sealed class DeferredData<out T> {
       else -> null
     }
   }
+
+  /**
+   * Returns the data if it has been obtained, otherwise throws an [IllegalStateException].
+   *
+   * @throws IllegalStateException If the data hasn't been obtained yet.
+   */
+  fun getOrThrow(): T {
+    check(this is Obtained)
+    return this.data
+  }
 }
