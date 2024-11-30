@@ -54,4 +54,16 @@ data class Hike(
   fun getColor(): Int {
     return hikeColors[abs(id.hashCode()) % hikeColors.size]
   }
+
+  /**
+   * Indicates whether the hike has all of its OSM data loaded.
+   *
+   * This includes [description], [bounds], and [waypoints].
+   *
+   * @return True if all OSM data were obtained ([DeferredData.Obtained]) for the hike, false
+   *   otherwise.
+   */
+  fun hasOsmData(): Boolean {
+    return description.obtained() && bounds.obtained() && waypoints.obtained()
+  }
 }
