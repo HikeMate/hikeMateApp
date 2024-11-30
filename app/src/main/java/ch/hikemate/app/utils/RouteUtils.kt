@@ -3,6 +3,7 @@ package ch.hikemate.app.utils
 import ch.hikemate.app.model.elevation.ElevationServiceRepository
 import ch.hikemate.app.model.route.HikeDifficulty
 import ch.hikemate.app.model.route.LatLong
+import ch.hikemate.app.model.route.RouteSegment
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
 
@@ -99,4 +100,22 @@ object RouteUtils {
       else -> HikeDifficulty.DIFFICULT
     }
   }
+
+  /**
+   * Data class used for projections from a location to the hike route this gives every necessary
+   * information for the UI to handle the projection.
+   *
+   * @param projectedLocation the projected point in the route
+   * @param progressDistance the total distance traveled up to the projectedLocation
+   * @param distanceFromRoute the distance from the location to the projectedLocation
+   * @param segment the RouteSegment the Location is projected in
+   * @param indexToSegment the index of the segment in the list of segments
+   */
+  data class RouteProjectionResponse(
+      val projectedLocation: LatLong,
+      val progressDistance: Double,
+      val distanceFromRoute: Double,
+      val segment: RouteSegment,
+      val indexToSegment: Int
+  )
 }

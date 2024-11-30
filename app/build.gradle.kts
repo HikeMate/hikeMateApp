@@ -147,6 +147,8 @@ dependencies {
     val composeBom = platform(libs.compose.bom)
 
     // Dependencies
+
+    implementation(libs.benchmark.junit4)
     implementation(libs.kotlinx.serialization.json)
     implementation (libs.androidx.material.icons.extended)
     implementation(libs.androidx.navigation.compose)
@@ -174,7 +176,6 @@ dependencies {
     implementation(libs.googleid)
     implementation(libs.accompanist.permissions)
     implementation(libs.play.services.location)
-    implementation(libs.gson)
 
 
     // Global test dependencies

@@ -35,6 +35,7 @@ import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_ELEVATION_GRAPH
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_HIKE_NAME
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_MAP
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_PLANNED_DATE_TEXT_BOX
+import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_RUN_HIKE_BUTTON
 import ch.hikemate.app.ui.navigation.NavigationActions
 import com.google.firebase.Timestamp
 import java.util.Locale
@@ -98,12 +99,16 @@ class HikeDetailScreenTest {
     }
   }
 
-  private fun setUpBottomSheetScaffold(hike: DetailedHike = detailedHike) {
+  private fun setUpBottomSheetScaffold(
+      hike: DetailedHike = detailedHike,
+      onRunThisHike: () -> Unit = {}
+  ) {
     composeTestRule.setContent {
       HikesDetailsBottomScaffold(
           detailedHike = hike,
           hikesViewModel = hikesViewModel,
-          userHikingLevel = HikingLevel.BEGINNER)
+          userHikingLevel = HikingLevel.BEGINNER,
+          onRunThisHike = onRunThisHike)
     }
   }
 
@@ -373,5 +378,21 @@ class HikeDetailScreenTest {
     composeTestRule
         .onAllNodesWithTag(TEST_TAG_DETAIL_ROW_VALUE)
         .assertAny(hasText("${minuteString}min"))
+  }
+
+  @Test
+  fun hikeDetails_showsRunThisHikeButton_andTriggersOnRunThisHike() = runTest {
+    val onRunThisHike = mock<() -> Unit>()
+    setUpSelectedHike(detailedHike)
+
+    setUpBottomSheetScaffold(onRunThisHike = onRunThisHike)
+
+    composeTestRule
+        .onNodeWithTag(TEST_TAG_RUN_HIKE_BUTTON)
+        .assertIsDisplayed()
+        .assertHasClickAction()
+        .performClick()
+
+    verify(onRunThisHike).invoke()
   }
 }

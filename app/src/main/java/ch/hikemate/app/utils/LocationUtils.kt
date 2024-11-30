@@ -6,7 +6,11 @@ import android.os.Looper
 import android.util.Log
 import android.widget.Toast
 import ch.hikemate.app.R
+import ch.hikemate.app.model.route.HikeRoute
+import ch.hikemate.app.model.route.LatLong
+import ch.hikemate.app.model.route.RouteSegment
 import ch.hikemate.app.ui.map.MapScreen
+import ch.hikemate.app.utils.RouteUtils.RouteProjectionResponse
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.MultiplePermissionsState
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -216,5 +220,74 @@ object LocationUtils {
       stopUserLocationUpdates(context, locationUpdatedCallback)
       MapUtils.clearUserPosition(userLocationMarker, mapView, invalidate = true)
     }
+  }
+
+  /**
+   * Projects a location onto the nearest point of a hiking route. This is a greedy approach that
+   * finds the closest segment.
+   *
+   * @param location The current location to project
+   * @param route The hiking route to project onto
+   * @return RouteProjectionResponse containing projection details
+   */
+  fun projectLocationOnHike(location: LatLong, route: HikeRoute): RouteProjectionResponse? {
+    // Validate input
+    if (route.ways.size < 2) return null
+
+    val segments = route.segments
+
+    // Handle simple case of just 2 points
+    if (segments.size == 1) {
+      val segment = segments[0]
+      val projected = projectPointOntoSegment(location, segment)
+      return RouteProjectionResponse(
+          projectedLocation = projected,
+          progressDistance = projected.distanceTo(segment.start),
+          distanceFromRoute = location.distanceTo(projected),
+          segment = segment,
+          indexToSegment = 0)
+    }
+
+    // Find closest segment by checking all segment
+    var closestSegment = segments[0]
+    var closestSegmentIndex = 0
+    var minDistance = Double.MAX_VALUE
+    var projectedPoint = route.ways[0]
+    // The distance that has been traveled according to the projection
+    var progressDistance = 0.0
+    var distanceCovered = 0.0
+
+    segments.forEachIndexed { index, segment ->
+      val projected = projectPointOntoSegment(location, segment)
+      val distance = location.distanceTo(projected)
+
+      // If the distance to that projection is smaller than update the projection for the new one.
+      if (distance < minDistance) {
+        minDistance = distance
+        projectedPoint = projected
+        progressDistance = distanceCovered + projected.distanceTo(segment.start)
+        closestSegment = segment
+        closestSegmentIndex = index
+      }
+      distanceCovered += segment.length
+    }
+
+    return RouteProjectionResponse(
+        projectedLocation = projectedPoint,
+        progressDistance = progressDistance,
+        distanceFromRoute = minDistance,
+        segment = closestSegment,
+        indexToSegment = closestSegmentIndex)
+  }
+
+  /**
+   * Projects a point onto a route segment.
+   *
+   * @param point
+   * @param segment
+   * @return projection
+   */
+  private inline fun projectPointOntoSegment(point: LatLong, segment: RouteSegment): LatLong {
+    return point.projectPointOntoLine(segment.start, segment.end)
   }
 }

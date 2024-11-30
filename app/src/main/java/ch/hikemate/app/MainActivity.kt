@@ -26,12 +26,14 @@ import ch.hikemate.app.model.authentication.FirebaseAuthRepository
 import ch.hikemate.app.model.profile.ProfileRepositoryFirestore
 import ch.hikemate.app.model.profile.ProfileViewModel
 import ch.hikemate.app.model.route.HikesViewModel
+import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
 import ch.hikemate.app.ui.auth.CreateAccountScreen
 import ch.hikemate.app.ui.auth.SignInScreen
 import ch.hikemate.app.ui.auth.SignInWithEmailScreen
 import ch.hikemate.app.ui.guide.GuideScreen
 import ch.hikemate.app.ui.map.HikeDetailScreen
 import ch.hikemate.app.ui.map.MapScreen
+import ch.hikemate.app.ui.map.RunHikeScreen
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
@@ -83,6 +85,8 @@ fun HikeMateApp() {
 
   val isUserLoggedIn = authViewModel.isUserLoggedIn()
 
+  val listOfHikeRoutesViewModel: ListOfHikeRoutesViewModel =
+      viewModel(factory = ListOfHikeRoutesViewModel.Factory)
   val hikesViewModel: HikesViewModel = viewModel(factory = HikesViewModel.Factory)
 
   val user by authViewModel.currentUser.collectAsState()
@@ -145,6 +149,13 @@ fun HikeMateApp() {
                 navigationActions = navigationActions,
                 hikesViewModel = hikesViewModel,
             )
+          }
+
+          composable(Screen.RUN_HIKE) {
+            RunHikeScreen(
+                listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
+                profileViewModel = profileViewModel,
+                navigationActions = navigationActions)
           }
         }
 
