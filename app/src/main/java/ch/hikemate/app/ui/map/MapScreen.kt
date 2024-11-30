@@ -326,14 +326,20 @@ fun MapScreen(
 
   // Show hikes on the map
   val hikes by hikesViewModel.hikeFlows.collectAsState()
+  val hikesType by hikesViewModel.loadedHikesType.collectAsState()
   val selectedHike by hikesViewModel.selectedHike.collectAsState()
 
-  LaunchedEffect(hikes, isSearching) {
+  LaunchedEffect(hikes, isSearching, hikesType) {
     // Don't update the map if a search is ongoing
     if (isSearching.value) return@LaunchedEffect
 
     // Clear all hikes drawn on the map previously
     clearHikesFromMap(mapView, userLocationMarker)
+
+    // If loaded hikes were not loaded from the displayed area, don't display them on the map
+    if (hikesType != HikesViewModel.LoadedHikes.FromBounds) {
+      return@LaunchedEffect
+    }
 
     // Draw the hikes on the map, avoid drawing too many of them for performance concerns
     hikes.take(MapScreen.MAX_HIKES_DRAWN_ON_MAP).forEach {
@@ -584,6 +590,7 @@ fun CollapsibleHikesList(
 ) {
   val scaffoldState = rememberBottomSheetScaffoldState()
   val hikes by hikesViewModel.hikeFlows.collectAsState()
+  val hikesType by hikesViewModel.loadedHikesType.collectAsState()
   val context = LocalContext.current
 
   // BottomSheetScaffold adds a layout at the bottom of the screen that the user can expand to view
@@ -607,7 +614,7 @@ fun CollapsibleHikesList(
                   CircularProgressIndicator(
                       modifier = Modifier.testTag(MapScreen.TEST_TAG_SEARCH_LOADING_ANIMATION))
                 }
-          } else if (hikes.isEmpty()) {
+          } else if (hikes.isEmpty() || hikesType != HikesViewModel.LoadedHikes.FromBounds) {
             // Use a box to center the Text composable of the empty list message
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
               Text(
