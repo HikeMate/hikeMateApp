@@ -503,6 +503,10 @@ class HikesViewModelTest {
         assertTrue(onSuccessCalled)
         // Check that the view model now contains the loaded hikes list
         assertEquals(singleSavedHike1.size, hikesViewModel.hikeFlows.value.size)
+        // Check that the status of the OSM data availability is updated correctly
+        assertFalse(hikesViewModel.allOsmDataLoaded.value)
+        // Check that the type of loaded hikes is updated accordingly
+        assertEquals(HikesViewModel.LoadedHikes.FromSaved, hikesViewModel.loadedHikesType.value)
       }
 
   @Test
@@ -1075,6 +1079,10 @@ class HikesViewModelTest {
         assertEquals(doubleOsmHikes1.size, hikesViewModel.hikeFlows.value.size)
         assertEquals(doubleOsmHikes1[0].id, hikesViewModel.hikeFlows.value[0].value.id)
         assertEquals(doubleOsmHikes1[1].id, hikesViewModel.hikeFlows.value[1].value.id)
+        // Check that the status of the OSM data availability is updated correctly
+        assertTrue(hikesViewModel.allOsmDataLoaded.value)
+        // Check that the type of loaded hikes is updated accordingly
+        assertEquals(HikesViewModel.LoadedHikes.FromBounds, hikesViewModel.loadedHikesType.value)
       }
 
   /**
@@ -1316,6 +1324,8 @@ class HikesViewModelTest {
         assertEquals(
             singleOsmHike1[0].ways,
             (hikesViewModel.hikeFlows.value[0].value.waypoints as DeferredData.Obtained).data)
+        // Make sure the OSM data is marked as available accordingly
+        assertTrue(hikesViewModel.allOsmDataLoaded.value)
       }
 
   @Test
