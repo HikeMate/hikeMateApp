@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -76,8 +77,8 @@ fun DeleteAccountScreen(navigationActions: NavigationActions, authViewModel: Aut
                   // Add padding to the sidebar padding
                   start = 16.dp,
                   end = 16.dp,
-                  top = 16.dp,
-              ),
+              )
+              .safeDrawingPadding(),
       verticalArrangement = Arrangement.spacedBy(16.dp)) {
         BackButton(navigationActions)
         Text(

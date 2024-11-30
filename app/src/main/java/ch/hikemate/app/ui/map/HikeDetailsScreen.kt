@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -59,6 +60,8 @@ import ch.hikemate.app.model.route.DetailedHike
 import ch.hikemate.app.model.route.HikesViewModel
 import ch.hikemate.app.ui.components.AsyncStateHandler
 import ch.hikemate.app.ui.components.BackButton
+import ch.hikemate.app.ui.components.BigButton
+import ch.hikemate.app.ui.components.ButtonType
 import ch.hikemate.app.ui.components.CenteredLoadingAnimation
 import ch.hikemate.app.ui.components.ElevationGraph
 import ch.hikemate.app.ui.components.ElevationGraphStyleProperties
@@ -74,11 +77,12 @@ import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_ELEVATION_GRAPH
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_HIKE_NAME
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_MAP
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_PLANNED_DATE_TEXT_BOX
+import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_RUN_HIKE_BUTTON
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.utils.MapUtils
-import ch.hikemate.app.utils.toFormattedString
+import ch.hikemate.app.utils.humanReadableFormat
 import com.google.firebase.Timestamp
 import java.util.Date
 import java.util.Locale
@@ -97,17 +101,18 @@ object HikeDetailScreen {
 
   const val LOG_TAG = "HikeDetailScreen"
 
-  const val TEST_TAG_MAP = "map"
-  const val TEST_TAG_HIKE_NAME = "hikeName"
-  const val TEST_TAG_BOOKMARK_ICON = "bookmarkIcon"
-  const val TEST_TAG_ELEVATION_GRAPH = "elevationGraph"
-  const val TEST_TAG_DETAIL_ROW_TAG = "detailRowTag"
-  const val TEST_TAG_DETAIL_ROW_VALUE = "detailRowValue"
-  const val TEST_TAG_ADD_DATE_BUTTON = "addDateButton"
-  const val TEST_TAG_PLANNED_DATE_TEXT_BOX = "plannedDateTextBox"
-  const val TEST_TAG_DATE_PICKER = "datePicker"
-  const val TEST_TAG_DATE_PICKER_CANCEL_BUTTON = "datePickerCancelButton"
-  const val TEST_TAG_DATE_PICKER_CONFIRM_BUTTON = "datePickerConfirmButton"
+  const val TEST_TAG_MAP = "HikeDetailScreenMap"
+  const val TEST_TAG_HIKE_NAME = "HikeDetailScreenHikeName"
+  const val TEST_TAG_BOOKMARK_ICON = "HikeDetailScreenBookmarkIcon"
+  const val TEST_TAG_ELEVATION_GRAPH = "HikeDetailScreenElevationGraph"
+  const val TEST_TAG_DETAIL_ROW_TAG = "HikeDetailScreenDetailRowTag"
+  const val TEST_TAG_DETAIL_ROW_VALUE = "HikeDetailScreenDetailRowValue"
+  const val TEST_TAG_ADD_DATE_BUTTON = "HikeDetailScreenAddDateButton"
+  const val TEST_TAG_PLANNED_DATE_TEXT_BOX = "HikeDetailScreenPlannedDateTextBox"
+  const val TEST_TAG_DATE_PICKER = "HikeDetailDatePicker"
+  const val TEST_TAG_DATE_PICKER_CANCEL_BUTTON = "HikeDetailDatePickerCancelButton"
+  const val TEST_TAG_DATE_PICKER_CONFIRM_BUTTON = "HikeDetailDatePickerConfirmButton"
+  const val TEST_TAG_RUN_HIKE_BUTTON = "HikeDetailRunHikeButton"
 }
 
 @Composable
@@ -215,7 +220,7 @@ fun HikeDetailsContent(
     // Display the back button on top of the map
     BackButton(
         navigationActions = navigationActions,
-        modifier = Modifier.padding(top = 40.dp, start = 16.dp, end = 16.dp),
+        modifier = Modifier.padding(top = 40.dp, start = 16.dp, end = 16.dp).safeDrawingPadding(),
         onClick = { hikesViewModel.unselectHike() })
 
     // Zoom buttons at the bottom right of the screen
@@ -227,7 +232,11 @@ fun HikeDetailsContent(
                 .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
 
     // Display the details of the hike at the bottom of the screen
-    HikesDetailsBottomScaffold(hike, hikesViewModel, userHikingLevel)
+    HikesDetailsBottomScaffold(
+        hike,
+        hikesViewModel,
+        userHikingLevel,
+        onRunThisHike = { navigationActions.navigateTo(Screen.RUN_HIKE) })
   }
 }
 
@@ -278,6 +287,7 @@ fun hikeDetailsMap(hike: DetailedHike): MapView {
   // Show the selected hike on the map
   // OnLineClick does nothing, the line should not be clickable
   val hikeLineColor = hike.color
+  Log.d("HikeDetailScreen", "Drawing hike on map: ${hike.bounds}")
   MapUtils.showHikeOnMap(
       mapView = mapView, waypoints = hike.waypoints, color = hikeLineColor, onLineClick = {})
 
@@ -292,12 +302,21 @@ fun hikeDetailsMap(hike: DetailedHike): MapView {
   return mapView
 }
 
+/**
+ * A composable that displays details about a hike in a bottom sheet.
+ *
+ * @param detailedHike The route about which information is displayed
+ * @param hikesViewModel The view model to handle selected hike data and saving/unsaving operations
+ * @param userHikingLevel The user's hiking experience level
+ * @param onRunThisHike Callback triggered when "Run This Hike" button is clicked
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HikesDetailsBottomScaffold(
     detailedHike: DetailedHike,
     hikesViewModel: HikesViewModel,
-    userHikingLevel: HikingLevel
+    userHikingLevel: HikingLevel,
+    onRunThisHike: () -> Unit
 ) {
   val scaffoldState = rememberBottomSheetScaffoldState()
 
@@ -389,6 +408,14 @@ fun HikesDetailsBottomScaffold(
               updatePlannedDate = { timestamp: Timestamp? ->
                 hikesViewModel.setPlannedDate(detailedHike.id, timestamp)
               })
+
+          // "Run This Hike" button
+          BigButton(
+              buttonType = ButtonType.PRIMARY,
+              label = stringResource(R.string.hike_detail_screen_run_this_hike_button_label),
+              onClick = { onRunThisHike() },
+              modifier =
+                  Modifier.padding(top = 16.dp).fillMaxWidth().testTag(TEST_TAG_RUN_HIKE_BUTTON))
         }
       },
       sheetPeekHeight = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT) {}
@@ -493,7 +520,7 @@ fun DateDetailRow(
                         shape = RoundedCornerShape(4.dp))
                     .padding(horizontal = 8.dp, vertical = 4.dp)) {
               Text(
-                  text = plannedDate.toFormattedString(),
+                  text = plannedDate.humanReadableFormat(),
                   // saved Date
                   style = MaterialTheme.typography.bodySmall,
                   modifier =

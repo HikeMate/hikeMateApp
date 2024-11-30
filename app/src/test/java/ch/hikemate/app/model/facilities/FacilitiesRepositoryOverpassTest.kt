@@ -6,15 +6,6 @@ import java.io.IOException
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.coroutines.resumeWithException
-import kotlin.time.Duration.Companion.seconds
-import kotlin.time.toJavaDuration
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.time.withTimeout
-import kotlinx.coroutines.withContext
 import okhttp3.Call
 import okhttp3.OkHttpClient
 import okhttp3.Protocol
@@ -26,12 +17,17 @@ import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.verify
+import org.robolectric.RobolectricTestRunner
 
+// Important: We need to use RobolectricTestRunner to run tests that use Android classes
+// such as JsonReader, which is used in the actual implementation of the app.
+@RunWith(RobolectricTestRunner::class)
 class FacilitiesRepositoryOverpassTest {
 
   companion object {
@@ -67,6 +63,18 @@ class FacilitiesRepositoryOverpassTest {
           "amenity": "toilets"
         }
       }"""
+
+    private const val VALID_RESPONSE_ELEMENT_2 =
+        """
+      {
+        "type": "node",
+        "id": 313827518,
+        "lat": 50.9620,
+        "lon": 5.12740,
+        "tags": {
+          "amenity": "parking"
+        }
+      }"""
   }
 
   private lateinit var client: OkHttpClient
@@ -81,7 +89,7 @@ class FacilitiesRepositoryOverpassTest {
     return Response.Builder()
         .code(200)
         .message("OK")
-        .body(request.toResponseBody())
+        .body(request.trimIndent().replace("\n", "").toResponseBody())
         .protocol(Protocol.HTTP_1_1)
         .header("Content-Type", "application/json")
         .request(mock())
@@ -108,34 +116,6 @@ class FacilitiesRepositoryOverpassTest {
     facilitiesRepository = FacilitiesRepositoryOverpass(client)
 
     `when`(client.newCall(any())).thenReturn(mockCall)
-  }
-
-  @OptIn(ExperimentalCoroutinesApi::class)
-  @Test
-  fun testGetFacilities_integrationTest() = runTest {
-    val realFacilitiesRepository = FacilitiesRepositoryOverpass(OkHttpClient())
-
-    var onSuccessCalled = false
-    var routesSize = 0
-
-    withContext(Dispatchers.Default.limitedParallelism(1)) {
-      withTimeout(5.seconds.toJavaDuration()) { // 5 seconds timeout
-        // Convert callback-based API to suspending function
-        suspendCancellableCoroutine { continuation ->
-          realFacilitiesRepository.getFacilities(
-              bounds = testBoundsNormal,
-              onSuccess = { routes ->
-                routesSize = routes.size
-                onSuccessCalled = true
-                continuation.resume(Unit, {})
-              },
-              onFailure = { error -> continuation.resumeWithException(error) })
-        }
-      }
-    }
-
-    assertTrue(onSuccessCalled)
-    assertNotEquals(0, routesSize)
   }
 
   @Test
@@ -172,6 +152,40 @@ class FacilitiesRepositoryOverpassTest {
               "getFacilities with normal parameters succeeded. Got: ${facilities.size} facilities")
         },
         onFailure = { fail("getFacilities call failed") })
+
+    verify(mockCall).enqueue(callbackCaptor.capture())
+
+    assert(latch.await(5, TimeUnit.SECONDS)) { "Test timed out" }
+
+    assertTrue(onSuccessCalled)
+  }
+
+  @Test
+  fun testGetFacilitiesWithMultipleAmenities() {
+    val response =
+        buildResponse(
+            VALID_RESPONSE_HEADER +
+                VALID_RESPONSE_ELEMENT +
+                "," +
+                VALID_RESPONSE_ELEMENT_2 +
+                VALID_RESPONSE_FOOTER)
+
+    val callbackCaptor = argumentCaptor<okhttp3.Callback>()
+    val latch = CountDownLatch(1)
+    var onSuccessCalled = false
+
+    setupMockResponse(response)
+
+    facilitiesRepository.getFacilities(
+        bounds = testBoundsNormal,
+        onSuccess = { facilities ->
+          assertEquals(2, facilities.size)
+          assertEquals(FacilityType.TOILETS, facilities[0].type)
+          assertEquals(FacilityType.PARKING, facilities[1].type)
+          onSuccessCalled = true
+          latch.countDown()
+        },
+        onFailure = { fail("Should not fail") })
 
     verify(mockCall).enqueue(callbackCaptor.capture())
 

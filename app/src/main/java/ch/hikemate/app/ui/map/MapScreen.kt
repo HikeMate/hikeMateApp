@@ -152,17 +152,17 @@ object MapScreen {
 
   const val LOG_TAG = "MapScreen"
 
-  const val TEST_TAG_MAP = "map"
-  const val TEST_TAG_SEARCH_BUTTON = "searchButton"
-  const val TEST_TAG_HIKES_LIST = "hikesList"
-  const val TEST_TAG_HIKE_ITEM = "hikeItem"
-  const val TEST_TAG_EMPTY_HIKES_LIST_MESSAGE = "emptyHikesListMessage"
-  const val TEST_TAG_SEARCHING_MESSAGE = "searchingMessage"
-  const val TEST_TAG_SEARCH_LOADING_ANIMATION = "searchLoadingAnimation"
-  const val TEST_TAG_CENTER_MAP_BUTTON = "centerMapButton"
-  const val TEST_TAG_LOCATION_PERMISSION_ALERT = "locationPermissionAlert"
-  const val TEST_TAG_NO_THANKS_ALERT_BUTTON = "noThanksAlertButton"
-  const val TEST_TAG_GRANT_ALERT_BUTTON = "grantAlertButton"
+  const val TEST_TAG_MAP = "MapScreenMap"
+  const val TEST_TAG_SEARCH_BUTTON = "MapScreenSearchButton"
+  const val TEST_TAG_HIKES_LIST = "MapScreenHikesList"
+  const val TEST_TAG_HIKE_ITEM = "MapScreenHikeItem"
+  const val TEST_TAG_EMPTY_HIKES_LIST_MESSAGE = "MapScreenEmptyHikesListMessage"
+  const val TEST_TAG_SEARCHING_MESSAGE = "MapScreenSearchingMessage"
+  const val TEST_TAG_SEARCH_LOADING_ANIMATION = "MapScreenSearchLoadingAnimation"
+  const val TEST_TAG_CENTER_MAP_BUTTON = "MapScreenCenterMapButton"
+  const val TEST_TAG_LOCATION_PERMISSION_ALERT = "MapScreenLocationPermissionAlert"
+  const val TEST_TAG_NO_THANKS_ALERT_BUTTON = "MapScreenNoThanksAlertButton"
+  const val TEST_TAG_GRANT_ALERT_BUTTON = "MapScreenGrantAlertButton"
 
   const val MINIMAL_SEARCH_TIME_IN_MS = 500 // ms
 
