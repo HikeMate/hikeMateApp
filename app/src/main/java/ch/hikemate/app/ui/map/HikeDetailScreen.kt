@@ -87,6 +87,7 @@ import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
+import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 
@@ -120,12 +121,6 @@ fun HikeDetailScreen(
 ) {
 
   val context = LocalContext.current
-
-  LaunchedEffect(listOfHikeRoutesViewModel.selectedHikeRoute.collectAsState().value) {
-    if (listOfHikeRoutesViewModel.selectedHikeRoute.value == null) {
-      navigationActions.goBack()
-    }
-  }
 
   if (listOfHikeRoutesViewModel.selectedHikeRoute.collectAsState().value == null) {
     Log.e("HikeDetailScreen", "No selected hike route")
@@ -183,6 +178,16 @@ fun HikeDetailScreen(
           max(HikeDetailScreen.MAP_MIN_LONGITUDE, mapView.boundingBox.lonWest),
           min(HikeDetailScreen.MAP_MAX_LONGITUDE, mapView.boundingBox.lonEast),
           HikeDetailScreen.MAP_BOUNDS_MARGIN)
+    }
+  }
+
+  LaunchedEffect(listOfHikeRoutesViewModel.selectedHikeRoute.collectAsState().value) {
+    if (listOfHikeRoutesViewModel.selectedHikeRoute.value == null) {
+      navigationActions.goBack()
+      listOfHikeRoutesViewModel.setMapState(
+          center = GeoPoint(mapView.mapCenter.latitude, mapView.mapCenter.longitude),
+          zoom = mapView.zoomLevelDouble,
+      )
     }
   }
 

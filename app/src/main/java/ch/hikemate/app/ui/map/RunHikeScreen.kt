@@ -1,6 +1,7 @@
 package ch.hikemate.app.ui.map
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -12,7 +13,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -52,11 +55,13 @@ fun RunHikeScreen(
     profileViewModel: ProfileViewModel,
     navigationActions: NavigationActions,
 ) {
-
   val context = LocalContext.current
 
-  val selectedRoute by listOfHikeRoutesViewModel.selectedHikeRoute.collectAsState()
+  // avoids the app crashing when spamming the back button
+  var wantToNavigateBack by remember { mutableStateOf(false) }
+  LaunchedEffect(wantToNavigateBack) { if (wantToNavigateBack) navigationActions.goBack() }
 
+  val selectedRoute by listOfHikeRoutesViewModel.selectedHikeRoute.collectAsState()
   LaunchedEffect(selectedRoute) {
     if (selectedRoute == null) {
       navigationActions.goBack()
@@ -128,7 +133,7 @@ fun RunHikeScreen(
           modifier =
               Modifier.padding(top = 40.dp, start = 16.dp, end = 16.dp)
                   .testTag(TEST_TAG_RUN_HIKE_SCREEN_BACK_BUTTON),
-          onClick = { navigationActions.goBack() })
+          onClick = { wantToNavigateBack = true })
       // Zoom buttons at the bottom right of the screen
       ZoomMapButton(
           onZoomIn = { mapView.controller.zoomIn() },
@@ -157,5 +162,5 @@ fun RunHikeBottomSheet(
       sheetContainerColor = MaterialTheme.colorScheme.surface,
       sheetPeekHeight = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT,
       modifier = Modifier.testTag(TEST_TAG_RUN_HIKE_SCREEN_BOTTOM_SHEET),
-      sheetContent = {}) {}
+      sheetContent = { Column() { /* Content of the bottom sheet */} }) {}
 }
