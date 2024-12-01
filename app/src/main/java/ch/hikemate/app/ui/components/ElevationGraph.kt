@@ -33,6 +33,7 @@ import kotlin.math.ceil
  * @param fillColor The color of the fill of the graph (default to black)
  * @param strokeColor The color of the line of the graph (default to black)
  * @param strokeWidth The width of the line the graph (default to 3f)
+ * @param locationMarkerSize The size of the location marker drawable (default to 24f)
  */
 data class ElevationGraphStyleProperties(
     val strokeColor: Color = Color.Black,
@@ -76,12 +77,14 @@ fun ElevationGraph(
   val elevationData = if (elevations.isNullOrEmpty()) listOf(0.0) else elevations
   Log.d("ElevationGraph", "Elevation data for the graph: $elevationData")
 
+  // Averaging the elevation data to reduce the number of points
   val averageSize = ceil(elevationData.size.toDouble() / maxNumberOfPoints).toInt()
   val elevationDataAveraged = elevationData.chunked(averageSize) { chunk -> chunk.average() }
 
   var height by remember { mutableFloatStateOf(0.0f) }
   var width by remember { mutableFloatStateOf(0.0f) }
 
+  // Bunch of variables to scale the graph in height
   val maxElevation = elevationDataAveraged.maxOrNull() ?: 0.0
   val minElevation = elevationDataAveraged.minOrNull() ?: 0.0
   val elevationRange = maxElevation - minElevation
@@ -90,6 +93,10 @@ fun ElevationGraph(
   val widthStep = width / (elevationDataAveraged.size - 1)
   val graphInnerPadding = height * graphInnerPaddingPercentage / 100
 
+  // Build (x, y) tuples to draw the path
+  // Scale the points width to fit the whole width
+  // Scale the points height to fit the whole height, but keeping the scale.
+  // The height is inverted because the origin of the canvas is at the top left corner
   val scaledData =
       elevationDataAveraged
           .mapIndexed { index, elevation ->
@@ -121,6 +128,7 @@ fun ElevationGraph(
         width = coordinates.size.width.toFloat()
       }) {
         if (elevations == null) {
+          // If there is no data, we draw a text in the middle of the canvas
           drawIntoCanvas {
             it.nativeCanvas.drawText(
                 context.getString(R.string.elevation_graph_loading_label),
@@ -132,6 +140,7 @@ fun ElevationGraph(
                 })
           }
         } else if (elevations.isEmpty()) {
+          // If there is no data, we draw a text in the middle of the canvas
           drawIntoCanvas {
             it.nativeCanvas.drawText(
                 context.getString(R.string.hike_card_no_data_label),
@@ -149,14 +158,16 @@ fun ElevationGraph(
               style = Stroke(width = styleProperties.strokeWidth))
           clipPath(path, clipOp = ClipOp.Intersect) { drawRect(color = styleProperties.fillColor) }
 
+          // If the progressThroughHike is not null then display the location marker
           progressThroughHike?.let { progress ->
-            val clampedProgress = progress.coerceIn(0f, 1f)
-            val markerX = width * clampedProgress
+            // The X component of the marker
+            val markerX = width * progress
 
-            val pointIndex = (clampedProgress * (scaledData.size - 1)).toInt()
-            val pointProgress = (clampedProgress * (scaledData.size - 1)) % 1
+            val pointIndex = (progress * (scaledData.size - 1)).toInt()
+            val pointProgress = (progress * (scaledData.size - 1)) % 1
 
-            val y =
+            // The Y component of the marker
+            val markerY =
                 if (pointIndex < scaledData.size - 1) {
                   val y1 = scaledData[pointIndex].second
                   val y2 = scaledData[pointIndex + 1].second
@@ -167,6 +178,8 @@ fun ElevationGraph(
 
             val markerDrawable = MapUtils.getUserLocationMarkerIcon(context)
             val originalBitmap = (markerDrawable as android.graphics.drawable.BitmapDrawable).bitmap
+
+            // Scale Bitmap to ensure it fits the desired size
             val scaledBitmap =
                 android.graphics.Bitmap.createScaledBitmap(
                     originalBitmap,
@@ -175,12 +188,13 @@ fun ElevationGraph(
                     true)
             val bitmap = scaledBitmap.asImageBitmap()
 
+            // Draws the location marker at the calculated position
             drawImage(
                 image = bitmap,
                 topLeft =
                     androidx.compose.ui.geometry.Offset(
                         x = markerX - styleProperties.locationMarkerSize / 2,
-                        y = y - styleProperties.locationMarkerSize / 2),
+                        y = markerY - styleProperties.locationMarkerSize / 2),
                 alpha = 1.0f)
           }
         }
