@@ -16,6 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -45,6 +46,7 @@ import ch.hikemate.app.ui.saved.SavedHikesScreen
 import ch.hikemate.app.ui.theme.HikeMateTheme
 import com.google.firebase.FirebaseApp
 import com.google.firebase.firestore.FirebaseFirestore
+import org.osmdroid.config.Configuration
 
 class MainActivity : ComponentActivity() {
   @SuppressLint("SourceLockedOrientationActivity")
@@ -71,26 +73,26 @@ class MainActivity : ComponentActivity() {
 }
 
 /**
- * The main composable function for the HikeMate application. It sets up the navigation host and
- * defines the navigation graph.
+ * The main composable function for the HikeMate application. It
+ * 1. Sets up the several view models that are needed for the whole app
+ * 2. Ensures the user's profile and saved hikes are reloaded every time a new user logs in
+ * 3. Configures what needs to be configured before using OSMDroid
+ * 4. Sets up the navigation host and defines the navigation graph
  */
 @Composable
 fun HikeMateApp() {
-  val navController = rememberNavController()
-  val navigationActions = NavigationActions(navController)
   val profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory)
   val authViewModel =
       AuthViewModel(
           FirebaseAuthRepository(), ProfileRepositoryFirestore(FirebaseFirestore.getInstance()))
 
-  val isUserLoggedIn = authViewModel.isUserLoggedIn()
-
   val listOfHikeRoutesViewModel: ListOfHikeRoutesViewModel =
       viewModel(factory = ListOfHikeRoutesViewModel.Factory)
   val hikesViewModel: HikesViewModel = viewModel(factory = HikesViewModel.Factory)
 
+  // When a user logs-in again with a different account, get the new profile and the new user's
+  // saved hikes list
   val user by authViewModel.currentUser.collectAsState()
-
   LaunchedEffect(user) {
     if (user != null) {
       profileViewModel.getProfileById(user!!.uid)
@@ -98,84 +100,105 @@ fun HikeMateApp() {
     }
   }
 
-  NavHost(
-      navController = navController,
-      startDestination =
-          if (isUserLoggedIn) TopLevelDestinations.MAP.route else TopLevelDestinations.AUTH.route) {
-        navigation(
-            startDestination = Screen.AUTH,
-            route = Route.AUTH,
-        ) {
-          composable(Screen.AUTH) { SignInScreen(navigationActions, authViewModel) }
-          composable(Screen.SIGN_IN_WITH_EMAIL) {
-            SignInWithEmailScreen(navigationActions, authViewModel)
-          }
-          composable(Screen.CREATE_ACCOUNT) {
-            CreateAccountScreen(navigationActions, authViewModel)
-          }
-          composable(Screen.DELETE_ACCOUNT) {
-            DeleteAccountScreen(navigationActions, authViewModel)
-          }
-        }
+  // The configuration only needs to be done once, not on every recomposition
+  val context = LocalContext.current
+  LaunchedEffect(Unit) {
+    Configuration.getInstance().apply {
+      // Set user-agent to avoid rejected requests
+      userAgentValue = context.packageName
 
-        navigation(
-            startDestination = Screen.SAVED_HIKES,
-            route = Route.SAVED_HIKES,
-        ) {
-          composable(Screen.SAVED_HIKES) {
-            SavedHikesScreen(navigationActions = navigationActions, hikesViewModel = hikesViewModel)
-          }
-        }
+      // Allow for faster loading of tiles. Default OSMDroid value is 2
+      tileDownloadThreads = 4
 
-        navigation(
-            startDestination = Screen.MAP,
-            route = Route.MAP,
-        ) {
-          composable(Screen.MAP) {
-            MapScreen(
-                navigationActions = navigationActions,
-                hikesViewModel = hikesViewModel,
-                authViewModel = authViewModel)
-          }
-        }
-        navigation(
-            startDestination = Screen.HIKE_DETAILS,
-            route = Route.HIKE_DETAILS,
-        ) {
-          composable(Screen.HIKE_DETAILS) {
-            HikeDetailScreen(
-                profileViewModel = profileViewModel,
-                authViewModel = authViewModel,
-                navigationActions = navigationActions,
-                hikesViewModel = hikesViewModel,
-            )
-          }
+      // Maximum number of tiles that can be downloaded at once. Default is 40
+      tileDownloadMaxQueueSize = 40
 
-          composable(Screen.RUN_HIKE) {
-            RunHikeScreen(
-                listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
-                profileViewModel = profileViewModel,
-                navigationActions = navigationActions)
-          }
-        }
+      // Maximum number of bytes that can be used by the tile file system cache. Default is 600MB
+      tileFileSystemCacheMaxBytes = 600L * 1024L * 1024L
+    }
+  }
 
-        navigation(
-            startDestination = Screen.PROFILE,
-            route = Route.PROFILE,
-        ) {
-          composable(Screen.PROFILE) {
-            ProfileScreen(
-                navigationActions = navigationActions,
-                profileViewModel = profileViewModel,
-                authViewModel = authViewModel)
-          }
-          composable(Screen.EDIT_PROFILE) {
-            EditProfileScreen(
-                navigationActions = navigationActions, profileViewModel = profileViewModel)
-          }
-        }
-        navigation(startDestination = Screen.TUTORIAL, route = Route.TUTORIAL) {
-          composable(Screen.TUTORIAL) { GuideScreen(navigationActions) }
-        }
+  // Prepare the navigation actions to go from one page to the other
+  val navController = rememberNavController()
+  val navigationActions = NavigationActions(navController)
+
+  // When the user is logged in, start on the map, otherwise start on the sign-in screen
+  val isUserLoggedIn = authViewModel.isUserLoggedIn()
+  val startDestination =
+      if (isUserLoggedIn) TopLevelDestinations.MAP.route else TopLevelDestinations.AUTH.route
+
+  // Set the app's screens hierarchy into the navigation actions
+  NavHost(navController = navController, startDestination = startDestination) {
+    navigation(
+        startDestination = Screen.AUTH,
+        route = Route.AUTH,
+    ) {
+      composable(Screen.AUTH) { SignInScreen(navigationActions, authViewModel) }
+      composable(Screen.SIGN_IN_WITH_EMAIL) {
+        SignInWithEmailScreen(navigationActions, authViewModel)
       }
+      composable(Screen.CREATE_ACCOUNT) { CreateAccountScreen(navigationActions, authViewModel) }
+      composable(Screen.DELETE_ACCOUNT) { DeleteAccountScreen(navigationActions, authViewModel) }
+    }
+
+    navigation(
+        startDestination = Screen.SAVED_HIKES,
+        route = Route.SAVED_HIKES,
+    ) {
+      composable(Screen.SAVED_HIKES) {
+        SavedHikesScreen(navigationActions = navigationActions, hikesViewModel = hikesViewModel)
+      }
+    }
+
+    navigation(
+        startDestination = Screen.MAP,
+        route = Route.MAP,
+    ) {
+      composable(Screen.MAP) {
+        MapScreen(
+            navigationActions = navigationActions,
+            hikesViewModel = hikesViewModel,
+            authViewModel = authViewModel)
+      }
+    }
+    navigation(
+        startDestination = Screen.HIKE_DETAILS,
+        route = Route.HIKE_DETAILS,
+    ) {
+      composable(Screen.HIKE_DETAILS) {
+        HikeDetailScreen(
+            profileViewModel = profileViewModel,
+            authViewModel = authViewModel,
+            navigationActions = navigationActions,
+            hikesViewModel = hikesViewModel,
+        )
+      }
+
+      composable(Screen.RUN_HIKE) {
+        RunHikeScreen(
+            listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
+            profileViewModel = profileViewModel,
+            navigationActions = navigationActions)
+      }
+    }
+
+    navigation(
+        startDestination = Screen.PROFILE,
+        route = Route.PROFILE,
+    ) {
+      composable(Screen.PROFILE) {
+        ProfileScreen(
+            navigationActions = navigationActions,
+            profileViewModel = profileViewModel,
+            authViewModel = authViewModel)
+      }
+      composable(Screen.EDIT_PROFILE) {
+        EditProfileScreen(
+            navigationActions = navigationActions, profileViewModel = profileViewModel)
+      }
+    }
+    navigation(startDestination = Screen.TUTORIAL, route = Route.TUTORIAL) {
+      composable(Screen.TUTORIAL) { GuideScreen(navigationActions) }
+    }
+  }
 }

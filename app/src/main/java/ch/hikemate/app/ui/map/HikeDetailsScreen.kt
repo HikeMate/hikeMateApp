@@ -89,7 +89,6 @@ import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
-import org.osmdroid.config.Configuration
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 
@@ -122,26 +121,9 @@ fun HikeDetailScreen(
     authViewModel: AuthViewModel,
     navigationActions: NavigationActions
 ) {
-  val context = LocalContext.current
-
   LaunchedEffect(Unit) {
     // Load or reload the saved hikes list to see if the currently selected one is saved
     hikesViewModel.refreshSavedHikesCache()
-
-    // Only do the configuration on the first composition, not on every recomposition
-    Configuration.getInstance().apply {
-      // Set user-agent to avoid rejected requests
-      userAgentValue = context.packageName
-
-      // Allow for faster loading of tiles. Default OSMDroid value is 2.
-      tileDownloadThreads = 4
-
-      // Maximum number of tiles that can be downloaded at once. Default is 40.
-      tileDownloadMaxQueueSize = 40
-
-      // Maximum number of bytes that can be used by the tile file system cache. Default is 600MB.
-      tileFileSystemCacheMaxBytes = 600L * 1024L * 1024L
-    }
   }
 
   // Load the user's profile to get their hiking level

@@ -68,7 +68,6 @@ import com.google.accompanist.permissions.MultiplePermissionsState
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationResult
-import org.osmdroid.config.Configuration
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
@@ -249,24 +248,10 @@ fun MapScreen(
   var showLocationPermissionDialog by remember { mutableStateOf(false) }
   var centerMapOnUserPosition by remember { mutableStateOf(false) }
 
-  // Only do the configuration on the first composition, not on every recomposition
+  // Ensure the profile is obtained at startup, because the user's hiking level is needed
   LaunchedEffect(Unit) {
-    Configuration.getInstance().apply {
-      // Set user-agent to avoid rejected requests
-      userAgentValue = context.packageName
-
-      // Allow for faster loading of tiles. Default OSMDroid value is 2.
-      tileDownloadThreads = 4
-
-      // Maximum number of tiles that can be downloaded at once. Default is 40.
-      tileDownloadMaxQueueSize = 40
-
-      // Maximum number of bytes that can be used by the tile file system cache. Default is 600MB.
-      tileFileSystemCacheMaxBytes = 600L * 1024L * 1024L
-    }
-
     if (authViewModel.currentUser.value == null) {
-      Log.e("MapScreen", "User is not signed in")
+      Log.e(MapScreen.LOG_TAG, "User is not signed in")
       return@LaunchedEffect
     }
     profileViewModel.getProfileById(authViewModel.currentUser.value!!.uid)
