@@ -70,6 +70,12 @@
 
     <!--Run Hike Screen -->
     <string name="run_hike_screen_stop_run_button_label">Stop the run</string>
+    <string name="run_hike_screen_zero_distance_progress_value">0km</string>
+    <string name="run_hike_screen_distance_progress_value_format">%.2fkm</string>
+    <string name="run_hike_screen_label_current_elevation">Current Elevation</string>
+    <string name="run_hike_screen_label_elevation_gain">Elevation Gain</string>
+    <string name="run_hike_screen_label_estimated_time">Estimated time</string>
+    <string name="run_hike_screen_label_difficulty">Difficulty</string>
 
     <!-- Hike Difficulty Levels -->
     <string name="hike_difficulty_easy">Easy</string>

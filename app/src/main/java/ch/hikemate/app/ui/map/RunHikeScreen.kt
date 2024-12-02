@@ -177,9 +177,10 @@ fun RunHikeScreen(
                   .testTag(TEST_TAG_ZOOM_BUTTONS))
 
       RunHikeBottomSheet(
-          DetailedHikeRoute.create(route, ElevationServiceRepository(OkHttpClient())),
-          elevationData,
-          { wantToNavigateBack = true })
+          hikeRoute = DetailedHikeRoute.create(route, ElevationServiceRepository(OkHttpClient())),
+          elevationData = elevationData,
+          onStopTheRun = { wantToNavigateBack = true },
+      )
     }
   }
 }
@@ -208,6 +209,7 @@ fun RunHikeBottomSheet(
               textAlign = TextAlign.Left,
               modifier = Modifier.testTag(TEST_TAG_HIKE_NAME))
 
+          // Elevation graph and the progress details below the graph
           Column {
             val hikeColor = Color(hikeRoute.route.getColor())
             ElevationGraph(
@@ -215,14 +217,13 @@ fun RunHikeBottomSheet(
                 styleProperties =
                     ElevationGraphStyleProperties(strokeColor = hikeColor, fillColor = hikeColor),
                 modifier = Modifier.fillMaxWidth().padding(16.dp).testTag(TEST_TAG_ELEVATION_GRAPH))
+
+            // Progress details below the graph
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween) {
-                  val totalDistanceString =
-                      String.format(Locale.getDefault(), "%.2f", hikeRoute.totalDistance)
-
                   Text(
-                      text = "0km",
+                      text = stringResource(R.string.run_hike_screen_zero_distance_progress_value),
                       style = MaterialTheme.typography.bodyLarge,
                       fontWeight = FontWeight.Bold,
                       textAlign = TextAlign.Left,
@@ -237,7 +238,9 @@ fun RunHikeBottomSheet(
                       modifier = Modifier.padding(top = 8.dp).testTag(TEST_TAG_PROGRESS_TEXT),
                   )
                   Text(
-                      text = "${totalDistanceString}km",
+                      text =
+                          stringResource(R.string.run_hike_screen_distance_progress_value_format)
+                              .format(hikeRoute.totalDistance),
                       style = MaterialTheme.typography.bodyLarge,
                       fontWeight = FontWeight.Bold,
                       textAlign = TextAlign.Right,
@@ -252,17 +255,19 @@ fun RunHikeBottomSheet(
                 String.format(
                     Locale.getDefault(), "%02d", (hikeRoute.estimatedTime % 60).roundToInt())
 
-            DetailRow(label = "Current elevation", value = "50m")
             DetailRow(
-                label = stringResource(R.string.hike_detail_screen_label_elevation_gain),
+                label = stringResource(R.string.run_hike_screen_label_current_elevation),
+                value = "50m")
+            DetailRow(
+                label = stringResource(R.string.run_hike_screen_label_elevation_gain),
                 value = "${elevationGainString}m")
             DetailRow(
-                label = stringResource(R.string.hike_detail_screen_label_estimated_time),
+                label = stringResource(R.string.run_hike_screen_label_estimated_time),
                 value =
                     if (hikeRoute.estimatedTime / 60 < 1) "${minuteString}min"
                     else "${hourString}h${minuteString}")
             DetailRow(
-                label = stringResource(R.string.hike_detail_screen_label_difficulty),
+                label = stringResource(R.string.run_hike_screen_label_difficulty),
                 value = stringResource(hikeRoute.difficulty.nameResourceId),
                 valueColor =
                     Color(

@@ -149,6 +149,7 @@ class RunHikeScreenTest {
     composeTestRule.onNodeWithTag(TEST_TAG_BOTTOM_SHEET).assertExists()
   }
 
+  /** Test all details which do not change during the hike run. */
   @Test
   fun runHikeScreen_displaysStaticDetails() = runTest {
     composeTestRule.setContent {
