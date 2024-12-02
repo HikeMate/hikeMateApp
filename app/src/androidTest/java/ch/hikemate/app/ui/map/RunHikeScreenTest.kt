@@ -171,7 +171,7 @@ class RunHikeScreenTest {
       )
     }
 
-    composeTestRule.onNodeWithTag(TEST_TAG_ELEVATION_GRAPH).assertExists()
+    composeTestRule.onNodeWithTag(TEST_TAG_ELEVATION_GRAPH).assertIsDisplayed()
   }
 
   @Test

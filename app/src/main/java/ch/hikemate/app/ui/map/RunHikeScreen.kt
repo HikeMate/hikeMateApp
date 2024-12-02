@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -215,12 +216,17 @@ fun RunHikeBottomSheet(
             ElevationGraph(
                 elevations = elevationData,
                 styleProperties =
-                    ElevationGraphStyleProperties(strokeColor = hikeColor, fillColor = hikeColor),
-                modifier = Modifier.fillMaxWidth().padding(16.dp).testTag(TEST_TAG_ELEVATION_GRAPH))
+                    ElevationGraphStyleProperties(
+                        strokeColor = hikeColor, fillColor = hikeColor.copy(0.1f)),
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .height(60.dp)
+                        .padding(4.dp)
+                        .testTag(TEST_TAG_ELEVATION_GRAPH))
 
             // Progress details below the graph
             Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 8.dp),
+                modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp),
                 horizontalArrangement = Arrangement.SpaceBetween) {
                   Text(
                       text = stringResource(R.string.run_hike_screen_zero_distance_progress_value),
