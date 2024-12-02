@@ -1,24 +1,34 @@
 package ch.hikemate.app.ui.map
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
 import ch.hikemate.app.R
 import ch.hikemate.app.model.elevation.ElevationServiceRepository
 import ch.hikemate.app.model.profile.ProfileViewModel
@@ -26,24 +36,31 @@ import ch.hikemate.app.model.route.DetailedHikeRoute
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
 import ch.hikemate.app.ui.components.AsyncStateHandler
 import ch.hikemate.app.ui.components.BackButton
-import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_RUN_HIKE_SCREEN_BACK_BUTTON
-import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_RUN_HIKE_SCREEN_BOTTOM_SHEET
-import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_RUN_HIKE_SCREEN_MAP
-import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_RUN_HIKE_SCREEN_ZOOM_BUTTONS
+import ch.hikemate.app.ui.components.BigButton
+import ch.hikemate.app.ui.components.ButtonType
+import ch.hikemate.app.ui.components.ElevationGraph
+import ch.hikemate.app.ui.components.ElevationGraphStyleProperties
+import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_HIKE_NAME
+import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_BACK_BUTTON
+import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_BOTTOM_SHEET
+import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_MAP
+import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_ZOOM_BUTTONS
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.utils.MapUtils
+import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.roundToInt
 import okhttp3.OkHttpClient
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 
 object RunHikeScreen {
-  const val TEST_TAG_RUN_HIKE_SCREEN_MAP = "runHikeScreenMap"
-  const val TEST_TAG_RUN_HIKE_SCREEN_BACK_BUTTON = "runHikeScreenBackButton"
-  const val TEST_TAG_RUN_HIKE_SCREEN_ZOOM_BUTTONS = "runHikeScreenZoomInButton"
-  const val TEST_TAG_RUN_HIKE_SCREEN_BOTTOM_SHEET = "runHikeScreenBottomSheet"
+  const val TEST_TAG_MAP = "runHikeScreenMap"
+  const val TEST_TAG_BACK_BUTTON = "runHikeScreenBackButton"
+  const val TEST_TAG_ZOOM_BUTTONS = "runHikeScreenZoomInButton"
+  const val TEST_TAG_BOTTOM_SHEET = "runHikeScreenBottomSheet"
 }
 
 @Composable
@@ -102,6 +119,12 @@ fun RunHikeScreen(
     }
   }
 
+  val elevationData = remember { mutableStateListOf<Double>() }
+
+  LaunchedEffect(Unit) {
+    listOfHikeRoutesViewModel.getRoutesElevation(route, { elevationData.addAll(it) })
+  }
+
   val hikeLineColor = route.getColor()
   MapUtils.showHikeOnMap(mapView = mapView, hike = route, color = hikeLineColor, onLineClick = {})
 
@@ -121,13 +144,13 @@ fun RunHikeScreen(
           modifier =
               Modifier.fillMaxWidth()
                   .padding(bottom = 300.dp) // Reserve space for the scaffold at the bottom
-                  .testTag(TEST_TAG_RUN_HIKE_SCREEN_MAP))
+                  .testTag(TEST_TAG_MAP))
       // Back Button at the top of the screen
       BackButton(
           navigationActions = navigationActions,
           modifier =
               Modifier.padding(top = 40.dp, start = 16.dp, end = 16.dp)
-                  .testTag(TEST_TAG_RUN_HIKE_SCREEN_BACK_BUTTON),
+                  .testTag(TEST_TAG_BACK_BUTTON),
           onClick = { navigationActions.goBack() })
       // Zoom buttons at the bottom right of the screen
       ZoomMapButton(
@@ -136,10 +159,12 @@ fun RunHikeScreen(
           modifier =
               Modifier.align(Alignment.BottomEnd)
                   .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
-                  .testTag(TEST_TAG_RUN_HIKE_SCREEN_ZOOM_BUTTONS))
+                  .testTag(TEST_TAG_ZOOM_BUTTONS))
 
       RunHikeBottomSheet(
-          DetailedHikeRoute.create(route, ElevationServiceRepository(OkHttpClient())), {})
+          DetailedHikeRoute.create(route, ElevationServiceRepository(OkHttpClient())),
+          elevationData,
+          {})
     }
   }
 }
@@ -148,6 +173,7 @@ fun RunHikeScreen(
 @Composable
 fun RunHikeBottomSheet(
     hikeRoute: DetailedHikeRoute,
+    elevationData: List<Double>,
     onStopTheRun: () -> Unit,
 ) {
   val scaffoldState = rememberBottomSheetScaffoldState()
@@ -156,6 +182,85 @@ fun RunHikeBottomSheet(
       scaffoldState = scaffoldState,
       sheetContainerColor = MaterialTheme.colorScheme.surface,
       sheetPeekHeight = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT,
-      modifier = Modifier.testTag(TEST_TAG_RUN_HIKE_SCREEN_BOTTOM_SHEET),
-      sheetContent = {}) {}
+      modifier = Modifier.testTag(TEST_TAG_BOTTOM_SHEET),
+      sheetContent = {
+        Column(
+            modifier = Modifier.padding(16.dp).weight(1f),
+        ) {
+          Text(
+              text = hikeRoute.route.name ?: stringResource(R.string.map_screen_hike_title_default),
+              style = MaterialTheme.typography.titleLarge,
+              textAlign = TextAlign.Left,
+              modifier = Modifier.testTag(TEST_TAG_HIKE_NAME))
+
+          Column {
+            val hikeColor = Color(hikeRoute.route.getColor())
+            ElevationGraph(
+                elevations = elevationData,
+                styleProperties =
+                    ElevationGraphStyleProperties(strokeColor = hikeColor, fillColor = hikeColor),
+                modifier = Modifier.fillMaxWidth().padding(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween) {
+                  val totalDistanceString =
+                      String.format(Locale.getDefault(), "%.2f", hikeRoute.totalDistance)
+
+                  Text(
+                      text = "0km",
+                      style = MaterialTheme.typography.bodyLarge,
+                      fontWeight = FontWeight.Bold,
+                      textAlign = TextAlign.Left,
+                      modifier = Modifier.padding(top = 8.dp),
+                  )
+                  Text(
+                      text = "23% complete",
+                      style = MaterialTheme.typography.bodyLarge,
+                      color = hikeColor,
+                      fontWeight = FontWeight.Bold,
+                      textAlign = TextAlign.Right,
+                      modifier = Modifier.padding(top = 8.dp),
+                  )
+                  Text(
+                      text = "${totalDistanceString}km",
+                      style = MaterialTheme.typography.bodyLarge,
+                      fontWeight = FontWeight.Bold,
+                      textAlign = TextAlign.Right,
+                      modifier = Modifier.padding(top = 8.dp),
+                  )
+                }
+
+            val elevationGainString = hikeRoute.elevationGain.roundToInt().toString()
+            val hourString =
+                String.format(Locale.getDefault(), "%02d", (hikeRoute.estimatedTime / 60).toInt())
+            val minuteString =
+                String.format(
+                    Locale.getDefault(), "%02d", (hikeRoute.estimatedTime % 60).roundToInt())
+
+            DetailRow(
+                label = stringResource(R.string.hike_detail_screen_label_elevation_gain),
+                value = "${elevationGainString}m")
+            DetailRow(
+                label = stringResource(R.string.hike_detail_screen_label_estimated_time),
+                value =
+                    if (hikeRoute.estimatedTime / 60 < 1) "${minuteString}min"
+                    else "${hourString}h${minuteString}")
+            DetailRow(
+                label = stringResource(R.string.hike_detail_screen_label_difficulty),
+                value = stringResource(hikeRoute.difficulty.nameResourceId),
+                valueColor =
+                    Color(
+                        ContextCompat.getColor(
+                            LocalContext.current, hikeRoute.difficulty.colorResourceId)),
+            )
+
+            BigButton(
+                buttonType = ButtonType.PRIMARY,
+                label = "Stop the run",
+                onClick = onStopTheRun,
+                modifier = Modifier.padding(top = 16.dp),
+                fillColor = Color(0xFFE83B3D))
+          }
+        }
+      }) {}
 }

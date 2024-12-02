@@ -13,10 +13,10 @@ import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.HikeRoutesRepository
 import ch.hikemate.app.model.route.LatLong
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
-import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_RUN_HIKE_SCREEN_BACK_BUTTON
-import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_RUN_HIKE_SCREEN_BOTTOM_SHEET
-import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_RUN_HIKE_SCREEN_MAP
-import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_RUN_HIKE_SCREEN_ZOOM_BUTTONS
+import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_BACK_BUTTON
+import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_BOTTOM_SHEET
+import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_MAP
+import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_ZOOM_BUTTONS
 import ch.hikemate.app.ui.navigation.NavigationActions
 import com.google.firebase.Timestamp
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -87,7 +87,7 @@ class RunHikeScreenTest {
           navigationActions = mockNavigationActions,
       )
     }
-    composeTestRule.onNodeWithTag(TEST_TAG_RUN_HIKE_SCREEN_MAP).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(TEST_TAG_MAP).assertIsDisplayed()
   }
 
   @Test
@@ -99,7 +99,7 @@ class RunHikeScreenTest {
           navigationActions = mockNavigationActions,
       )
     }
-    composeTestRule.onNodeWithTag(TEST_TAG_RUN_HIKE_SCREEN_BACK_BUTTON).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(TEST_TAG_BACK_BUTTON).assertIsDisplayed()
   }
 
   @Test
@@ -111,7 +111,7 @@ class RunHikeScreenTest {
           navigationActions = mockNavigationActions,
       )
     }
-    composeTestRule.onNodeWithTag(TEST_TAG_RUN_HIKE_SCREEN_ZOOM_BUTTONS).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(TEST_TAG_ZOOM_BUTTONS).assertIsDisplayed()
   }
 
   @Test
@@ -123,6 +123,6 @@ class RunHikeScreenTest {
           navigationActions = mockNavigationActions,
       )
     }
-    composeTestRule.onNodeWithTag(TEST_TAG_RUN_HIKE_SCREEN_BOTTOM_SHEET).assertExists()
+    composeTestRule.onNodeWithTag(TEST_TAG_BOTTOM_SHEET).assertExists()
   }
 }
