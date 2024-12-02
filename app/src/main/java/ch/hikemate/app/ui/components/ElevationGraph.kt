@@ -103,6 +103,7 @@ fun ElevationGraph(
             Pair(index * widthStep, (height - (elevation - minElevation) / elevationStep).toFloat())
           }
           .map {
+            // We clamp the points to ensure they are not outside the canvas
             Pair(
                 it.first,
                 MathUtils.clamp(

@@ -1,4 +1,4 @@
-package ch.hikemate.app.ui.map
+package ch.hikemate.app.ui.components
 
 import android.content.Context
 import androidx.compose.ui.graphics.Color
@@ -7,8 +7,6 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.hikemate.app.R
-import ch.hikemate.app.ui.components.ElevationGraph
-import ch.hikemate.app.ui.components.ElevationGraphStyleProperties
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
