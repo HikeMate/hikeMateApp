@@ -17,7 +17,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -40,10 +42,14 @@ import ch.hikemate.app.ui.components.BigButton
 import ch.hikemate.app.ui.components.ButtonType
 import ch.hikemate.app.ui.components.ElevationGraph
 import ch.hikemate.app.ui.components.ElevationGraphStyleProperties
-import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_HIKE_NAME
 import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_BACK_BUTTON
 import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_BOTTOM_SHEET
+import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_ELEVATION_GRAPH
+import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_HIKE_NAME
 import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_MAP
+import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_PROGRESS_TEXT
+import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_STOP_HIKE_BUTTON
+import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_TOTAL_DISTANCE_TEXT
 import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_ZOOM_BUTTONS
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Screen
@@ -61,6 +67,11 @@ object RunHikeScreen {
   const val TEST_TAG_BACK_BUTTON = "runHikeScreenBackButton"
   const val TEST_TAG_ZOOM_BUTTONS = "runHikeScreenZoomInButton"
   const val TEST_TAG_BOTTOM_SHEET = "runHikeScreenBottomSheet"
+  const val TEST_TAG_HIKE_NAME = "runHikeScreenHikeName"
+  const val TEST_TAG_ELEVATION_GRAPH = "runHikeScreenElevationGraph"
+  const val TEST_TAG_STOP_HIKE_BUTTON = "runHikeScreenStopHikeButton"
+  const val TEST_TAG_TOTAL_DISTANCE_TEXT = "runHikeScreenTotalDistanceText"
+  const val TEST_TAG_PROGRESS_TEXT = "runHikeScreenProgressText"
 }
 
 @Composable
@@ -128,6 +139,10 @@ fun RunHikeScreen(
   val hikeLineColor = route.getColor()
   MapUtils.showHikeOnMap(mapView = mapView, hike = route, color = hikeLineColor, onLineClick = {})
 
+  // avoids the app crashing when spamming the back button
+  var wantToNavigateBack by remember { mutableStateOf(false) }
+  LaunchedEffect(wantToNavigateBack) { if (wantToNavigateBack) navigationActions.goBack() }
+
   val errorMessageIdState = profileViewModel.errorMessageId.collectAsState()
   val profileState = profileViewModel.profile.collectAsState()
 
@@ -151,7 +166,7 @@ fun RunHikeScreen(
           modifier =
               Modifier.padding(top = 40.dp, start = 16.dp, end = 16.dp)
                   .testTag(TEST_TAG_BACK_BUTTON),
-          onClick = { navigationActions.goBack() })
+          onClick = { wantToNavigateBack = true })
       // Zoom buttons at the bottom right of the screen
       ZoomMapButton(
           onZoomIn = { mapView.controller.zoomIn() },
@@ -164,7 +179,7 @@ fun RunHikeScreen(
       RunHikeBottomSheet(
           DetailedHikeRoute.create(route, ElevationServiceRepository(OkHttpClient())),
           elevationData,
-          {})
+          { wantToNavigateBack = true })
     }
   }
 }
@@ -199,7 +214,7 @@ fun RunHikeBottomSheet(
                 elevations = elevationData,
                 styleProperties =
                     ElevationGraphStyleProperties(strokeColor = hikeColor, fillColor = hikeColor),
-                modifier = Modifier.fillMaxWidth().padding(16.dp))
+                modifier = Modifier.fillMaxWidth().padding(16.dp).testTag(TEST_TAG_ELEVATION_GRAPH))
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween) {
@@ -219,14 +234,14 @@ fun RunHikeBottomSheet(
                       color = hikeColor,
                       fontWeight = FontWeight.Bold,
                       textAlign = TextAlign.Right,
-                      modifier = Modifier.padding(top = 8.dp),
+                      modifier = Modifier.padding(top = 8.dp).testTag(TEST_TAG_PROGRESS_TEXT),
                   )
                   Text(
                       text = "${totalDistanceString}km",
                       style = MaterialTheme.typography.bodyLarge,
                       fontWeight = FontWeight.Bold,
                       textAlign = TextAlign.Right,
-                      modifier = Modifier.padding(top = 8.dp),
+                      modifier = Modifier.padding(top = 8.dp).testTag(TEST_TAG_TOTAL_DISTANCE_TEXT),
                   )
                 }
 
@@ -237,6 +252,7 @@ fun RunHikeBottomSheet(
                 String.format(
                     Locale.getDefault(), "%02d", (hikeRoute.estimatedTime % 60).roundToInt())
 
+            DetailRow(label = "Current elevation", value = "50m")
             DetailRow(
                 label = stringResource(R.string.hike_detail_screen_label_elevation_gain),
                 value = "${elevationGainString}m")
@@ -258,7 +274,7 @@ fun RunHikeBottomSheet(
                 buttonType = ButtonType.PRIMARY,
                 label = "Stop the run",
                 onClick = onStopTheRun,
-                modifier = Modifier.padding(top = 16.dp),
+                modifier = Modifier.padding(top = 16.dp).testTag(TEST_TAG_STOP_HIKE_BUTTON),
                 fillColor = Color(0xFFE83B3D))
           }
         }

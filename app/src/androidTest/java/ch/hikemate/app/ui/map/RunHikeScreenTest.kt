@@ -1,7 +1,11 @@
 package ch.hikemate.app.ui.map
 
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import ch.hikemate.app.model.elevation.ElevationService
 import ch.hikemate.app.model.profile.HikingLevel
@@ -9,13 +13,19 @@ import ch.hikemate.app.model.profile.Profile
 import ch.hikemate.app.model.profile.ProfileRepository
 import ch.hikemate.app.model.profile.ProfileViewModel
 import ch.hikemate.app.model.route.Bounds
+import ch.hikemate.app.model.route.DetailedHikeRoute
+import ch.hikemate.app.model.route.HikeDifficulty
 import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.HikeRoutesRepository
 import ch.hikemate.app.model.route.LatLong
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
+import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DETAIL_ROW_TAG
 import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_BACK_BUTTON
 import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_BOTTOM_SHEET
+import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_ELEVATION_GRAPH
+import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_HIKE_NAME
 import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_MAP
+import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_TOTAL_DISTANCE_TEXT
 import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_ZOOM_BUTTONS
 import ch.hikemate.app.ui.navigation.NavigationActions
 import com.google.firebase.Timestamp
@@ -48,6 +58,14 @@ class RunHikeScreenTest {
           name = "Sample Hike",
           description =
               "A scenic trail with breathtaking views of the Matterhorn and surrounding glaciers.")
+
+  private val detailedRoute =
+      DetailedHikeRoute(
+          route = route,
+          totalDistance = 13.543077559212616,
+          elevationGain = 68.0,
+          estimatedTime = 169.3169307105514,
+          difficulty = HikeDifficulty.DIFFICULT)
 
   private val profile =
       Profile(
@@ -115,7 +133,7 @@ class RunHikeScreenTest {
   }
 
   @Test
-  fun runHikeScreen_displaysBottomSheet() {
+  fun runHikeScreen_displaysBottomSheet() = runTest {
     composeTestRule.setContent {
       RunHikeScreen(
           listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
@@ -125,4 +143,40 @@ class RunHikeScreenTest {
     }
     composeTestRule.onNodeWithTag(TEST_TAG_BOTTOM_SHEET).assertExists()
   }
+
+  @Test
+  fun runHikeScreen_displaysStaticDetails() = runTest {
+    composeTestRule.setContent {
+      RunHikeScreen(
+          listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
+          profileViewModel = profileViewModel,
+          navigationActions = mockNavigationActions,
+      )
+    }
+
+    composeTestRule.onNodeWithTag(TEST_TAG_HIKE_NAME).assertIsDisplayed()
+
+    composeTestRule.onAllNodesWithTag(TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(4)
+    composeTestRule.onAllNodesWithTag(TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(4)
+
+    composeTestRule
+        .onNodeWithTag(TEST_TAG_TOTAL_DISTANCE_TEXT)
+        .assertIsDisplayed()
+        .assert(hasText("13.54km"))
+  }
+
+  @Test
+  fun runHikeScreen_displaysElevationGraph() = runTest {
+    composeTestRule.setContent {
+      RunHikeScreen(
+          listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
+          profileViewModel = profileViewModel,
+          navigationActions = mockNavigationActions,
+      )
+    }
+
+    composeTestRule.onNodeWithTag(TEST_TAG_ELEVATION_GRAPH).assertIsDisplayed()
+  }
+
+  @Test fun runHikeScreen_displaysStopHikeButton() = runTest {}
 }
