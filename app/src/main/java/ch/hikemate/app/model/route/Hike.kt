@@ -68,24 +68,38 @@ data class Hike(
   }
 
   /**
+   * Indicates whether the hike has all of its data obtained.
+   *
+   * See [DeferredData] for more information about what it means for the data to be obtained.
+   *
+   * If this returns, true, you can safely call [withDetailsOrThrow] to get a [DetailedHike]
+   * instance
+   *
+   * @return True if all data were obtained for the hike, false otherwise.
+   */
+  fun isFullyLoaded(): Boolean =
+      description.obtained() &&
+          bounds.obtained() &&
+          waypoints.obtained() &&
+          elevation.obtained() &&
+          distance.obtained() &&
+          estimatedTime.obtained() &&
+          elevationGain.obtained() &&
+          difficulty.obtained()
+
+  /**
    * If all attributes of the hike are computed, casts everything to their respective data type and
    * returns a [DetailedHike] with the values to work with them directly without needing to perform
    * null checks.
+   *
+   * To make sure all details are loaded before calling this method, use [isFullyLoaded].
    *
    * If one or more attribute is missing, throws an [IllegalStateException].
    *
    * @throws IllegalStateException If one or more attribute of the hike has not been computed yet.
    */
   fun withDetailsOrThrow(): DetailedHike {
-    check(
-        description.obtained() &&
-            bounds.obtained() &&
-            waypoints.obtained() &&
-            elevation.obtained() &&
-            distance.obtained() &&
-            estimatedTime.obtained() &&
-            elevationGain.obtained() &&
-            difficulty.obtained())
+    check(isFullyLoaded())
     return DetailedHike(
         id,
         getColor(),

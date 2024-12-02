@@ -94,6 +94,35 @@ class HikeTest {
   }
 
   @Test
+  fun isFullyLoadedWorksAsExpected() {
+    val description = "Hike description"
+    val bounds = Bounds(0.0, 0.0, 0.0, 0.0)
+    val waypoints = emptyList<LatLong>()
+    val elevation = emptyList<Double>()
+    val distance = 1.0
+    val estimatedTime = 2.0
+    val elevationGain = 3.0
+    val difficulty = HikeDifficulty.MODERATE
+
+    val incomplete1 = createHike()
+    val incomplete2 = createHike(waypoints = waypoints, distance = distance)
+    val complete =
+        createHike(
+            description = description,
+            bounds = bounds,
+            waypoints = waypoints,
+            elevation = elevation,
+            distance = distance,
+            estimatedTime = estimatedTime,
+            elevationGain = elevationGain,
+            difficulty = difficulty)
+
+    assertFalse(incomplete1.isFullyLoaded())
+    assertFalse(incomplete2.isFullyLoaded())
+    assertTrue(complete.isFullyLoaded())
+  }
+
+  @Test
   fun withDetailsOrThrowWorksAsExpected() {
     val description = "Description"
     val bounds = Bounds(0.0, 0.0, 0.0, 0.0)
