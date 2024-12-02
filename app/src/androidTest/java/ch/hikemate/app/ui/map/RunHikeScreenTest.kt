@@ -14,8 +14,6 @@ import ch.hikemate.app.model.profile.Profile
 import ch.hikemate.app.model.profile.ProfileRepository
 import ch.hikemate.app.model.profile.ProfileViewModel
 import ch.hikemate.app.model.route.Bounds
-import ch.hikemate.app.model.route.DetailedHikeRoute
-import ch.hikemate.app.model.route.HikeDifficulty
 import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.HikeRoutesRepository
 import ch.hikemate.app.model.route.LatLong
@@ -63,14 +61,6 @@ class RunHikeScreenTest {
           name = "Sample Hike",
           description =
               "A scenic trail with breathtaking views of the Matterhorn and surrounding glaciers.")
-
-  private val detailedRoute =
-      DetailedHikeRoute(
-          route = route,
-          totalDistance = 13.543077559212616,
-          elevationGain = 68.0,
-          estimatedTime = 169.3169307105514,
-          difficulty = HikeDifficulty.DIFFICULT)
 
   private val profile =
       Profile(
