@@ -50,7 +50,12 @@ data class Hike(
   /** Helper to convert this [Hike] to a [SavedHike] object. */
   fun toSavedHike() = SavedHike(id, name ?: "", plannedDate)
 
-  /** Get the color of the route from its id. The color should be the same for the same route id. */
+  /**
+   * Get the color of the route from its id. The color should be the same for the same route id.
+   *
+   * @return The color as an integer. Use [androidx.compose.ui.graphics.Color] to convert it to an
+   *   actual color.
+   */
   fun getColor(): Int {
     return hikeColors[abs(id.hashCode()) % hikeColors.size]
   }
