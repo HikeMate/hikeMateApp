@@ -190,7 +190,7 @@ class SavedHikesScreenTest : TestCase() {
             .assertIsNotDisplayed()
         composeTestRule
             .onAllNodesWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_HIKE_CARD)
-            .assertCountEquals(2)
+            .assertCountEquals(3)
       }
 
   @Test
@@ -210,5 +210,38 @@ class SavedHikesScreenTest : TestCase() {
             .performClick()
 
         verify(savedHikesRepository, times(2)).loadSavedHikes()
+      }
+
+  @Test
+  fun savedHikeThatIsPlannedIsStillInSavedHikesScreen() =
+      runTest(timeout = 5.seconds) {
+        val savedHikes =
+            listOf(
+                SavedHike(id = "1", name = "Hike 1", date = null),
+                SavedHike(id = "2", name = "Hike 2", date = null))
+        `when`(savedHikesRepository.loadSavedHikes()).thenReturn(savedHikes)
+
+        composeTestRule.setContent { SavedHikesScreen(savedHikesViewModel, navigationActions) }
+
+        // Select the saved hikes tab
+        composeTestRule
+            .onNodeWithTag(
+                SavedHikesScreen.TEST_TAG_SAVED_HIKES_TABS_MENU_ITEM_PREFIX +
+                    SavedHikesSection.Saved.name)
+            .performClick()
+
+        val savedHikes2 =
+            listOf(
+                SavedHike(id = "1", name = "Hike 1", date = Timestamp.now()),
+                SavedHike(id = "2", name = "Hike 2", date = null))
+
+        `when`(savedHikesRepository.loadSavedHikes()).thenReturn(savedHikes2)
+        // Verify that the hike is still displayed in the saved hikes screen
+        composeTestRule
+            .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_SAVED_TITLE)
+            .assertIsDisplayed()
+        composeTestRule
+            .onAllNodesWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_HIKE_CARD)
+            .assertCountEquals(2)
       }
 }
