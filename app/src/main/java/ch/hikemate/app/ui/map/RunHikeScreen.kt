@@ -272,7 +272,7 @@ fun RunHikeBottomSheet(
 
             BigButton(
                 buttonType = ButtonType.PRIMARY,
-                label = "Stop the run",
+                label = stringResource(R.string.run_hike_screen_stop_run_button_label),
                 onClick = onStopTheRun,
                 modifier = Modifier.padding(top = 16.dp).testTag(TEST_TAG_STOP_HIKE_BUTTON),
                 fillColor = Color(0xFFE83B3D))
