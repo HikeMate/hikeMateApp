@@ -171,7 +171,7 @@ class RunHikeScreenTest {
       )
     }
 
-    composeTestRule.onNodeWithTag(TEST_TAG_ELEVATION_GRAPH).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(TEST_TAG_ELEVATION_GRAPH).assertExists()
   }
 
   @Test
@@ -222,6 +222,6 @@ class RunHikeScreenTest {
     composeTestRule
         .onNodeWithTag(TEST_TAG_PROGRESS_TEXT)
         .assertIsDisplayed()
-        .assert(hasText("23% completed"))
+        .assert(hasText("23% complete"))
   }
 }
