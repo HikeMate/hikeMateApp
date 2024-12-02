@@ -34,8 +34,10 @@ import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -121,6 +123,18 @@ fun HikeDetailScreen(
 ) {
 
   val context = LocalContext.current
+  var mapView: MapView? by remember { mutableStateOf(null) }
+
+  LaunchedEffect(listOfHikeRoutesViewModel.selectedHikeRoute.collectAsState().value) {
+    if (listOfHikeRoutesViewModel.selectedHikeRoute.value == null) {
+      navigationActions.goBack()
+      mapView?.let { mapView ->
+        listOfHikeRoutesViewModel.setMapState(
+            center = GeoPoint(mapView.mapCenter.latitude, mapView.mapCenter.longitude),
+            zoom = mapView.zoomLevelDouble)
+      }
+    }
+  }
 
   if (listOfHikeRoutesViewModel.selectedHikeRoute.collectAsState().value == null) {
     Log.e("HikeDetailScreen", "No selected hike route")
@@ -145,7 +159,7 @@ fun HikeDetailScreen(
   }
 
   // Avoid re-creating the MapView on every recomposition
-  val mapView = remember {
+  mapView = remember {
     MapView(context).apply {
       // Set map's initial state
       controller.setZoom(routeZoomLevel)
@@ -165,29 +179,33 @@ fun HikeDetailScreen(
     }
   }
 
-  // When the map is ready, it will have computed its bounding box
-  mapView.addOnFirstLayoutListener { _, _, _, _, _ ->
-    // Limit the vertical scrollable area to avoid the user scrolling too far from the hike
-    mapView.setScrollableAreaLimitLatitude(
-        min(MapScreen.MAP_MAX_LATITUDE, mapView.boundingBox.latNorth),
-        max(MapScreen.MAP_MIN_LATITUDE, mapView.boundingBox.latSouth),
-        HikeDetailScreen.MAP_BOUNDS_MARGIN)
-    if (route.bounds.maxLon < HikeDetailScreen.MAP_MAX_LONGITUDE ||
-        route.bounds.minLon > HikeDetailScreen.MAP_MIN_LONGITUDE) {
-      mapView.setScrollableAreaLimitLongitude(
-          max(HikeDetailScreen.MAP_MIN_LONGITUDE, mapView.boundingBox.lonWest),
-          min(HikeDetailScreen.MAP_MAX_LONGITUDE, mapView.boundingBox.lonEast),
-          HikeDetailScreen.MAP_BOUNDS_MARGIN)
-    }
+  if (mapView == null) {
+    Log.e("HikeDetailScreen", "MapView is null")
+    return
   }
 
   LaunchedEffect(listOfHikeRoutesViewModel.selectedHikeRoute.collectAsState().value) {
     if (listOfHikeRoutesViewModel.selectedHikeRoute.value == null) {
-      navigationActions.goBack()
       listOfHikeRoutesViewModel.setMapState(
-          center = GeoPoint(mapView.mapCenter.latitude, mapView.mapCenter.longitude),
-          zoom = mapView.zoomLevelDouble,
-      )
+          center =
+              GeoPoint(mapView?.mapCenter?.latitude ?: 0.0, mapView?.mapCenter?.longitude ?: 0.0),
+          zoom = mapView?.zoomLevelDouble ?: 0.0)
+    }
+  }
+
+  // When the map is ready, it will have computed its bounding box
+  mapView?.addOnFirstLayoutListener { _, _, _, _, _ ->
+    // Limit the vertical scrollable area to avoid the user scrolling too far from the hike
+    mapView?.setScrollableAreaLimitLatitude(
+        min(MapScreen.MAP_MAX_LATITUDE, mapView?.boundingBox?.latNorth ?: 0.0),
+        max(MapScreen.MAP_MIN_LATITUDE, mapView?.boundingBox?.latSouth ?: 0.0),
+        HikeDetailScreen.MAP_BOUNDS_MARGIN)
+    if (route.bounds.maxLon < HikeDetailScreen.MAP_MAX_LONGITUDE ||
+        route.bounds.minLon > HikeDetailScreen.MAP_MIN_LONGITUDE) {
+      mapView?.setScrollableAreaLimitLongitude(
+          max(HikeDetailScreen.MAP_MIN_LONGITUDE, mapView?.boundingBox?.lonWest ?: 0.0),
+          min(HikeDetailScreen.MAP_MAX_LONGITUDE, mapView?.boundingBox?.lonEast ?: 0.0),
+          HikeDetailScreen.MAP_BOUNDS_MARGIN)
     }
   }
 
@@ -217,7 +235,7 @@ fun HikeDetailScreen(
     Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {
       // Map
       AndroidView(
-          factory = { mapView },
+          factory = { mapView!! },
           modifier =
               Modifier.fillMaxWidth()
                   .padding(bottom = 300.dp) // Reserve space for the scaffold at the bottom
@@ -229,8 +247,8 @@ fun HikeDetailScreen(
           onClick = { listOfHikeRoutesViewModel.clearSelectedRoute() })
       // Zoom buttons at the bottom right of the screen
       ZoomMapButton(
-          onZoomIn = { mapView.controller.zoomIn() },
-          onZoomOut = { mapView.controller.zoomOut() },
+          onZoomIn = { mapView?.controller?.zoomIn() },
+          onZoomOut = { mapView?.controller?.zoomOut() },
           modifier =
               Modifier.align(Alignment.BottomEnd)
                   .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))

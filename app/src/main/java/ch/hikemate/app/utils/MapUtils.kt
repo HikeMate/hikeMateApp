@@ -29,11 +29,15 @@ object MapUtils {
    * @param color The color of the hike.
    */
   fun showHikeOnMap(
-      mapView: MapView,
+      mapView: MapView?,
       hike: HikeRoute,
       color: Int,
       onLineClick: () -> Unit,
   ) {
+    if (mapView == null) {
+      Log.e(LOG_TAG, "Map view is null, cannot show hike")
+      return
+    }
     val line = Polyline()
 
     line.setPoints(hike.ways.map { GeoPoint(it.lat, it.lon) })
