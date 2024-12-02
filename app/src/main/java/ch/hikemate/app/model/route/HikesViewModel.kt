@@ -566,6 +566,8 @@ class HikesViewModel(
    * another function, please set [_loading] to true before calling the function and to false once
    * the call has ended.
    *
+   * @param forceOverwriteHikesList If true, [_savedHikesMap] will be overwritten to contain all and
+   *   only saved hikes. If false, [_savedHikesMap] will be updated according to [_loadedHikesType].
    * @return True if the operation is successful, false otherwise.
    */
   private suspend fun refreshSavedHikesCacheAsync(forceOverwriteHikesList: Boolean): Boolean =
