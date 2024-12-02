@@ -7,6 +7,7 @@ import android.util.Log
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.result.ActivityResult
 import androidx.lifecycle.ViewModel
+import ch.hikemate.app.R
 import ch.hikemate.app.model.profile.ProfileRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -14,6 +15,7 @@ import com.google.firebase.auth.userProfileChangeRequest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 class AuthViewModel(
     private val repository: AuthRepository,
@@ -29,6 +31,20 @@ class AuthViewModel(
   // it.
   val currentUser: StateFlow<FirebaseUser?>
     get() = _currentUser
+
+  private val _loading = MutableStateFlow(false)
+  /**
+   * If an operation is in progress, the loading state will be set to true. This can be used to
+   * display a loading animation.
+   */
+  val loading: StateFlow<Boolean> = _loading.asStateFlow()
+
+  private val _errorMessageId = MutableStateFlow<Int?>(null)
+  /**
+   * If an error occurs while performing an operation related to authentication, the resource ID of
+   * an appropriate error message will be set in this state flow.
+   */
+  val errorMessageId: StateFlow<Int?> = _errorMessageId.asStateFlow()
 
   /** Checks if the user is currently logged in. */
   fun isUserLoggedIn(): Boolean {
@@ -47,18 +63,26 @@ class AuthViewModel(
       context: Context,
       startAddAccountIntentLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>?,
   ) {
+    _loading.value = true
 
     repository.signInWithGoogle(
         onSuccess = { user: FirebaseUser? ->
           profileRepository.createProfile(
-              // TODO handle errors
               user,
-              onSuccess = { _currentUser.value = user },
-              onFailure = {},
+              onSuccess = {
+                _currentUser.value = user
+                _loading.value = true
+              },
+              onFailure = {
+                _loading.value = true
+                _errorMessageId.value = R.string.an_error_occurred_while_creating_the_profile
+              },
               context = context)
         },
-        // TODO handle errors
-        onErrorAction = {},
+        onErrorAction = {
+          _loading.value = true
+          _errorMessageId.value = it
+        },
         context = context,
         coroutineScope = coroutineScope,
         startAddAccountIntentLauncher = startAddAccountIntentLauncher,
@@ -76,11 +100,11 @@ class AuthViewModel(
       email: String,
       password: String,
       onSuccess: () -> Unit,
-      onErrorAction: (Exception) -> Unit,
+      onErrorAction: (Int) -> Unit,
       context: Context
   ) {
     if (email.isEmpty() || password.isEmpty()) {
-      onErrorAction(Exception("Email and password must not be empty"))
+      onErrorAction(R.string.error_email_and_password_must_not_be_empty)
       return
     }
 
@@ -102,13 +126,12 @@ class AuthViewModel(
                       },
                       onFailure = {
                         Log.e("AuthViewModel", "Error creating user profile", it)
-                        onErrorAction(it)
+                        onErrorAction(R.string.an_error_occurred_while_creating_the_profile)
                       },
                       context = context)
                 } else {
-                  // TODO handle errors in a unanimous way
                   Log.e("AuthViewModel", "Error updating user profile")
-                  onErrorAction(Exception("Error updating user profile"))
+                  onErrorAction(R.string.an_error_occurred_while_updating_the_profile)
                 }
               }
         },
@@ -128,10 +151,10 @@ class AuthViewModel(
       email: String,
       password: String,
       onSuccess: () -> Unit,
-      onErrorAction: (Exception) -> Unit
+      onErrorAction: (Int) -> Unit
   ) {
     if (email.isEmpty() || password.isEmpty()) {
-      onErrorAction(Exception("Email and password must not be empty"))
+      onErrorAction(R.string.error_email_and_password_must_not_be_empty)
       return
     }
 
@@ -167,7 +190,7 @@ class AuthViewModel(
       password: String,
       activity: Activity,
       onSuccess: () -> Unit,
-      onErrorAction: (Exception) -> Unit
+      onErrorAction: (Int) -> Unit
   ) {
     repository.deleteAccount(
         password = password,

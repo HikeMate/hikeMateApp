@@ -25,7 +25,7 @@ interface AuthRepository {
    */
   fun signInWithGoogle(
       onSuccess: (FirebaseUser?) -> Unit,
-      onErrorAction: (Exception) -> Unit,
+      onErrorAction: (Int) -> Unit,
       context: Context,
       coroutineScope: CoroutineScope,
       credentialManager: CredentialManager = CredentialManager.create(context),
@@ -44,7 +44,7 @@ interface AuthRepository {
    */
   fun createAccountWithEmailAndPassword(
       onSuccess: (FirebaseUser?) -> Unit,
-      onErrorAction: (Exception) -> Unit,
+      onErrorAction: (Int) -> Unit,
       email: String,
       password: String,
   )
@@ -63,7 +63,7 @@ interface AuthRepository {
       email: String,
       password: String,
       onSuccess: (FirebaseUser?) -> Unit,
-      onErrorAction: (Exception) -> Unit,
+      onErrorAction: (Int) -> Unit,
   )
 
   /**
@@ -88,7 +88,7 @@ interface AuthRepository {
       password: String,
       activity: Activity,
       onSuccess: () -> Unit,
-      onErrorAction: (Exception) -> Unit
+      onErrorAction: (Int) -> Unit
   )
 
   /**

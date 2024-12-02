@@ -45,3 +45,31 @@ fun <T> AsyncStateHandler(
     }
   }
 }
+
+@Composable
+fun AsyncStateHandler(
+    errorMessageIdState: State<Int?>,
+    actionContentDescriptionStringId: Int,
+    actionOnErrorAction: () -> Unit,
+    loadingState: State<Boolean>,
+    content: @Composable () -> Unit
+) {
+  when {
+    errorMessageIdState.value != null -> {
+      Log.e("Error handler", "Error occurred: ${stringResource(id = errorMessageIdState.value!!)}")
+      // Display an error message if an error occurred
+      CenteredErrorAction(
+          errorMessageId = errorMessageIdState.value!!,
+          actionIcon = Icons.Outlined.Home,
+          actionContentDescriptionStringId = actionContentDescriptionStringId,
+          onAction = actionOnErrorAction)
+    }
+    loadingState.value -> {
+      CenteredLoadingAnimation()
+    }
+    else -> {
+      // Display the content if no error occurred
+      content()
+    }
+  }
+}

@@ -36,8 +36,10 @@ class SignInScreenTest : TestCase() {
     mockNavigationActions = mockk(relaxed = true)
     mockAuthViewModel = mockk(relaxed = true)
 
-    // Replace the currentUser StateFlow with a mock, which is iniially null, so not signed in
+    // Replace the currentUser StateFlow with a mock, which is initially null, so not signed in
     every { mockAuthViewModel.currentUser } returns mockUserStateFlow
+    every { mockAuthViewModel.errorMessageId.value } returns null
+    every { mockAuthViewModel.loading.value } returns false
   }
 
   // Release Intents after each test

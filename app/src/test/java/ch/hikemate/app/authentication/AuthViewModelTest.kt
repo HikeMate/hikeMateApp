@@ -137,8 +137,8 @@ class AuthViewModelTest {
 
     // Simulate an unsuccessful Google sign-in by invoking the onError callback
     doAnswer { invocation ->
-          val onErrorAction = invocation.getArgument<(Exception) -> Unit>(1)
-          onErrorAction(Exception("Error"))
+          val onErrorAction = invocation.getArgument<(Int) -> Unit>(1)
+          onErrorAction(1)
           null
         }
         .`when`(mockRepository)
@@ -192,8 +192,8 @@ class AuthViewModelTest {
 
         // Simulate an unsuccessful email and password sign-in by invoking the onError callback
         doAnswer { invocation ->
-              val onErrorAction = invocation.getArgument<(Exception) -> Unit>(3)
-              onErrorAction(Exception("Error"))
+              val onErrorAction = invocation.getArgument<(Int) -> Unit>(3)
+              onErrorAction(1)
               null
             }
             .`when`(mockRepository)
@@ -307,8 +307,8 @@ class AuthViewModelTest {
         // Simulate an unsuccessful email and password account creation by invoking the onError
         // callback
         doAnswer { invocation ->
-              val onErrorAction = invocation.getArgument<(Exception) -> Unit>(1)
-              onErrorAction(Exception("Error"))
+              val onErrorAction = invocation.getArgument<(Int) -> Unit>(1)
+              onErrorAction(1)
               null
             }
             .`when`(mockRepository)
@@ -400,12 +400,12 @@ class AuthViewModelTest {
     runTest {
       setupSignedInUser()
 
-      val mockOnError: ((Exception) -> Unit) = mock()
+      val mockOnError: ((Int) -> Unit) = mock()
 
       // Simulate an unsuccessful account deletion by invoking the onError callback
       doAnswer { arguments ->
-            val onError = arguments.getArgument<(Exception) -> Unit>(3)
-            onError(Exception("Error"))
+            val onError = arguments.getArgument<(Int) -> Unit>(3)
+            onError(1)
             null
           }
           .`when`(mockRepository)

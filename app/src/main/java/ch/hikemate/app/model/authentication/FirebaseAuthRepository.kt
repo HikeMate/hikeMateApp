@@ -31,7 +31,7 @@ class FirebaseAuthRepository : AuthRepository {
 
   override fun signInWithGoogle(
       onSuccess: (FirebaseUser?) -> Unit,
-      onErrorAction: (Exception) -> Unit,
+      onErrorAction: (Int) -> Unit,
       context: Context,
       coroutineScope: CoroutineScope,
       credentialManager: CredentialManager,
@@ -79,7 +79,7 @@ class FirebaseAuthRepository : AuthRepository {
             onSuccess(auth.currentUser)
           } else {
             Log.d("FirebaseAuthRepository", "signInWithCredential:failure")
-            onErrorAction(task.exception ?: Exception())
+            onErrorAction(R.string.error_occurred_while_signing_in_with_google)
           }
         }
       } catch (e: NoCredentialException) {
@@ -88,7 +88,7 @@ class FirebaseAuthRepository : AuthRepository {
         startAddAccountIntentLauncher?.launch(getAddGoogleAccountIntent())
       } catch (e: Exception) {
         Log.d("SignInButton", "Login error: ${e.message}")
-        onErrorAction(e)
+        onErrorAction(R.string.error_occurred_while_signing_in_with_google)
       }
     }
   }
@@ -101,7 +101,7 @@ class FirebaseAuthRepository : AuthRepository {
 
   override fun createAccountWithEmailAndPassword(
       onSuccess: (FirebaseUser?) -> Unit,
-      onErrorAction: (Exception) -> Unit,
+      onErrorAction: (Int) -> Unit,
       email: String,
       password: String
   ) {
@@ -112,7 +112,7 @@ class FirebaseAuthRepository : AuthRepository {
         onSuccess(auth.currentUser)
       } else {
         Log.e("FirebaseAuthRepository", "createAccountWithEmailAndPassword:failure", task.exception)
-        onErrorAction(task.exception ?: Exception())
+        onErrorAction(R.string.error_occurred_while_creating_account)
       }
     }
   }
@@ -121,7 +121,7 @@ class FirebaseAuthRepository : AuthRepository {
       email: String,
       password: String,
       onSuccess: (FirebaseUser?) -> Unit,
-      onErrorAction: (Exception) -> Unit,
+      onErrorAction: (Int) -> Unit,
   ) {
     val auth = FirebaseAuth.getInstance()
     auth.signInWithEmailAndPassword(email, password).addOnCompleteListener { task ->
@@ -130,7 +130,7 @@ class FirebaseAuthRepository : AuthRepository {
         onSuccess(auth.currentUser)
       } else {
         Log.e("FirebaseAuthRepository", "signInWithEmailAndPassword:failure", task.exception)
-        onErrorAction(task.exception ?: Exception())
+        onErrorAction(R.string.error_occurred_while_signing_in_with_email)
       }
     }
   }
@@ -144,11 +144,11 @@ class FirebaseAuthRepository : AuthRepository {
       password: String,
       activity: Activity,
       onSuccess: () -> Unit,
-      onErrorAction: (Exception) -> Unit
+      onErrorAction: (Int) -> Unit
   ) {
     val user = FirebaseAuth.getInstance().currentUser
-    if (user != null) {
-      val email = user.email ?: throw Exception("User email is null")
+    if (user != null && user.email != null) {
+      val email = user.email
       Log.d("DeleteAccount", "User email: '$email', password: '$password'")
 
       // Re-authenticate the user
@@ -182,17 +182,17 @@ class FirebaseAuthRepository : AuthRepository {
                     Log.d("DeleteAccount", "User account deleted")
                     onSuccess()
                   } else {
-                    onErrorAction(task.exception ?: Exception())
+                    onErrorAction(R.string.error_deleting_the_user)
                   }
                 }
               } else {
-                onErrorAction(deleteDataTask.exception ?: Exception("Unknown error"))
+                onErrorAction(R.string.error_deleting_user_profile_and_saved_hikes)
               }
             }
           },
-          { onErrorAction(Exception("Error re-authenticating user")) })
+          { onErrorAction(R.string.error_re_authenticating_the_user) })
     } else {
-      onErrorAction(Exception("No user is currently signed in"))
+      onErrorAction(R.string.no_user_is_currently_signed_in)
     }
   }
 
