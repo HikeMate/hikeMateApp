@@ -323,6 +323,7 @@ fun MapScreen(
       setOnTouchListener { _, _ ->
         if (abs(zoomLevelDouble - zoomLevel) >= MapScreen.ZOOM_UPDATE_THRESHOLD)
             zoomLevel = zoomLevelDouble
+        // We do not consume the event, so the map can handle it
         false
       }
     }
