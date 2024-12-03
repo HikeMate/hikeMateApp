@@ -23,7 +23,7 @@ open class ProfileViewModel(private val repository: ProfileRepository) : ViewMod
 
   private val _errorMessageId = MutableStateFlow<Int?>(null)
   /**
-   * If an error occurs while performing an operation related to saved hikes, the resource ID of an
+   * If an error occurs while performing an operation related to profile, the resource ID of an
    * appropriate error message will be set in this state flow.
    */
   val errorMessageId: StateFlow<Int?> = _errorMessageId.asStateFlow()

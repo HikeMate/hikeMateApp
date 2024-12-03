@@ -114,7 +114,7 @@ fun DeleteAccountScreen(navigationActions: NavigationActions, authViewModel: Aut
                     password,
                     context as Activity,
                     { navigationActions.navigateTo(Route.AUTH) },
-                    { Toast.makeText(context, it.message, Toast.LENGTH_SHORT).show() })
+                    { Toast.makeText(context, context.getString(it), Toast.LENGTH_SHORT).show() })
               }
             })
       }
