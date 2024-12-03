@@ -32,6 +32,7 @@ class SignInScreenTest : TestCase() {
   private lateinit var mockAuthViewModel: AuthViewModel
   private val mockUserStateFlow = MutableStateFlow<FirebaseUser?>(null)
   private val mockLoadingStateFlow = MutableStateFlow(false)
+  private val errorMessageIdStateFlow = MutableStateFlow<Int?>(null)
 
   @Before
   fun setUp() {
@@ -43,6 +44,7 @@ class SignInScreenTest : TestCase() {
     // Replace the currentUser StateFlow with a mock, which is initially null, so not signed in
     every { mockAuthViewModel.currentUser } returns mockUserStateFlow
     every { mockAuthViewModel.loading } returns mockLoadingStateFlow
+    every { mockAuthViewModel.errorMessageId } returns errorMessageIdStateFlow
   }
 
   // Release Intents after each test
@@ -91,9 +93,7 @@ class SignInScreenTest : TestCase() {
 
   @Test
   fun errorMessageIsDisplayed() {
-    val errorMessage = R.string.error_occurred_while_signing_in_with_google
-    val errorMessageIdStateFlow = MutableStateFlow(errorMessage)
-    every { mockAuthViewModel.errorMessageId } returns errorMessageIdStateFlow
+    errorMessageIdStateFlow.value = R.string.error_occurred_while_signing_in_with_google
 
     setupSignInScreen()
 
@@ -104,9 +104,7 @@ class SignInScreenTest : TestCase() {
 
   @Test
   fun loadingIsDisplayed() {
-    val errorMessageIdStateFlow = MutableStateFlow<Int?>(null)
     val loadingStateFlow = MutableStateFlow(true)
-    every { mockAuthViewModel.errorMessageId } returns errorMessageIdStateFlow
     every { mockAuthViewModel.loading } returns loadingStateFlow
 
     setupSignInScreen()
@@ -118,9 +116,7 @@ class SignInScreenTest : TestCase() {
 
   @Test
   fun errorCanBeDismissed() {
-    val errorMessage = R.string.error_occurred_while_signing_in_with_google
-    val errorMessageIdStateFlow = MutableStateFlow(errorMessage)
-    every { mockAuthViewModel.errorMessageId } returns errorMessageIdStateFlow
+    errorMessageIdStateFlow.value = R.string.error_occurred_while_signing_in_with_google
 
     setupSignInScreen()
 
