@@ -296,7 +296,7 @@ fun MapScreen(
     profileViewModel.getProfileById(authViewModel.currentUser.value!!.uid)
   }
 
-  var zoomLevel by remember { mutableDoubleStateOf(0.0) }
+  var zoomLevel by remember { mutableDoubleStateOf(MapScreen.MAP_INITIAL_ZOOM) }
 
   // Avoid re-creating the MapView on every recomposition
   val mapView = remember {
