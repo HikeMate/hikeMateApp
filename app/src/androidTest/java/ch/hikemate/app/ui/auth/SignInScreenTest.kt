@@ -7,8 +7,11 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.espresso.intent.Intents
+import ch.hikemate.app.R
 import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.ui.components.AppIcon
+import ch.hikemate.app.ui.components.CenteredErrorAction
+import ch.hikemate.app.ui.components.CenteredLoadingAnimation
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.TopLevelDestinations
 import com.google.firebase.auth.FirebaseUser
@@ -28,6 +31,8 @@ class SignInScreenTest : TestCase() {
   private lateinit var mockNavigationActions: NavigationActions
   private lateinit var mockAuthViewModel: AuthViewModel
   private val mockUserStateFlow = MutableStateFlow<FirebaseUser?>(null)
+  private val mockLoadingStateFlow = MutableStateFlow(false)
+  private val errorMessageIdStateFlow = MutableStateFlow<Int?>(null)
 
   @Before
   fun setUp() {
@@ -36,8 +41,10 @@ class SignInScreenTest : TestCase() {
     mockNavigationActions = mockk(relaxed = true)
     mockAuthViewModel = mockk(relaxed = true)
 
-    // Replace the currentUser StateFlow with a mock, which is iniially null, so not signed in
+    // Replace the currentUser StateFlow with a mock, which is initially null, so not signed in
     every { mockAuthViewModel.currentUser } returns mockUserStateFlow
+    every { mockAuthViewModel.loading } returns mockLoadingStateFlow
+    every { mockAuthViewModel.errorMessageId } returns errorMessageIdStateFlow
   }
 
   // Release Intents after each test
@@ -82,5 +89,42 @@ class SignInScreenTest : TestCase() {
     setupSignInScreen()
 
     verify { mockNavigationActions.navigateTo(TopLevelDestinations.MAP) }
+  }
+
+  @Test
+  fun errorMessageIsDisplayed() {
+    errorMessageIdStateFlow.value = R.string.error_occurred_while_signing_in_with_google
+
+    setupSignInScreen()
+
+    composeTestRule
+        .onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_MESSAGE)
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun loadingIsDisplayed() {
+    val loadingStateFlow = MutableStateFlow(true)
+    every { mockAuthViewModel.loading } returns loadingStateFlow
+
+    setupSignInScreen()
+
+    composeTestRule
+        .onNodeWithTag(CenteredLoadingAnimation.TEST_TAG_CENTERED_LOADING_ANIMATION)
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun errorCanBeDismissed() {
+    errorMessageIdStateFlow.value = R.string.error_occurred_while_signing_in_with_google
+
+    setupSignInScreen()
+
+    composeTestRule
+        .onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_MESSAGE)
+        .assertIsDisplayed()
+    composeTestRule.onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_BUTTON).performClick()
+
+    verify { mockAuthViewModel.clearErrorMessage() }
   }
 }
