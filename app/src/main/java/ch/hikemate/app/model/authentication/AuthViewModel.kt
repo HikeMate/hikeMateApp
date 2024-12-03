@@ -46,6 +46,11 @@ class AuthViewModel(
    */
   val errorMessageId: StateFlow<Int?> = _errorMessageId.asStateFlow()
 
+  /** Clears the error message. */
+  fun clearErrorMessage() {
+    _errorMessageId.value = null
+  }
+
   /** Checks if the user is currently logged in. */
   fun isUserLoggedIn(): Boolean {
     return _currentUser.value != null
@@ -70,17 +75,17 @@ class AuthViewModel(
           profileRepository.createProfile(
               user,
               onSuccess = {
+                _loading.value = false
                 _currentUser.value = user
-                _loading.value = true
               },
               onFailure = {
-                _loading.value = true
+                _loading.value = false
                 _errorMessageId.value = R.string.an_error_occurred_while_creating_the_profile
               },
               context = context)
         },
         onErrorAction = {
-          _loading.value = true
+          _loading.value = false
           _errorMessageId.value = it
         },
         context = context,

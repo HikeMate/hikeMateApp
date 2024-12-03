@@ -2,6 +2,7 @@ package ch.hikemate.app.authentication
 
 import android.app.Activity
 import android.content.Context
+import ch.hikemate.app.R
 import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.model.authentication.FirebaseAuthRepository
 import ch.hikemate.app.model.profile.Profile
@@ -138,7 +139,7 @@ class AuthViewModelTest {
     // Simulate an unsuccessful Google sign-in by invoking the onError callback
     doAnswer { invocation ->
           val onErrorAction = invocation.getArgument<(Int) -> Unit>(1)
-          onErrorAction(1)
+          onErrorAction(R.string.error_occurred_while_signing_in_with_google)
           null
         }
         .`when`(mockRepository)
@@ -193,7 +194,7 @@ class AuthViewModelTest {
         // Simulate an unsuccessful email and password sign-in by invoking the onError callback
         doAnswer { invocation ->
               val onErrorAction = invocation.getArgument<(Int) -> Unit>(3)
-              onErrorAction(1)
+              onErrorAction(R.string.error_occurred_while_signing_in_with_google)
               null
             }
             .`when`(mockRepository)
@@ -308,7 +309,7 @@ class AuthViewModelTest {
         // callback
         doAnswer { invocation ->
               val onErrorAction = invocation.getArgument<(Int) -> Unit>(1)
-              onErrorAction(1)
+              onErrorAction(R.string.error_occurred_while_signing_in_with_google)
               null
             }
             .`when`(mockRepository)
@@ -405,7 +406,7 @@ class AuthViewModelTest {
       // Simulate an unsuccessful account deletion by invoking the onError callback
       doAnswer { arguments ->
             val onError = arguments.getArgument<(Int) -> Unit>(3)
-            onError(1)
+            onError(R.string.error_occurred_while_signing_in_with_google)
             null
           }
           .`when`(mockRepository)

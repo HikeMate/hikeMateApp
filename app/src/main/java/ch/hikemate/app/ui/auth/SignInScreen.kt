@@ -47,7 +47,6 @@ import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.ui.components.AppIcon
 import ch.hikemate.app.ui.components.AsyncStateHandler
 import ch.hikemate.app.ui.navigation.NavigationActions
-import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.navigation.TopLevelDestinations
 import ch.hikemate.app.ui.theme.kaushanTitleFontFamily
@@ -98,7 +97,7 @@ fun SignInScreen(
   AsyncStateHandler(
       errorMessageIdState = errorMessageIdState,
       actionContentDescriptionStringId = R.string.retry,
-      actionOnErrorAction = { navigationActions.navigateTo(Route.AUTH) },
+      actionOnErrorAction = { authViewModel.clearErrorMessage() },
       loadingState = loadingState,
   ) {
     Scaffold(

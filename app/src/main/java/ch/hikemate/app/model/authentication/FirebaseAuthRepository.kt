@@ -78,7 +78,7 @@ class FirebaseAuthRepository : AuthRepository {
             Log.d("FirebaseAuthRepository", "signInWithCredential:success")
             onSuccess(auth.currentUser)
           } else {
-            Log.d("FirebaseAuthRepository", "signInWithCredential:failure")
+            Log.d("FirebaseAuthRepository", "signInWithCredential:failure", task.exception)
             onErrorAction(R.string.error_occurred_while_signing_in_with_google)
           }
         }
