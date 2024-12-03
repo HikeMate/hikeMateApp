@@ -19,7 +19,7 @@ import org.mockito.kotlin.argumentCaptor
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
-class ElevationServiceRepositoryTest {
+class ElevationRepositoryRepositoryTest {
   @Mock private lateinit var client: OkHttpClient
   private lateinit var elevationServiceRepository: ElevationServiceRepository
   private val longList =

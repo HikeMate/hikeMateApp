@@ -31,7 +31,7 @@ data class ElevationResult(val latitude: Double, val longitude: Double, val elev
 /**
  * A repository for the ElevationService. This class is responsible for making the network request
  */
-class ElevationServiceRepository(private val client: OkHttpClient) : ElevationService {
+class ElevationServiceRepository(private val client: OkHttpClient) : ElevationRepository {
 
   // Cache for the elevation data, indexed by hike ID
   private val cache = mutableMapOf<String, List<Double>>()

@@ -1,6 +1,6 @@
 package ch.hikemate.app.model.route
 
-import ch.hikemate.app.model.elevation.ElevationService
+import ch.hikemate.app.model.elevation.ElevationRepository
 import ch.hikemate.app.model.route.saved.SavedHike
 import ch.hikemate.app.model.route.saved.SavedHikesRepository
 import ch.hikemate.app.utils.RouteUtils
@@ -34,7 +34,7 @@ import org.osmdroid.util.BoundingBox
 class HikesViewModelTest {
   private lateinit var savedHikesRepo: SavedHikesRepository
   private lateinit var osmHikesRepo: HikeRoutesRepository
-  private lateinit var elevationRepo: ElevationService
+  private lateinit var elevationRepo: ElevationRepository
 
   private lateinit var hikesViewModel: HikesViewModel
 
@@ -47,7 +47,7 @@ class HikesViewModelTest {
 
     savedHikesRepo = mockk<SavedHikesRepository>()
     osmHikesRepo = mockk<HikeRoutesRepository>()
-    elevationRepo = mockk<ElevationService>()
+    elevationRepo = mockk<ElevationRepository>()
 
     hikesViewModel = HikesViewModel(savedHikesRepo, osmHikesRepo, elevationRepo, dispatcher)
   }

@@ -3,7 +3,7 @@ package ch.hikemate.app.model.elevation
 import ch.hikemate.app.model.route.LatLong
 
 /** A service for getting the elevation of a list of coordinates */
-fun interface ElevationService {
+fun interface ElevationRepository {
   /**
    * Get the elevation of a list of coordinates
    *

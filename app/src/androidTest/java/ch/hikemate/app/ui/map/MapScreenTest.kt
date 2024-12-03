@@ -13,7 +13,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import ch.hikemate.app.R
 import ch.hikemate.app.model.authentication.AuthRepository
 import ch.hikemate.app.model.authentication.AuthViewModel
-import ch.hikemate.app.model.elevation.ElevationService
+import ch.hikemate.app.model.elevation.ElevationRepository
 import ch.hikemate.app.model.profile.HikingLevel
 import ch.hikemate.app.model.profile.Profile
 import ch.hikemate.app.model.profile.ProfileRepository
@@ -48,7 +48,7 @@ import org.osmdroid.util.BoundingBox
 
 class MapScreenTest : TestCase() {
   private lateinit var hikesRepository: HikeRoutesRepository
-  private lateinit var elevationService: ElevationService
+  private lateinit var elevationRepository: ElevationRepository
   private lateinit var listOfHikeRoutesViewModel: ListOfHikeRoutesViewModel
   private lateinit var navigationActions: NavigationActions
   private lateinit var authRepository: AuthRepository
@@ -94,13 +94,13 @@ class MapScreenTest : TestCase() {
 
     navigationActions = mock(NavigationActions::class.java)
     hikesRepository = mock(HikeRoutesRepository::class.java)
-    elevationService = mock(ElevationService::class.java)
+    elevationRepository = mock(ElevationRepository::class.java)
     profileRepository = mock(ProfileRepository::class.java)
     profileViewModel = ProfileViewModel(profileRepository)
     authRepository = mock(AuthRepository::class.java)
     authViewModel = AuthViewModel(authRepository, profileRepository)
     listOfHikeRoutesViewModel =
-        ListOfHikeRoutesViewModel(hikesRepository, elevationService, UnconfinedTestDispatcher())
+        ListOfHikeRoutesViewModel(hikesRepository, elevationRepository, UnconfinedTestDispatcher())
 
     `when`(profileRepository.getProfileById(eq(profile.id), any(), any())).thenAnswer {
       val onSuccess = it.getArgument<(Profile) -> Unit>(1)

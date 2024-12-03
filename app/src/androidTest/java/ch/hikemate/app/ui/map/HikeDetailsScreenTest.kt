@@ -7,7 +7,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.hikemate.app.model.authentication.AuthRepository
 import ch.hikemate.app.model.authentication.AuthViewModel
-import ch.hikemate.app.model.elevation.ElevationService
+import ch.hikemate.app.model.elevation.ElevationRepository
 import ch.hikemate.app.model.profile.HikingLevel
 import ch.hikemate.app.model.profile.Profile
 import ch.hikemate.app.model.profile.ProfileRepository
@@ -65,7 +65,7 @@ class HikeDetailScreenTest {
   private lateinit var savedHikesViewModel: SavedHikesViewModel
   private lateinit var mockSavedHikesRepository: SavedHikesRepository
   private lateinit var hikesRepository: HikeRoutesRepository
-  private lateinit var elevationService: ElevationService
+  private lateinit var elevationRepository: ElevationRepository
   private lateinit var listOfHikeRoutesViewModel: ListOfHikeRoutesViewModel
   private val route =
       HikeRoute(
@@ -101,12 +101,12 @@ class HikeDetailScreenTest {
     authRepository = mock(AuthRepository::class.java)
     authViewModel = AuthViewModel(authRepository, profileRepository)
     hikesRepository = mock(HikeRoutesRepository::class.java)
-    elevationService = mock(ElevationService::class.java)
+    elevationRepository = mock(ElevationRepository::class.java)
     mockSavedHikesRepository = mock(SavedHikesRepository::class.java)
 
     savedHikesViewModel = SavedHikesViewModel(mockSavedHikesRepository, UnconfinedTestDispatcher())
     listOfHikeRoutesViewModel =
-        ListOfHikeRoutesViewModel(hikesRepository, elevationService, UnconfinedTestDispatcher())
+        ListOfHikeRoutesViewModel(hikesRepository, elevationRepository, UnconfinedTestDispatcher())
 
     listOfHikeRoutesViewModel.selectRoute(route)
 
