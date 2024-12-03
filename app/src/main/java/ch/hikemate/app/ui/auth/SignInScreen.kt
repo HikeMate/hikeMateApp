@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.sp
 import ch.hikemate.app.R
 import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.ui.components.AppIcon
+import ch.hikemate.app.ui.components.AsyncStateHandler
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.navigation.TopLevelDestinations
@@ -83,6 +84,9 @@ fun SignInScreen(
             Log.d("MainActivity", "addAccountLauncher result: $result")
           }
 
+  val errorMessageIdState = authViewModel.errorMessageId.collectAsState()
+  val loadingState = authViewModel.loading.collectAsState()
+
   // If the user is already signed in, navigate to the map screen
   LaunchedEffect(authViewModel.currentUser.collectAsState().value) {
     if (authViewModel.isUserLoggedIn()) {
@@ -90,76 +94,83 @@ fun SignInScreen(
     }
   }
 
-  Scaffold(
-      modifier = Modifier.fillMaxSize().testTag(Screen.AUTH),
-      content = { padding ->
-        Box(
-            modifier = Modifier.fillMaxSize(),
-        ) {
-          // I created a box to make the background image take a little more space
-          // than the screen size, so that the blur effect doesn't show white edges
+  AsyncStateHandler(
+      errorMessageIdState = errorMessageIdState,
+      actionContentDescriptionStringId = R.string.retry,
+      actionOnErrorAction = { authViewModel.clearErrorMessage() },
+      loadingState = loadingState,
+  ) {
+    Scaffold(
+        modifier = Modifier.fillMaxSize().testTag(Screen.AUTH),
+        content = { padding ->
           Box(
-              modifier = Modifier.fillMaxSize().clipToBounds().scale(1.1f),
+              modifier = Modifier.fillMaxSize(),
           ) {
-            Image(
-                painter = painterResource(id = R.drawable.sign_in_background),
-                contentDescription = "Background Image",
-                modifier = Modifier.fillMaxSize().blur(10.dp),
-                contentScale = ContentScale.Crop,
-            )
-          }
-          Column(
-              modifier = Modifier.fillMaxSize().padding(padding),
-              horizontalAlignment = Alignment.CenterHorizontally,
-              verticalArrangement = Arrangement.SpaceAround,
-          ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
+            // I created a box to make the background image take a little more space
+            // than the screen size, so that the blur effect doesn't show white edges
+            Box(
+                modifier = Modifier.fillMaxSize().clipToBounds().scale(1.1f),
             ) {
-              // App Logo Image
-              AppIcon(200.dp)
-              Spacer(modifier = Modifier.height(16.dp))
-
-              // App name Text
-              Text(
-                  modifier = Modifier.testTag(SignInScreen.TEST_TAG_TITLE),
-                  text = "HikeMate",
-                  style =
-                      TextStyle(
-                          color = Color.White,
-                          fontFamily = kaushanTitleFontFamily,
-                          fontSize = 60.sp,
-                          fontWeight = FontWeight.Bold,
-                      ),
+              Image(
+                  painter = painterResource(id = R.drawable.sign_in_background),
+                  contentDescription = "Background Image",
+                  modifier = Modifier.fillMaxSize().blur(10.dp),
+                  contentScale = ContentScale.Crop,
               )
             }
-
-            // Sign in with email button
-            Column {
-              SignInButton(
-                  text = stringResource(R.string.sign_in_with_email),
-                  icon = R.drawable.app_icon,
-                  modifier = Modifier.testTag(SignInScreen.TEST_TAG_SIGN_IN_WITH_EMAIL),
+            Column(
+                modifier = Modifier.fillMaxSize().padding(padding),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.SpaceAround,
+            ) {
+              Column(
+                  horizontalAlignment = Alignment.CenterHorizontally,
               ) {
-                navigationActions.navigateTo(Screen.SIGN_IN_WITH_EMAIL)
+                // App Logo Image
+                AppIcon(200.dp)
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // App name Text
+                Text(
+                    modifier = Modifier.testTag(SignInScreen.TEST_TAG_TITLE),
+                    text = "HikeMate",
+                    style =
+                        TextStyle(
+                            color = Color.White,
+                            fontFamily = kaushanTitleFontFamily,
+                            fontSize = 60.sp,
+                            fontWeight = FontWeight.Bold,
+                        ),
+                )
               }
 
-              // Sign in with Google button
-              SignInButton(
-                  text = stringResource(R.string.sign_in_with_google),
-                  icon = R.drawable.google_logo,
-                  modifier = Modifier.testTag(SignInScreen.TEST_TAG_SIGN_IN_WITH_GOOGLE),
-              ) {
-                authViewModel.signInWithGoogle(
-                    coroutineScope = coroutineScope,
-                    context = context,
-                    startAddAccountIntentLauncher = addAccountLauncher)
+              // Sign in with email button
+              Column {
+                SignInButton(
+                    text = stringResource(R.string.sign_in_with_email),
+                    icon = R.drawable.app_icon,
+                    modifier = Modifier.testTag(SignInScreen.TEST_TAG_SIGN_IN_WITH_EMAIL),
+                ) {
+                  navigationActions.navigateTo(Screen.SIGN_IN_WITH_EMAIL)
+                }
+
+                // Sign in with Google button
+                SignInButton(
+                    text = stringResource(R.string.sign_in_with_google),
+                    icon = R.drawable.google_logo,
+                    modifier = Modifier.testTag(SignInScreen.TEST_TAG_SIGN_IN_WITH_GOOGLE),
+                ) {
+                  authViewModel.signInWithGoogle(
+                      coroutineScope = coroutineScope,
+                      context = context,
+                      startAddAccountIntentLauncher = addAccountLauncher)
+                }
               }
             }
           }
-        }
-      },
-  )
+        },
+    )
+  }
 }
 
 /**

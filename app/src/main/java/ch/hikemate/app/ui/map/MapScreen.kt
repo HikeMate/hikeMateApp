@@ -1,5 +1,6 @@
 package ch.hikemate.app.ui.map
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -32,6 +33,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -68,6 +70,7 @@ import com.google.accompanist.permissions.MultiplePermissionsState
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationResult
+import kotlin.math.abs
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
@@ -108,6 +111,24 @@ object MapScreen {
    * still being able to see a reasonable area of the world map.
    */
   const val MAP_MIN_ZOOM = 3.0
+
+  /**
+   * (Config) Maximum zoom level at which the search button is disabled. The zoom level is defined
+   * empirically to avoid the user launching a search when the map is zoomed out too much and the
+   * search would not be relevant.
+   *
+   * The value is arbitrary and can be adjusted based on the user's experience.
+   *
+   * The button will be enabled when the zoom level is greater than or equal to this value.
+   */
+  const val DISABLED_SEARCH_BUTTON_MAX_ZOOM_LEVEL = 11.5
+
+  /**
+   * (Config) Threshold to trigger an update (and a recomposition) of the zoom value when the user
+   * zooms in or out. The value is defined empirically to avoid unnecessary recompositions when the
+   * user zooms in or out slightly.
+   */
+  const val ZOOM_UPDATE_THRESHOLD = 0.5
 
   /** (Config) Initial position of the center of the map. */
   val MAP_INITIAL_CENTER = GeoPoint(46.5, 6.6)
@@ -229,6 +250,7 @@ data class MapInitialValues(
     val mapInitialCenter: GeoPoint = MapScreen.MAP_INITIAL_CENTER,
 )
 
+@SuppressLint("ClickableViewAccessibility")
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun MapScreen(
@@ -257,6 +279,8 @@ fun MapScreen(
     profileViewModel.getProfileById(authViewModel.currentUser.value!!.uid)
   }
 
+  var zoomLevel by remember { mutableDoubleStateOf(MapScreen.MAP_INITIAL_ZOOM) }
+
   // Avoid re-creating the MapView on every recomposition
   val mapView = remember {
     MapView(context).apply {
@@ -277,8 +301,17 @@ fun MapScreen(
       setMultiTouchControls(true)
       // Limit the vertical scrollable area to avoid the user scrolling too far
       setScrollableAreaLimitLatitude(MapScreen.MAP_MAX_LATITUDE, MapScreen.MAP_MIN_LATITUDE, 0)
+
+      // Update the zoom level when the user zooms in or out
+      setOnTouchListener { _, _ ->
+        if (abs(zoomLevelDouble - zoomLevel) >= MapScreen.ZOOM_UPDATE_THRESHOLD)
+            zoomLevel = zoomLevelDouble
+        // We do not consume the event, so the map can handle it
+        false
+      }
     }
   }
+
   var userLocationMarker: Marker? by remember { mutableStateOf(null) }
 
   // We need to keep a reference to the instance of location callback, this way we can unregister
@@ -386,15 +419,6 @@ fun MapScreen(
       locationPermissionState = locationPermissionState,
       context = context)
 
-  DisposableEffect(Unit) {
-    onDispose {
-      LocationUtils.stopUserLocationUpdates(context, locationUpdatedCallback)
-      mapView.overlays.clear()
-      mapView.onPause()
-      mapView.onDetach()
-    }
-  }
-
   val errorMessageIdState = profileViewModel.errorMessageId.collectAsState()
   val profileState = profileViewModel.profile.collectAsState()
 
@@ -448,14 +472,21 @@ fun MapScreen(
                       onClick = {
                         MapScreen.launchSearch(isSearching, hikesViewModel, mapView, context)
                       },
+                      enabled = zoomLevel >= MapScreen.DISABLED_SEARCH_BUTTON_MAX_ZOOM_LEVEL,
                       modifier =
                           Modifier.align(Alignment.BottomCenter)
                               .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
                 }
                 // The zoom buttons are displayed on the bottom left of the screen
                 ZoomMapButton(
-                    onZoomIn = { mapView.controller.zoomIn() },
-                    onZoomOut = { mapView.controller.zoomOut() },
+                    onZoomIn = {
+                      zoomLevel = mapView.zoomLevelDouble + 1
+                      mapView.controller.zoomIn()
+                    },
+                    onZoomOut = {
+                      zoomLevel = mapView.zoomLevelDouble - 1
+                      mapView.controller.zoomOut()
+                    },
                     modifier =
                         Modifier.align(Alignment.BottomEnd)
                             .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
@@ -533,11 +564,16 @@ fun LocationPermissionAlertDialog(
 }
 
 @Composable
-fun MapSearchButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun MapSearchButton(onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
   Button(
       onClick = onClick,
       modifier = modifier.testTag(MapScreen.TEST_TAG_SEARCH_BUTTON),
-      colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surface)) {
+      colors =
+          ButtonDefaults.buttonColors(
+              containerColor = MaterialTheme.colorScheme.surface,
+              disabledContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+          ),
+      enabled = enabled) {
         Text(
             text = LocalContext.current.getString(R.string.map_screen_search_button_text),
             color = MaterialTheme.colorScheme.onSurface)

@@ -122,6 +122,7 @@
     <string name="an_error_occurred_while_fetching_the_profile">An error occurred while fetching the profile.</string>
     <string name="an_error_occurred_while_updating_the_profile">An error occurred while updating the profile.</string>
     <string name="an_error_occurred_while_deleting_the_profile">An error occurred while deleting the profile</string>
+    <string name="an_error_occurred_while_creating_the_profile">An error occurred while creating the profile</string>
 
     <!-- Edit Profile Screen -->
     <string name="edit_profile_screen_title">Edit your profile</string>
@@ -147,6 +148,12 @@
     <string name="create_account_email_format_error">Invalid email format</string>
     <string name="create_account_fields_must_be_filled_error">All fields must be filled</string>
 
+    <string name="error_email_and_password_must_not_be_empty">Email and password must not be empty</string>
+    <string name="error_occurred_while_creating_account">An error occurred while creating the account</string>
+
+    <string name="error_occurred_while_signing_in_with_google">An error occurred while signing in with Google</string>
+    <string name="error_occurred_while_signing_in_with_email">An error occurred while signing in with email</string>
+
     <!-- Default profile -->
     <string name="default_display_name">Unnamed hiker</string>
     <string name="default_email">unnamedhiker@example.com</string>
@@ -161,4 +168,11 @@
     <string name="delete_account_password_label">Password</string>
     <string name="delete_account_delete_button">Delete account</string>
     <string name="delete_account_password_must_be_filled_error">You should provide a password</string>
+    <string name="error_deleting_the_user">Error deleting the user</string>
+    <string name="error_deleting_user_profile_and_saved_hikes">Error deleting user profile and saved hikes</string>
+    <string name="error_re_authenticating_the_user">Error re-authenticating the user</string>
+    <string name="no_user_is_currently_signed_in">No user is currently signed in</string>
+
+    <!-- Error handling -->
+    <string name="retry">Retry</string>
 </resources>

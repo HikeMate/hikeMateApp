@@ -340,7 +340,7 @@ class HikeDetailScreenTest {
     // Display only the bottom part without the map
     setUpBottomSheetScaffold(detailedHike)
 
-    val distanceString = String.format(Locale.ENGLISH, "%.2f", detailedHike.distance)
+    val distanceString = String.format(Locale.getDefault(), "%.2f", detailedHike.distance)
     val elevationGainString = detailedHike.elevationGain.roundToInt().toString()
     val hourString =
         String.format(Locale.getDefault(), "%02d", (detailedHike.estimatedTime / 60).toInt())
