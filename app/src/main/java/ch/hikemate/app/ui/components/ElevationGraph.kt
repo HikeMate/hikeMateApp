@@ -127,6 +127,7 @@ fun ElevationGraph(
       modifier.onGloballyPositioned { coordinates ->
         height = coordinates.size.height.toFloat()
         width = coordinates.size.width.toFloat()
+        Log.d("ElevationGraph", "Canvas dimensions: Width=$width, Height=$height")
       }) {
         if (elevations == null) {
           // If there is no data, we draw a text in the middle of the canvas

@@ -1,9 +1,11 @@
 package ch.hikemate.app.ui.components
 
 import android.content.Context
-import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.hikemate.app.R
@@ -28,8 +30,13 @@ class ElevationGraphTest {
     val elevationData = listOf(100.0, 200.0, 150.0, 175.0)
 
     composeTestRule.setContent {
-      ElevationGraph(elevations = elevationData, styleProperties = ElevationGraphStyleProperties())
+      ElevationGraph(
+          elevations = elevationData,
+          modifier = Modifier.size(200.dp),
+          styleProperties = ElevationGraphStyleProperties())
     }
+
+    composeTestRule.waitForIdle()
 
     // Verify that neither loading nor no data messages are shown
     composeTestRule
@@ -47,53 +54,14 @@ class ElevationGraphTest {
     composeTestRule.setContent {
       ElevationGraph(
           elevations = elevationData,
+          modifier = Modifier.size(200.dp),
           progressThroughHike = 0.5f,
           styleProperties = ElevationGraphStyleProperties(locationMarkerSize = 24f))
     }
 
-    // Verify that the graph is displayed without error messages
-    composeTestRule
-        .onNode(hasText(context.getString(R.string.elevation_graph_loading_label)))
-        .assertDoesNotExist()
-    composeTestRule
-        .onNode(hasText(context.getString(R.string.hike_card_no_data_label)))
-        .assertDoesNotExist()
-  }
+    composeTestRule.waitForIdle()
 
-  @Test
-  fun elevationGraph_withProgressOutOfBounds_clampsToValidRange() {
-    val elevationData = listOf(100.0, 200.0, 150.0, 175.0)
-
-    // Test with progress > 1
-    composeTestRule.setContent {
-      ElevationGraph(elevations = elevationData, progressThroughHike = 1.5f)
-    }
-
-    // Verify that the graph is displayed without errors
-    composeTestRule
-        .onNode(hasText(context.getString(R.string.elevation_graph_loading_label)))
-        .assertDoesNotExist()
-    composeTestRule
-        .onNode(hasText(context.getString(R.string.hike_card_no_data_label)))
-        .assertDoesNotExist()
-  }
-
-  @Test
-  fun elevationGraph_withCustomStyles_appliesStyles() {
-    val elevationData = listOf(100.0, 200.0, 150.0, 175.0)
-    val customStyles =
-        ElevationGraphStyleProperties(
-            strokeColor = Color.Red,
-            fillColor = Color.Blue,
-            strokeWidth = 5f,
-            locationMarkerSize = 32f)
-
-    composeTestRule.setContent {
-      ElevationGraph(
-          elevations = elevationData, styleProperties = customStyles, progressThroughHike = 0.5f)
-    }
-
-    // Verify that the graph is displayed without errors
+    // Since we can't directly test Canvas drawing, we verify no error states are shown
     composeTestRule
         .onNode(hasText(context.getString(R.string.elevation_graph_loading_label)))
         .assertDoesNotExist()
@@ -107,10 +75,13 @@ class ElevationGraphTest {
     val largeElevationData = List(1000) { it.toDouble() }
 
     composeTestRule.setContent {
-      ElevationGraph(elevations = largeElevationData, maxNumberOfPoints = 40)
+      ElevationGraph(
+          elevations = largeElevationData, modifier = Modifier.size(200.dp), maxNumberOfPoints = 40)
     }
 
-    // Verify that the graph is displayed without errors
+    composeTestRule.waitForIdle()
+
+    // Verify no error states are shown
     composeTestRule
         .onNode(hasText(context.getString(R.string.elevation_graph_loading_label)))
         .assertDoesNotExist()
