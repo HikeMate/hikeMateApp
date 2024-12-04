@@ -62,6 +62,8 @@ import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
+import ch.hikemate.app.ui.theme.challengingColor
+import ch.hikemate.app.ui.theme.suitableColor
 import ch.hikemate.app.utils.LocationUtils
 import ch.hikemate.app.utils.MapUtils
 import ch.hikemate.app.utils.PermissionUtils
@@ -698,12 +700,12 @@ fun HikeCardFor(
   val suitableLabelIcon: Int?
   when (isSuitable) {
     true -> {
-      suitableLabelColor = Color(0xFF4CAF50)
+      suitableLabelColor = suitableColor
       suitableLabelText = LocalContext.current.getString(R.string.map_screen_suitable_hike_label)
       suitableLabelIcon = R.drawable.check_circle
     }
     false -> {
-      suitableLabelColor = Color(0xFFFFC107)
+      suitableLabelColor = challengingColor
       suitableLabelText = LocalContext.current.getString(R.string.map_screen_challenging_hike_label)
       suitableLabelIcon = R.drawable.warning
     }
