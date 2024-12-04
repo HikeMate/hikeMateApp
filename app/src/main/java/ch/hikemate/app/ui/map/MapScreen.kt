@@ -723,7 +723,8 @@ fun HikeCardFor(
       messageContent = suitableLabelText,
       styleProperties =
           HikeCardStyleProperties(
-              messageIcon = painterResource(suitableLabelIcon!!),
+              messageIcon =
+                  if (suitableLabelIcon != null) painterResource(suitableLabelIcon) else null,
               messageColor = suitableLabelColor,
               graphColor = Color(color)))
 }
