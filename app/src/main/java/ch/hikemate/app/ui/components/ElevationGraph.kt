@@ -165,7 +165,14 @@ fun ElevationGraph(
             // The X component of the marker
             val markerX = width * progress
 
+            // For progress = 0.6 (60% along total path) in data with 5 points:
+            // points:    0    1    2    3    4
+            // progress:  0.0  0.25 0.5  0.75 1.0
+            // pointIndex = floor(0.6 * 4) = floor(2.4) = 2
             val pointIndex = (progress * (scaledData.size - 1)).toInt()
+
+            // pointProgress = 0.6 * 4 % 1 = 2.4 % 1 = 0.4
+            // So we're 40% between points 2 and 3
             val pointProgress = (progress * (scaledData.size - 1)) % 1
 
             // The Y component of the marker
