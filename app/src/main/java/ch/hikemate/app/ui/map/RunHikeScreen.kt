@@ -175,7 +175,7 @@ fun RunHikeScreen(
           modifier =
               Modifier.align(Alignment.BottomEnd)
                   .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
-                  .testTag(TEST_TAG_ZOOM_BUTTONS))
+                  .testTag(RunHikeScreen.TEST_TAG_ZOOM_BUTTONS))
 
       RunHikeBottomSheet(
           hikeRoute = DetailedHikeRoute.create(route, ElevationServiceRepository(OkHttpClient())),
