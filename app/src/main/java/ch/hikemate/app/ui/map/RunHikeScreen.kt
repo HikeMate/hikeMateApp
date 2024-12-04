@@ -199,7 +199,7 @@ fun RunHikeBottomSheet(
       scaffoldState = scaffoldState,
       sheetContainerColor = MaterialTheme.colorScheme.surface,
       sheetPeekHeight = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT,
-      modifier = Modifier.testTag(TEST_TAG_BOTTOM_SHEET),
+      modifier = Modifier.testTag(RunHikeScreen.TEST_TAG_BOTTOM_SHEET),
       sheetContent = {
         Column(
             modifier = Modifier.padding(16.dp).weight(1f),
