@@ -200,6 +200,10 @@ fun HikeDetailScreen(
     profileViewModel.getProfileById(authViewModel.currentUser.value!!.uid)
   }
 
+  var wantToRunHike = false
+
+  LaunchedEffect(wantToRunHike) { navigationActions.navigateTo(Screen.RUN_HIKE) }
+
   val errorMessageIdState = profileViewModel.errorMessageId.collectAsState()
   val profileState = profileViewModel.profile.collectAsState()
 
@@ -236,7 +240,7 @@ fun HikeDetailScreen(
           savedHikesViewModel = savedHikesViewModel,
           elevationData = elevationData,
           userHikingLevel = profile.hikingLevel,
-          onRunThisHike = { navigationActions.navigateTo(Screen.RUN_HIKE) },
+          onRunThisHike = { wantToRunHike = true },
       )
     }
   }

@@ -18,16 +18,6 @@ import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.HikeRoutesRepository
 import ch.hikemate.app.model.route.LatLong
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
-import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DETAIL_ROW_TAG
-import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_BACK_BUTTON
-import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_BOTTOM_SHEET
-import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_ELEVATION_GRAPH
-import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_HIKE_NAME
-import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_MAP
-import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_PROGRESS_TEXT
-import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_STOP_HIKE_BUTTON
-import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_TOTAL_DISTANCE_TEXT
-import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_ZOOM_BUTTONS
 import ch.hikemate.app.ui.navigation.NavigationActions
 import com.google.firebase.Timestamp
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -100,7 +90,7 @@ class RunHikeScreenTest {
           navigationActions = mockNavigationActions,
       )
     }
-    composeTestRule.onNodeWithTag(TEST_TAG_MAP).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_MAP).assertIsDisplayed()
   }
 
   @Test
@@ -112,7 +102,7 @@ class RunHikeScreenTest {
           navigationActions = mockNavigationActions,
       )
     }
-    composeTestRule.onNodeWithTag(TEST_TAG_BACK_BUTTON).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_BACK_BUTTON).assertIsDisplayed()
   }
 
   @Test
@@ -124,7 +114,7 @@ class RunHikeScreenTest {
           navigationActions = mockNavigationActions,
       )
     }
-    composeTestRule.onNodeWithTag(TEST_TAG_ZOOM_BUTTONS).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_ZOOM_BUTTONS).assertIsDisplayed()
   }
 
   @Test
@@ -136,7 +126,7 @@ class RunHikeScreenTest {
           navigationActions = mockNavigationActions,
       )
     }
-    composeTestRule.onNodeWithTag(TEST_TAG_BOTTOM_SHEET).assertExists()
+    composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_BOTTOM_SHEET).assertExists()
   }
 
   /** Test all details which do not change during the hike run. */
@@ -150,13 +140,15 @@ class RunHikeScreenTest {
       )
     }
 
-    composeTestRule.onNodeWithTag(TEST_TAG_HIKE_NAME).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_HIKE_NAME).assertIsDisplayed()
 
-    composeTestRule.onAllNodesWithTag(TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(4)
-    composeTestRule.onAllNodesWithTag(TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(4)
+    composeTestRule.onAllNodesWithTag(HikeDetailScreen.TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(4)
+    composeTestRule
+        .onAllNodesWithTag(HikeDetailScreen.TEST_TAG_DETAIL_ROW_VALUE)
+        .assertCountEquals(4)
 
     composeTestRule
-        .onNodeWithTag(TEST_TAG_TOTAL_DISTANCE_TEXT)
+        .onNodeWithTag(RunHikeScreen.TEST_TAG_TOTAL_DISTANCE_TEXT)
         .assertIsDisplayed()
         .assert(hasText("13.54km"))
   }
@@ -171,7 +163,7 @@ class RunHikeScreenTest {
       )
     }
 
-    composeTestRule.onNodeWithTag(TEST_TAG_ELEVATION_GRAPH).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_ELEVATION_GRAPH).assertIsDisplayed()
   }
 
   @Test
@@ -184,7 +176,7 @@ class RunHikeScreenTest {
       )
     }
 
-    composeTestRule.onNodeWithTag(TEST_TAG_STOP_HIKE_BUTTON).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_STOP_HIKE_BUTTON).assertIsDisplayed()
   }
 
   @Test
@@ -198,7 +190,10 @@ class RunHikeScreenTest {
     }
     doNothing().`when`(mockNavigationActions).goBack()
 
-    composeTestRule.onNodeWithTag(TEST_TAG_STOP_HIKE_BUTTON).assertIsDisplayed().performClick()
+    composeTestRule
+        .onNodeWithTag(RunHikeScreen.TEST_TAG_STOP_HIKE_BUTTON)
+        .assertIsDisplayed()
+        .performClick()
 
     composeTestRule.waitForIdle()
 
@@ -220,7 +215,7 @@ class RunHikeScreenTest {
     }
 
     composeTestRule
-        .onNodeWithTag(TEST_TAG_PROGRESS_TEXT)
+        .onNodeWithTag(RunHikeScreen.TEST_TAG_PROGRESS_TEXT)
         .assertIsDisplayed()
         .assert(hasText("23% complete"))
   }

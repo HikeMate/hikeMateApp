@@ -26,12 +26,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.ContextCompat
 import ch.hikemate.app.R
 import ch.hikemate.app.model.elevation.ElevationServiceRepository
 import ch.hikemate.app.model.profile.ProfileViewModel
@@ -43,15 +43,6 @@ import ch.hikemate.app.ui.components.BigButton
 import ch.hikemate.app.ui.components.ButtonType
 import ch.hikemate.app.ui.components.ElevationGraph
 import ch.hikemate.app.ui.components.ElevationGraphStyleProperties
-import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_BACK_BUTTON
-import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_BOTTOM_SHEET
-import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_ELEVATION_GRAPH
-import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_HIKE_NAME
-import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_MAP
-import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_PROGRESS_TEXT
-import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_STOP_HIKE_BUTTON
-import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_TOTAL_DISTANCE_TEXT
-import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_ZOOM_BUTTONS
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.utils.MapUtils
@@ -222,26 +213,29 @@ fun RunHikeBottomSheet(
                     Modifier.fillMaxWidth()
                         .height(60.dp)
                         .padding(4.dp)
-                        .testTag(TEST_TAG_ELEVATION_GRAPH))
+                        .testTag(RunHikeScreen.TEST_TAG_ELEVATION_GRAPH))
 
             // Progress details below the graph
             Row(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp),
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 20.dp),
                 horizontalArrangement = Arrangement.SpaceBetween) {
                   Text(
                       text = stringResource(R.string.run_hike_screen_zero_distance_progress_value),
                       style = MaterialTheme.typography.bodyLarge,
                       fontWeight = FontWeight.Bold,
                       textAlign = TextAlign.Left,
-                      modifier = Modifier.padding(top = 8.dp),
                   )
                   Text(
-                      text = "23% complete",
+                      // Displays the progress percentage below the graph
+                      // TODO hardcoded as 23% for now
+                      text =
+                          stringResource(R.string.run_hike_screen_progress_percentage_format)
+                              .format(23),
                       style = MaterialTheme.typography.bodyLarge,
                       color = hikeColor,
                       fontWeight = FontWeight.Bold,
                       textAlign = TextAlign.Right,
-                      modifier = Modifier.padding(top = 8.dp).testTag(TEST_TAG_PROGRESS_TEXT),
+                      modifier = Modifier.testTag(RunHikeScreen.TEST_TAG_PROGRESS_TEXT),
                   )
                   Text(
                       text =
@@ -250,11 +244,10 @@ fun RunHikeBottomSheet(
                       style = MaterialTheme.typography.bodyLarge,
                       fontWeight = FontWeight.Bold,
                       textAlign = TextAlign.Right,
-                      modifier = Modifier.padding(top = 8.dp).testTag(TEST_TAG_TOTAL_DISTANCE_TEXT),
+                      modifier = Modifier.testTag(RunHikeScreen.TEST_TAG_TOTAL_DISTANCE_TEXT),
                   )
                 }
 
-            val elevationGainString = hikeRoute.elevationGain.roundToInt().toString()
             val hourString =
                 String.format(Locale.getDefault(), "%02d", (hikeRoute.estimatedTime / 60).toInt())
             val minuteString =
@@ -263,30 +256,41 @@ fun RunHikeBottomSheet(
 
             DetailRow(
                 label = stringResource(R.string.run_hike_screen_label_current_elevation),
-                value = "50m")
+                // TODO hardcoded to 50m for now
+                value =
+                    stringResource(R.string.run_hike_screen_value_format_current_elevation)
+                        .format(50))
             DetailRow(
                 label = stringResource(R.string.run_hike_screen_label_elevation_gain),
-                value = "${elevationGainString}m")
+                value =
+                    stringResource(R.string.run_hike_screen_value_format_elevation_gain)
+                        .format(hikeRoute.elevationGain.roundToInt()))
             DetailRow(
                 label = stringResource(R.string.run_hike_screen_label_estimated_time),
                 value =
-                    if (hikeRoute.estimatedTime / 60 < 1) "${minuteString}min"
-                    else "${hourString}h${minuteString}")
+                    if (hikeRoute.estimatedTime / 60 < 1)
+                        stringResource(R.string.run_hike_screen_value_format_estimated_time_minutes)
+                            .format((hikeRoute.estimatedTime % 60).roundToInt())
+                    else
+                        stringResource(
+                                R.string
+                                    .run_hike_screen_value_format_estimated_time_hours_and_minutes)
+                            .format(
+                                (hikeRoute.estimatedTime / 60).toInt(),
+                                (hikeRoute.estimatedTime % 60).roundToInt()))
             DetailRow(
                 label = stringResource(R.string.run_hike_screen_label_difficulty),
                 value = stringResource(hikeRoute.difficulty.nameResourceId),
-                valueColor =
-                    Color(
-                        ContextCompat.getColor(
-                            LocalContext.current, hikeRoute.difficulty.colorResourceId)),
-            )
+                valueColor = colorResource(hikeRoute.difficulty.colorResourceId))
 
             BigButton(
                 buttonType = ButtonType.PRIMARY,
                 label = stringResource(R.string.run_hike_screen_stop_run_button_label),
                 onClick = onStopTheRun,
-                modifier = Modifier.padding(top = 16.dp).testTag(RunHikeScreen.TEST_TAG_STOP_HIKE_BUTTON),
-                fillColor = Color(0xFFE83B3D))
+                modifier =
+                    Modifier.padding(top = 16.dp).testTag(RunHikeScreen.TEST_TAG_STOP_HIKE_BUTTON),
+                fillColor = colorResource(R.color.red),
+            )
           }
         }
       }) {}
