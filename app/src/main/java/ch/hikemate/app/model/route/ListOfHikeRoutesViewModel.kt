@@ -9,7 +9,7 @@ import ch.hikemate.app.model.elevation.ElevationServiceRepository
 import ch.hikemate.app.model.extensions.crossesDateLine
 import ch.hikemate.app.model.extensions.splitByDateLine
 import ch.hikemate.app.model.extensions.toBounds
-import ch.hikemate.app.ui.map.MapScreen
+import ch.hikemate.app.ui.map.MapInitialValues
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,8 +37,8 @@ open class ListOfHikeRoutesViewModel(
 
   // So that the map can be maintained when the user navigates between screens with a map
   data class MapViewState(
-      val center: GeoPoint? = MapScreen.MAP_INITIAL_CENTER,
-      val zoom: Double = MapScreen.MAP_INITIAL_ZOOM,
+      val center: GeoPoint? = MapInitialValues().mapInitialCenter,
+      val zoom: Double = MapInitialValues().mapInitialZoomLevel,
   )
 
   private val _mapState = MutableStateFlow(MapViewState())
