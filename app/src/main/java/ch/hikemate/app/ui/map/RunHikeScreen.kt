@@ -166,7 +166,7 @@ fun RunHikeScreen(
           navigationActions = navigationActions,
           modifier =
               Modifier.padding(top = 40.dp, start = 16.dp, end = 16.dp)
-                  .testTag(TEST_TAG_BACK_BUTTON),
+                  .testTag(RunHikeScreen.TEST_TAG_BACK_BUTTON),
           onClick = { wantToNavigateBack = true })
       // Zoom buttons at the bottom right of the screen
       ZoomMapButton(
