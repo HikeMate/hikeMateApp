@@ -208,7 +208,7 @@ fun RunHikeBottomSheet(
               text = hikeRoute.route.name ?: stringResource(R.string.map_screen_hike_title_default),
               style = MaterialTheme.typography.titleLarge,
               textAlign = TextAlign.Left,
-              modifier = Modifier.testTag(TEST_TAG_HIKE_NAME))
+              modifier = Modifier.testTag(RunHikeScreen.TEST_TAG_HIKE_NAME))
 
           // Elevation graph and the progress details below the graph
           Column {
