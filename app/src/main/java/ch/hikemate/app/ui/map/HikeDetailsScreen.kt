@@ -121,11 +121,6 @@ fun HikeDetailScreen(
     authViewModel: AuthViewModel,
     navigationActions: NavigationActions
 ) {
-  LaunchedEffect(Unit) {
-    // Load or reload the saved hikes list to see if the currently selected one is saved
-    hikesViewModel.refreshSavedHikesCache()
-  }
-
   // Load the user's profile to get their hiking level
   LaunchedEffect(Unit) {
     if (authViewModel.currentUser.value == null) {
@@ -133,6 +128,8 @@ fun HikeDetailScreen(
       return@LaunchedEffect
     }
     profileViewModel.getProfileById(authViewModel.currentUser.value!!.uid)
+    // Load or reload the saved hikes list to see if the currently selected one is saved
+    hikesViewModel.refreshSavedHikesCache()
   }
 
   val selectedHike by hikesViewModel.selectedHike.collectAsState()
