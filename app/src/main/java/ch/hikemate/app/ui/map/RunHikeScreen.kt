@@ -160,7 +160,7 @@ fun RunHikeScreen(
           modifier =
               Modifier.fillMaxWidth()
                   .padding(bottom = 300.dp) // Reserve space for the scaffold at the bottom
-                  .testTag(TEST_TAG_MAP))
+                  .testTag(RunHikeScreen.TEST_TAG_MAP))
       // Back Button at the top of the screen
       BackButton(
           navigationActions = navigationActions,
