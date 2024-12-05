@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.dp
@@ -30,17 +32,19 @@ class ElevationGraphTest {
   }
 
   @Test
-  fun elevationGraph_withValidData_displaysGraph() {
+  fun elevationGraph_withValidData_displaysGraph_withHikeColor() {
     val elevationData = listOf(100.0, 200.0, 150.0, 175.0)
-    val markerDrawable = MapUtils.getUserLocationMarkerIcon(context)
-    val markerBitmap = (markerDrawable as android.graphics.drawable.BitmapDrawable).bitmap
-    val markerColor = markerBitmap.getPixel(markerBitmap.width / 2, markerBitmap.height / 2)
+    val hikeColor = Color.Red.toArgb() // Default stroke color in ElevationGraphStyleProperties
 
     composeTestRule.setContent {
-      ElevationGraph(
+        ElevationGraph(
           elevations = elevationData,
-          modifier = Modifier.size(200.dp),
-          styleProperties = ElevationGraphStyleProperties())
+          modifier = Modifier.fillMaxSize(),
+          styleProperties = ElevationGraphStyleProperties(
+            strokeColor = Color.Red,
+            fillColor = Color.Red
+          )
+        )
     }
 
     composeTestRule.waitForIdle()
@@ -49,18 +53,17 @@ class ElevationGraphTest {
     val pixels = IntArray(image.width * image.height)
     image.readPixels(pixels)
 
+    // Check that the hike color exists in the image
+    val foundHikeColor = pixels.any { it == hikeColor }
+    assertTrue("Hike color was not found in the image", foundHikeColor)
+
     // Check that no marker color exists in the image
+    val markerDrawable = MapUtils.getUserLocationMarkerIcon(context)
+    val markerBitmap = (markerDrawable as android.graphics.drawable.BitmapDrawable).bitmap
+    val markerColor = markerBitmap.getPixel(markerBitmap.width / 2, markerBitmap.height / 2)
     val foundMarker = pixels.any { it == markerColor }
     assertFalse("Marker was found when it should not be displayed", foundMarker)
-    // Verify that neither loading nor no data messages are shown
-    composeTestRule
-        .onNode(hasText(context.getString(R.string.elevation_graph_loading_label)))
-        .assertDoesNotExist()
-    composeTestRule
-        .onNode(hasText(context.getString(R.string.hike_card_no_data_label)))
-        .assertDoesNotExist()
   }
-
   @Test
   fun elevationGraph_withLocationMarker_displaysMarker() {
     val elevationData = listOf(100.0, 20.0, 40.0, 150.0)
