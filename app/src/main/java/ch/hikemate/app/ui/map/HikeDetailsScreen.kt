@@ -134,16 +134,21 @@ fun HikeDetailScreen(
 
   val selectedHike by hikesViewModel.selectedHike.collectAsState()
 
-  var mapView = remember { mutableStateOf<MapView?>(null) }
+  // Gets initialized here so that the LaunchedEffect has access to it. The value is only actually
+  // initialised and used in HikeDetailsContent
+  val mapViewState = remember { mutableStateOf<MapView?>(null) }
 
+  // If the selected hike is null, save the map's state and go back to the map screen
   LaunchedEffect(selectedHike) {
     if (selectedHike == null) {
       Log.e(HikeDetailScreen.LOG_TAG, "No selected hike, going back")
-      if (mapView.value != null) {
+      if (mapViewState.value != null) {
         hikesViewModel.setMapState(
             center =
-                GeoPoint(mapView.value!!.mapCenter.latitude, mapView.value!!.mapCenter.longitude),
-            zoom = mapView.value!!.zoomLevelDouble)
+                GeoPoint(
+                    mapViewState.value!!.mapCenter.latitude,
+                    mapViewState.value!!.mapCenter.longitude),
+            zoom = mapViewState.value!!.zoomLevelDouble)
       }
       navigationActions.goBack()
     }
@@ -167,7 +172,7 @@ fun HikeDetailScreen(
         Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {
           // Display the hike's actual information
           HikeDetailsContent(
-              detailedHike, mapView, navigationActions, hikesViewModel, profile.hikingLevel)
+              detailedHike, mapViewState, navigationActions, hikesViewModel, profile.hikingLevel)
         }
       }
     }

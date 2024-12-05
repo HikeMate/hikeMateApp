@@ -164,8 +164,6 @@ class HikesViewModel(
    */
   val selectedHike: StateFlow<Hike?> = _selectedHike.asStateFlow()
 
-  val mapState = _mapState.asStateFlow()
-
   /**
    * Sets the selected hike to the provided one.
    *
@@ -410,10 +408,27 @@ class HikesViewModel(
   fun computeDetailsFor(hikeId: String, onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}) =
       viewModelScope.launch { computeDetailsForAsync(hikeId, onSuccess, onFailure) }
 
+  /**
+   * Saves the current state of the map.
+   *
+   * Updates the center and zoom level of the map's. This function enables saving the map's state,
+   * so that the map's center and zoom level can be preserved when navigating between screens.
+   *
+   * @param center The center of the map. Can be fetched by calling .mapCenter on a MapView
+   * @param zoom The zoom level of the map. Can be fetched by calling .zoomLevelDouble on a MapView
+   */
   fun setMapState(center: GeoPoint, zoom: Double) {
     _mapState.value = MapUtils.MapViewState(center, zoom)
   }
 
+  /**
+   * Retrieves the current state of the map.
+   *
+   * Fetches the center and zoom level of the map's. This function enables saving the map's state,
+   * so that the map's center and zoom level can be preserved when navigating between screens.
+   *
+   * @return The current [MapUtils.MapViewState] containing the map's center point and zoom level.
+   */
   fun getMapState(): MapUtils.MapViewState {
     return _mapState.value
   }
