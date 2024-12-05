@@ -147,11 +147,16 @@ class ElevationServiceRepository(
     // We need to start a new job to update the cache
     cacheUpdateJob =
         CoroutineScope(dispatcher).launch {
-          // Delay the update by 1 second to allow for multiple requests to be batched together
+          // Delay the update by some amount of time to allow for multiple requests
+          // to be batched together
           // This is purely empirical and can be adjusted
-          delay(CACHE_UPDATE_DELAY)
+          // If we already have enough data for a request, we don't need to wait
+          var coordinates: List<LatLong> = emptyList()
+          mutex.withLock { coordinates = requests.flatMap { it.coordinates } }
+          if (coordinates.size < MAX_COORDINATES_PER_REQUEST) {
+            delay(CACHE_UPDATE_DELAY)
+          }
           mutex.withLock {
-            val coordinates = requests.flatMap { it.coordinates }
             val chunks = coordinates.chunked(MAX_COORDINATES_PER_REQUEST)
 
             for (chunk in chunks) {
