@@ -40,29 +40,25 @@ object RouteUtils {
    * Helper function to compute the total elevation gain based on a list of waypoints.
    *
    * @param ways A list of `LatLong` objects representing the waypoints of the hike.
-   * @param hikeId the hikes id, needed for the elevation API request
    * @return The total elevation gain in meters as a `Double`.
    */
-  fun getElevationGain(
-      ways: List<LatLong>,
-      hikeId: String,
-      elevationService: ElevationServiceRepository
-  ): Double = runBlocking {
+  fun getElevationGain(ways: List<LatLong>, elevationService: ElevationServiceRepository): Double =
+      runBlocking {
 
-    // Since elevationService.getElevation is asynchronous, we use a CompletableDeferred to wait for
-    // the result
-    val deferredResult = CompletableDeferred<List<Double>>()
+        // Since elevationService.getElevation is asynchronous, we use a CompletableDeferred to wait
+        // for
+        // the result
+        val deferredResult = CompletableDeferred<List<Double>>()
 
-    elevationService.getElevation(
-        coordinates = ways,
-        hikeID = hikeId,
-        onSuccess = { elevation -> deferredResult.complete(elevation) },
-        onFailure = { deferredResult.complete(emptyList()) })
+        elevationService.getElevation(
+            coordinates = ways,
+            onSuccess = { elevation -> deferredResult.complete(elevation) },
+            onFailure = { deferredResult.complete(emptyList()) })
 
-    val elevations = deferredResult.await()
+        val elevations = deferredResult.await()
 
-    return@runBlocking calculateElevationGain(elevations)
-  }
+        return@runBlocking calculateElevationGain(elevations)
+      }
 
   /**
    * Helper function to estimate the time based on distance and elevation gain. The calculation is

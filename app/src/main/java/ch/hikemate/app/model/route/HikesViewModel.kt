@@ -1167,7 +1167,7 @@ class HikesViewModel(
         // Launch a request for the elevation data of the hike
         val elevation: List<Double>
         try {
-          elevation = getElevationRepoWrapper(waypoints, hikeId)
+          elevation = getElevationRepoWrapper(waypoints)
         } catch (e: Exception) {
           Log.e(LOG_TAG, "Error encountered while retrieving elevation", e)
           onFailure()
@@ -1202,11 +1202,9 @@ class HikesViewModel(
    */
   private suspend fun getElevationRepoWrapper(
       coordinates: List<LatLong>,
-      hikeId: String
   ): List<Double> = suspendCoroutine { continuation ->
     elevationRepository.getElevation(
         coordinates = coordinates,
-        hikeID = hikeId,
         onSuccess = { elevation -> continuation.resume(elevation) },
         onFailure = { exception -> continuation.resumeWithException(exception) })
   }

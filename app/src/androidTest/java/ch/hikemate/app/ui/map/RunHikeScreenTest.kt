@@ -79,16 +79,17 @@ class RunHikeScreenTest {
   }
 
   @Test
-  fun runHikeScreen_displaysMap() = runTest {
-    composeTestRule.setContent {
-      RunHikeScreen(
-          listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
-          profileViewModel = profileViewModel,
-          navigationActions = mockNavigationActions,
-      )
-    }
-    composeTestRule.onNodeWithTag(TEST_TAG_RUN_HIKE_SCREEN_MAP).assertIsDisplayed()
-  }
+  fun runHikeScreen_displaysMap() =
+      runTest() {
+        composeTestRule.setContent {
+          RunHikeScreen(
+              listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
+              profileViewModel = profileViewModel,
+              navigationActions = mockNavigationActions,
+          )
+        }
+        composeTestRule.onNodeWithTag(TEST_TAG_RUN_HIKE_SCREEN_MAP).assertIsDisplayed()
+      }
 
   @Test
   fun runHikeScreen_displaysBackButton() = runTest {

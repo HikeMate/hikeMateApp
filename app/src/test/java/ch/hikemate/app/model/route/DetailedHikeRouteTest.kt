@@ -22,9 +22,15 @@ class DetailedHikeRouteTest {
     mockElevationService = mockk()
     mockDeferred = mockk()
 
-    coEvery { mockElevationService.getElevation(any(), any(), any(), any()) } answers
+    coEvery {
+      mockElevationService.getElevation(
+          any(),
+          any(),
+          any(),
+      )
+    } answers
         {
-          val onSuccess = thirdArg<(List<Double>) -> Unit>()
+          val onSuccess = secondArg<(List<Double>) -> Unit>()
           onSuccess(mockElevations)
         }
   }

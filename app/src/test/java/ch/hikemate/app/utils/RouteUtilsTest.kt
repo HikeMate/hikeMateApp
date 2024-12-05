@@ -90,17 +90,17 @@ class RouteUtilsTest {
   fun test_getElevationGain_returns_correct_elevation_gain_from_service() =
       runTest(timeout = 10.seconds) {
         // mock elevationService
-        val mockElevationService = mockk<ElevationServiceRepository>()
+        val mockElevationRepository = mockk<ElevationServiceRepository>()
         val mockElevations = listOf(100.0, 150.0, 140.0, 200.0, 190.0)
 
-        coEvery { mockElevationService.getElevation(any(), any(), any(), any()) } answers
+        coEvery { mockElevationRepository.getElevation(any(), any(), any()) } answers
             {
-              val onSuccess = thirdArg<(List<Double>) -> Unit>()
+              val onSuccess = secondArg<(List<Double>) -> Unit>()
               onSuccess(mockElevations)
             }
 
         // The coordinates we pass and the hikeId do not matter since we mock the elevation service
-        val elevationGain = RouteUtils.getElevationGain(emptyList(), "0", mockElevationService)
+        val elevationGain = RouteUtils.getElevationGain(emptyList(), mockElevationRepository)
 
         assertEquals(110.0, elevationGain, 0.01)
       }

@@ -43,7 +43,7 @@ data class DetailedHikeRoute(
 
       val totalDistance = RouteUtils.computeTotalDistance(hikeRoute.ways)
       val elevationGain = runBlocking {
-        RouteUtils.getElevationGain(hikeRoute.ways, hikeRoute.id, elevationService)
+        RouteUtils.getElevationGain(hikeRoute.ways, elevationService)
       }
       val estimatedTime = RouteUtils.estimateTime(totalDistance, elevationGain)
       val difficulty = RouteUtils.determineDifficulty(totalDistance, elevationGain)

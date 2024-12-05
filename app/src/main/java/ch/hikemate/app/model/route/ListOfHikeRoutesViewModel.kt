@@ -129,7 +129,6 @@ open class ListOfHikeRoutesViewModel(
     withContext(dispatcher) {
       elevationRepository.getElevation(
           coordinates = route.ways,
-          hikeID = route.id,
           onSuccess = { elevationData -> onSuccess(elevationData) },
           onFailure = { exception ->
             Log.d(LOG_TAG, "[getRoutesElevationAsync] Failed to get elevation data: $exception")

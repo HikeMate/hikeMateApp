@@ -85,14 +85,14 @@ class ListOfHikeRoutesViewModelTest {
   fun getRouteElevationCallsElevationService() {
     val route = HikeRoute("Route 1", Bounds(0.0, 0.0, 0.0, 0.0), emptyList())
     listOfHikeRoutesViewModel.getRoutesElevation(route)
-    verify(elevationRepository, times(1)).getElevation(any(), any(), any(), any())
+    verify(elevationRepository, times(1)).getElevation(any(), any(), any())
   }
 
   @Test
   fun getRouteElevationReturnsCorrectElevation() {
     val route = HikeRoute("Route 1", Bounds(0.0, 0.0, 0.0, 0.0), emptyList())
-    `when`(elevationRepository.getElevation(any(), any(), any(), any())).thenAnswer {
-      val onSuccess = it.getArgument<(List<Double>) -> Unit>(2)
+    `when`(elevationRepository.getElevation(any(), any(), any())).thenAnswer {
+      val onSuccess = it.getArgument<(List<Double>) -> Unit>(1)
       onSuccess(listOf(1.0, 2.0, 3.0))
     }
 
@@ -111,8 +111,8 @@ class ListOfHikeRoutesViewModelTest {
   @Test
   fun getRouteElevationCallsOnFailure() {
     val route = HikeRoute("Route 1", Bounds(0.0, 0.0, 0.0, 0.0), emptyList())
-    `when`(elevationRepository.getElevation(any(), any(), any(), any())).thenAnswer {
-      val onFailure = it.getArgument<(Exception) -> Unit>(3)
+    `when`(elevationRepository.getElevation(any(), any(), any())).thenAnswer {
+      val onFailure = it.getArgument<(Exception) -> Unit>(2)
       onFailure(Exception("Test exception"))
     }
 
@@ -123,7 +123,7 @@ class ListOfHikeRoutesViewModelTest {
         })
 
     // Verify that the onFailure function was called
-    verify(elevationRepository, times(1)).getElevation(any(), any(), any(), any())
+    verify(elevationRepository, times(1)).getElevation(any(), any(), any())
   }
 
   @Test
