@@ -189,4 +189,6 @@
 
     <!-- Error handling -->
     <string name="retry">Retry</string>
+    <!-- Map Utils -->
+    <string name="facility_marker">facility_marker</string>
 </resources>
