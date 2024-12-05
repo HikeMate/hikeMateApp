@@ -210,14 +210,13 @@ fun HikeDetailsContent(
 
     // Prevent the app from crashing when the "run hike" button is spammed
     var wantToRunHike by remember { mutableStateOf(false) }
-    LaunchedEffect(wantToRunHike) { if (wantToRunHike) navigationActions.navigateTo(Screen.RUN_HIKE) }
+    LaunchedEffect(wantToRunHike) {
+      if (wantToRunHike) navigationActions.navigateTo(Screen.RUN_HIKE)
+    }
 
     // Display the details of the hike at the bottom of the screen
     HikesDetailsBottomScaffold(
-        hike,
-        hikesViewModel,
-        userHikingLevel,
-        onRunThisHike = { wantToRunHike = true })
+        hike, hikesViewModel, userHikingLevel, onRunThisHike = { wantToRunHike = true })
   }
 }
 
