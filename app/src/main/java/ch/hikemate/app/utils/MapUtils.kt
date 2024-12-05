@@ -317,4 +317,11 @@ object MapUtils {
     // Trigger the map to be drawn again
     mapView.invalidate()
   }
+
+  fun clearFacilities(mapView: MapView) {
+    mapView.overlays.removeAll { overlay ->
+      overlay is Marker && overlay.relatedObject == R.string.facility_marker
+    }
+    mapView.invalidate()
+  }
 }

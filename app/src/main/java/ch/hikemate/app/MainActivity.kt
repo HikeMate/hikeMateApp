@@ -24,11 +24,12 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navigation
 import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.model.authentication.FirebaseAuthRepository
+import ch.hikemate.app.model.facilities.FacilitiesRepositoryOverpass
+import ch.hikemate.app.model.facilities.FacilitiesViewModel
 import ch.hikemate.app.model.profile.ProfileRepositoryFirestore
 import ch.hikemate.app.model.profile.ProfileViewModel
 import ch.hikemate.app.model.route.HikesViewModel
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
-import ch.hikemate.app.model.route.saved.SavedHikesViewModel
 import ch.hikemate.app.ui.auth.CreateAccountScreen
 import ch.hikemate.app.ui.auth.SignInScreen
 import ch.hikemate.app.ui.auth.SignInWithEmailScreen
@@ -47,6 +48,7 @@ import ch.hikemate.app.ui.saved.SavedHikesScreen
 import ch.hikemate.app.ui.theme.HikeMateTheme
 import com.google.firebase.FirebaseApp
 import com.google.firebase.firestore.FirebaseFirestore
+import okhttp3.OkHttpClient
 import org.osmdroid.config.Configuration
 
 class MainActivity : ComponentActivity() {
@@ -74,8 +76,11 @@ class MainActivity : ComponentActivity() {
 }
 
 /**
- * The main composable function for the HikeMate application. It sets up the navigation host and
- * defines the navigation graph.
+ * The main composable function for the HikeMate application. It
+ * 1. Sets up the several view models that are needed for the whole app
+ * 2. Ensures the user's profile and saved hikes are reloaded every time a new user logs in
+ * 3. Configures what needs to be configured before using OSMDroid
+ * 4. Sets up the navigation host and defines the navigation graph
  */
 @Composable
 fun HikeMateApp() {
@@ -87,6 +92,7 @@ fun HikeMateApp() {
   val listOfHikeRoutesViewModel: ListOfHikeRoutesViewModel =
       viewModel(factory = ListOfHikeRoutesViewModel.Factory)
   val hikesViewModel: HikesViewModel = viewModel(factory = HikesViewModel.Factory)
+  val facilitiesViewModel = FacilitiesViewModel(FacilitiesRepositoryOverpass(OkHttpClient()))
 
   // When a user logs-in again with a different account, get the new profile and the new user's
   // saved hikes list
@@ -169,7 +175,7 @@ fun HikeMateApp() {
             authViewModel = authViewModel,
             navigationActions = navigationActions,
             hikesViewModel = hikesViewModel,
-        )
+            facilitiesViewModel = facilitiesViewModel)
       }
 
       composable(Screen.RUN_HIKE) {
