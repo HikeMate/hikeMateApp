@@ -123,28 +123,20 @@ fun HikeDetailScreen(
 ) {
 
   val context = LocalContext.current
-  var mapView: MapView? by remember { mutableStateOf(null) }
 
-  LaunchedEffect(listOfHikeRoutesViewModel.selectedHikeRoute.collectAsState().value) {
-    if (listOfHikeRoutesViewModel.selectedHikeRoute.value == null) {
-      mapView?.let { mapView ->
-        listOfHikeRoutesViewModel.setMapState(
-            center = GeoPoint(mapView.mapCenter.latitude, mapView.mapCenter.longitude),
-            zoom = mapView.zoomLevelDouble)
-      }
-      navigationActions.goBack()
-    }
-  }
-
-  if (listOfHikeRoutesViewModel.selectedHikeRoute.collectAsState().value == null) {
+  // Fetches the route only once. The screen is not updated if the selectedHikeRoute changes. This
+  // is to avoid re-fetching the route when the route is unselected (turned to null) and crashing
+  // the app with NullPointerExceptions. If viewModels selectedHikeRoute changes to null, the screen
+  // will do a navigateBack.
+  val route = remember { listOfHikeRoutesViewModel.selectedHikeRoute.value }
+  if (route == null) {
     Log.e("HikeDetailScreen", "No selected hike route")
     return
   }
 
-  val route = listOfHikeRoutesViewModel.selectedHikeRoute.collectAsState().value!!
   val elevationData = remember { mutableListOf<Double>() }
-  val detailedRoute = DetailedHikeRoute.create(route)
-  val routeZoomLevel = MapUtils.calculateBestZoomLevel(route.bounds).toDouble()
+  val detailedRoute = remember { DetailedHikeRoute.create(route) }
+  val routeZoomLevel = remember { MapUtils.calculateBestZoomLevel(route.bounds).toDouble() }
 
   // Only do the configuration on the first composition, not on every recomposition
   LaunchedEffect(Unit) {
@@ -159,7 +151,7 @@ fun HikeDetailScreen(
   }
 
   // Avoid re-creating the MapView on every recomposition
-  mapView = remember {
+  val mapView = remember {
     MapView(context).apply {
       // Set map's initial state
       controller.setZoom(routeZoomLevel)
@@ -179,33 +171,32 @@ fun HikeDetailScreen(
     }
   }
 
-  if (mapView == null) {
-    Log.e("HikeDetailScreen", "MapView is null")
-    return
-  }
-
-  LaunchedEffect(listOfHikeRoutesViewModel.selectedHikeRoute.collectAsState().value) {
-    if (listOfHikeRoutesViewModel.selectedHikeRoute.value == null) {
-      listOfHikeRoutesViewModel.setMapState(
-          center =
-              GeoPoint(mapView?.mapCenter?.latitude ?: 0.0, mapView?.mapCenter?.longitude ?: 0.0),
-          zoom = mapView?.zoomLevelDouble ?: 0.0)
-    }
-  }
-
   // When the map is ready, it will have computed its bounding box
-  mapView?.addOnFirstLayoutListener { _, _, _, _, _ ->
+  mapView.addOnFirstLayoutListener { _, _, _, _, _ ->
     // Limit the vertical scrollable area to avoid the user scrolling too far from the hike
-    mapView?.setScrollableAreaLimitLatitude(
-        min(MapScreen.MAP_MAX_LATITUDE, mapView?.boundingBox?.latNorth ?: 0.0),
-        max(MapScreen.MAP_MIN_LATITUDE, mapView?.boundingBox?.latSouth ?: 0.0),
+    mapView.setScrollableAreaLimitLatitude(
+        min(MapScreen.MAP_MAX_LATITUDE, mapView.boundingBox.latNorth),
+        max(MapScreen.MAP_MIN_LATITUDE, mapView.boundingBox.latSouth),
         HikeDetailScreen.MAP_BOUNDS_MARGIN)
     if (route.bounds.maxLon < HikeDetailScreen.MAP_MAX_LONGITUDE ||
         route.bounds.minLon > HikeDetailScreen.MAP_MIN_LONGITUDE) {
-      mapView?.setScrollableAreaLimitLongitude(
-          max(HikeDetailScreen.MAP_MIN_LONGITUDE, mapView?.boundingBox?.lonWest ?: 0.0),
-          min(HikeDetailScreen.MAP_MAX_LONGITUDE, mapView?.boundingBox?.lonEast ?: 0.0),
+      mapView.setScrollableAreaLimitLongitude(
+          max(HikeDetailScreen.MAP_MIN_LONGITUDE, mapView.boundingBox.lonWest),
+          min(HikeDetailScreen.MAP_MAX_LONGITUDE, mapView.boundingBox.lonEast),
           HikeDetailScreen.MAP_BOUNDS_MARGIN)
+    }
+  }
+
+  // When the selectedHikeRoute changes to null, save the map's zoom level and center and navigate
+  // back
+  LaunchedEffect(listOfHikeRoutesViewModel.selectedHikeRoute.collectAsState().value) {
+    if (listOfHikeRoutesViewModel.selectedHikeRoute.value == null) {
+      mapView.let { mapView ->
+        listOfHikeRoutesViewModel.setMapState(
+            center = GeoPoint(mapView.mapCenter.latitude, mapView.mapCenter.longitude),
+            zoom = mapView.zoomLevelDouble)
+      }
+      navigationActions.goBack()
     }
   }
 
@@ -235,7 +226,7 @@ fun HikeDetailScreen(
     Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {
       // Map
       AndroidView(
-          factory = { mapView!! },
+          factory = { mapView },
           modifier =
               Modifier.fillMaxWidth()
                   .padding(bottom = 300.dp) // Reserve space for the scaffold at the bottom
@@ -247,8 +238,8 @@ fun HikeDetailScreen(
           onClick = { listOfHikeRoutesViewModel.clearSelectedRoute() })
       // Zoom buttons at the bottom right of the screen
       ZoomMapButton(
-          onZoomIn = { mapView?.controller?.zoomIn() },
-          onZoomOut = { mapView?.controller?.zoomOut() },
+          onZoomIn = { mapView.controller.zoomIn() },
+          onZoomOut = { mapView.controller.zoomOut() },
           modifier =
               Modifier.align(Alignment.BottomEnd)
                   .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
