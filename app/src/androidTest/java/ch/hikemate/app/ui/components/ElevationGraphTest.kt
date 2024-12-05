@@ -32,6 +32,9 @@ class ElevationGraphTest {
   @Test
   fun elevationGraph_withValidData_displaysGraph() {
     val elevationData = listOf(100.0, 200.0, 150.0, 175.0)
+    val markerDrawable = MapUtils.getUserLocationMarkerIcon(context)
+    val markerBitmap = (markerDrawable as android.graphics.drawable.BitmapDrawable).bitmap
+    val markerColor = markerBitmap.getPixel(markerBitmap.width / 2, markerBitmap.height / 2)
 
     composeTestRule.setContent {
       ElevationGraph(
@@ -42,6 +45,13 @@ class ElevationGraphTest {
 
     composeTestRule.waitForIdle()
 
+    val image = composeTestRule.onRoot().captureToImage()
+    val pixels = IntArray(image.width * image.height)
+    image.readPixels(pixels)
+
+    // Check that no marker color exists in the image
+    val foundMarker = pixels.any { it == markerColor }
+    assertFalse("Marker was found when it should not be displayed", foundMarker)
     // Verify that neither loading nor no data messages are shown
     composeTestRule
         .onNode(hasText(context.getString(R.string.elevation_graph_loading_label)))
