@@ -1,6 +1,6 @@
 package ch.hikemate.app.utils
 
-import ch.hikemate.app.model.elevation.ElevationServiceRepository
+import ch.hikemate.app.model.elevation.ElevationRepository
 import ch.hikemate.app.model.route.HikeDifficulty
 import ch.hikemate.app.model.route.LatLong
 import ch.hikemate.app.model.route.RouteSegment
@@ -40,17 +40,19 @@ object RouteUtils {
    * Helper function to compute the total elevation gain based on a list of waypoints.
    *
    * @param ways A list of `LatLong` objects representing the waypoints of the hike.
+   * @param elevationRepository The elevation service to use for computing elevation gain.
    * @return The total elevation gain in meters as a `Double`.
    */
-  fun getElevationGain(ways: List<LatLong>, elevationService: ElevationServiceRepository): Double =
+  fun getElevationGain(ways: List<LatLong>, elevationRepository: ElevationRepository): Double =
       runBlocking {
 
-        // Since elevationService.getElevation is asynchronous, we use a CompletableDeferred to wait
+        // Since elevationRepository.getElevation is asynchronous, we use a CompletableDeferred to
+        // wait
         // for
         // the result
         val deferredResult = CompletableDeferred<List<Double>>()
 
-        elevationService.getElevation(
+        elevationRepository.getElevation(
             coordinates = ways,
             onSuccess = { elevation -> deferredResult.complete(elevation) },
             onFailure = { deferredResult.complete(emptyList()) })

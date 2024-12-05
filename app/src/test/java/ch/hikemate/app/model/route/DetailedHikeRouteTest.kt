@@ -1,4 +1,4 @@
-import ch.hikemate.app.model.elevation.ElevationServiceRepository
+import ch.hikemate.app.model.elevation.ElevationRepository
 import ch.hikemate.app.model.route.Bounds
 import ch.hikemate.app.model.route.DetailedHikeRoute
 import ch.hikemate.app.model.route.HikeRoute
@@ -13,17 +13,17 @@ import org.junit.Test
 
 class DetailedHikeRouteTest {
 
-  private lateinit var mockElevationService: ElevationServiceRepository
+  private lateinit var mockElevationRepository: ElevationRepository
   private lateinit var mockDeferred: CompletableDeferred<Double>
   private var mockElevations = listOf(0.0)
 
   @Before
   fun setUp() {
-    mockElevationService = mockk()
+    mockElevationRepository = mockk()
     mockDeferred = mockk()
 
     coEvery {
-      mockElevationService.getElevation(
+      mockElevationRepository.getElevation(
           any(),
           any(),
           any(),
@@ -45,7 +45,7 @@ class DetailedHikeRouteTest {
             bounds = Bounds(1.0, 2.0, 3.0, 4.0),
             ways = listOf(LatLong(1.0, 2.0), LatLong(2.0, 3.0), LatLong(3.0, 4.0)))
 
-    val detailedHikeRoute = DetailedHikeRoute.create(hikeRoute, mockElevationService)
+    val detailedHikeRoute = DetailedHikeRoute.create(hikeRoute, mockElevationRepository)
 
     // assert the rest of the data is still accessible as expected
     assertEquals(hikeRoute, detailedHikeRoute.route)

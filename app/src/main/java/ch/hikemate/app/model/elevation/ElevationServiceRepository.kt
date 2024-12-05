@@ -18,25 +18,6 @@ import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
 import okhttp3.OkHttpClient
 
-private const val BASE_URL = "https://www.elevation-api.eu/v1/elevation?pts="
-
-// We need to wait some time before updating the cache to allow for multiple requests to be
-// batched together
-private const val CACHE_UPDATE_DELAY = 500L
-
-// Limit the cache size to avoid memory issues
-// This has been tested with a cache size of 100000, on a Google Pixel 8 Pro, without any issues
-private const val CACHE_MAX_SIZE = 150000
-
-// The maximum number of failed requests before giving up
-private const val MAX_FAILED_REQUESTS = 5
-
-// Delay to add per failed request
-private const val FAILED_REQUEST_DELAY = 1000L
-
-// The max number of coordinates that can be sent in a single request
-private const val MAX_COORDINATES_PER_REQUEST = 500
-
 /** Serializable data class for the response from the Elevation API */
 @Serializable data class ElevationResponse(val elevations: List<Double?>)
 
@@ -69,6 +50,28 @@ class ElevationServiceRepository(
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : ElevationRepository {
 
+  companion object {
+    // The base URL for the Elevation API
+    private const val BASE_URL = "https://www.elevation-api.eu/v1/elevation?pts="
+
+    // We need to wait some time before updating the cache to allow for multiple requests to be
+    // batched together
+    private const val CACHE_UPDATE_DELAY = 500L
+
+    // Limit the cache size to avoid memory issues
+    // This has been tested with a cache size of 150000, on a Google Pixel 8 Pro, without any issues
+    const val CACHE_MAX_SIZE = 100000
+
+    // The maximum number of failed requests before giving up
+    private const val MAX_FAILED_REQUESTS = 5
+
+    // Delay to add per failed request
+    private const val FAILED_REQUEST_DELAY = 1000L
+
+    // The max number of coordinates that can be sent in a single request
+    private const val MAX_COORDINATES_PER_REQUEST = 500
+  }
+
   // The number of failed requests made to the Elevation API since the last successful request
   private var failedRequests = 0
 
@@ -89,7 +92,7 @@ class ElevationServiceRepository(
    *
    * @return The size of the cache
    */
-  private fun getCacheSize(): Int {
+  fun getCacheSize(): Int {
     return cache.size
   }
 
@@ -155,6 +158,8 @@ class ElevationServiceRepository(
           mutex.withLock { coordinates = requests.flatMap { it.coordinates } }
           if (coordinates.size < MAX_COORDINATES_PER_REQUEST) {
             delay(CACHE_UPDATE_DELAY)
+            // If there were new requests in the meantime, we need to update the coordinates
+            mutex.withLock { coordinates = requests.flatMap { it.coordinates } }
           }
           mutex.withLock {
             val chunks = coordinates.chunked(MAX_COORDINATES_PER_REQUEST)
@@ -239,7 +244,6 @@ class ElevationServiceRepository(
       Log.d("ElevationServiceRepository", "Cache size: ${getCacheSize()}")
       if (getCacheSize() > CACHE_MAX_SIZE) {
         launchCacheCleanup()
-        Log.d("ElevationServiceRepository", "Cache cleanup launched")
       }
 
       onSuccess(nonNullListOfElevation)
@@ -251,11 +255,26 @@ class ElevationServiceRepository(
    * oldest entries to free up space.
    */
   private fun launchCacheCleanup() {
+    Log.d("ElevationServiceRepository", "Cache cleanup launched")
     CoroutineScope(dispatcher).launch {
       mutex.withLock {
+        if (cache.size <= CACHE_MAX_SIZE) return@launch
+
         val sortedCache = cache.toList().sortedBy { it.second.timestamp }
+
+        val deletionTimestamp = sortedCache[sortedCache.size - CACHE_MAX_SIZE].second.timestamp
+
+        // The current cache must keep entries related to currently being processed requests
+        val currentRequestCoordinates = requests.flatMap { it.coordinates }
+
+        val kept =
+            sortedCache.filter {
+              it.second.timestamp > deletionTimestamp ||
+                  currentRequestCoordinates.contains(it.first)
+            }
+
         cache.clear()
-        cache.putAll(sortedCache.take(CACHE_MAX_SIZE))
+        cache.putAll(kept)
       }
     }
   }

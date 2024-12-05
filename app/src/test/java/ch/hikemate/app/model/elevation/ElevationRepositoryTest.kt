@@ -28,7 +28,7 @@ import org.robolectric.RobolectricTestRunner
 @OptIn(ExperimentalCoroutinesApi::class)
 class ElevationRepositoryTest {
   private lateinit var client: OkHttpClient
-  private lateinit var elevationServiceRepository: ElevationServiceRepository
+  private lateinit var elevationRepository: ElevationRepository
   private val longList =
       listOf(515.0, 545.0, 117.0, 620.0, 480.0, 200.0, 750.0, 1020.0, 890.0, 1500.0, 340.0, 670.0)
   private val smallList = listOf(515.0, 545.0, 117.0)
@@ -133,7 +133,7 @@ class ElevationRepositoryTest {
   fun setup() {
     Dispatchers.setMain(dispatcher)
     client = mockk()
-    elevationServiceRepository = ElevationServiceRepository(client, dispatcher)
+    elevationRepository = ElevationServiceRepository(client, dispatcher)
   }
 
   @Test
@@ -148,7 +148,7 @@ class ElevationRepositoryTest {
 
     var onSuccessCalled = false
 
-    elevationServiceRepository.getElevation(
+    elevationRepository.getElevation(
         latLongList,
         { list ->
           assertEquals(smallList, list)
@@ -173,7 +173,7 @@ class ElevationRepositoryTest {
 
     var onSuccessCalled = false
 
-    elevationServiceRepository.getElevation(
+    elevationRepository.getElevation(
         longLatLongList,
         { list ->
           assertEquals(longList, list)
@@ -204,7 +204,7 @@ class ElevationRepositoryTest {
 
     var onSuccessCalled = false
 
-    elevationServiceRepository.getElevation(
+    elevationRepository.getElevation(
         longLatLongList,
         { list ->
           assertEquals(longList, list)
@@ -235,7 +235,7 @@ class ElevationRepositoryTest {
 
     var onSuccessCalled = false
 
-    elevationServiceRepository.getElevation(
+    elevationRepository.getElevation(
         longLatLongList,
         { list ->
           assertEquals(longList, list)

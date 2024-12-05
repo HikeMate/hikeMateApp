@@ -1,6 +1,6 @@
 package ch.hikemate.app.utils
 
-import ch.hikemate.app.model.elevation.ElevationServiceRepository
+import ch.hikemate.app.model.elevation.ElevationRepository
 import ch.hikemate.app.model.route.HikeDifficulty
 import ch.hikemate.app.model.route.LatLong
 import io.mockk.coEvery
@@ -89,8 +89,8 @@ class RouteUtilsTest {
   @Test
   fun test_getElevationGain_returns_correct_elevation_gain_from_service() =
       runTest(timeout = 10.seconds) {
-        // mock elevationService
-        val mockElevationRepository = mockk<ElevationServiceRepository>()
+        // mock elevationRepository
+        val mockElevationRepository = mockk<ElevationRepository>()
         val mockElevations = listOf(100.0, 150.0, 140.0, 200.0, 190.0)
 
         coEvery { mockElevationRepository.getElevation(any(), any(), any()) } answers

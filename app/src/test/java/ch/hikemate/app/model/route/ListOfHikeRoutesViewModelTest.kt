@@ -82,7 +82,7 @@ class ListOfHikeRoutesViewModelTest {
   }
 
   @Test
-  fun getRouteElevationCallsElevationService() {
+  fun getRouteElevationCallsElevationRepository() {
     val route = HikeRoute("Route 1", Bounds(0.0, 0.0, 0.0, 0.0), emptyList())
     listOfHikeRoutesViewModel.getRoutesElevation(route)
     verify(elevationRepository, times(1)).getElevation(any(), any(), any())
