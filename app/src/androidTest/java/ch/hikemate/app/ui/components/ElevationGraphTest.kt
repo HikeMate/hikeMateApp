@@ -2,16 +2,13 @@ package ch.hikemate.app.ui.components
 
 import android.content.Context
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import ch.hikemate.app.R
 import ch.hikemate.app.utils.MapUtils
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -37,14 +34,11 @@ class ElevationGraphTest {
     val hikeColor = Color.Red.toArgb() // Default stroke color in ElevationGraphStyleProperties
 
     composeTestRule.setContent {
-        ElevationGraph(
+      ElevationGraph(
           elevations = elevationData,
           modifier = Modifier.fillMaxSize(),
-          styleProperties = ElevationGraphStyleProperties(
-            strokeColor = Color.Red,
-            fillColor = Color.Red
-          )
-        )
+          styleProperties =
+              ElevationGraphStyleProperties(strokeColor = Color.Red, fillColor = Color.Red))
     }
 
     composeTestRule.waitForIdle()
@@ -64,6 +58,7 @@ class ElevationGraphTest {
     val foundMarker = pixels.any { it == markerColor }
     assertFalse("Marker was found when it should not be displayed", foundMarker)
   }
+
   @Test
   fun elevationGraph_withLocationMarker_displaysMarker() {
     val elevationData = listOf(100.0, 20.0, 40.0, 150.0)
