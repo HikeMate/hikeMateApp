@@ -181,13 +181,11 @@ open class ListOfHikeRoutesViewModel(
    */
   fun selectRoute(hikeRoute: HikeRoute) {
     selectedHikeRoute_.value = hikeRoute
-    // Clears map state when new route is selected
   }
 
   /** Clears the selected route */
   fun clearSelectedRoute() {
     selectedHikeRoute_.value = null
-    // Clears map state when route is cleared
   }
 
   private suspend fun selectRouteByIdAsync(hikeId: String) {

@@ -127,12 +127,12 @@ fun HikeDetailScreen(
 
   LaunchedEffect(listOfHikeRoutesViewModel.selectedHikeRoute.collectAsState().value) {
     if (listOfHikeRoutesViewModel.selectedHikeRoute.value == null) {
-      navigationActions.goBack()
       mapView?.let { mapView ->
         listOfHikeRoutesViewModel.setMapState(
             center = GeoPoint(mapView.mapCenter.latitude, mapView.mapCenter.longitude),
             zoom = mapView.zoomLevelDouble)
       }
+      navigationActions.goBack()
     }
   }
 

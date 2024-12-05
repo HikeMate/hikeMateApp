@@ -24,7 +24,8 @@ object MapUtils {
   /**
    * Shows a hike on the map.
    *
-   * @param mapView The map view where the hike will be shown.
+   * @param mapView The map view where the hike will be shown. Nullable, but if the mapView is null
+   *   the function just returns.
    * @param hike The hike to be shown.
    * @param color The color of the hike.
    */
