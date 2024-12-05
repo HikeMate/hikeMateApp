@@ -340,7 +340,6 @@ class MapScreenTest : TestCase() {
     composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_CENTER_MAP_BUTTON).performClick()
 
     // Then an alert will be shown to ask for the permission
-
     composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_LOCATION_PERMISSION_ALERT).assertIsDisplayed()
 
     // When the user clicks on the "No thanks" button
