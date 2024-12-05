@@ -16,7 +16,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -26,8 +25,8 @@ import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.model.authentication.FirebaseAuthRepository
 import ch.hikemate.app.model.profile.ProfileRepositoryFirestore
 import ch.hikemate.app.model.profile.ProfileViewModel
-import ch.hikemate.app.model.route.HikesViewModel
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
+import ch.hikemate.app.model.route.saved.SavedHikesViewModel
 import ch.hikemate.app.ui.auth.CreateAccountScreen
 import ch.hikemate.app.ui.auth.SignInScreen
 import ch.hikemate.app.ui.auth.SignInWithEmailScreen
@@ -46,7 +45,6 @@ import ch.hikemate.app.ui.saved.SavedHikesScreen
 import ch.hikemate.app.ui.theme.HikeMateTheme
 import com.google.firebase.FirebaseApp
 import com.google.firebase.firestore.FirebaseFirestore
-import org.osmdroid.config.Configuration
 
 class MainActivity : ComponentActivity() {
   @SuppressLint("SourceLockedOrientationActivity")
@@ -73,11 +71,8 @@ class MainActivity : ComponentActivity() {
 }
 
 /**
- * The main composable function for the HikeMate application. It
- * 1. Sets up the several view models that are needed for the whole app
- * 2. Ensures the user's profile and saved hikes are reloaded every time a new user logs in
- * 3. Configures what needs to be configured before using OSMDroid
- * 4. Sets up the navigation host and defines the navigation graph
+ * The main composable function for the HikeMate application. It sets up the navigation host and
+ * defines the navigation graph.
  */
 @Composable
 fun HikeMateApp() {
