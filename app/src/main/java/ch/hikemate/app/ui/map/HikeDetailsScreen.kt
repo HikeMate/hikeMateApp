@@ -265,10 +265,9 @@ fun hikeDetailsMap(hike: DetailedHike): MapView {
 
   // Show the selected hike on the map
   // OnLineClick does nothing, the line should not be clickable
-  val hikeLineColor = hike.color
   Log.d("HikeDetailScreen", "Drawing hike on map: ${hike.bounds}")
   MapUtils.showHikeOnMap(
-      mapView = mapView, waypoints = hike.waypoints, color = hikeLineColor, onLineClick = {})
+      mapView = mapView, waypoints = hike.waypoints, color = hike.color, onLineClick = {})
 
   // Display the map as a composable
   AndroidView(
