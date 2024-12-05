@@ -109,10 +109,10 @@ object HikeDetailScreen {
   const val MAP_MAX_LONGITUDE = 180.0
   const val MAP_MIN_LONGITUDE = -180.0
   const val MAP_BOUNDS_MARGIN: Int = 100
-    const val MARGIN_BOUNDS = 0.001
+  const val MARGIN_BOUNDS = 0.001
 
-    const val MIN_ZOOM_FOR_FACILITIES = 15.0
-    const val DEBOUNCE_DURATION = 300L
+  const val MIN_ZOOM_FOR_FACILITIES = 15.0
+  const val DEBOUNCE_DURATION = 300L
 
   const val TEST_TAG_MAP = "HikeDetailScreenMap"
   const val TEST_TAG_HIKE_NAME = "HikeDetailScreenHikeName"
