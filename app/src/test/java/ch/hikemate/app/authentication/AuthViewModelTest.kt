@@ -1,6 +1,5 @@
 package ch.hikemate.app.authentication
 
-import android.app.Activity
 import android.content.Context
 import ch.hikemate.app.R
 import ch.hikemate.app.model.authentication.AuthViewModel
@@ -371,25 +370,25 @@ class AuthViewModelTest {
 
     // Simulate a successful account deletion by invoking the onSuccess callback
     doAnswer { arguments ->
-          val onSuccess = arguments.getArgument<() -> Unit>(2)
+          val onSuccess = arguments.getArgument<() -> Unit>(3)
           onSuccess()
           null
         }
         .`when`(mockRepository)
-        .deleteAccount(any(), any(), any(), any())
+        .deleteAccount(any(), any(), any(), any(), any())
 
     // Verify that currentUser is initially mockFirebaseUser
     assertEquals(mockFirebaseUser, viewModel.currentUser.value)
 
-    val activity = mock(Activity::class.java)
     viewModel.deleteAccount(
         "password",
-        activity = activity,
+        context = mockContext,
+        coroutineScope = this,
         onSuccess = mockOnSuccess,
         onErrorAction = { fail("Error callback should not be called") })
 
     // Verify that the repository's deleteAccount was called
-    verify(mockRepository).deleteAccount(any(), any(), any(), any())
+    verify(mockRepository).deleteAccount(any(), any(), any(), any(), any())
     // Verify that currentUser is updated to null
     assertEquals(null, viewModel.currentUser.value)
     // Verify that the onSuccess callback was called
@@ -405,25 +404,25 @@ class AuthViewModelTest {
 
       // Simulate an unsuccessful account deletion by invoking the onError callback
       doAnswer { arguments ->
-            val onError = arguments.getArgument<(Int) -> Unit>(3)
+            val onError = arguments.getArgument<(Int) -> Unit>(4)
             onError(R.string.error_occurred_while_signing_in_with_google)
             null
           }
           .`when`(mockRepository)
-          .deleteAccount(any(), any(), any(), any())
+          .deleteAccount(any(), any(), any(), any(), any())
 
       // Verify that currentUser is initially mockFirebaseUser
       assertEquals(mockFirebaseUser, viewModel.currentUser.value)
 
-      val activity = mock(Activity::class.java)
       viewModel.deleteAccount(
           "password",
-          activity = activity,
+          context = mockContext,
+          coroutineScope = this,
           onSuccess = { fail("Success callback should not be called") },
           onErrorAction = mockOnError)
 
       // Verify that the repository's deleteAccount was called
-      verify(mockRepository).deleteAccount(any(), any(), any(), any())
+      verify(mockRepository).deleteAccount(any(), any(), any(), any(), any())
       // Verify that currentUser is still mockFirebaseUser
       assertEquals(mockFirebaseUser, viewModel.currentUser.value)
       // Verify that the onError callback was called
