@@ -264,7 +264,7 @@ fun RunHikeBottomSheet(
             DetailRow(
                 label = stringResource(R.string.run_hike_screen_label_estimated_time),
                 value =
-                    if (hikeRoute.estimatedTime / 60 < 1)
+                    if (hours < 1)
                         stringResource(
                             R.string.run_hike_screen_value_format_estimated_time_minutes, minutes)
                     else
