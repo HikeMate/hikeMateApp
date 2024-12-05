@@ -67,6 +67,7 @@ import ch.hikemate.app.ui.components.AsyncStateHandler
 import ch.hikemate.app.ui.components.BackButton
 import ch.hikemate.app.ui.components.BigButton
 import ch.hikemate.app.ui.components.ButtonType
+import ch.hikemate.app.ui.components.DetailRow
 import ch.hikemate.app.ui.components.ElevationGraph
 import ch.hikemate.app.ui.components.ElevationGraphStyleProperties
 import ch.hikemate.app.ui.map.HikeDetailScreen.MAP_MAX_ZOOM
@@ -75,8 +76,6 @@ import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_BOOKMARK_ICON
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DATE_PICKER
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DATE_PICKER_CANCEL_BUTTON
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DATE_PICKER_CONFIRM_BUTTON
-import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DETAIL_ROW_TAG
-import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DETAIL_ROW_VALUE
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_ELEVATION_GRAPH
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_HIKE_NAME
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_MAP
@@ -119,8 +118,6 @@ object HikeDetailScreen {
   const val TEST_TAG_HIKE_NAME = "HikeDetailScreenHikeName"
   const val TEST_TAG_BOOKMARK_ICON = "HikeDetailScreenBookmarkIcon"
   const val TEST_TAG_ELEVATION_GRAPH = "HikeDetailScreenElevationGraph"
-  const val TEST_TAG_DETAIL_ROW_TAG = "HikeDetailScreenDetailRowTag"
-  const val TEST_TAG_DETAIL_ROW_VALUE = "HikeDetailScreenDetailRowValue"
   const val TEST_TAG_ADD_DATE_BUTTON = "HikeDetailScreenAddDateButton"
   const val TEST_TAG_PLANNED_DATE_TEXT_BOX = "HikeDetailScreenPlannedDateTextBox"
   const val TEST_TAG_DATE_PICKER = "HikeDetailDatePicker"
@@ -286,6 +283,9 @@ fun HikeDetailScreen(
     profileViewModel.getProfileById(authViewModel.currentUser.value!!.uid)
   }
 
+  var wantToRunHike by remember { mutableStateOf(false) }
+  LaunchedEffect(wantToRunHike) { if (wantToRunHike) navigationActions.navigateTo(Screen.RUN_HIKE) }
+
   val errorMessageIdState = profileViewModel.errorMessageId.collectAsState()
   val profileState = profileViewModel.profile.collectAsState()
 
@@ -322,7 +322,7 @@ fun HikeDetailScreen(
           savedHikesViewModel = savedHikesViewModel,
           elevationData = elevationData,
           userHikingLevel = profile.hikingLevel,
-          onRunThisHike = { navigationActions.navigateTo(Screen.RUN_HIKE) },
+          onRunThisHike = { wantToRunHike = true },
       )
     }
   }
@@ -514,7 +514,7 @@ fun DateDetailRow(
         Text(
             text = stringResource(R.string.hike_detail_screen_label_planned_for),
             style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.testTag(TEST_TAG_DETAIL_ROW_TAG))
+            modifier = Modifier.testTag(DetailRow.TEST_TAG_DETAIL_ROW_TAG))
 
         Button(
             modifier = Modifier.width(90.dp).height(25.dp).testTag(TEST_TAG_ADD_DATE_BUTTON),
@@ -544,7 +544,7 @@ fun DateDetailRow(
         Text(
             text = stringResource(R.string.hike_detail_screen_label_planned_for),
             style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.testTag(TEST_TAG_DETAIL_ROW_TAG))
+            modifier = Modifier.testTag(DetailRow.TEST_TAG_DETAIL_ROW_TAG))
         Box(
             modifier =
                 Modifier.border(
@@ -567,27 +567,6 @@ fun DateDetailRow(
         value = stringResource(R.string.hike_detail_screen_value_not_saved),
         valueColor = MaterialTheme.colorScheme.onSurface)
   }
-}
-
-@Composable
-fun DetailRow(
-    label: String,
-    value: String,
-    valueColor: Color = MaterialTheme.colorScheme.onSurface
-) {
-  Row(
-      horizontalArrangement = Arrangement.SpaceBetween,
-      modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.testTag(TEST_TAG_DETAIL_ROW_TAG))
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-            color = valueColor,
-            modifier = Modifier.testTag(TEST_TAG_DETAIL_ROW_VALUE))
-      }
 }
 
 @Composable
