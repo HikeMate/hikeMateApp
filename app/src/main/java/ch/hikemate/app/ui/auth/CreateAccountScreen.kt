@@ -9,11 +9,7 @@ import androidx.compose.foundation.layout.imeNestedScroll
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -26,8 +22,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ch.hikemate.app.R
@@ -35,10 +29,10 @@ import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.ui.components.BackButton
 import ch.hikemate.app.ui.components.BigButton
 import ch.hikemate.app.ui.components.ButtonType
+import ch.hikemate.app.ui.components.CustomTextField
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
-import ch.hikemate.app.ui.theme.primaryColor
 
 object CreateAccountScreen {
   const val TEST_TAG_TITLE = "create_account_title"
@@ -70,19 +64,6 @@ fun CreateAccountScreen(
   val emailWrongFormatErrorMessage = stringResource(R.string.create_account_email_format_error)
   val fieldMustBeFilledErrorMessage =
       stringResource(R.string.create_account_fields_must_be_filled_error)
-
-  // Define the colors for the input fields
-  val inputColors =
-      OutlinedTextFieldDefaults.colors()
-          .copy(
-              focusedLabelColor = primaryColor,
-              focusedIndicatorColor = primaryColor,
-              cursorColor = primaryColor,
-              textSelectionColors =
-                  TextSelectionColors(
-                      handleColor = primaryColor,
-                      backgroundColor = primaryColor,
-                  ))
 
   var name by remember { mutableStateOf("") }
   var email by remember { mutableStateOf("") }
@@ -135,42 +116,39 @@ fun CreateAccountScreen(
             style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 32.sp),
             modifier = Modifier.testTag(CreateAccountScreen.TEST_TAG_TITLE))
 
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().testTag(CreateAccountScreen.TEST_TAG_NAME_INPUT),
-            colors = inputColors,
+        CustomTextField(
             value = name,
             onValueChange = { name = it },
-            label = { Text(stringResource(R.string.create_account_name_label)) },
-            singleLine = true)
+            label = stringResource(R.string.create_account_name_label),
+            maxLength = CustomTextField.MAX_NAME_LENGTH,
+            modifier = Modifier.testTag(CreateAccountScreen.TEST_TAG_NAME_INPUT),
+        )
 
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().testTag(CreateAccountScreen.TEST_TAG_EMAIL_INPUT),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            colors = inputColors,
+        CustomTextField(
             value = email,
             onValueChange = { email = it },
-            label = { Text(stringResource(R.string.create_account_email_label)) },
-            singleLine = true)
+            label = stringResource(R.string.create_account_email_label),
+            maxLength = CustomTextField.MAX_EMAIL_LENGTH,
+            modifier = Modifier.testTag(CreateAccountScreen.TEST_TAG_EMAIL_INPUT),
+        )
 
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().testTag(CreateAccountScreen.TEST_TAG_PASSWORD_INPUT),
-            visualTransformation = PasswordVisualTransformation(),
-            colors = inputColors,
+        CustomTextField(
             value = password,
             onValueChange = { password = it },
-            label = { Text(stringResource(R.string.create_account_password_label)) },
-            singleLine = true)
+            isPassword = true,
+            label = stringResource(R.string.create_account_password_label),
+            maxLength = CustomTextField.MAX_PASSWORD_LENGTH,
+            modifier = Modifier.testTag(CreateAccountScreen.TEST_TAG_PASSWORD_INPUT),
+        )
 
-        OutlinedTextField(
-            modifier =
-                Modifier.fillMaxWidth()
-                    .testTag(CreateAccountScreen.TEST_TAG_CONFIRM_PASSWORD_INPUT),
-            visualTransformation = PasswordVisualTransformation(),
-            colors = inputColors,
+        CustomTextField(
             value = confirmPassword,
             onValueChange = { confirmPassword = it },
-            label = { Text(stringResource(R.string.create_account_repeat_password_label)) },
-            singleLine = true)
+            isPassword = true,
+            label = stringResource(R.string.create_account_repeat_password_label),
+            maxLength = CustomTextField.MAX_PASSWORD_LENGTH,
+            modifier = Modifier.testTag(CreateAccountScreen.TEST_TAG_CONFIRM_PASSWORD_INPUT),
+        )
 
         BigButton(
             modifier = Modifier.fillMaxWidth().testTag(CreateAccountScreen.TEST_TAG_SIGN_UP_BUTTON),
