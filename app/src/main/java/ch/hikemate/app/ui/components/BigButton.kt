@@ -41,13 +41,14 @@ fun BigButton(
     buttonType: ButtonType,
     label: String,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    fillColor: Color = buttonType.backgroundColor,
 ) {
   Button(
       onClick = onClick,
       colors =
           ButtonDefaults.buttonColors(
-              contentColor = buttonType.textColor, containerColor = buttonType.backgroundColor),
+              contentColor = buttonType.textColor, containerColor = fillColor),
       shape = RoundedCornerShape(20),
       modifier =
           modifier
