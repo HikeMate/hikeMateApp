@@ -122,7 +122,7 @@ fun EditProfileScreen(
               value = name,
               onValueChange = { name = it },
               label = context.getString(R.string.profile_screen_name_label),
-              maxLength = 40,
+              maxLength = CustomTextField.MAX_NAME_LENGTH,
               modifier = Modifier.testTag(EditProfileScreen.TEST_TAG_NAME_INPUT),
           )
 

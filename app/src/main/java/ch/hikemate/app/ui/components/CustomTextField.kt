@@ -19,7 +19,8 @@ object CustomTextField {
 }
 
 /**
- * Custom text field with custom colors and optional max length.
+ * Custom text field with custom colors and optional max length. This field will always be single
+ * line.
  *
  * @param value The value of the text field.
  * @param onValueChange The callback when the value changes.
