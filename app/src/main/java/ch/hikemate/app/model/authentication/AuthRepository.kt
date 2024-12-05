@@ -1,6 +1,5 @@
 package ch.hikemate.app.model.authentication
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import androidx.activity.compose.ManagedActivityResultLauncher
@@ -79,14 +78,16 @@ interface AuthRepository {
    * account.
    *
    * @param password The password of the user.
-   * @param activity The Android Activity, used for launching the re-authentication dialog.
+   * @param context The Android Context, used for accessing resources and system services.
+   * @param coroutineScope The CoroutineScope to launch the account deletion task in a non-blocking
    * @param onSuccess Callback to invoke after the user's account has been successfully deleted.
    * @param onErrorAction Callback to invoke when an error occurs during account deletion. Passes
    *   the Throwable error.
    */
   fun deleteAccount(
       password: String,
-      activity: Activity,
+      context: Context,
+      coroutineScope: CoroutineScope,
       onSuccess: () -> Unit,
       onErrorAction: (Int) -> Unit
   )

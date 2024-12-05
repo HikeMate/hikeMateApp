@@ -1,6 +1,5 @@
 package ch.hikemate.app.model.authentication
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.util.Log
@@ -193,13 +192,15 @@ class AuthViewModel(
    */
   fun deleteAccount(
       password: String,
-      activity: Activity,
+      context: Context,
+      coroutineScope: CoroutineScope,
       onSuccess: () -> Unit,
       onErrorAction: (Int) -> Unit
   ) {
     repository.deleteAccount(
         password = password,
-        activity = activity,
+        context = context,
+        coroutineScope = coroutineScope,
         onSuccess = {
           _currentUser.value = null
           onSuccess()

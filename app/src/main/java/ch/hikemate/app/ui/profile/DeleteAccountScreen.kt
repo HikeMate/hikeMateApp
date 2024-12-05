@@ -1,6 +1,5 @@
 package ch.hikemate.app.ui.profile
 
-import android.app.Activity
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -15,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -51,6 +51,8 @@ object DeleteAccountScreen {
 @Composable
 fun DeleteAccountScreen(navigationActions: NavigationActions, authViewModel: AuthViewModel) {
   val context = LocalContext.current
+
+  val coroutineScope = rememberCoroutineScope()
 
   val passwordMustNotBeEmptyError =
       stringResource(R.string.delete_account_password_must_be_filled_error)
@@ -112,7 +114,8 @@ fun DeleteAccountScreen(navigationActions: NavigationActions, authViewModel: Aut
               } else {
                 authViewModel.deleteAccount(
                     password,
-                    context as Activity,
+                    context,
+                    coroutineScope,
                     { navigationActions.navigateTo(Route.AUTH) },
                     { Toast.makeText(context, context.getString(it), Toast.LENGTH_SHORT).show() })
               }
