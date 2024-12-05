@@ -41,12 +41,12 @@ import ch.hikemate.app.ui.components.AsyncStateHandler
 import ch.hikemate.app.ui.components.BackButton
 import ch.hikemate.app.ui.components.BigButton
 import ch.hikemate.app.ui.components.ButtonType
+import ch.hikemate.app.ui.components.DetailRow
 import ch.hikemate.app.ui.components.ElevationGraph
 import ch.hikemate.app.ui.components.ElevationGraphStyleProperties
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.utils.MapUtils
-import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -229,8 +229,7 @@ fun RunHikeBottomSheet(
                       // Displays the progress percentage below the graph
                       // TODO hardcoded as 23% for now
                       text =
-                          stringResource(R.string.run_hike_screen_progress_percentage_format)
-                              .format(23),
+                          stringResource(R.string.run_hike_screen_progress_percentage_format, 23),
                       style = MaterialTheme.typography.bodyLarge,
                       color = hikeColor,
                       fontWeight = FontWeight.Bold,
@@ -239,8 +238,9 @@ fun RunHikeBottomSheet(
                   )
                   Text(
                       text =
-                          stringResource(R.string.run_hike_screen_distance_progress_value_format)
-                              .format(hikeRoute.totalDistance),
+                          stringResource(
+                              R.string.run_hike_screen_distance_progress_value_format,
+                              hikeRoute.totalDistance),
                       style = MaterialTheme.typography.bodyLarge,
                       fontWeight = FontWeight.Bold,
                       textAlign = TextAlign.Right,
@@ -248,36 +248,30 @@ fun RunHikeBottomSheet(
                   )
                 }
 
-            val hourString =
-                String.format(Locale.getDefault(), "%02d", (hikeRoute.estimatedTime / 60).toInt())
-            val minuteString =
-                String.format(
-                    Locale.getDefault(), "%02d", (hikeRoute.estimatedTime % 60).roundToInt())
+            val hours = (hikeRoute.estimatedTime / 60).toInt()
+            val minutes = (hikeRoute.estimatedTime % 60).roundToInt()
 
             DetailRow(
                 label = stringResource(R.string.run_hike_screen_label_current_elevation),
                 // TODO hardcoded to 50m for now
-                value =
-                    stringResource(R.string.run_hike_screen_value_format_current_elevation)
-                        .format(50))
+                value = stringResource(R.string.run_hike_screen_value_format_current_elevation, 50))
             DetailRow(
                 label = stringResource(R.string.run_hike_screen_label_elevation_gain),
                 value =
-                    stringResource(R.string.run_hike_screen_value_format_elevation_gain)
-                        .format(hikeRoute.elevationGain.roundToInt()))
+                    stringResource(
+                        R.string.run_hike_screen_value_format_elevation_gain,
+                        hikeRoute.elevationGain.roundToInt()))
             DetailRow(
                 label = stringResource(R.string.run_hike_screen_label_estimated_time),
                 value =
                     if (hikeRoute.estimatedTime / 60 < 1)
-                        stringResource(R.string.run_hike_screen_value_format_estimated_time_minutes)
-                            .format((hikeRoute.estimatedTime % 60).roundToInt())
+                        stringResource(
+                            R.string.run_hike_screen_value_format_estimated_time_minutes, minutes)
                     else
                         stringResource(
-                                R.string
-                                    .run_hike_screen_value_format_estimated_time_hours_and_minutes)
-                            .format(
-                                (hikeRoute.estimatedTime / 60).toInt(),
-                                (hikeRoute.estimatedTime % 60).roundToInt()))
+                            R.string.run_hike_screen_value_format_estimated_time_hours_and_minutes,
+                            hours,
+                            minutes))
             DetailRow(
                 label = stringResource(R.string.run_hike_screen_label_difficulty),
                 value = stringResource(hikeRoute.difficulty.nameResourceId),

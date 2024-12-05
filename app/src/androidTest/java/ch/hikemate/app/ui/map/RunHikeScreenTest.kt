@@ -18,6 +18,7 @@ import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.HikeRoutesRepository
 import ch.hikemate.app.model.route.LatLong
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
+import ch.hikemate.app.ui.components.DetailRow
 import ch.hikemate.app.ui.navigation.NavigationActions
 import com.google.firebase.Timestamp
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -142,10 +143,8 @@ class RunHikeScreenTest {
 
     composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_HIKE_NAME).assertIsDisplayed()
 
-    composeTestRule.onAllNodesWithTag(HikeDetailScreen.TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(4)
-    composeTestRule
-        .onAllNodesWithTag(HikeDetailScreen.TEST_TAG_DETAIL_ROW_VALUE)
-        .assertCountEquals(4)
+    composeTestRule.onAllNodesWithTag(DetailRow.TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(4)
+    composeTestRule.onAllNodesWithTag(DetailRow.TEST_TAG_DETAIL_ROW_VALUE).assertCountEquals(4)
 
     composeTestRule
         .onNodeWithTag(RunHikeScreen.TEST_TAG_TOTAL_DISTANCE_TEXT)

@@ -22,13 +22,12 @@ import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
 import ch.hikemate.app.model.route.saved.SavedHikesRepository
 import ch.hikemate.app.model.route.saved.SavedHikesViewModel
 import ch.hikemate.app.ui.components.BackButton.BACK_BUTTON_TEST_TAG
+import ch.hikemate.app.ui.components.DetailRow
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_ADD_DATE_BUTTON
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_BOOKMARK_ICON
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DATE_PICKER
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DATE_PICKER_CANCEL_BUTTON
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DATE_PICKER_CONFIRM_BUTTON
-import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DETAIL_ROW_TAG
-import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DETAIL_ROW_VALUE
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_ELEVATION_GRAPH
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_HIKE_NAME
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_MAP
@@ -208,8 +207,8 @@ class HikeDetailScreenTest {
           {})
     }
 
-    composeTestRule.onAllNodesWithTag(TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(5)
-    composeTestRule.onAllNodesWithTag(TEST_TAG_DETAIL_ROW_VALUE).assertCountEquals(5)
+    composeTestRule.onAllNodesWithTag(DetailRow.TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(5)
+    composeTestRule.onAllNodesWithTag(DetailRow.TEST_TAG_DETAIL_ROW_VALUE).assertCountEquals(5)
   }
 
   @Test
@@ -234,8 +233,8 @@ class HikeDetailScreenTest {
           {})
     }
 
-    composeTestRule.onAllNodesWithTag(TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(6)
-    composeTestRule.onAllNodesWithTag(TEST_TAG_DETAIL_ROW_VALUE).assertCountEquals(5)
+    composeTestRule.onAllNodesWithTag(DetailRow.TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(6)
+    composeTestRule.onAllNodesWithTag(DetailRow.TEST_TAG_DETAIL_ROW_VALUE).assertCountEquals(5)
     composeTestRule.onNodeWithTag(TEST_TAG_ADD_DATE_BUTTON).assertIsDisplayed()
   }
 
@@ -265,8 +264,8 @@ class HikeDetailScreenTest {
           {})
     }
 
-    composeTestRule.onAllNodesWithTag(TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(6)
-    composeTestRule.onAllNodesWithTag(TEST_TAG_DETAIL_ROW_VALUE).assertCountEquals(5)
+    composeTestRule.onAllNodesWithTag(DetailRow.TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(6)
+    composeTestRule.onAllNodesWithTag(DetailRow.TEST_TAG_DETAIL_ROW_VALUE).assertCountEquals(5)
     composeTestRule.onNodeWithTag(TEST_TAG_PLANNED_DATE_TEXT_BOX).assertIsDisplayed()
   }
 
@@ -398,16 +397,16 @@ class HikeDetailScreenTest {
         String.format(Locale.getDefault(), "%02d", (detailedRoute.estimatedTime % 60).roundToInt())
 
     composeTestRule
-        .onAllNodesWithTag(TEST_TAG_DETAIL_ROW_VALUE)
+        .onAllNodesWithTag(DetailRow.TEST_TAG_DETAIL_ROW_VALUE)
         .assertAny(hasText("${distanceString}km"))
     composeTestRule
-        .onAllNodesWithTag(TEST_TAG_DETAIL_ROW_VALUE)
+        .onAllNodesWithTag(DetailRow.TEST_TAG_DETAIL_ROW_VALUE)
         .assertAny(hasText("${elevationGainString}m"))
     composeTestRule
-        .onAllNodesWithTag(TEST_TAG_DETAIL_ROW_VALUE)
+        .onAllNodesWithTag(DetailRow.TEST_TAG_DETAIL_ROW_VALUE)
         .assertAny(hasText("${hourString}h${minuteString}"))
     composeTestRule
-        .onAllNodesWithTag(TEST_TAG_DETAIL_ROW_VALUE)
+        .onAllNodesWithTag(DetailRow.TEST_TAG_DETAIL_ROW_VALUE)
         .assertAny(
             hasText(
                 ApplicationProvider.getApplicationContext<Context>()
@@ -431,7 +430,7 @@ class HikeDetailScreenTest {
         String.format(Locale.getDefault(), "%02d", (detailedRoute.estimatedTime % 60).roundToInt())
 
     composeTestRule
-        .onAllNodesWithTag(TEST_TAG_DETAIL_ROW_VALUE)
+        .onAllNodesWithTag(DetailRow.TEST_TAG_DETAIL_ROW_VALUE)
         .assertAny(hasText("${minuteString}min"))
   }
 
