@@ -50,6 +50,9 @@
     <string name="map_search_for_hikes">Searching for hikes…</string>
 
     <!-- Hike Details Screen -->
+    <string name="hike_details_screen_obtaining_osm_data">Loading hike data…</string>
+    <string name="hike_details_screen_obtaining_elevation">Loading hike elevation…</string>
+    <string name="hike_details_screen_computing_details">Last computations…</string>
     <string name="hike_detail_screen_bookmark_hint_on_isSaved_true">Unsave hike</string>
     <string name="hike_detail_screen_bookmark_hint_on_isSaved_false">Save hike</string>
     <string name="hike_detail_screen_label_distance">Distance</string>
@@ -68,6 +71,20 @@
     <string name="hike_detail_screen_date_picker_cancel_button">Cancel</string>
     <string name="hike_detail_screen_date_picker_confirm_button">Plan this hike!</string>
 
+    <!--Run Hike Screen -->
+    <string name="run_hike_screen_stop_run_button_label">Stop the run</string>
+    <string name="run_hike_screen_zero_distance_progress_value">0km</string>
+    <string name="run_hike_screen_distance_progress_value_format">%.2fkm</string>
+    <string name="run_hike_screen_progress_percentage_format">%d%% complete</string>
+    <string name="run_hike_screen_label_current_elevation">Current Elevation</string>
+    <string name="run_hike_screen_value_format_current_elevation">%dm</string>
+    <string name="run_hike_screen_label_elevation_gain">Elevation Gain</string>
+    <string name="run_hike_screen_value_format_elevation_gain">%dm</string>
+    <string name="run_hike_screen_label_estimated_time">Estimated time</string>
+    <string name="run_hike_screen_value_format_estimated_time_minutes">%02dmin</string>
+    <string name="run_hike_screen_value_format_estimated_time_hours_and_minutes">%dh%02d</string>
+    <string name="run_hike_screen_label_difficulty">Difficulty</string>
+
     <!-- Hike Difficulty Levels -->
     <string name="hike_difficulty_easy">Easy</string>
     <string name="hike_difficulty_moderate">Moderate</string>
@@ -75,6 +92,7 @@
 
 
     <!-- Saved Hikes Screen -->
+    <string name="saved_hikes_screen_loading_message">Loading saved hikes…</string>
     <string name="saved_hikes_screen_generic_error">
         An error occurred while loading saved hikes.
         Please check your Internet connection and try again.

@@ -1,8 +1,13 @@
 package ch.hikemate.app.ui.map
 
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
 import ch.hikemate.app.model.elevation.ElevationRepository
 import ch.hikemate.app.model.profile.HikingLevel
 import ch.hikemate.app.model.profile.Profile
@@ -13,10 +18,7 @@ import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.HikeRoutesRepository
 import ch.hikemate.app.model.route.LatLong
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
-import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_RUN_HIKE_SCREEN_BACK_BUTTON
-import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_RUN_HIKE_SCREEN_BOTTOM_SHEET
-import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_RUN_HIKE_SCREEN_MAP
-import ch.hikemate.app.ui.map.RunHikeScreen.TEST_TAG_RUN_HIKE_SCREEN_ZOOM_BUTTONS
+import ch.hikemate.app.ui.components.DetailRow
 import ch.hikemate.app.ui.navigation.NavigationActions
 import com.google.firebase.Timestamp
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -25,10 +27,12 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.mockito.Mockito.doNothing
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.verify
 
 class RunHikeScreenTest {
 
@@ -79,17 +83,16 @@ class RunHikeScreenTest {
   }
 
   @Test
-  fun runHikeScreen_displaysMap() =
-      runTest() {
-        composeTestRule.setContent {
-          RunHikeScreen(
-              listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
-              profileViewModel = profileViewModel,
-              navigationActions = mockNavigationActions,
-          )
-        }
-        composeTestRule.onNodeWithTag(TEST_TAG_RUN_HIKE_SCREEN_MAP).assertIsDisplayed()
-      }
+  fun runHikeScreen_displaysMap() = runTest {
+    composeTestRule.setContent {
+      RunHikeScreen(
+          listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
+          profileViewModel = profileViewModel,
+          navigationActions = mockNavigationActions,
+      )
+    }
+    composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_MAP).assertIsDisplayed()
+  }
 
   @Test
   fun runHikeScreen_displaysBackButton() = runTest {
@@ -100,7 +103,7 @@ class RunHikeScreenTest {
           navigationActions = mockNavigationActions,
       )
     }
-    composeTestRule.onNodeWithTag(TEST_TAG_RUN_HIKE_SCREEN_BACK_BUTTON).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_BACK_BUTTON).assertIsDisplayed()
   }
 
   @Test
@@ -112,11 +115,11 @@ class RunHikeScreenTest {
           navigationActions = mockNavigationActions,
       )
     }
-    composeTestRule.onNodeWithTag(TEST_TAG_RUN_HIKE_SCREEN_ZOOM_BUTTONS).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_ZOOM_BUTTONS).assertIsDisplayed()
   }
 
   @Test
-  fun runHikeScreen_displaysBottomSheet() {
+  fun runHikeScreen_displaysBottomSheet() = runTest {
     composeTestRule.setContent {
       RunHikeScreen(
           listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
@@ -124,6 +127,96 @@ class RunHikeScreenTest {
           navigationActions = mockNavigationActions,
       )
     }
-    composeTestRule.onNodeWithTag(TEST_TAG_RUN_HIKE_SCREEN_BOTTOM_SHEET).assertExists()
+    composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_BOTTOM_SHEET).assertExists()
+  }
+
+  /** Test all details which do not change during the hike run. */
+  @Test
+  fun runHikeScreen_displaysStaticDetails() = runTest {
+    composeTestRule.setContent {
+      RunHikeScreen(
+          listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
+          profileViewModel = profileViewModel,
+          navigationActions = mockNavigationActions,
+      )
+    }
+
+    composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_HIKE_NAME).assertIsDisplayed()
+
+    composeTestRule.onAllNodesWithTag(DetailRow.TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(4)
+    composeTestRule.onAllNodesWithTag(DetailRow.TEST_TAG_DETAIL_ROW_VALUE).assertCountEquals(4)
+
+    // TODO: THIS IS NOT LOCALE FRIENDLY
+    composeTestRule
+        .onNodeWithTag(RunHikeScreen.TEST_TAG_TOTAL_DISTANCE_TEXT)
+        .assertIsDisplayed()
+        .assert(hasText("13.54km"))
+  }
+
+  @Test
+  fun runHikeScreen_displaysElevationGraph() = runTest {
+    composeTestRule.setContent {
+      RunHikeScreen(
+          listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
+          profileViewModel = profileViewModel,
+          navigationActions = mockNavigationActions,
+      )
+    }
+
+    composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_ELEVATION_GRAPH).assertIsDisplayed()
+  }
+
+  @Test
+  fun runHikeScreen_displaysStopHikeButton() = runTest {
+    composeTestRule.setContent {
+      RunHikeScreen(
+          listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
+          profileViewModel = profileViewModel,
+          navigationActions = mockNavigationActions,
+      )
+    }
+
+    composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_STOP_HIKE_BUTTON).assertIsDisplayed()
+  }
+
+  @Test
+  fun runHikeScreen_stopHikeButton_navigatesBack() = runTest {
+    composeTestRule.setContent {
+      RunHikeScreen(
+          listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
+          profileViewModel = profileViewModel,
+          navigationActions = mockNavigationActions,
+      )
+    }
+    doNothing().`when`(mockNavigationActions).goBack()
+
+    composeTestRule
+        .onNodeWithTag(RunHikeScreen.TEST_TAG_STOP_HIKE_BUTTON)
+        .assertIsDisplayed()
+        .performClick()
+
+    composeTestRule.waitForIdle()
+
+    verify(mockNavigationActions).goBack()
+  }
+
+  /**
+   * TODO This test just tests the static hard-coded value for now, but should be updated as soon as
+   * the screen is implemented to display the actual progress indicator.
+   */
+  @Test
+  fun runHikeScreen_displaysProgressIndicator() = runTest {
+    composeTestRule.setContent {
+      RunHikeScreen(
+          listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
+          profileViewModel = profileViewModel,
+          navigationActions = mockNavigationActions,
+      )
+    }
+
+    composeTestRule
+        .onNodeWithTag(RunHikeScreen.TEST_TAG_PROGRESS_TEXT)
+        .assertIsDisplayed()
+        .assert(hasText("23% complete"))
   }
 }

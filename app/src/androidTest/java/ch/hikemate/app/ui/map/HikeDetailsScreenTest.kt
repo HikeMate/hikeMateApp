@@ -13,22 +13,23 @@ import ch.hikemate.app.model.profile.Profile
 import ch.hikemate.app.model.profile.ProfileRepository
 import ch.hikemate.app.model.profile.ProfileViewModel
 import ch.hikemate.app.model.route.Bounds
-import ch.hikemate.app.model.route.DetailedHikeRoute
+import ch.hikemate.app.model.route.DetailedHike
+import ch.hikemate.app.model.route.Hike
 import ch.hikemate.app.model.route.HikeDifficulty
 import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.HikeRoutesRepository
+import ch.hikemate.app.model.route.HikesViewModel
 import ch.hikemate.app.model.route.LatLong
-import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
+import ch.hikemate.app.model.route.saved.SavedHike
 import ch.hikemate.app.model.route.saved.SavedHikesRepository
-import ch.hikemate.app.model.route.saved.SavedHikesViewModel
+import ch.hikemate.app.model.route.toBoundingBox
 import ch.hikemate.app.ui.components.BackButton.BACK_BUTTON_TEST_TAG
+import ch.hikemate.app.ui.components.DetailRow
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_ADD_DATE_BUTTON
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_BOOKMARK_ICON
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DATE_PICKER
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DATE_PICKER_CANCEL_BUTTON
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DATE_PICKER_CONFIRM_BUTTON
-import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DETAIL_ROW_TAG
-import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DETAIL_ROW_VALUE
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_ELEVATION_GRAPH
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_HIKE_NAME
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_MAP
@@ -41,6 +42,7 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -51,8 +53,8 @@ import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
 class HikeDetailScreenTest {
   @get:Rule val composeTestRule = createComposeRule()
@@ -62,27 +64,101 @@ class HikeDetailScreenTest {
   private lateinit var authViewModel: AuthViewModel
   private lateinit var profileRepository: ProfileRepository
   private lateinit var profileViewModel: ProfileViewModel
-  private lateinit var savedHikesViewModel: SavedHikesViewModel
   private lateinit var mockSavedHikesRepository: SavedHikesRepository
   private lateinit var hikesRepository: HikeRoutesRepository
   private lateinit var elevationRepository: ElevationRepository
-  private lateinit var listOfHikeRoutesViewModel: ListOfHikeRoutesViewModel
-  private val route =
-      HikeRoute(
-          id = "1",
-          bounds = Bounds(minLat = 45.9, minLon = 7.6, maxLat = 46.0, maxLon = 7.7),
-          ways = listOf(LatLong(45.9, 7.6), LatLong(45.95, 7.65), LatLong(46.0, 7.7)),
+  private lateinit var hikesViewModel: HikesViewModel
+
+  private val hikeId = "1"
+  private val detailedHike =
+      DetailedHike(
+          id = hikeId,
+          color = Hike(hikeId, false, null, null).getColor(),
+          isSaved = false,
+          plannedDate = null,
           name = "Sample Hike",
           description =
-              "A scenic trail with breathtaking views of the Matterhorn and surrounding glaciers.")
-
-  private val detailedRoute =
-      DetailedHikeRoute(
-          route = route,
-          totalDistance = 13.543077559212616,
+              "A scenic trail with breathtaking views of the Matterhorn and surrounding glaciers.",
+          bounds = Bounds(minLat = 45.9, minLon = 7.6, maxLat = 46.0, maxLon = 7.7),
+          waypoints = listOf(LatLong(45.9, 7.6), LatLong(45.95, 7.65), LatLong(46.0, 7.7)),
+          elevation = listOf(0.0, 10.0, 20.0, 30.0),
+          distance = 13.543077559212616,
           elevationGain = 68.0,
           estimatedTime = 169.3169307105514,
-          difficulty = HikeDifficulty.DIFFICULT)
+          difficulty = HikeDifficulty.DIFFICULT,
+      )
+
+  private fun setUpCompleteScreen() {
+    composeTestRule.setContent {
+      HikeDetailScreen(
+          hikesViewModel = hikesViewModel,
+          profileViewModel = profileViewModel,
+          authViewModel = authViewModel,
+          navigationActions = mockNavigationActions)
+    }
+  }
+
+  private fun setUpBottomSheetScaffold(
+      hike: DetailedHike = detailedHike,
+      onRunThisHike: () -> Unit = {}
+  ) {
+    composeTestRule.setContent {
+      HikesDetailsBottomScaffold(
+          detailedHike = hike,
+          hikesViewModel = hikesViewModel,
+          userHikingLevel = HikingLevel.BEGINNER,
+          onRunThisHike = onRunThisHike)
+    }
+  }
+
+  private suspend fun setUpSelectedHike(hike: DetailedHike) {
+    val asSavedHike = SavedHike(hike.id, hike.name ?: "", hike.plannedDate)
+
+    val hikeAsOsm =
+        HikeRoute(
+            id = hike.id,
+            bounds = hike.bounds,
+            ways = hike.waypoints,
+            name = hike.name,
+            description = hike.description,
+        )
+
+    // Make sure the saved status of the hike is set correctly
+    `when`(mockSavedHikesRepository.loadSavedHikes())
+        .thenReturn(if (hike.isSaved) listOf(asSavedHike) else emptyList())
+
+    // Make sure that the hike is loaded from bounds when the view model gets it
+    `when`(hikesRepository.getRoutes(any(), any(), any())).thenAnswer {
+      val onSuccess = it.getArgument<(List<HikeRoute>) -> Unit>(1)
+      onSuccess(listOf(hikeAsOsm))
+    }
+
+    // Make sure the appropriate elevation profile is obtained when requested
+    `when`(elevationRepository.getElevation(any(), any(), any())).thenAnswer {
+      val onSuccess = it.getArgument<(List<Double>) -> Unit>(1)
+      onSuccess(hike.elevation)
+    }
+
+    // Reset the view model
+    hikesViewModel =
+        HikesViewModel(
+            mockSavedHikesRepository,
+            hikesRepository,
+            elevationRepository,
+            UnconfinedTestDispatcher())
+
+    // Load the hike from OSM, as if the user had searched it on the map
+    hikesViewModel.loadHikesInBounds(detailedHike.bounds.toBoundingBox())
+
+    // Retrieve the hike's elevation data from the repository
+    hikesViewModel.retrieveElevationDataFor(hikeId)
+
+    // Compute the hike's details
+    hikesViewModel.computeDetailsFor(hikeId)
+
+    // Mark the hike as selected, to make sure it is the one displayed on the details screen
+    hikesViewModel.selectHike(hikeId)
+  }
 
   private val profile =
       Profile(
@@ -92,7 +168,6 @@ class HikeDetailScreenTest {
           hikingLevel = HikingLevel.INTERMEDIATE,
           joinedDate = Timestamp.now())
 
-  @OptIn(ExperimentalCoroutinesApi::class)
   @Before
   fun setUp() {
     mockNavigationActions = mock(NavigationActions::class.java)
@@ -104,12 +179,6 @@ class HikeDetailScreenTest {
     elevationRepository = mock(ElevationRepository::class.java)
     mockSavedHikesRepository = mock(SavedHikesRepository::class.java)
 
-    savedHikesViewModel = SavedHikesViewModel(mockSavedHikesRepository, UnconfinedTestDispatcher())
-    listOfHikeRoutesViewModel =
-        ListOfHikeRoutesViewModel(hikesRepository, elevationRepository, UnconfinedTestDispatcher())
-
-    listOfHikeRoutesViewModel.selectRoute(route)
-
     `when`(profileRepository.getProfileById(eq(profile.id), any(), any())).thenAnswer {
       val onSuccess = it.getArgument<(Profile) -> Unit>(1)
       onSuccess(profile)
@@ -119,229 +188,130 @@ class HikeDetailScreenTest {
 
   @Test
   fun hikeDetailScreen_displaysMap() = runTest {
-    listOfHikeRoutesViewModel.selectRoute(route)
-
-    composeTestRule.setContent {
-      HikeDetailScreen(
-          listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
-          savedHikesViewModel = savedHikesViewModel,
-          profileViewModel = profileViewModel,
-          authViewModel = authViewModel,
-          navigationActions = mockNavigationActions)
-    }
+    setUpSelectedHike(detailedHike)
+    setUpCompleteScreen()
 
     composeTestRule.onNodeWithTag(TEST_TAG_MAP).assertIsDisplayed()
   }
 
   @Test
   fun hikeDetails_displaysHikeNameAndBookmarkIcon() = runTest {
-    listOfHikeRoutesViewModel.selectRoute(route)
+    setUpSelectedHike(detailedHike)
+    setUpBottomSheetScaffold()
 
-    composeTestRule.setContent {
-      HikeDetails(
-          detailedRoute = detailedRoute,
-          savedHikesViewModel = savedHikesViewModel,
-          emptyList(),
-          HikingLevel.BEGINNER,
-          {})
-    }
-
-    composeTestRule.onNodeWithTag(TEST_TAG_HIKE_NAME).assertTextEquals(route.name!!)
+    composeTestRule.onNodeWithTag(TEST_TAG_HIKE_NAME).assertTextEquals(detailedHike.name!!)
     composeTestRule.onNodeWithTag(TEST_TAG_BOOKMARK_ICON).assertIsDisplayed()
   }
 
   @Test
   fun hikeDetails_showsElevationGraph() = runTest {
-    listOfHikeRoutesViewModel.selectRoute(route)
-
-    composeTestRule.setContent {
-      HikeDetails(
-          detailedRoute = detailedRoute,
-          savedHikesViewModel = savedHikesViewModel,
-          emptyList(),
-          HikingLevel.BEGINNER,
-          {})
-    }
+    setUpSelectedHike(detailedHike)
+    setUpBottomSheetScaffold()
 
     composeTestRule.onNodeWithTag(TEST_TAG_ELEVATION_GRAPH).assertIsDisplayed()
   }
 
   @Test
   fun hikeDetails_showsPlannedDate_whenDateIsSet() = runTest {
-    listOfHikeRoutesViewModel.selectRoute(route)
+    val plannedDate = Timestamp(1622563200, 0)
+    val hike = detailedHike.copy(isSaved = true, plannedDate = plannedDate)
+    setUpSelectedHike(hike)
 
-    // Mock the necessary functions
-    whenever(mockSavedHikesRepository.loadSavedHikes()).thenReturn(emptyList())
-    whenever(mockSavedHikesRepository.addSavedHike(any())).thenReturn(Unit)
-    whenever(mockSavedHikesRepository.removeSavedHike(any())).thenReturn(Unit)
-
-    // Update the hike detail state and toggle save state
-    savedHikesViewModel.updateHikeDetailState(route)
-    savedHikesViewModel.toggleSaveState()
-
-    // Set the planned date
-    val plannedDate = Timestamp(1622563200, 0) // Example timestamp
-    savedHikesViewModel.updatePlannedDate(plannedDate)
-
-    composeTestRule.setContent {
-      HikeDetails(
-          detailedRoute = detailedRoute,
-          savedHikesViewModel = savedHikesViewModel,
-          emptyList(),
-          HikingLevel.BEGINNER,
-          {})
-    }
+    // Display only the bottom part without the map
+    setUpBottomSheetScaffold(hike)
 
     composeTestRule.onNodeWithTag(TEST_TAG_PLANNED_DATE_TEXT_BOX).assertIsDisplayed()
   }
 
   @Test
   fun hikeDetails_showsCorrectDetailsRowsWhenNotSaved() = runTest {
-    listOfHikeRoutesViewModel.selectRoute(route)
+    val hike = detailedHike.copy(isSaved = false, plannedDate = null)
+    setUpSelectedHike(hike)
 
-    composeTestRule.setContent {
-      HikeDetails(
-          detailedRoute = detailedRoute,
-          savedHikesViewModel = savedHikesViewModel,
-          emptyList(),
-          HikingLevel.BEGINNER,
-          {})
-    }
+    // Display only the bottom part without the map
+    setUpBottomSheetScaffold(hike)
 
-    composeTestRule.onAllNodesWithTag(TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(5)
-    composeTestRule.onAllNodesWithTag(TEST_TAG_DETAIL_ROW_VALUE).assertCountEquals(5)
+    composeTestRule.onAllNodesWithTag(DetailRow.TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(5)
+    composeTestRule.onAllNodesWithTag(DetailRow.TEST_TAG_DETAIL_ROW_VALUE).assertCountEquals(5)
   }
 
   @Test
   fun hikeDetails_showsCorrectDetailsRowsWhenSavedAndNoDateIsSet() = runTest {
-    listOfHikeRoutesViewModel.selectRoute(route)
+    val hike = detailedHike.copy(isSaved = true, plannedDate = null)
+    setUpSelectedHike(hike)
 
-    // Mock the necessary functions
-    whenever(mockSavedHikesRepository.loadSavedHikes()).thenReturn(emptyList())
-    whenever(mockSavedHikesRepository.addSavedHike(any())).thenReturn(Unit)
-    whenever(mockSavedHikesRepository.removeSavedHike(any())).thenReturn(Unit)
+    // Display only the bottom part without the map
+    setUpBottomSheetScaffold(hike)
 
-    // Update the hike detail state and toggle save state
-    savedHikesViewModel.updateHikeDetailState(route)
-    savedHikesViewModel.toggleSaveState()
-
-    composeTestRule.setContent {
-      HikeDetails(
-          detailedRoute = detailedRoute,
-          savedHikesViewModel = savedHikesViewModel,
-          emptyList(),
-          HikingLevel.BEGINNER,
-          {})
-    }
-
-    composeTestRule.onAllNodesWithTag(TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(6)
-    composeTestRule.onAllNodesWithTag(TEST_TAG_DETAIL_ROW_VALUE).assertCountEquals(5)
+    composeTestRule.onAllNodesWithTag(DetailRow.TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(6)
+    composeTestRule.onAllNodesWithTag(DetailRow.TEST_TAG_DETAIL_ROW_VALUE).assertCountEquals(5)
     composeTestRule.onNodeWithTag(TEST_TAG_ADD_DATE_BUTTON).assertIsDisplayed()
   }
 
   @Test
   fun hikeDetails_showsCorrectDetailsRowsWhenSavedAndDateIsSet() = runTest {
-    listOfHikeRoutesViewModel.selectRoute(route)
+    val plannedDate = Timestamp(1622563200, 0)
+    val hike = detailedHike.copy(isSaved = true, plannedDate = plannedDate)
+    setUpSelectedHike(hike)
 
-    // Mock the necessary functions
-    whenever(mockSavedHikesRepository.loadSavedHikes()).thenReturn(emptyList())
-    whenever(mockSavedHikesRepository.addSavedHike(any())).thenReturn(Unit)
-    whenever(mockSavedHikesRepository.removeSavedHike(any())).thenReturn(Unit)
+    // Display only the bottom part without the map
+    setUpBottomSheetScaffold(hike)
 
-    // Update the hike detail state and toggle save state
-    savedHikesViewModel.updateHikeDetailState(route)
-    savedHikesViewModel.toggleSaveState()
-
-    // Set the planned date
-    val plannedDate = Timestamp(1622563200, 0) // Example timestamp
-    savedHikesViewModel.updatePlannedDate(plannedDate)
-
-    composeTestRule.setContent {
-      HikeDetails(
-          detailedRoute = detailedRoute,
-          savedHikesViewModel = savedHikesViewModel,
-          emptyList(),
-          HikingLevel.BEGINNER,
-          {})
-    }
-
-    composeTestRule.onAllNodesWithTag(TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(6)
-    composeTestRule.onAllNodesWithTag(TEST_TAG_DETAIL_ROW_VALUE).assertCountEquals(5)
+    composeTestRule.onAllNodesWithTag(DetailRow.TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(6)
+    composeTestRule.onAllNodesWithTag(DetailRow.TEST_TAG_DETAIL_ROW_VALUE).assertCountEquals(5)
     composeTestRule.onNodeWithTag(TEST_TAG_PLANNED_DATE_TEXT_BOX).assertIsDisplayed()
   }
 
   @Test
   fun hikeDetailScreen_navigatesBackOnBackButtonClick() = runTest {
-    listOfHikeRoutesViewModel.selectRoute(route)
+    setUpSelectedHike(detailedHike)
 
-    composeTestRule.setContent {
-      HikeDetailScreen(
-          listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
-          savedHikesViewModel = savedHikesViewModel,
-          profileViewModel = profileViewModel,
-          authViewModel = authViewModel,
-          navigationActions = mockNavigationActions)
-    }
+    // Display the whole details screen for the hike, including the map
+    setUpCompleteScreen()
 
     doNothing().`when`(mockNavigationActions).goBack()
 
-    composeTestRule.onNodeWithTag(BACK_BUTTON_TEST_TAG).performClick()
+    composeTestRule
+        .onNodeWithTag(BACK_BUTTON_TEST_TAG)
+        .assertIsDisplayed()
+        .assertHasClickAction()
+        .performClick()
 
     composeTestRule.waitForIdle()
 
-    assert(listOfHikeRoutesViewModel.selectedHikeRoute.value == null)
+    assertNull(hikesViewModel.selectedHike.value)
     verify(mockNavigationActions).goBack()
   }
 
   @Test
   fun hikeDetails_opensDatePicker_whenAddDateButtonClicked() = runTest {
-    listOfHikeRoutesViewModel.selectRoute(route)
+    val hike = detailedHike.copy(isSaved = true, plannedDate = null)
+    setUpSelectedHike(hike)
 
-    // Mock the necessary functions
-    whenever(mockSavedHikesRepository.loadSavedHikes()).thenReturn(emptyList())
-    whenever(mockSavedHikesRepository.addSavedHike(any())).thenReturn(Unit)
-    whenever(mockSavedHikesRepository.removeSavedHike(any())).thenReturn(Unit)
+    // Display only the bottom part without the map
+    setUpBottomSheetScaffold(hike)
 
-    // Update the hike detail state
-    savedHikesViewModel.updateHikeDetailState(route)
-    savedHikesViewModel.toggleSaveState()
-
-    composeTestRule.setContent {
-      HikeDetails(
-          detailedRoute = detailedRoute,
-          savedHikesViewModel = savedHikesViewModel,
-          emptyList(),
-          HikingLevel.BEGINNER,
-          {})
-    }
-
-    composeTestRule.onNodeWithTag(TEST_TAG_ADD_DATE_BUTTON).assertHasClickAction().performClick()
+    composeTestRule
+        .onNodeWithTag(TEST_TAG_ADD_DATE_BUTTON)
+        .assertIsDisplayed()
+        .assertHasClickAction()
+        .performClick()
     composeTestRule.onNodeWithTag(TEST_TAG_DATE_PICKER).assertIsDisplayed()
   }
 
   @Test
   fun hikeDetails_datePickerDismisses_whenClickedOnCancel() = runTest {
-    listOfHikeRoutesViewModel.selectRoute(route)
+    val hike = detailedHike.copy(isSaved = true, plannedDate = null)
+    setUpSelectedHike(hike)
 
-    // Mock the necessary functions
-    whenever(mockSavedHikesRepository.loadSavedHikes()).thenReturn(emptyList())
-    whenever(mockSavedHikesRepository.addSavedHike(any())).thenReturn(Unit)
-    whenever(mockSavedHikesRepository.removeSavedHike(any())).thenReturn(Unit)
+    // Display only the bottom part without the map
+    setUpBottomSheetScaffold(hike)
 
-    // Update the hike detail state
-    savedHikesViewModel.updateHikeDetailState(route)
-    savedHikesViewModel.toggleSaveState()
-
-    composeTestRule.setContent {
-      HikeDetails(
-          detailedRoute = detailedRoute,
-          savedHikesViewModel = savedHikesViewModel,
-          emptyList(),
-          HikingLevel.BEGINNER,
-          {})
-    }
-
-    composeTestRule.onNodeWithTag(TEST_TAG_ADD_DATE_BUTTON).assertHasClickAction().performClick()
+    composeTestRule
+        .onNodeWithTag(TEST_TAG_ADD_DATE_BUTTON)
+        .assertIsDisplayed()
+        .assertHasClickAction()
+        .performClick()
     composeTestRule.onNodeWithTag(TEST_TAG_DATE_PICKER).assertIsDisplayed()
 
     composeTestRule.onNodeWithTag(TEST_TAG_DATE_PICKER_CANCEL_BUTTON).performClick()
@@ -351,25 +321,11 @@ class HikeDetailScreenTest {
 
   @Test
   fun hikeDetails_datePickerDismisses_whenClickedOnConfirm() = runTest {
-    listOfHikeRoutesViewModel.selectRoute(route)
+    val hike = detailedHike.copy(isSaved = true, plannedDate = null)
+    setUpSelectedHike(hike)
 
-    // Mock the necessary functions
-    whenever(mockSavedHikesRepository.loadSavedHikes()).thenReturn(emptyList())
-    whenever(mockSavedHikesRepository.addSavedHike(any())).thenReturn(Unit)
-    whenever(mockSavedHikesRepository.removeSavedHike(any())).thenReturn(Unit)
-
-    // Update the hike detail state
-    savedHikesViewModel.updateHikeDetailState(route)
-    savedHikesViewModel.toggleSaveState()
-
-    composeTestRule.setContent {
-      HikeDetails(
-          detailedRoute = detailedRoute,
-          savedHikesViewModel = savedHikesViewModel,
-          emptyList(),
-          HikingLevel.BEGINNER,
-          {})
-    }
+    // Display only the bottom part without the map
+    setUpBottomSheetScaffold(hike)
 
     composeTestRule.onNodeWithTag(TEST_TAG_ADD_DATE_BUTTON).assertHasClickAction().performClick()
     composeTestRule.onNodeWithTag(TEST_TAG_DATE_PICKER).assertIsDisplayed()
@@ -380,74 +336,64 @@ class HikeDetailScreenTest {
   }
 
   @Test
-  fun hikeDetails_showsCorrectDetailedHikesValues() {
-    composeTestRule.setContent {
-      HikeDetails(
-          detailedRoute = detailedRoute,
-          savedHikesViewModel = savedHikesViewModel,
-          emptyList(),
-          HikingLevel.BEGINNER,
-          {})
-    }
+  fun hikeDetails_showsCorrectDetailedHikesValues() = runTest {
+    setUpSelectedHike(detailedHike)
 
-    val distanceString = String.format(Locale.getDefault(), "%.2f", detailedRoute.totalDistance)
-    val elevationGainString = detailedRoute.elevationGain.roundToInt().toString()
+    // Display only the bottom part without the map
+    setUpBottomSheetScaffold(detailedHike)
+
+    val distanceString = String.format(Locale.getDefault(), "%.2f", detailedHike.distance)
+    val elevationGainString = detailedHike.elevationGain.roundToInt().toString()
     val hourString =
-        String.format(Locale.getDefault(), "%02d", (detailedRoute.estimatedTime / 60).toInt())
+        String.format(Locale.getDefault(), "%02d", (detailedHike.estimatedTime / 60).toInt())
     val minuteString =
-        String.format(Locale.getDefault(), "%02d", (detailedRoute.estimatedTime % 60).roundToInt())
+        String.format(Locale.getDefault(), "%02d", (detailedHike.estimatedTime % 60).roundToInt())
 
     composeTestRule
-        .onAllNodesWithTag(TEST_TAG_DETAIL_ROW_VALUE)
+        .onAllNodesWithTag(DetailRow.TEST_TAG_DETAIL_ROW_VALUE)
         .assertAny(hasText("${distanceString}km"))
     composeTestRule
-        .onAllNodesWithTag(TEST_TAG_DETAIL_ROW_VALUE)
+        .onAllNodesWithTag(DetailRow.TEST_TAG_DETAIL_ROW_VALUE)
         .assertAny(hasText("${elevationGainString}m"))
     composeTestRule
-        .onAllNodesWithTag(TEST_TAG_DETAIL_ROW_VALUE)
+        .onAllNodesWithTag(DetailRow.TEST_TAG_DETAIL_ROW_VALUE)
         .assertAny(hasText("${hourString}h${minuteString}"))
     composeTestRule
-        .onAllNodesWithTag(TEST_TAG_DETAIL_ROW_VALUE)
+        .onAllNodesWithTag(DetailRow.TEST_TAG_DETAIL_ROW_VALUE)
         .assertAny(
             hasText(
                 ApplicationProvider.getApplicationContext<Context>()
-                    .getString(detailedRoute.difficulty.nameResourceId)))
+                    .getString(detailedHike.difficulty.nameResourceId)))
   }
 
   @Test
-  fun hikeDetails_showsCorrectDetailedHikesValues_whenTimeIsLessThan60Min() {
-    val detailedRoute = detailedRoute.copy(estimatedTime = 45.0) // test hike that takes just 45 min
+  fun hikeDetails_showsCorrectDetailedHikesValues_whenTimeIsLessThan60Min() = runTest {
+    val hike = detailedHike.copy(estimatedTime = 45.0) // test hike that takes just 45 min
+    setUpSelectedHike(hike)
 
-    composeTestRule.setContent {
-      HikeDetails(
-          detailedRoute = detailedRoute,
-          savedHikesViewModel = savedHikesViewModel,
-          emptyList(),
-          HikingLevel.BEGINNER,
-          {})
-    }
+    // Display only the bottom part without the map
+    setUpBottomSheetScaffold(hike)
 
     val minuteString =
-        String.format(Locale.getDefault(), "%02d", (detailedRoute.estimatedTime % 60).roundToInt())
+        String.format(Locale.getDefault(), "%02d", (hike.estimatedTime % 60).roundToInt())
 
     composeTestRule
-        .onAllNodesWithTag(TEST_TAG_DETAIL_ROW_VALUE)
+        .onAllNodesWithTag(DetailRow.TEST_TAG_DETAIL_ROW_VALUE)
         .assertAny(hasText("${minuteString}min"))
   }
 
   @Test
-  fun hikeDetails_showsRunThisHikeButton_andTriggersOnRunThisHike() {
+  fun hikeDetails_showsRunThisHikeButton_andTriggersOnRunThisHike() = runTest {
     val onRunThisHike = mock<() -> Unit>()
-    composeTestRule.setContent {
-      HikeDetails(
-          detailedRoute = detailedRoute,
-          savedHikesViewModel = savedHikesViewModel,
-          emptyList(),
-          HikingLevel.BEGINNER,
-          { onRunThisHike() })
-    }
+    setUpSelectedHike(detailedHike)
 
-    composeTestRule.onNodeWithTag(TEST_TAG_RUN_HIKE_BUTTON).assertIsDisplayed().performClick()
+    setUpBottomSheetScaffold(onRunThisHike = onRunThisHike)
+
+    composeTestRule
+        .onNodeWithTag(TEST_TAG_RUN_HIKE_BUTTON)
+        .assertIsDisplayed()
+        .assertHasClickAction()
+        .performClick()
 
     verify(onRunThisHike).invoke()
   }
