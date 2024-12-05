@@ -24,21 +24,16 @@ object MapUtils {
   /**
    * Shows a hike on the map.
    *
-   * @param mapView The map view where the hike will be shown. Nullable, but if the mapView is null
-   *   the function just returns.
+   * @param mapView The map view where the hike will be shown. the function just returns.
    * @param hike The hike to be shown.
    * @param color The color of the hike.
    */
   fun showHikeOnMap(
-      mapView: MapView?,
+      mapView: MapView,
       hike: HikeRoute,
       color: Int,
       onLineClick: () -> Unit,
   ) {
-    if (mapView == null) {
-      Log.e(LOG_TAG, "Map view is null, cannot show hike")
-      return
-    }
     val line = Polyline()
 
     line.setPoints(hike.ways.map { GeoPoint(it.lat, it.lon) })
