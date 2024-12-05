@@ -284,15 +284,14 @@ object MapUtils {
           when (facility.type) {
             FacilityType.TOILETS -> ContextCompat.getDrawable(context, R.drawable.toilets)
             FacilityType.PARKING -> ContextCompat.getDrawable(context, R.drawable.parking)
-            // FacilityType.WASTE_BASKET -> ContextCompat.getDrawable(context,
-            // R.drawable.waste_basket)
+            FacilityType.WASTE_BASKET -> ContextCompat.getDrawable(context, R.drawable.waste_basket)
             FacilityType.SUPERMARKET -> ContextCompat.getDrawable(context, R.drawable.supermarket)
             FacilityType.DRINKING_WATER ->
                 ContextCompat.getDrawable(context, R.drawable.drinking_water)
             FacilityType.RANGER_STATION ->
                 ContextCompat.getDrawable(context, R.drawable.ranger_station)
             FacilityType.BBQ -> ContextCompat.getDrawable(context, R.drawable.bbq)
-            // FacilityType.BENCH -> ContextCompat.getDrawable(context, R.drawable.bench)
+            FacilityType.BENCH -> ContextCompat.getDrawable(context, R.drawable.bench)
             FacilityType.RESTAURANT -> ContextCompat.getDrawable(context, R.drawable.restaurant)
             FacilityType.BIERGARTEN -> ContextCompat.getDrawable(context, R.drawable.biergarten)
           }
@@ -318,10 +317,19 @@ object MapUtils {
     mapView.invalidate()
   }
 
+  /**
+   * Remove any facility that is being displayed in the map.
+   *
+   * @param mapView the map view to remove the facilities from
+   * @see [displayFacilities]
+   */
   fun clearFacilities(mapView: MapView) {
     mapView.overlays.removeAll { overlay ->
+      // The relatedObject was defined in displayFacilities for easier removal of the markers.
       overlay is Marker && overlay.relatedObject == R.string.facility_marker
     }
+
+    // Trigger the map to be drawn again
     mapView.invalidate()
   }
 }

@@ -63,6 +63,7 @@ import ch.hikemate.app.model.profile.ProfileViewModel
 import ch.hikemate.app.model.route.Bounds
 import ch.hikemate.app.model.route.DetailedHike
 import ch.hikemate.app.model.route.HikesViewModel
+import ch.hikemate.app.model.route.LatLong
 import ch.hikemate.app.ui.components.AsyncStateHandler
 import ch.hikemate.app.ui.components.BackButton
 import ch.hikemate.app.ui.components.BigButton
@@ -85,6 +86,7 @@ import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_RUN_HIKE_BUTTON
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
+import ch.hikemate.app.utils.LocationUtils
 import ch.hikemate.app.utils.MapUtils
 import ch.hikemate.app.utils.humanReadableFormat
 import com.google.firebase.Timestamp
@@ -111,9 +113,10 @@ object HikeDetailScreen {
   const val MAP_BOUNDS_MARGIN: Int = 100
   const val MARGIN_BOUNDS = 0.001
 
-  const val MIN_ZOOM_FOR_FACILITIES = 13.0
-  const val DEBOUNCE_DURATION = 100L
-  const val MAX_DISTANCE_FROM_ROUTE_TO_FACILITY = 2000
+  const val MIN_ZOOM_FOR_FACILITIES = 15.0
+  const val DEBOUNCE_DURATION = 150L
+  const val MAX_DISTANCE_FROM_ROUTE_TO_FACILITY = 3000
+  const val MAX_AMOUNT_OF_FACILITIES = 30
 
   const val LOG_TAG = "HikeDetailScreen"
 
@@ -138,7 +141,6 @@ fun HikeDetailScreen(
     facilitiesViewModel: FacilitiesViewModel
 ) {
   // Load the user's profile to get their hiking level
-  val context = LocalContext.current
   LaunchedEffect(Unit) {
     if (authViewModel.currentUser.value == null) {
       Log.e("HikeDetailScreen", "User is not signed in")
@@ -276,33 +278,61 @@ fun hikeDetailsMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel)
     }
   }
 
+  // The state of the current bounds
   val boundingBoxState = remember { MutableStateFlow(mapView.boundingBox) }
+  // The state of the current zoom level
   val zoomLevelState = remember { MutableStateFlow(mapView.zoomLevelDouble) }
   LaunchedEffect(Unit) {
+    // This is calculated so that elements that are near but not contained into the bounds of a Hike
+    // are still displayed this is actually a very common occurrence.
     val boundsWithMargin =
         Bounds(
             hike.bounds.minLat - HikeDetailScreen.MARGIN_BOUNDS,
             hike.bounds.minLon - HikeDetailScreen.MARGIN_BOUNDS,
             hike.bounds.maxLat + HikeDetailScreen.MARGIN_BOUNDS,
             hike.bounds.maxLon + HikeDetailScreen.MARGIN_BOUNDS)
+    // Get all the facilities within the bounds.
     facilitiesViewModel.getFacilities(boundsWithMargin, { facilities.value = it }, {})
   }
 
+  // Display the facilities according to changes in the boundingBoxState and zoomLevelState
   LaunchedEffect(mapView) {
     combine(
+            // Debounce acts as a delay triggering less redrawings and thus being more performant.
             boundingBoxState.debounce(HikeDetailScreen.DEBOUNCE_DURATION),
             zoomLevelState.debounce(HikeDetailScreen.DEBOUNCE_DURATION)) { boundingBox, zoomLevel ->
+              // If the user is too far away the facilities won't be displayed
               if (zoomLevel > HikeDetailScreen.MIN_ZOOM_FOR_FACILITIES) {
-                MapUtils.clearFacilities(mapView)
-                MapUtils.displayFacilities(
-                    facilities.value.filter { facility ->
-                      boundingBox.contains(
-                          GeoPoint(facility.coordinates.lat, facility.coordinates.lon))
-                    },
-                    mapView,
-                    context)
-                facilitiesDisplayed.value = true
+                val distanceFromCenterToHike =
+                    LocationUtils.projectLocationOnHike(
+                            LatLong(
+                                mapView.boundingBox.centerLatitude,
+                                mapView.boundingBox.centerLongitude),
+                            hike)!!
+                        .distanceFromRoute
+                // This particular case is useful for hikes with very big bounds around big cities
+                // this avoids drawing facilities that are really far away but are contained into
+                // the bounds
+                // since these are useless
+                if (distanceFromCenterToHike <=
+                    HikeDetailScreen.MAX_DISTANCE_FROM_ROUTE_TO_FACILITY) {
+                  // We make a list with facilities that are contained into the current bounds and
+                  // don't
+                  // surpass the max amount of facilities to not draw too many facilities.
+                  val filteredFacilities = mutableListOf<Facility>()
+                  for (facility in facilities.value) {
+                    if (filteredFacilities.size >= HikeDetailScreen.MAX_AMOUNT_OF_FACILITIES) break
+                    if (boundingBox.contains(
+                        GeoPoint(facility.coordinates.lat, facility.coordinates.lon))) {
+                      filteredFacilities.add(facility)
+                    }
+                  }
+                  // Function call to draw the icons.
+                  MapUtils.displayFacilities(filteredFacilities, mapView, context)
+                  facilitiesDisplayed.value = true
+                }
               } else if (facilitiesDisplayed.value) {
+                // Removes any facilities that are drawn inside the map.
                 MapUtils.clearFacilities(mapView)
                 facilitiesDisplayed.value = false
               }
@@ -310,6 +340,7 @@ fun hikeDetailsMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel)
         .launchIn(scope)
   }
 
+  // This listener basically updates the state of the variables of the bounds and zoom level
   mapView.addMapListener(
       object : MapListener {
         override fun onScroll(event: ScrollEvent?): Boolean {

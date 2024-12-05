@@ -21,12 +21,12 @@ data class Facility(val type: FacilityType, val coordinates: LatLong)
 enum class FacilityType(val type: String) {
   TOILETS("toilets"),
   PARKING("parking"),
-  // WASTE_BASKET("waste_basket"),
+  WASTE_BASKET("waste_basket"),
   SUPERMARKET("supermarket"),
   DRINKING_WATER("drinking_water"),
   RANGER_STATION("ranger_station"),
   BBQ("bbq"),
-  // BENCH("bench"),
+  BENCH("bench"),
   RESTAURANT("restaurant"),
   BIERGARTEN("biergarten");
 

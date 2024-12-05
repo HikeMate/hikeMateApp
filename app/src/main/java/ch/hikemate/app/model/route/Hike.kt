@@ -143,4 +143,9 @@ data class DetailedHike(
     val estimatedTime: Double,
     val elevationGain: Double,
     val difficulty: HikeDifficulty
-)
+) {
+  /** The list of segments of the Route */
+  val segments: List<RouteSegment> by lazy {
+    return@lazy this.waypoints.zipWithNext { p1, p2 -> RouteSegment(p1, p2, p1.distanceTo(p2)) }
+  }
+}
