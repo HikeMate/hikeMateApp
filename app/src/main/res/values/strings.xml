@@ -50,6 +50,9 @@
     <string name="map_search_for_hikes">Searching for hikes…</string>
 
     <!-- Hike Details Screen -->
+    <string name="hike_details_screen_obtaining_osm_data">Loading hike data…</string>
+    <string name="hike_details_screen_obtaining_elevation">Loading hike elevation…</string>
+    <string name="hike_details_screen_computing_details">Last computations…</string>
     <string name="hike_detail_screen_bookmark_hint_on_isSaved_true">Unsave hike</string>
     <string name="hike_detail_screen_bookmark_hint_on_isSaved_false">Save hike</string>
     <string name="hike_detail_screen_label_distance">Distance</string>
@@ -89,6 +92,7 @@
 
 
     <!-- Saved Hikes Screen -->
+    <string name="saved_hikes_screen_loading_message">Loading saved hikes…</string>
     <string name="saved_hikes_screen_generic_error">
         An error occurred while loading saved hikes.
         Please check your Internet connection and try again.

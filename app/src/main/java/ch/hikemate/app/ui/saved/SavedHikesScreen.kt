@@ -1,6 +1,5 @@
 package ch.hikemate.app.ui.saved
 
-import android.widget.Toast
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,8 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Tab
@@ -30,12 +27,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.hikemate.app.R
-import ch.hikemate.app.model.route.saved.SavedHike
-import ch.hikemate.app.model.route.saved.SavedHikesViewModel
-import ch.hikemate.app.ui.components.CenteredErrorAction
+import ch.hikemate.app.model.route.Hike
+import ch.hikemate.app.model.route.HikesViewModel
 import ch.hikemate.app.ui.components.CenteredLoadingAnimation
 import ch.hikemate.app.ui.components.HikeCard
 import ch.hikemate.app.ui.components.HikeCardStyleProperties
@@ -43,7 +39,8 @@ import ch.hikemate.app.ui.navigation.BottomBarNavigation
 import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
-import ch.hikemate.app.utils.humanReadablePlannedLabel
+import ch.hikemate.app.ui.navigation.Screen
+import kotlinx.coroutines.flow.StateFlow
 
 object SavedHikesScreen {
   // Components used by several (or all) sections
@@ -62,23 +59,26 @@ object SavedHikesScreen {
 }
 
 @Composable
-fun SavedHikesScreen(
-    savedHikesViewModel: SavedHikesViewModel = viewModel(factory = SavedHikesViewModel.Factory),
-    navigationActions: NavigationActions
-) {
+fun SavedHikesScreen(hikesViewModel: HikesViewModel, navigationActions: NavigationActions) {
   BottomBarNavigation(
       onTabSelect = { route -> navigationActions.navigateTo(route) },
       tabList = LIST_TOP_LEVEL_DESTINATIONS,
       selectedItem = Route.SAVED_HIKES,
   ) { paddingValues ->
     var currentSection by remember { mutableStateOf(SavedHikesSection.Saved) }
-    val loading by savedHikesViewModel.loadingSavedHikes.collectAsState()
-    val errorMessageId by savedHikesViewModel.errorMessageId.collectAsState()
-    val savedHikes by savedHikesViewModel.savedHike.collectAsState()
+    val loading by hikesViewModel.loading.collectAsState()
+    val hikesType by hikesViewModel.loadedHikesType.collectAsState()
+    val savedHikes by hikesViewModel.hikeFlows.collectAsState()
+    val selectedHike by hikesViewModel.selectedHike.collectAsState()
+    val osmDataAvailable by hikesViewModel.allOsmDataLoaded.collectAsState()
 
     val pagerState = rememberPagerState { SavedHikesSection.values().size }
 
-    LaunchedEffect(Unit) { savedHikesViewModel.loadSavedHikes() }
+    LaunchedEffect(selectedHike) {
+      if (selectedHike != null) {
+        navigationActions.navigateTo(Screen.HIKE_DETAILS)
+      }
+    }
 
     LaunchedEffect(currentSection) { pagerState.animateScrollToPage(currentSection.ordinal) }
 
@@ -97,35 +97,49 @@ fun SavedHikesScreen(
               selectedIndex = currentSection.ordinal, onSelectedChange = { currentSection = it })
 
           when {
-            loading -> CenteredLoadingAnimation()
-            errorMessageId != null ->
-                CenteredErrorAction(
-                    errorMessageId = errorMessageId!!,
-                    actionIcon = Icons.Default.Refresh,
-                    actionContentDescriptionStringId =
-                        R.string.saved_hikes_screen_refresh_button_action,
-                    onAction = { savedHikesViewModel.loadSavedHikes() })
-            else ->
-                HorizontalPager(
-                    state = pagerState,
-                    modifier = Modifier.fillMaxWidth(),
-                ) { pageIndex ->
-                  Column {
-                    SavedHikesSection.values()[pageIndex].let {
-                      when (it) {
-                        SavedHikesSection.Planned -> PlannedHikes(savedHikes)
-                        SavedHikesSection.Saved -> SavedHikes(savedHikes)
-                      }
-                    }
+            // The view model is either loading the saved hikes list or their OSM data, display a
+            // loading screen
+            loading ->
+                CenteredLoadingAnimation(
+                    stringResource(R.string.saved_hikes_screen_loading_message))
+
+            // There is no loading operation ongoing, but the saved hikes are not the ones
+            // currently displayed, reload the saved hikes
+            hikesType != HikesViewModel.LoadedHikes.FromSaved -> {
+              hikesViewModel.loadSavedHikes()
+              CenteredLoadingAnimation(stringResource(R.string.saved_hikes_screen_loading_message))
+            }
+
+            // All data is available, start displaying the list of saved hikes
+            osmDataAvailable -> {
+              HorizontalPager(
+                  state = pagerState,
+                  modifier = Modifier.fillMaxWidth(),
+              ) { pageIndex ->
+                Column {
+                  // Display either the planned or saved hikes section
+                  when (SavedHikesSection.values()[pageIndex]) {
+                    SavedHikesSection.Planned ->
+                        PlannedHikes(hikes = savedHikes, hikesViewModel = hikesViewModel)
+                    SavedHikesSection.Saved ->
+                        SavedHikes(savedHikes = savedHikes, hikesViewModel = hikesViewModel)
                   }
                 }
+              }
+            }
+
+            // OSM data are missing, retrieve them
+            else -> {
+              hikesViewModel.retrieveLoadedHikesOsmData()
+              CenteredLoadingAnimation(stringResource(R.string.saved_hikes_screen_loading_message))
+            }
           }
         }
   }
 }
 
 @Composable
-private fun PlannedHikes(hikes: List<SavedHike>?) {
+private fun PlannedHikes(hikes: List<StateFlow<Hike>>?, hikesViewModel: HikesViewModel) {
   val context = LocalContext.current
   Text(
       context.getString(R.string.saved_hikes_screen_planned_section_title),
@@ -133,7 +147,8 @@ private fun PlannedHikes(hikes: List<SavedHike>?) {
       modifier =
           Modifier.padding(16.dp).testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_PLANNED_TITLE))
 
-  val plannedHikes = hikes?.filter { it.date != null }?.sortedBy { it.date }
+  val plannedHikes =
+      hikes?.filter { it.value.plannedDate != null }?.sortedBy { it.value.plannedDate }
 
   if (plannedHikes.isNullOrEmpty()) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -146,34 +161,16 @@ private fun PlannedHikes(hikes: List<SavedHike>?) {
     }
   } else {
     LazyColumn {
-      items(plannedHikes.size, key = { plannedHikes[it].id }) { index ->
-        val hike = plannedHikes[index]
-        HikeCard(
-            title = hike.name,
-            // This generates a random list of elevation data for the hike
-            // with a random number of points and altitude between 0 and 1000
-            elevationData = (0..(0..1000).random()).map { it.toDouble() }.shuffled(),
-            showGraph = false,
-            onClick = {
-              Toast.makeText(
-                      context,
-                      "Hike details not implemented yet for this screen, since the listOfHikeRoutesVM does not support fetching just a single hike for the moment",
-                      Toast.LENGTH_SHORT)
-                  .show()
-            },
-            messageContent = hike.date!!.humanReadablePlannedLabel(LocalContext.current),
-            modifier = Modifier.testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_HIKE_CARD),
-            styleProperties =
-                HikeCardStyleProperties(
-                    messageIcon = painterResource(R.drawable.calendar_today),
-                    messageColor = Color(0xFF3B82F6)))
+      items(plannedHikes.size, key = { plannedHikes[it].value.id }) { index ->
+        val hike by plannedHikes[index].collectAsState()
+        SavedHikeCardFor(hike, hikesViewModel)
       }
     }
   }
 }
 
 @Composable
-private fun SavedHikes(savedHikes: List<SavedHike>?) {
+private fun SavedHikes(savedHikes: List<StateFlow<Hike>>?, hikesViewModel: HikesViewModel) {
   val context = LocalContext.current
   Text(
       context.getString(R.string.saved_hikes_screen_saved_section_title),
@@ -191,25 +188,28 @@ private fun SavedHikes(savedHikes: List<SavedHike>?) {
     }
   } else {
     LazyColumn {
-      items(savedHikes.size, key = { savedHikes[it].id }) { index ->
-        val hike = savedHikes[index]
-        HikeCard(
-            title = hike.name,
-            onClick = {
-              Toast.makeText(
-                      context,
-                      "Hike details not implemented yet for this screen, since the listOfHikeRoutesVM does not support fetching just a single hike for the moment",
-                      Toast.LENGTH_SHORT)
-                  .show()
-            },
-            // This generates a random list of elevation data for the hike
-            // with a random number of points and altitude between 0 and 1000
-            elevationData = (0..(0..1000).random()).map { it.toDouble() }.shuffled(),
-            showGraph = false,
-            modifier = Modifier.testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_HIKE_CARD))
+      items(savedHikes.size, key = { savedHikes[it].value.id }) { index ->
+        val hike by savedHikes[index].collectAsState()
+        SavedHikeCardFor(hike, hikesViewModel)
       }
     }
   }
+}
+
+@Composable
+private fun SavedHikeCardFor(hike: Hike, hikesViewModel: HikesViewModel) {
+  // Ask for elevation if not already available
+  if (!hike.elevation.obtained()) {
+    hikesViewModel.retrieveElevationDataFor(hike.id)
+  }
+
+  // Display the hike card
+  HikeCard(
+      title = hike.name ?: stringResource(R.string.map_screen_hike_title_default),
+      elevationData = hike.elevation.getOrNull(),
+      onClick = { hikesViewModel.selectHike(hike.id) },
+      modifier = Modifier.testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_HIKE_CARD),
+      styleProperties = HikeCardStyleProperties(graphColor = Color(hike.getColor())))
 }
 
 @Composable

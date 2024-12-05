@@ -129,7 +129,8 @@ fun RunHikeScreen(
   }
 
   val hikeLineColor = route.getColor()
-  MapUtils.showHikeOnMap(mapView = mapView, hike = route, color = hikeLineColor, onLineClick = {})
+  MapUtils.showHikeOnMap(
+      mapView = mapView, waypoints = route.ways, color = hikeLineColor, onLineClick = {})
 
   // avoids the app crashing when spamming the back button
   var wantToNavigateBack by remember { mutableStateOf(false) }

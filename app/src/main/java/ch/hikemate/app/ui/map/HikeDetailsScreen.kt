@@ -2,6 +2,7 @@ package ch.hikemate.app.ui.map
 
 import android.annotation.SuppressLint
 import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
@@ -56,13 +57,13 @@ import ch.hikemate.app.R
 import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.model.profile.HikingLevel
 import ch.hikemate.app.model.profile.ProfileViewModel
-import ch.hikemate.app.model.route.DetailedHikeRoute
-import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
-import ch.hikemate.app.model.route.saved.SavedHikesViewModel
+import ch.hikemate.app.model.route.DetailedHike
+import ch.hikemate.app.model.route.HikesViewModel
 import ch.hikemate.app.ui.components.AsyncStateHandler
 import ch.hikemate.app.ui.components.BackButton
 import ch.hikemate.app.ui.components.BigButton
 import ch.hikemate.app.ui.components.ButtonType
+import ch.hikemate.app.ui.components.CenteredLoadingAnimation
 import ch.hikemate.app.ui.components.DetailRow
 import ch.hikemate.app.ui.components.ElevationGraph
 import ch.hikemate.app.ui.components.ElevationGraphStyleProperties
@@ -97,6 +98,8 @@ object HikeDetailScreen {
   const val MAP_MIN_LONGITUDE = -180.0
   const val MAP_BOUNDS_MARGIN: Int = 100
 
+  const val LOG_TAG = "HikeDetailScreen"
+
   const val TEST_TAG_MAP = "HikeDetailScreenMap"
   const val TEST_TAG_HIKE_NAME = "HikeDetailScreenHikeName"
   const val TEST_TAG_BOOKMARK_ICON = "HikeDetailScreenBookmarkIcon"
@@ -111,51 +114,127 @@ object HikeDetailScreen {
 
 @Composable
 fun HikeDetailScreen(
-    listOfHikeRoutesViewModel: ListOfHikeRoutesViewModel,
-    savedHikesViewModel: SavedHikesViewModel,
+    hikesViewModel: HikesViewModel,
     profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory),
     authViewModel: AuthViewModel,
     navigationActions: NavigationActions
 ) {
+  // Load the user's profile to get their hiking level
+  LaunchedEffect(Unit) {
+    if (authViewModel.currentUser.value == null) {
+      Log.e("HikeDetailScreen", "User is not signed in")
+      return@LaunchedEffect
+    }
+    profileViewModel.getProfileById(authViewModel.currentUser.value!!.uid)
+    // Load or reload the saved hikes list to see if the currently selected one is saved
+    hikesViewModel.refreshSavedHikesCache()
+  }
 
-  val context = LocalContext.current
+  val selectedHike by hikesViewModel.selectedHike.collectAsState()
 
-  LaunchedEffect(listOfHikeRoutesViewModel.selectedHikeRoute.collectAsState().value) {
-    if (listOfHikeRoutesViewModel.selectedHikeRoute.value == null) {
+  LaunchedEffect(selectedHike) {
+    if (selectedHike == null) {
+      Log.e(HikeDetailScreen.LOG_TAG, "No selected hike, going back")
       navigationActions.goBack()
     }
   }
 
-  if (listOfHikeRoutesViewModel.selectedHikeRoute.collectAsState().value == null) {
-    Log.e("HikeDetailScreen", "No selected hike route")
-    return
-  }
+  when {
+    // If the hike is null, the LaunchedEffect will navigate back, don't handle it here
+    selectedHike == null -> CenteredLoadingAnimation()
 
-  val route = listOfHikeRoutesViewModel.selectedHikeRoute.collectAsState().value!!
-  val elevationData = remember { mutableListOf<Double>() }
-  val detailedRoute = DetailedHikeRoute.create(route)
-  val routeZoomLevel = MapUtils.calculateBestZoomLevel(route.bounds).toDouble()
+    // All the details of the hike have been computed, display them
+    hikesViewModel.areDetailsComputedFor(selectedHike!!) -> {
+      val detailedHike = selectedHike!!.withDetailsOrThrow()
+      val errorMessageIdState = profileViewModel.errorMessageId.collectAsState()
+      val profileState = profileViewModel.profile.collectAsState()
+      AsyncStateHandler(
+          errorMessageIdState = errorMessageIdState,
+          actionContentDescriptionStringId = R.string.go_back,
+          actionOnErrorAction = { navigationActions.navigateTo(Route.MAP) },
+          valueState = profileState,
+      ) { profile ->
+        Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {
+          // Display the hike's actual information
+          HikeDetailsContent(detailedHike, navigationActions, hikesViewModel, profile.hikingLevel)
+        }
+      }
+    }
 
-  // Only do the configuration on the first composition, not on every recomposition
-  LaunchedEffect(Unit) {
-    savedHikesViewModel.loadSavedHikes()
-    savedHikesViewModel.updateHikeDetailState(route)
-    listOfHikeRoutesViewModel.getRoutesElevation(
-        route,
-        {
-          elevationData.clear()
-          elevationData.addAll(it)
-        })
+    // Details have not been computed yet, but the elevation has been retrieved
+    selectedHike!!.elevation.obtained() -> {
+      hikesViewModel.computeDetailsFor(selectedHike!!.id)
+      CenteredLoadingAnimation(stringResource(R.string.hike_details_screen_computing_details))
+    }
+
+    // Waypoints are available, but elevation hasn't been retrieved yet. Retrieve it
+    hikesViewModel.canElevationDataBeRetrievedFor(selectedHike!!) -> {
+      hikesViewModel.retrieveElevationDataFor(selectedHike!!.id)
+      CenteredLoadingAnimation(stringResource(R.string.hike_details_screen_obtaining_elevation))
+    }
+
+    // Waypoints are not available, retrieve them
+    else -> {
+      hikesViewModel.retrieveLoadedHikesOsmData()
+      CenteredLoadingAnimation(stringResource(R.string.hike_details_screen_obtaining_osm_data))
+    }
   }
+}
+
+@Composable
+fun HikeDetailsContent(
+    hike: DetailedHike,
+    navigationActions: NavigationActions,
+    hikesViewModel: HikesViewModel,
+    userHikingLevel: HikingLevel
+) {
+  BackHandler { hikesViewModel.unselectHike() }
+
+  Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {
+    // Display the map and the zoom buttons
+    val mapView = hikeDetailsMap(hike)
+
+    // Display the back button on top of the map
+    BackButton(
+        navigationActions = navigationActions,
+        modifier = Modifier.padding(top = 40.dp, start = 16.dp, end = 16.dp).safeDrawingPadding(),
+        onClick = { hikesViewModel.unselectHike() })
+
+    // Zoom buttons at the bottom right of the screen
+    ZoomMapButton(
+        onZoomIn = { mapView.controller.zoomIn() },
+        onZoomOut = { mapView.controller.zoomOut() },
+        modifier =
+            Modifier.align(Alignment.BottomEnd)
+                .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
+
+    // Prevent the app from crashing when the "run hike" button is spammed
+    var wantToRunHike by remember { mutableStateOf(false) }
+    LaunchedEffect(wantToRunHike) {
+      if (wantToRunHike) navigationActions.navigateTo(Screen.RUN_HIKE)
+    }
+
+    // Display the details of the hike at the bottom of the screen
+    HikesDetailsBottomScaffold(
+        hike, hikesViewModel, userHikingLevel, onRunThisHike = { wantToRunHike = true })
+  }
+}
+
+@Composable
+fun hikeDetailsMap(hike: DetailedHike): MapView {
+  val context = LocalContext.current
+
+  val hikeZoomLevel = MapUtils.calculateBestZoomLevel(hike.bounds).toDouble()
+  val hikeCenter = MapUtils.getGeographicalCenter(hike.bounds)
 
   // Avoid re-creating the MapView on every recomposition
   val mapView = remember {
     MapView(context).apply {
       // Set map's initial state
-      controller.setZoom(routeZoomLevel)
-      controller.setCenter(MapUtils.getGeographicalCenter(route.bounds))
+      controller.setZoom(hikeZoomLevel)
+      controller.setCenter(hikeCenter)
       // Limit the zoom to avoid the user zooming out or out too much
-      minZoomLevel = routeZoomLevel
+      minZoomLevel = hikeZoomLevel
       maxZoomLevel = MAP_MAX_ZOOM
       // Avoid repeating the map when the user reaches the edge or zooms out
       // We keep the horizontal repetition enabled to allow the user to scroll the map
@@ -176,8 +255,8 @@ fun HikeDetailScreen(
         min(MapScreen.MAP_MAX_LATITUDE, mapView.boundingBox.latNorth),
         max(MapScreen.MAP_MIN_LATITUDE, mapView.boundingBox.latSouth),
         HikeDetailScreen.MAP_BOUNDS_MARGIN)
-    if (route.bounds.maxLon < HikeDetailScreen.MAP_MAX_LONGITUDE ||
-        route.bounds.minLon > HikeDetailScreen.MAP_MIN_LONGITUDE) {
+    if (hike.bounds.maxLon < HikeDetailScreen.MAP_MAX_LONGITUDE ||
+        hike.bounds.minLon > HikeDetailScreen.MAP_MIN_LONGITUDE) {
       mapView.setScrollableAreaLimitLongitude(
           max(HikeDetailScreen.MAP_MIN_LONGITUDE, mapView.boundingBox.lonWest),
           min(HikeDetailScreen.MAP_MAX_LONGITUDE, mapView.boundingBox.lonEast),
@@ -187,98 +266,43 @@ fun HikeDetailScreen(
 
   // Show the selected hike on the map
   // OnLineClick does nothing, the line should not be clickable
-  val hikeLineColor = route.getColor()
-  Log.d("HikeDetailScreen", "Drawing hike on map: ${route.bounds}")
-  MapUtils.showHikeOnMap(mapView = mapView, hike = route, color = hikeLineColor, onLineClick = {})
+  Log.d("HikeDetailScreen", "Drawing hike on map: ${hike.bounds}")
+  MapUtils.showHikeOnMap(
+      mapView = mapView, waypoints = hike.waypoints, color = hike.color, onLineClick = {})
 
-  LaunchedEffect(Unit) {
-    if (authViewModel.currentUser.value == null) {
-      Log.e("HikeDetailScreen", "User is not signed in")
-      return@LaunchedEffect
-    }
-    profileViewModel.getProfileById(authViewModel.currentUser.value!!.uid)
-  }
+  // Display the map as a composable
+  AndroidView(
+      factory = { mapView },
+      modifier =
+          Modifier.fillMaxWidth()
+              .padding(bottom = 300.dp) // Reserve space for the scaffold at the bottom
+              .testTag(TEST_TAG_MAP))
 
-  var wantToRunHike by remember { mutableStateOf(false) }
-  LaunchedEffect(wantToRunHike) { if (wantToRunHike) navigationActions.navigateTo(Screen.RUN_HIKE) }
-
-  val errorMessageIdState = profileViewModel.errorMessageId.collectAsState()
-  val profileState = profileViewModel.profile.collectAsState()
-
-  AsyncStateHandler(
-      errorMessageIdState = errorMessageIdState,
-      actionContentDescriptionStringId = R.string.go_back,
-      actionOnErrorAction = { navigationActions.navigateTo(Route.MAP) },
-      valueState = profileState,
-  ) { profile ->
-    Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {
-      // Map
-      AndroidView(
-          factory = { mapView },
-          modifier =
-              Modifier.fillMaxWidth()
-                  .padding(bottom = 300.dp) // Reserve space for the scaffold at the bottom
-                  .testTag(TEST_TAG_MAP))
-      // Back Button at the top of the screen
-      BackButton(
-          navigationActions = navigationActions,
-          modifier = Modifier.padding(start = 16.dp, end = 16.dp).safeDrawingPadding(),
-          onClick = { listOfHikeRoutesViewModel.clearSelectedRoute() })
-      // Zoom buttons at the bottom right of the screen
-      ZoomMapButton(
-          onZoomIn = { mapView.controller.zoomIn() },
-          onZoomOut = { mapView.controller.zoomOut() },
-          modifier =
-              Modifier.align(Alignment.BottomEnd)
-                  .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
-
-      // Hike Details bottom sheet
-      HikeDetails(
-          detailedRoute = detailedRoute,
-          savedHikesViewModel = savedHikesViewModel,
-          elevationData = elevationData,
-          userHikingLevel = profile.hikingLevel,
-          onRunThisHike = { wantToRunHike = true },
-      )
-    }
-  }
+  return mapView
 }
 
 /**
  * A composable that displays details about a hike in a bottom sheet.
  *
- * @param detailedRoute The route for which information is displayed
- * @param savedHikesViewModel ViewModel managing saved hikes state
- * @param elevationData List of elevation points for the elevation graph
+ * @param detailedHike The route about which information is displayed
+ * @param hikesViewModel The view model to handle selected hike data and saving/unsaving operations
  * @param userHikingLevel The user's hiking experience level
  * @param onRunThisHike Callback triggered when "Run This Hike" button is clicked
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HikeDetails(
-    detailedRoute: DetailedHikeRoute,
-    savedHikesViewModel: SavedHikesViewModel,
-    elevationData: List<Double>,
+fun HikesDetailsBottomScaffold(
+    detailedHike: DetailedHike,
+    hikesViewModel: HikesViewModel,
     userHikingLevel: HikingLevel,
     onRunThisHike: () -> Unit
 ) {
-  val hikeDetailState = savedHikesViewModel.hikeDetailState.collectAsState(null).value
-
-  // Handle save/unsave actions
-  val isSaved = hikeDetailState?.isSaved ?: false
-  val toggleSaveState = { savedHikesViewModel.toggleSaveState() }
-
-  // Handle planned date updates
-  val plannedDate = hikeDetailState?.plannedDate
-  val updatePlannedDate = { timestamp: Timestamp? ->
-    savedHikesViewModel.updatePlannedDate(timestamp)
-  }
-
-  val hikeColor = Color(detailedRoute.route.getColor())
-
   val scaffoldState = rememberBottomSheetScaffoldState()
 
-  val isSuitable = detailedRoute.difficulty.ordinal <= userHikingLevel.ordinal
+  val hikeColor = Color(detailedHike.color)
+  val isSuitable = detailedHike.difficulty.ordinal <= userHikingLevel.ordinal
+  val bookmarkIconId =
+      if (detailedHike.isSaved) R.drawable.bookmark_filled_blue else R.drawable.bookmark_no_fill
 
   BottomSheetScaffold(
       scaffoldState = scaffoldState,
@@ -294,8 +318,7 @@ fun HikeDetails(
             ) {
               Text(
                   text =
-                      detailedRoute.route.name
-                          ?: stringResource(R.string.map_screen_hike_title_default),
+                      detailedHike.name ?: stringResource(R.string.map_screen_hike_title_default),
                   style = MaterialTheme.typography.titleLarge,
                   textAlign = TextAlign.Left,
                   modifier = Modifier.testTag(TEST_TAG_HIKE_NAME))
@@ -303,21 +326,25 @@ fun HikeDetails(
             }
 
             Image(
-                painter = painterResource(hikeDetailState?.bookmark ?: R.drawable.bookmark_no_fill),
+                painter = painterResource(bookmarkIconId),
                 contentDescription =
-                    if (hikeDetailState?.isSaved == true)
+                    if (detailedHike.isSaved)
                         stringResource(R.string.hike_detail_screen_bookmark_hint_on_isSaved_true)
                     else stringResource(R.string.hike_detail_screen_bookmark_hint_on_isSaved_false),
                 modifier =
                     Modifier.size(60.dp, 80.dp).testTag(TEST_TAG_BOOKMARK_ICON).clickable {
-                      toggleSaveState()
+                      if (detailedHike.isSaved) {
+                        hikesViewModel.unsaveHike(detailedHike.id)
+                      } else {
+                        hikesViewModel.saveHike(detailedHike.id)
+                      }
                     },
                 contentScale = ContentScale.FillBounds,
             )
           }
 
           ElevationGraph(
-              elevations = elevationData,
+              elevations = detailedHike.elevation,
               modifier =
                   Modifier.fillMaxWidth()
                       .height(60.dp)
@@ -327,14 +354,13 @@ fun HikeDetails(
                   ElevationGraphStyleProperties(
                       strokeColor = hikeColor, fillColor = hikeColor.copy(0.1f)))
 
-          val distanceString =
-              String.format(Locale.getDefault(), "%.2f", detailedRoute.totalDistance)
-          val elevationGainString = detailedRoute.elevationGain.roundToInt().toString()
+          val distanceString = String.format(Locale.getDefault(), "%.2f", detailedHike.distance)
+          val elevationGainString = detailedHike.elevationGain.roundToInt().toString()
           val hourString =
-              String.format(Locale.getDefault(), "%02d", (detailedRoute.estimatedTime / 60).toInt())
+              String.format(Locale.getDefault(), "%02d", (detailedHike.estimatedTime / 60).toInt())
           val minuteString =
               String.format(
-                  Locale.getDefault(), "%02d", (detailedRoute.estimatedTime % 60).roundToInt())
+                  Locale.getDefault(), "%02d", (detailedHike.estimatedTime % 60).roundToInt())
 
           DetailRow(
               label = stringResource(R.string.hike_detail_screen_label_distance),
@@ -345,17 +371,22 @@ fun HikeDetails(
           DetailRow(
               label = stringResource(R.string.hike_detail_screen_label_estimated_time),
               value =
-                  if (detailedRoute.estimatedTime / 60 < 1) "${minuteString}min"
+                  if (detailedHike.estimatedTime / 60 < 1) "${minuteString}min"
                   else "${hourString}h${minuteString}")
           DetailRow(
               label = stringResource(R.string.hike_detail_screen_label_difficulty),
-              value = stringResource(detailedRoute.difficulty.nameResourceId),
+              value = stringResource(detailedHike.difficulty.nameResourceId),
               valueColor =
                   Color(
                       ContextCompat.getColor(
-                          LocalContext.current, detailedRoute.difficulty.colorResourceId)),
+                          LocalContext.current, detailedHike.difficulty.colorResourceId)),
           )
-          DateDetailRow(isSaved, plannedDate, updatePlannedDate)
+          DateDetailRow(
+              isSaved = detailedHike.isSaved,
+              plannedDate = detailedHike.plannedDate,
+              updatePlannedDate = { timestamp: Timestamp? ->
+                hikesViewModel.setPlannedDate(detailedHike.id, timestamp)
+              })
 
           // "Run This Hike" button
           BigButton(
