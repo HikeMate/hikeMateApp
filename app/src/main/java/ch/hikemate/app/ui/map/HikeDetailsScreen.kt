@@ -148,6 +148,7 @@ fun HikeDetailScreen(
       navigationActions.goBack()
     }
   }
+
   when {
     // If the hike is null, the LaunchedEffect will navigate back, don't handle it here
     selectedHike == null -> CenteredLoadingAnimation()

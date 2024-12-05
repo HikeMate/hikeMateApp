@@ -9,7 +9,6 @@ import ch.hikemate.app.model.elevation.ElevationServiceRepository
 import ch.hikemate.app.model.extensions.crossesDateLine
 import ch.hikemate.app.model.extensions.splitByDateLine
 import ch.hikemate.app.model.extensions.toBounds
-import ch.hikemate.app.ui.map.MapInitialValues
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +18,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import org.osmdroid.util.BoundingBox
-import org.osmdroid.util.GeoPoint
 
 /** ViewModel for the list of hike routes */
 open class ListOfHikeRoutesViewModel(
@@ -34,15 +32,6 @@ open class ListOfHikeRoutesViewModel(
   // Selected route, i.e the route for the detail view
   private val selectedHikeRoute_ = MutableStateFlow<HikeRoute?>(null)
   open val selectedHikeRoute: StateFlow<HikeRoute?> = selectedHikeRoute_.asStateFlow()
-
-  // So that the map can be maintained when the user navigates between screens with a map
-  data class MapViewState(
-      val center: GeoPoint? = MapInitialValues().mapInitialCenter,
-      val zoom: Double = MapInitialValues().mapInitialZoomLevel,
-  )
-
-  private val _mapState = MutableStateFlow(MapViewState())
-  val mapState = _mapState.asStateFlow()
 
   private val area_ = MutableStateFlow<BoundingBox?>(null)
 
@@ -209,13 +198,5 @@ open class ListOfHikeRoutesViewModel(
    */
   fun selectRouteById(hikeId: String) {
     viewModelScope.launch { selectRouteByIdAsync(hikeId) }
-  }
-
-  fun setMapState(center: GeoPoint, zoom: Double) {
-    _mapState.value = MapViewState(center, zoom)
-  }
-
-  fun getMapState(): MapViewState {
-    return _mapState.value
   }
 }
