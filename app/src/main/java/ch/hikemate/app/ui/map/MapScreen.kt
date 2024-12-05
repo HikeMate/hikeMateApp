@@ -40,6 +40,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -692,22 +693,22 @@ fun HikeCardFor(
   // The color of the card's message is chosen based on whether the hike is suitable or not
   val suitableLabelColor: Color?
   val suitableLabelText: String?
-  val suitableLabelIcon: Int?
+  val messageIcon: Painter?
   when (isSuitable) {
     true -> {
       suitableLabelColor = suitableColor
       suitableLabelText = LocalContext.current.getString(R.string.map_screen_suitable_hike_label)
-      suitableLabelIcon = R.drawable.check_circle
+      messageIcon = painterResource(R.drawable.check_circle)
     }
     false -> {
       suitableLabelColor = challengingColor
       suitableLabelText = LocalContext.current.getString(R.string.map_screen_challenging_hike_label)
-      suitableLabelIcon = R.drawable.warning
+      messageIcon = painterResource(R.drawable.warning)
     }
     else -> {
       suitableLabelColor = null
       suitableLabelText = null
-      suitableLabelIcon = null
+      messageIcon = null
     }
   }
 
@@ -718,8 +719,7 @@ fun HikeCardFor(
       messageContent = suitableLabelText,
       styleProperties =
           HikeCardStyleProperties(
-              messageIcon =
-                  if (suitableLabelIcon != null) painterResource(suitableLabelIcon) else null,
+              messageIcon = messageIcon,
               messageColor = suitableLabelColor,
               graphColor = Color(color)))
 }
