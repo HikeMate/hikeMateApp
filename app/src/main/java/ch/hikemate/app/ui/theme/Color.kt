@@ -4,6 +4,9 @@ import androidx.compose.ui.graphics.Color
 
 val primaryColor = Color(0xFF3B9DE8)
 
+val suitableColor = Color(0xFF4CAF50)
+val challengingColor = Color(0xFFFFC107)
+
 val hikeColors =
     listOf(
         0xFF7E57C2.toInt(), // Purple
