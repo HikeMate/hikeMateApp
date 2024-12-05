@@ -118,13 +118,12 @@ fun SavedHikesScreen(hikesViewModel: HikesViewModel, navigationActions: Navigati
                   modifier = Modifier.fillMaxWidth(),
               ) { pageIndex ->
                 Column {
-                  SavedHikesSection.values()[pageIndex].let {
-                    when (it) {
-                      SavedHikesSection.Planned ->
-                          PlannedHikes(hikes = savedHikes, hikesViewModel = hikesViewModel)
-                      SavedHikesSection.Saved ->
-                          SavedHikes(savedHikes = savedHikes, hikesViewModel = hikesViewModel)
-                    }
+                  // Display either the planned or saved hikes section
+                  when (SavedHikesSection.values()[pageIndex]) {
+                    SavedHikesSection.Planned ->
+                        PlannedHikes(hikes = savedHikes, hikesViewModel = hikesViewModel)
+                    SavedHikesSection.Saved ->
+                        SavedHikes(savedHikes = savedHikes, hikesViewModel = hikesViewModel)
                   }
                 }
               }
