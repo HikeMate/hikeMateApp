@@ -40,7 +40,6 @@ import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
-import ch.hikemate.app.utils.humanReadablePlannedLabel
 import kotlinx.coroutines.flow.StateFlow
 
 object SavedHikesScreen {
@@ -164,31 +163,7 @@ private fun PlannedHikes(hikes: List<StateFlow<Hike>>?, hikesViewModel: HikesVie
     LazyColumn {
       items(plannedHikes.size, key = { plannedHikes[it].value.id }) { index ->
         val hike by plannedHikes[index].collectAsState()
-        if (!hike.elevation.obtained()) {
-          hikesViewModel.retrieveElevationDataFor(hike.id)
-          HikeCard(
-              title = hike.name ?: stringResource(R.string.map_screen_hike_title_default),
-              elevationData = null,
-              onClick = { hikesViewModel.selectHike(hike.id) },
-              messageContent = hike.plannedDate!!.humanReadablePlannedLabel(LocalContext.current),
-              modifier = Modifier.testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_HIKE_CARD),
-              styleProperties =
-                  HikeCardStyleProperties(
-                      messageIcon = painterResource(R.drawable.calendar_today),
-                      messageColor = Color(0xFF3B82F6)))
-        } else {
-          HikeCard(
-              title = hike.name ?: stringResource(R.string.map_screen_hike_title_default),
-              elevationData = hike.elevation.getOrThrow(),
-              onClick = { hikesViewModel.selectHike(hike.id) },
-              messageContent = hike.plannedDate!!.humanReadablePlannedLabel(LocalContext.current),
-              modifier = Modifier.testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_HIKE_CARD),
-              styleProperties =
-                  HikeCardStyleProperties(
-                      messageIcon = painterResource(R.drawable.calendar_today),
-                      messageColor = Color(0xFF3B82F6),
-                      graphColor = Color(hike.getColor())))
-        }
+        SavedHikeCardFor(hike, hikesViewModel)
       }
     }
   }
@@ -215,25 +190,26 @@ private fun SavedHikes(savedHikes: List<StateFlow<Hike>>?, hikesViewModel: Hikes
     LazyColumn {
       items(savedHikes.size, key = { savedHikes[it].value.id }) { index ->
         val hike by savedHikes[index].collectAsState()
-        if (!hike.elevation.obtained()) {
-          hikesViewModel.retrieveElevationDataFor(hike.id)
-          HikeCard(
-              title = hike.name ?: stringResource(R.string.map_screen_hike_title_default),
-              elevationData = null,
-              onClick = { hikesViewModel.selectHike(hike.id) },
-              modifier = Modifier.testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_HIKE_CARD),
-          )
-        } else {
-          HikeCard(
-              title = hike.name ?: stringResource(R.string.map_screen_hike_title_default),
-              elevationData = hike.elevation.getOrThrow(),
-              onClick = { hikesViewModel.selectHike(hike.id) },
-              modifier = Modifier.testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_HIKE_CARD),
-              styleProperties = HikeCardStyleProperties(graphColor = Color(hike.getColor())))
-        }
+        SavedHikeCardFor(hike, hikesViewModel)
       }
     }
   }
+}
+
+@Composable
+private fun SavedHikeCardFor(hike: Hike, hikesViewModel: HikesViewModel) {
+  // Ask for elevation if not already available
+  if (!hike.elevation.obtained()) {
+    hikesViewModel.retrieveElevationDataFor(hike.id)
+  }
+
+  // Display the hike card
+  HikeCard(
+      title = hike.name ?: stringResource(R.string.map_screen_hike_title_default),
+      elevationData = hike.elevation.getOrNull(),
+      onClick = { hikesViewModel.selectHike(hike.id) },
+      modifier = Modifier.testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_HIKE_CARD),
+      styleProperties = HikeCardStyleProperties(graphColor = Color(hike.getColor())))
 }
 
 @Composable
