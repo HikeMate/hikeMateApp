@@ -651,33 +651,28 @@ fun CollapsibleHikesList(
             LazyColumn(modifier = Modifier.fillMaxSize()) {
               items(hikes.size, key = { hikes[it].value.id }) { index: Int ->
                 val hike by hikes[index].collectAsState()
+                val elevation: List<Double>?
+                val suitable: Boolean
                 if (!hike.elevation.obtained()) {
                   hikesViewModel.retrieveElevationDataFor(hike.id)
-                  HikeCardFor(
-                      name = hike.name,
-                      isSuitable = false,
-                      color = hike.getColor(),
-                      elevationData = null,
-                      onClick = { hikesViewModel.selectHike(hike.id) })
+                  elevation = null
+                  suitable = false
                 } else if (!hikesViewModel.areDetailsComputedFor(hike)) {
                   hikesViewModel.computeDetailsFor(hike.id)
-                  val elevation = hike.elevation.getOrThrow()
-                  HikeCardFor(
-                      name = hike.name,
-                      isSuitable = false,
-                      color = hike.getColor(),
-                      elevationData = elevation,
-                      onClick = { hikesViewModel.selectHike(hike.id) })
+                  elevation = hike.elevation.getOrThrow()
+                  suitable = false
                 } else {
                   // The hike has elevation data and details computed
                   val detailed = hike.withDetailsOrThrow()
-                  HikeCardFor(
-                      name = detailed.name,
-                      isSuitable = detailed.difficulty.ordinal <= userHikingLevel.ordinal,
-                      color = hike.getColor(),
-                      elevationData = detailed.elevation,
-                      onClick = { hikesViewModel.selectHike(hike.id) })
+                  elevation = detailed.elevation
+                  suitable = detailed.difficulty.ordinal <= userHikingLevel.ordinal
                 }
+                HikeCardFor(
+                    name = hike.name,
+                    isSuitable = suitable,
+                    color = hike.getColor(),
+                    elevationData = elevation,
+                    onClick = { hikesViewModel.selectHike(hike.id) })
               }
             }
           }
