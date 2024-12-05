@@ -1,6 +1,5 @@
 package ch.hikemate.app.model.authentication
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.provider.Settings
@@ -20,7 +19,6 @@ import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
-import com.google.firebase.auth.OAuthProvider
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
@@ -39,58 +37,33 @@ class FirebaseAuthRepository : AuthRepository {
   ) {
     // Initialize Firebase authentication and retrieve the web client ID from resources
     val auth = FirebaseAuth.getInstance()
-    val token = context.getString(R.string.default_web_client_id)
 
-    // Configure Google ID options to request credentials from authorized accounts and the server
-    // client ID
-    val googleIdOption: GetGoogleIdOption =
-        GetGoogleIdOption.Builder()
-            .setFilterByAuthorizedAccounts(false) // Allow all kinds of Google accounts
-            .setServerClientId(token) // Server client ID for OAuth
-            .setAutoSelectEnabled(true) // Auto-select if only one account is available
-            .build()
-
-    // Build the credential request with the Google ID option
-    val request: GetCredentialRequest =
-        GetCredentialRequest.Builder().addCredentialOption(googleIdOption).build()
-
-    // Launch a coroutine for the login process to avoid blocking the main thread
-    coroutineScope.launch {
-      try {
-        // Request credentials from the credential manager
-        val result =
-            credentialManager.getCredential(
-                request = request, // Send the request we built
-                context = context // Provide the context for the request
-                )
-
-        // Extract the ID token from the result and create a Firebase credential
-        val firebaseCredential =
-            GoogleAuthProvider.getCredential(
-                result.credential.data.getString(
-                    "com.google.android.libraries.identity.googleid.BUNDLE_KEY_ID_TOKEN")!!, // Non-null assertion because the token must exist if login is successful
-                null // No access token needed
-                )
-
-        // Sign in with the Firebase credential (async task)
-        auth.signInWithCredential(firebaseCredential).addOnCompleteListener { task ->
-          if (task.isSuccessful) {
-            Log.d("FirebaseAuthRepository", "signInWithCredential:success")
-            onSuccess(auth.currentUser)
+    getGoogleAuthCredential(
+        context,
+        coroutineScope,
+        credentialManager,
+        onSuccess = { firebaseCredential ->
+          // Sign in with the Firebase credential (async task)
+          auth.signInWithCredential(firebaseCredential).addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+              Log.d("FirebaseAuthRepository", "signInWithCredential:success")
+              onSuccess(auth.currentUser)
+            } else {
+              Log.d("FirebaseAuthRepository", "signInWithCredential:failure", task.exception)
+              onErrorAction(R.string.error_occurred_while_signing_in_with_google)
+            }
+          }
+        },
+        onFailure = { e ->
+          if (e is NoCredentialException) {
+            Log.e("SignInButton", "No credentials found: ${e.message}")
+            // If there is no Google account connected to the device, prompt the user to add one
+            startAddAccountIntentLauncher?.launch(getAddGoogleAccountIntent())
           } else {
-            Log.d("FirebaseAuthRepository", "signInWithCredential:failure", task.exception)
+            Log.d("SignInButton", "Login error: ${e.message}")
             onErrorAction(R.string.error_occurred_while_signing_in_with_google)
           }
-        }
-      } catch (e: NoCredentialException) {
-        Log.e("SignInButton", "No credentials found: ${e.message}")
-        // If there is no Google account connected to the device, prompt the user to add one
-        startAddAccountIntentLauncher?.launch(getAddGoogleAccountIntent())
-      } catch (e: Exception) {
-        Log.d("SignInButton", "Login error: ${e.message}")
-        onErrorAction(R.string.error_occurred_while_signing_in_with_google)
-      }
-    }
+        })
   }
 
   private fun getAddGoogleAccountIntent(): Intent {
@@ -142,7 +115,8 @@ class FirebaseAuthRepository : AuthRepository {
 
   override fun deleteAccount(
       password: String,
-      activity: Activity,
+      context: Context,
+      coroutineScope: CoroutineScope,
       onSuccess: () -> Unit,
       onErrorAction: (Int) -> Unit
   ) {
@@ -155,7 +129,8 @@ class FirebaseAuthRepository : AuthRepository {
       reauthenticate(
           user,
           password,
-          activity,
+          context,
+          coroutineScope,
           {
             Log.d("DeleteAccount", "User re-authenticated")
 
@@ -200,38 +175,151 @@ class FirebaseAuthRepository : AuthRepository {
     return user.providerData.any { it.providerId == EmailAuthProvider.PROVIDER_ID }
   }
 
+  /**
+   * Re-authenticate the user with a given passwords. If the user is signed in with an email
+   * provider, re-authenticate with email and password. If the user is signed in with Google, use
+   * Google Sign-In to re-authenticate.
+   *
+   * @param user The user to re-authenticate.
+   * @param password The password to use for re-authentication.
+   * @param context The context to use for Google Sign-In.
+   * @param coroutineScope The coroutine scope to use for Google Sign-In.
+   * @param onSuccess The action to perform if re-authentication is successful.
+   * @param onFailure The action to perform if re-authentication fails.
+   */
   private fun reauthenticate(
       user: FirebaseUser,
       password: String,
-      activity: Activity,
+      context: Context,
+      coroutineScope: CoroutineScope,
       onSuccess: () -> Unit,
       onFailure: () -> Unit
   ) {
     val isEmail = isEmailProvider(user)
 
     if (isEmail) {
-      val email = user.email ?: throw Exception("User email is null")
-      val credential: AuthCredential = EmailAuthProvider.getCredential(email, password)
-      user.reauthenticate(credential).addOnCompleteListener { task ->
-        if (task.isSuccessful) {
-          Log.d("DeleteAccount", "User re-authenticated")
-          onSuccess()
-        } else {
-          onFailure()
-        }
-      }
+      reauthenticateWithEmailAndPassword(user, password, onSuccess, onFailure)
     } else {
-      val googleProvider = OAuthProvider.newBuilder(GoogleAuthProvider.PROVIDER_ID)
-      user
-          .startActivityForReauthenticateWithProvider(activity, googleProvider.build())
-          .addOnFailureListener { e ->
-            Log.e("DeleteAccount", "Re-authentication failed: ${e.message}")
-            onFailure()
+      reauthenticateWithGoogleSignIn(user, context, coroutineScope, onSuccess, onFailure)
+    }
+  }
+
+  /**
+   * Re-authenticate the user with email and password.
+   *
+   * @param user The user to re-authenticate.
+   * @param password The password to use for re-authentication.
+   * @param onSuccess The action to perform if re-authentication is successful.
+   * @param onFailure The action to perform if re-authentication fails.
+   */
+  private fun reauthenticateWithEmailAndPassword(
+      user: FirebaseUser,
+      password: String,
+      onSuccess: () -> Unit,
+      onFailure: () -> Unit
+  ) {
+    val email = user.email ?: throw Exception("User email is null")
+    val credential: AuthCredential = EmailAuthProvider.getCredential(email, password)
+    user.reauthenticate(credential).addOnCompleteListener { task ->
+      if (task.isSuccessful) {
+        Log.d("FirebaseAuthRepository", "reauthenticate(email):success")
+        onSuccess()
+      } else {
+        Log.d("FirebaseAuthRepository", "reauthenticate(email):failure", task.exception)
+        onFailure()
+      }
+    }
+  }
+
+  /**
+   * Re-authenticate the user with Google Sign-In.
+   *
+   * @param user The user to re-authenticate.
+   * @param context The context to use for Google Sign-In.
+   * @param coroutineScope The coroutine scope to use for Google Sign-In.
+   * @param onSuccess The action to perform if re-authentication is successful.
+   * @param onFailure The action to perform if re-authentication fails.
+   */
+  private fun reauthenticateWithGoogleSignIn(
+      user: FirebaseUser,
+      context: Context,
+      coroutineScope: CoroutineScope,
+      onSuccess: () -> Unit,
+      onFailure: () -> Unit
+  ) {
+    getGoogleAuthCredential(
+        context,
+        coroutineScope,
+        onSuccess = { firebaseCredential ->
+          user.reauthenticate(firebaseCredential).addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+              Log.d("FirebaseAuthRepository", "reauthenticate(google):success")
+              onSuccess()
+            } else {
+              Log.d("FirebaseAuthRepository", "reauthenticate(google):failure", task.exception)
+              onFailure()
+            }
           }
-          .addOnSuccessListener { result ->
-            Log.d("DeleteAccount", "Re-authentication successful: $result")
-            onSuccess()
-          }
+        },
+        onFailure = {
+          Log.d("GetGoogleCredential", "Error getting Google credential: ${it.message}")
+          onFailure()
+        })
+  }
+
+  /**
+   * Get a Google credential for Firebase authentication. Useful for Google Sign-In and
+   * re-authentication.
+   *
+   * @param context The context to use for Google Sign-In.
+   * @param coroutineScope The coroutine scope to use for Google Sign-In.
+   * @param credentialManager The credential manager to use for Google Sign-In.
+   * @param onSuccess The action to perform if the credential is successfully retrieved.
+   * @param onFailure The action to perform if the credential retrieval fails.
+   */
+  private fun getGoogleAuthCredential(
+      context: Context,
+      coroutineScope: CoroutineScope,
+      credentialManager: CredentialManager = CredentialManager.create(context),
+      onSuccess: (AuthCredential) -> Unit,
+      onFailure: (Exception) -> Unit
+  ) {
+    val token = context.getString(R.string.default_web_client_id)
+
+    // Configure Google ID options to request credentials from authorized accounts and the server
+    // client ID
+    val googleIdOption: GetGoogleIdOption =
+        GetGoogleIdOption.Builder()
+            .setFilterByAuthorizedAccounts(false) // Allow all kinds of Google accounts
+            .setServerClientId(token) // Server client ID for OAuth
+            .setAutoSelectEnabled(true) // Auto-select if only one account is available
+            .build()
+
+    // Build the credential request with the Google ID option
+    val request: GetCredentialRequest =
+        GetCredentialRequest.Builder().addCredentialOption(googleIdOption).build()
+
+    coroutineScope.launch {
+      try {
+        // Request credentials from the credential manager
+        val result =
+            credentialManager.getCredential(
+                request = request, // Send the request we built
+                context = context // Provide the context for the request
+                )
+
+        // Extract the ID token from the result and create a Firebase credential
+        val firebaseCredential =
+            GoogleAuthProvider.getCredential(
+                result.credential.data.getString(
+                    "com.google.android.libraries.identity.googleid.BUNDLE_KEY_ID_TOKEN")!!, // Non-null assertion because the token must exist if login is successful
+                null // No access token needed
+                )
+
+        onSuccess(firebaseCredential)
+      } catch (e: Exception) {
+        onFailure(e)
+      }
     }
   }
 }
