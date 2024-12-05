@@ -358,6 +358,7 @@ class FirebaseAuthRepositoryTest {
 
       repository.deleteAccount("password", context, this, onSuccess, mockOnError)
 
+      verify { mockFirebaseUser.reauthenticate(any()) }
       verify { mockFirebaseUser.delete() }
       verify(exactly = 2) { mockDocument.delete() }
       verify { onSuccess() }
@@ -378,6 +379,7 @@ class FirebaseAuthRepositoryTest {
 
       repository.deleteAccount("password", context, this, onSuccess, mockOnError)
 
+      verify { mockFirebaseUser.reauthenticate(any()) }
       verify { mockOnError(any()) }
     }
   }

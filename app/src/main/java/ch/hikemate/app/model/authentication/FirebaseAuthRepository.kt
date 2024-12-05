@@ -175,6 +175,18 @@ class FirebaseAuthRepository : AuthRepository {
     return user.providerData.any { it.providerId == EmailAuthProvider.PROVIDER_ID }
   }
 
+  /**
+   * Re-authenticate the user with a given passwords. If the user is signed in with an email
+   * provider, re-authenticate with email and password. If the user is signed in with Google, use
+   * Google Sign-In to re-authenticate.
+   *
+   * @param user The user to re-authenticate.
+   * @param password The password to use for re-authentication.
+   * @param context The context to use for Google Sign-In.
+   * @param coroutineScope The coroutine scope to use for Google Sign-In.
+   * @param onSuccess The action to perform if re-authentication is successful.
+   * @param onFailure The action to perform if re-authentication fails.
+   */
   private fun reauthenticate(
       user: FirebaseUser,
       password: String,
@@ -192,6 +204,14 @@ class FirebaseAuthRepository : AuthRepository {
     }
   }
 
+  /**
+   * Re-authenticate the user with email and password.
+   *
+   * @param user The user to re-authenticate.
+   * @param password The password to use for re-authentication.
+   * @param onSuccess The action to perform if re-authentication is successful.
+   * @param onFailure The action to perform if re-authentication fails.
+   */
   private fun reauthenticateWithEmailAndPassword(
       user: FirebaseUser,
       password: String,
@@ -202,14 +222,24 @@ class FirebaseAuthRepository : AuthRepository {
     val credential: AuthCredential = EmailAuthProvider.getCredential(email, password)
     user.reauthenticate(credential).addOnCompleteListener { task ->
       if (task.isSuccessful) {
-        Log.d("DeleteAccount", "User re-authenticated")
+        Log.d("FirebaseAuthRepository", "reauthenticate(email):success")
         onSuccess()
       } else {
+        Log.d("FirebaseAuthRepository", "reauthenticate(email):failure", task.exception)
         onFailure()
       }
     }
   }
 
+  /**
+   * Re-authenticate the user with Google Sign-In.
+   *
+   * @param user The user to re-authenticate.
+   * @param context The context to use for Google Sign-In.
+   * @param coroutineScope The coroutine scope to use for Google Sign-In.
+   * @param onSuccess The action to perform if re-authentication is successful.
+   * @param onFailure The action to perform if re-authentication fails.
+   */
   private fun reauthenticateWithGoogleSignIn(
       user: FirebaseUser,
       context: Context,
@@ -223,10 +253,10 @@ class FirebaseAuthRepository : AuthRepository {
         onSuccess = { firebaseCredential ->
           user.reauthenticate(firebaseCredential).addOnCompleteListener { task ->
             if (task.isSuccessful) {
-              Log.d("FirebaseAuthRepository", "reauthenticate:success")
+              Log.d("FirebaseAuthRepository", "reauthenticate(google):success")
               onSuccess()
             } else {
-              Log.d("FirebaseAuthRepository", "reauthenticate:failure", task.exception)
+              Log.d("FirebaseAuthRepository", "reauthenticate(google):failure", task.exception)
               onFailure()
             }
           }
@@ -237,6 +267,16 @@ class FirebaseAuthRepository : AuthRepository {
         })
   }
 
+  /**
+   * Get a Google credential for Firebase authentication. Useful for Google Sign-In and
+   * re-authentication.
+   *
+   * @param context The context to use for Google Sign-In.
+   * @param coroutineScope The coroutine scope to use for Google Sign-In.
+   * @param credentialManager The credential manager to use for Google Sign-In.
+   * @param onSuccess The action to perform if the credential is successfully retrieved.
+   * @param onFailure The action to perform if the credential retrieval fails.
+   */
   private fun getGoogleAuthCredential(
       context: Context,
       coroutineScope: CoroutineScope,
