@@ -59,7 +59,7 @@ class FirebaseAuthRepositoryTest {
   private lateinit var mockTask: Task<AuthResult>
   private lateinit var mockVoidTask: Task<Void>
   private lateinit var mockOnSuccess: (FirebaseUser?) -> Unit
-  private lateinit var mockOnError: (Throwable) -> Unit
+  private lateinit var mockOnError: (Int) -> Unit
 
   private lateinit var mockFirebaseFirestore: FirebaseFirestore
   private lateinit var mockCollection: CollectionReference
@@ -187,7 +187,7 @@ class FirebaseAuthRepositoryTest {
 
         verify { mockFirebaseAuth.createUserWithEmailAndPassword(any(), any()) }
         verify(exactly = 0) { mockOnSuccess(any()) }
-        verify { mockOnError(any<Throwable>()) }
+        verify { mockOnError(any()) }
       }
 
   @Test
@@ -225,7 +225,7 @@ class FirebaseAuthRepositoryTest {
 
         verify { mockFirebaseAuth.signInWithEmailAndPassword(any(), any()) }
         verify(exactly = 0) { mockOnSuccess(any()) }
-        verify { mockOnError(any<Throwable>()) }
+        verify { mockOnError(any()) }
       }
 
   @Test
@@ -270,7 +270,7 @@ class FirebaseAuthRepositoryTest {
         coVerify { mockCredentialManager.getCredential(any(), any<GetCredentialRequest>()) }
         verify { mockFirebaseAuth.signInWithCredential(mockAuthCredential) }
         verify(exactly = 0) { mockOnSuccess(any()) }
-        verify { mockOnError(any<Throwable>()) }
+        verify { mockOnError(any()) }
       }
 
   @Test
@@ -293,7 +293,7 @@ class FirebaseAuthRepositoryTest {
         coVerify { mockCredentialManager.getCredential(any(), any<GetCredentialRequest>()) }
         verify(exactly = 0) { mockFirebaseAuth.signInWithCredential(mockAuthCredential) }
         verify(exactly = 0) { mockOnSuccess(any()) }
-        verify { mockOnError(any<GetCredentialUnknownException>()) }
+        verify { mockOnError(any()) }
       }
 
   @Test

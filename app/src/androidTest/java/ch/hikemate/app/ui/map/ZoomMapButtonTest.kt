@@ -13,9 +13,12 @@ import ch.hikemate.app.model.profile.Profile
 import ch.hikemate.app.model.profile.ProfileRepository
 import ch.hikemate.app.model.profile.ProfileViewModel
 import ch.hikemate.app.model.route.HikeRoutesRepository
-import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
+import ch.hikemate.app.model.route.HikesViewModel
+import ch.hikemate.app.model.route.saved.SavedHikesRepository
 import ch.hikemate.app.ui.navigation.NavigationActions
 import com.google.firebase.Timestamp
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -27,9 +30,10 @@ import org.mockito.kotlin.eq
 
 class ZoomMapButtonTest {
 
+  private lateinit var savedHikesRepository: SavedHikesRepository
   private lateinit var hikesRepository: HikeRoutesRepository
   private lateinit var elevationService: ElevationService
-  private lateinit var listOfHikeRoutesViewModel: ListOfHikeRoutesViewModel
+  private lateinit var hikesViewModel: HikesViewModel
   private lateinit var navigationActions: NavigationActions
   private lateinit var profileRepository: ProfileRepository
   private lateinit var profileViewModel: ProfileViewModel
@@ -46,16 +50,24 @@ class ZoomMapButtonTest {
           hikingLevel = HikingLevel.INTERMEDIATE,
           joinedDate = Timestamp.now())
 
+  @OptIn(ExperimentalCoroutinesApi::class)
   @Before
   fun setUp() {
     navigationActions = mock(NavigationActions::class.java)
+    savedHikesRepository = mock(SavedHikesRepository::class.java)
     hikesRepository = mock(HikeRoutesRepository::class.java)
     elevationService = mock(ElevationService::class.java)
     profileRepository = mock(ProfileRepository::class.java)
     profileViewModel = ProfileViewModel(profileRepository)
     authRepository = mock(AuthRepository::class.java)
     authViewModel = AuthViewModel(authRepository, profileRepository)
-    listOfHikeRoutesViewModel = ListOfHikeRoutesViewModel(hikesRepository, elevationService)
+
+    hikesViewModel =
+        HikesViewModel(
+            savedHikesRepo = savedHikesRepository,
+            osmHikesRepo = hikesRepository,
+            elevationService = elevationService,
+            UnconfinedTestDispatcher())
 
     `when`(profileRepository.getProfileById(eq(profile.id), any(), any())).thenAnswer {
       val onSuccess = it.getArgument<(Profile) -> Unit>(1)
@@ -68,7 +80,7 @@ class ZoomMapButtonTest {
   fun buttonIsDisplayed() {
     composeTestRule.setContent {
       MapScreen(
-          hikingRoutesViewModel = listOfHikeRoutesViewModel,
+          hikesViewModel = hikesViewModel,
           navigationActions = navigationActions,
           authViewModel = authViewModel,
           profileViewModel = profileViewModel)
@@ -83,7 +95,7 @@ class ZoomMapButtonTest {
 
     composeTestRule.setContent {
       MapScreen(
-          hikingRoutesViewModel = listOfHikeRoutesViewModel,
+          hikesViewModel = hikesViewModel,
           navigationActions = navigationActions,
           authViewModel = authViewModel,
           profileViewModel = profileViewModel)

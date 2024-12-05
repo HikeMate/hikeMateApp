@@ -50,6 +50,9 @@
     <string name="map_search_for_hikes">Searching for hikes…</string>
 
     <!-- Hike Details Screen -->
+    <string name="hike_details_screen_obtaining_osm_data">Loading hike data…</string>
+    <string name="hike_details_screen_obtaining_elevation">Loading hike elevation…</string>
+    <string name="hike_details_screen_computing_details">Last computations…</string>
     <string name="hike_detail_screen_bookmark_hint_on_isSaved_true">Unsave hike</string>
     <string name="hike_detail_screen_bookmark_hint_on_isSaved_false">Save hike</string>
     <string name="hike_detail_screen_label_distance">Distance</string>
@@ -68,6 +71,20 @@
     <string name="hike_detail_screen_date_picker_cancel_button">Cancel</string>
     <string name="hike_detail_screen_date_picker_confirm_button">Plan this hike!</string>
 
+    <!--Run Hike Screen -->
+    <string name="run_hike_screen_stop_run_button_label">Stop the run</string>
+    <string name="run_hike_screen_zero_distance_progress_value">0km</string>
+    <string name="run_hike_screen_distance_progress_value_format">%.2fkm</string>
+    <string name="run_hike_screen_progress_percentage_format">%d%% complete</string>
+    <string name="run_hike_screen_label_current_elevation">Current Elevation</string>
+    <string name="run_hike_screen_value_format_current_elevation">%dm</string>
+    <string name="run_hike_screen_label_elevation_gain">Elevation Gain</string>
+    <string name="run_hike_screen_value_format_elevation_gain">%dm</string>
+    <string name="run_hike_screen_label_estimated_time">Estimated time</string>
+    <string name="run_hike_screen_value_format_estimated_time_minutes">%02dmin</string>
+    <string name="run_hike_screen_value_format_estimated_time_hours_and_minutes">%dh%02d</string>
+    <string name="run_hike_screen_label_difficulty">Difficulty</string>
+
     <!-- Hike Difficulty Levels -->
     <string name="hike_difficulty_easy">Easy</string>
     <string name="hike_difficulty_moderate">Moderate</string>
@@ -75,6 +92,7 @@
 
 
     <!-- Saved Hikes Screen -->
+    <string name="saved_hikes_screen_loading_message">Loading saved hikes…</string>
     <string name="saved_hikes_screen_generic_error">
         An error occurred while loading saved hikes.
         Please check your Internet connection and try again.
@@ -118,6 +136,7 @@
     <string name="an_error_occurred_while_fetching_the_profile">An error occurred while fetching the profile.</string>
     <string name="an_error_occurred_while_updating_the_profile">An error occurred while updating the profile.</string>
     <string name="an_error_occurred_while_deleting_the_profile">An error occurred while deleting the profile</string>
+    <string name="an_error_occurred_while_creating_the_profile">An error occurred while creating the profile</string>
 
     <!-- Edit Profile Screen -->
     <string name="edit_profile_screen_title">Edit your profile</string>
@@ -143,6 +162,12 @@
     <string name="create_account_email_format_error">Invalid email format</string>
     <string name="create_account_fields_must_be_filled_error">All fields must be filled</string>
 
+    <string name="error_email_and_password_must_not_be_empty">Email and password must not be empty</string>
+    <string name="error_occurred_while_creating_account">An error occurred while creating the account</string>
+
+    <string name="error_occurred_while_signing_in_with_google">An error occurred while signing in with Google</string>
+    <string name="error_occurred_while_signing_in_with_email">An error occurred while signing in with email</string>
+
     <!-- Default profile -->
     <string name="default_display_name">Unnamed hiker</string>
     <string name="default_email">unnamedhiker@example.com</string>
@@ -157,4 +182,11 @@
     <string name="delete_account_password_label">Password</string>
     <string name="delete_account_delete_button">Delete account</string>
     <string name="delete_account_password_must_be_filled_error">You should provide a password</string>
+    <string name="error_deleting_the_user">Error deleting the user</string>
+    <string name="error_deleting_user_profile_and_saved_hikes">Error deleting user profile and saved hikes</string>
+    <string name="error_re_authenticating_the_user">Error re-authenticating the user</string>
+    <string name="no_user_is_currently_signed_in">No user is currently signed in</string>
+
+    <!-- Error handling -->
+    <string name="retry">Retry</string>
 </resources>

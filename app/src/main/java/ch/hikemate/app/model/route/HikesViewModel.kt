@@ -10,6 +10,7 @@ import ch.hikemate.app.model.extensions.toBounds
 import ch.hikemate.app.model.route.saved.SavedHike
 import ch.hikemate.app.model.route.saved.SavedHikesRepository
 import ch.hikemate.app.model.route.saved.SavedHikesRepositoryFirestore
+import ch.hikemate.app.utils.MapUtils
 import ch.hikemate.app.utils.RouteUtils
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
@@ -28,6 +29,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import org.osmdroid.util.BoundingBox
+import org.osmdroid.util.GeoPoint
 
 /**
  * View model to work with hikes.
@@ -70,25 +72,59 @@ class HikesViewModel(
 
   private var _hikeFlowsMap = mutableMapOf<String, MutableStateFlow<Hike>>()
 
+  private val _osmDataRetrievalMutex = Mutex()
+
+  private val _allOsmDataLoaded = MutableStateFlow(true)
+
+  private val _loadingMutex = Mutex()
+
+  private var _ongoingLoadingOperations: Int = 0
+
   private val _loading = MutableStateFlow(false)
 
   private val _hikeFlowsList = MutableStateFlow<List<StateFlow<Hike>>>(emptyList())
 
   private val _selectedHike = MutableStateFlow<Hike?>(null)
 
-  /** Internal type used to store where the hikes in [_hikeFlowsMap] come from. */
-  private enum class LoadedHikes {
+  private val _mapState = MutableStateFlow(MapUtils.MapViewState())
+
+  /**
+   * Enum used to designate where the hikes loaded in [hikeFlows] come from semantically.
+   *
+   * See the possible values for this enum along with [loadedHikesType] for more information.
+   */
+  enum class LoadedHikes {
     /** No hikes have been loaded yet. */
     None,
 
-    /** The hikes loaded in [_hikeFlowsMap] are the saved hikes. */
+    /** The hikes loaded in [hikeFlows] are the saved hikes of the user. */
     FromSaved,
 
-    /** The hikes loaded in [_hikeFlowsMap] were fetched from within a geographical rectangle. */
+    /** The hikes loaded in [hikeFlows] were fetched from within a geographical rectangle. */
     FromBounds
   }
 
-  private var _loadedHikesType: LoadedHikes = LoadedHikes.None
+  private val _loadedHikesType = MutableStateFlow(LoadedHikes.None)
+
+  /**
+   * Indicates what type of hikes are currently loaded inside of [hikeFlows].
+   * - [LoadedHikes.None] if no hikes have been loaded yet.
+   * - [LoadedHikes.FromSaved] if [hikeFlows] contains a list of the user's saved hikes.
+   * - [LoadedHikes.FromBounds] if [hikeFlows] contains hikes fetched from within a geographical
+   *   rectangle.
+   */
+  val loadedHikesType: StateFlow<LoadedHikes> = _loadedHikesType.asStateFlow()
+
+  /**
+   * Indicates whether all the hikes in [hikeFlows] have their OSM data loaded.
+   *
+   * Note that if [hikeFlows] is empty, this value will be true, because there are no hikes that
+   * need to be updated with their OSM data.
+   *
+   * This value is a state flow, so it can be observed for the UI to update directly when the value
+   * changes.
+   */
+  val allOsmDataLoaded: StateFlow<Boolean> = _allOsmDataLoaded.asStateFlow()
 
   /**
    * Whether a new list of hikes is currently being retrieved.
@@ -128,6 +164,8 @@ class HikesViewModel(
    */
   val selectedHike: StateFlow<Hike?> = _selectedHike.asStateFlow()
 
+  val mapState = _mapState.asStateFlow()
+
   /**
    * Sets the selected hike to the provided one.
    *
@@ -155,9 +193,8 @@ class HikesViewModel(
    * Downloads the current user's saved hikes from the database and caches them locally.
    *
    * This function updates the saved status of the loaded hikes in [hikeFlows]. If saved hikes are
-   * currently loaded (a call to [loadSavedHikes] has been made and no other loading call has been
-   * performed since), calling this function will update the whole loaded hikes list to match it
-   * with the new saved hikes.
+   * currently loaded (see [loadedHikesType]), calling this function will update the whole loaded
+   * hikes list to match it with the new saved hikes.
    *
    * @param onSuccess To be called when the saved hikes cache has been updated successfully.
    * @param onFailure Will be called if an error is encountered.
@@ -165,9 +202,9 @@ class HikesViewModel(
   fun refreshSavedHikesCache(onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}) =
       viewModelScope.launch {
         // Let the user know a heavy load operation is being performed
-        _loading.value = true
+        setLoading(true)
 
-        val success = refreshSavedHikesCacheAsync()
+        val success = refreshSavedHikesCacheAsync(forceOverwriteHikesList = false)
         if (success) {
           onSuccess()
         } else {
@@ -175,7 +212,7 @@ class HikesViewModel(
         }
 
         // The heavy loading operation is done now
-        _loading.value = false
+        setLoading(false)
       }
 
   /**
@@ -191,9 +228,9 @@ class HikesViewModel(
    */
   fun loadSavedHikes(onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}) =
       viewModelScope.launch {
-        _loading.value = true
+        setLoading(true)
         loadSavedHikesAsync(onSuccess, onFailure)
-        _loading.value = false
+        setLoading(false)
       }
 
   /**
@@ -264,12 +301,12 @@ class HikesViewModel(
   ) =
       viewModelScope.launch {
         // Let the user know a heavy load operation is being performed
-        _loading.value = true
+        setLoading(true)
 
         loadHikesInBoundsAsync(bounds, onSuccess, onFailure)
 
         // The heavy loading operation is done now
-        _loading.value = false
+        setLoading(false)
       }
 
   /**
@@ -296,15 +333,7 @@ class HikesViewModel(
    *   operation.
    */
   fun retrieveLoadedHikesOsmData(onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}) =
-      viewModelScope.launch {
-        // Notify the UI that a heavy loading operation is in progress
-        _loading.value = true
-
-        retrieveLoadedHikesOsmDataAsync(onSuccess, onFailure)
-
-        // The heavy loading operation is done now
-        _loading.value = false
-      }
+      viewModelScope.launch { retrieveLoadedHikesOsmDataAsync(onSuccess, onFailure) }
 
   /**
    * Indicates whether [retrieveElevationDataFor] can be called for the provided hike.
@@ -381,6 +410,51 @@ class HikesViewModel(
   fun computeDetailsFor(hikeId: String, onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}) =
       viewModelScope.launch { computeDetailsForAsync(hikeId, onSuccess, onFailure) }
 
+  fun setMapState(center: GeoPoint, zoom: Double) {
+    _mapState.value = MapUtils.MapViewState(center, zoom)
+  }
+
+  fun getMapState(): MapUtils.MapViewState {
+    return _mapState.value
+  }
+
+  /**
+   * Internal helper function.
+   *
+   * The exposed [loading] state indicates whether a loading operation is ongoing. Simply setting it
+   * to true/false is not enough, because several loading operations might be ongoing.
+   *
+   * To avoid one operation setting [_loading] to false when another operation is still ongoing,
+   * this function uses [_ongoingLoadingOperations] to count how many operations are left. It also
+   * uses [_loadingMutex] to make its checks thread-safe.
+   *
+   * If [value] is true, [_ongoingLoadingOperations] is incremented. Reversely if [value] is false.
+   *
+   * If [_ongoingLoadingOperations] is 0 at the end of the operation, [_loading] is set to false. If
+   * it is positive, [_loading] is set to true.
+   *
+   * If [_ongoingLoadingOperations] becomes negative, it is clamped at 0. [setLoading] should always
+   * be used in pair, one call to set loading to true, and one to set it to false.
+   */
+  private suspend fun setLoading(value: Boolean) =
+      _loadingMutex.withLock {
+        if (value) {
+          // setLoading(true) is called to indicate the start of a new loading operation
+          _ongoingLoadingOperations += 1
+        } else if (_ongoingLoadingOperations > 0) {
+          // setLoading(false) indicates the end of a loading operation. Ensure the counter does not
+          // go below 0.
+          _ongoingLoadingOperations -= 1
+        }
+
+        // Adapt the _loading state flow accordingly
+        if (_ongoingLoadingOperations < 1 && _loading.value) {
+          _loading.value = false
+        } else if (_ongoingLoadingOperations > 0 && !_loading.value) {
+          _loading.value = true
+        }
+      }
+
   /**
    * Internal helper function.
    *
@@ -391,9 +465,39 @@ class HikesViewModel(
    * [_hikeFlowsMap] is the one that actually gets updated during operations. Once it has been
    * updated, we need to update [_hikeFlowsList] to reflect the changes. This is what this helper
    * function does.
+   *
+   * Because [_hikeFlowsList] is updated, this function also updates [_allOsmDataLoaded] to reflect
+   * whether all hikes in [_hikeFlowsList] have their OSM data loaded.
    */
-  private fun updateHikeFlowsList() {
+  private fun updateHikeFlowsListAndOsmDataStatus() {
     _hikeFlowsList.value = _hikeFlowsMap.values.toList()
+    updateOsmDataAvailabilityStatus()
+  }
+
+  /**
+   * Internal helper function.
+   *
+   * The exposed [allOsmDataLoaded] indicates whether all loaded hikes in [hikeFlows] have their OSM
+   * data available. This needs to be updated when either the entire list is updated, or a single
+   * hike is updated.
+   *
+   * This helper function updates the value of [_allOsmDataLoaded] accordingly to [_hikeFlowsList].
+   */
+  private fun updateOsmDataAvailabilityStatus() {
+    _allOsmDataLoaded.value = _hikeFlowsList.value.all { it.value.hasOsmData() }
+  }
+
+  /**
+   * Internal helper function.
+   *
+   * Sets [_loadedHikesType] with the new provided value if not already equal to that value.
+   *
+   * Requires [_hikesMutex] to have been acquired by the caller.
+   */
+  private fun setLoadedHikesType(value: LoadedHikes) {
+    if (_loadedHikesType.value != value) {
+      _loadedHikesType.value = value
+    }
   }
 
   /**
@@ -476,9 +580,11 @@ class HikesViewModel(
    * another function, please set [_loading] to true before calling the function and to false once
    * the call has ended.
    *
+   * @param forceOverwriteHikesList If true, [_savedHikesMap] will be overwritten to contain all and
+   *   only saved hikes. If false, [_savedHikesMap] will be updated according to [_loadedHikesType].
    * @return True if the operation is successful, false otherwise.
    */
-  private suspend fun refreshSavedHikesCacheAsync(): Boolean =
+  private suspend fun refreshSavedHikesCacheAsync(forceOverwriteHikesList: Boolean): Boolean =
       withContext(dispatcher) {
         val savedHikes: List<SavedHike>
         try {
@@ -490,7 +596,12 @@ class HikesViewModel(
         }
 
         // Wait for the lock to avoid concurrent modifications
-        _hikesMutex.withLock { updateSavedHikesCache(savedHikes) }
+        _hikesMutex.withLock {
+          updateSavedHikesCache(savedHikes, forceOverwriteHikesList)
+          if (forceOverwriteHikesList) {
+            setLoadedHikesType(LoadedHikes.FromSaved)
+          }
+        }
 
         return@withContext true
       }
@@ -507,7 +618,7 @@ class HikesViewModel(
    *
    * @param newList The list of saved hikes to update the cache with.
    */
-  private fun updateSavedHikesCache(newList: List<SavedHike>) {
+  private fun updateSavedHikesCache(newList: List<SavedHike>, forceOverwriteHikesList: Boolean) {
     // Clear the current saved hikes register
     _savedHikesMap.clear()
 
@@ -516,16 +627,9 @@ class HikesViewModel(
 
     // Now the saved hikes cache was updated, but we still need to update the hike flows list
 
-    when (_loadedHikesType) {
-      // No hikes were loaded yet, do nothing
-      LoadedHikes.None -> return
-      LoadedHikes.FromBounds -> {
-        // Hikes were loaded from bounds, do not remove nor add any hikes, just update existing ones
-        updateExistingHikesSavedStatus()
-      }
-      LoadedHikes.FromSaved -> {
-        // Saved hikes are loaded, remove the ones that were unsaved and add the new saved ones
-
+    when {
+      // Saved hikes are loaded or should be loaded. Remove the unsaved and add the new saved ones.
+      forceOverwriteHikesList || _loadedHikesType.value == LoadedHikes.FromSaved -> {
         // First, remove the hikes that were unsaved
         _hikeFlowsMap = _hikeFlowsMap.filterKeys { _savedHikesMap.containsKey(it) }.toMutableMap()
 
@@ -544,13 +648,21 @@ class HikesViewModel(
                       name = savedHike.name))
         }
       }
+
+      // No hikes were loaded yet, do nothing
+      _loadedHikesType.value == LoadedHikes.None -> return
+
+      // Hikes were loaded from bounds, do not remove nor add any hikes, just update existing ones
+      _loadedHikesType.value == LoadedHikes.FromBounds -> {
+        updateExistingHikesSavedStatus()
+      }
     }
 
     // Update the selected hike's saved status, unselect it if it's not loaded anymore
     updateSelectedHike()
 
     // Update the exposed list of hikes based on the map of hikes
-    updateHikeFlowsList()
+    updateHikeFlowsListAndOsmDataStatus()
   }
 
   /**
@@ -577,11 +689,8 @@ class HikesViewModel(
    */
   private suspend fun loadSavedHikesAsync(onSuccess: () -> Unit, onFailure: () -> Unit) =
       withContext(dispatcher) {
-        // Remember that the loaded hikes list will now only hold saved hikes
-        _loadedHikesType = LoadedHikes.FromSaved
-
         // Update the local cache of saved hikes and add them to _hikeFlows
-        val success = refreshSavedHikesCacheAsync()
+        val success = refreshSavedHikesCacheAsync(forceOverwriteHikesList = true)
 
         if (success) {
           onSuccess()
@@ -712,10 +821,10 @@ class HikesViewModel(
           // Update the saved hikes map
           _savedHikesMap.remove(hikeId)
 
-          if (_loadedHikesType == LoadedHikes.FromSaved) {
+          if (_loadedHikesType.value == LoadedHikes.FromSaved) {
             // Only saved hikes may stay in the list, delete the unsaved hike from the list
             _hikeFlowsMap.remove(hikeId)
-            updateHikeFlowsList()
+            updateHikeFlowsListAndOsmDataStatus()
           } else {
             // The hike can stay even if it is not saved, so update it
             hikeFlow.value = hikeFlow.value.copy(isSaved = false, plannedDate = null)
@@ -824,11 +933,6 @@ class HikesViewModel(
       onFailure: () -> Unit
   ) =
       withContext(dispatcher) {
-        // We are loading hikes from bounds, remember this to avoid overriding loaded hikes with
-        // saved
-        // hikes when those get reloaded.
-        _loadedHikesType = LoadedHikes.FromBounds
-
         // Load the hikes from the repository
         val hikes: List<HikeRoute>
         try {
@@ -892,7 +996,11 @@ class HikesViewModel(
           updateSelectedHike()
 
           // Update the exposed list of hikes based on the map of hikes
-          updateHikeFlowsList()
+          updateHikeFlowsListAndOsmDataStatus()
+
+          // We are loading hikes from bounds, remember this to avoid overriding loaded hikes with
+          // saved hikes when those get refreshed.
+          setLoadedHikesType(LoadedHikes.FromBounds)
         }
 
         // Call the success callback once the mutex has been released to avoid locking for too long
@@ -935,49 +1043,72 @@ class HikesViewModel(
       onFailure: () -> Unit
   ) =
       withContext(dispatcher) {
-        // Prepare a list of hikes for which we need to retrieve the data
-        val idsToRetrieve: List<String>
-        _hikesMutex.withLock {
-          idsToRetrieve = _hikeFlowsMap.values.filter { !hasOsmData(it.value) }.map { it.value.id }
-        }
-
-        // If all routes already have their OSM data, do nothing more
-        if (idsToRetrieve.isEmpty()) {
-          onSuccess()
-          return@withContext
-        }
-
-        // Retrieve the OSM data of the hikes
-        val hikeRoutes: List<HikeRoute>
-        try {
-          hikeRoutes = loadHikesByIdsRepoWrapper(idsToRetrieve)
-        } catch (e: Exception) {
-          Log.e(LOG_TAG, "Error encountered while loading hikes OSM data", e)
-          onFailure()
-          return@withContext
-        }
-
-        // Update the retrieved data for the loaded hikes
-        _hikesMutex.withLock {
-          hikeRoutes.forEach { hikeRoute ->
-            val hikeFlow = _hikeFlowsMap[hikeRoute.id] ?: return@forEach
-            val hike = hikeFlow.value
-
-            val newHike =
-                hike.copy(
-                    name = hikeRoute.name,
-                    description = DeferredData.Obtained(hikeRoute.description),
-                    bounds = DeferredData.Obtained(hikeRoute.bounds),
-                    waypoints = DeferredData.Obtained(hikeRoute.ways))
-            hikeFlow.value = newHike
+        // Allow only one retrieval request to be performed at any given time
+        val success: Boolean
+        _osmDataRetrievalMutex.withLock {
+          // Prepare a list of hikes for which we need to retrieve the data
+          val idsToRetrieve: List<String>
+          val requestNeeded: Boolean
+          _hikesMutex.withLock {
+            requestNeeded = !_allOsmDataLoaded.value
+            idsToRetrieve =
+                _hikeFlowsMap.values.filter { !hasOsmData(it.value) }.map { it.value.id }
           }
 
-          // Update the selected hike if necessary
-          updateSelectedHike()
+          // If all hikes already have their OSM data, do nothing more
+          if (!requestNeeded || idsToRetrieve.isEmpty()) {
+            success = true
+            return@withLock
+          }
+
+          // If the request is needed, indicate a heavy loading operation is being performed
+          setLoading(true)
+
+          // Retrieve the OSM data of the hikes
+          val hikeRoutes: List<HikeRoute>
+          try {
+            hikeRoutes = loadHikesByIdsRepoWrapper(idsToRetrieve)
+          } catch (e: Exception) {
+            Log.e(LOG_TAG, "Error encountered while loading hikes OSM data", e)
+            success = false
+            return@withLock
+          }
+
+          // Update the retrieved data for the loaded hikes
+          _hikesMutex.withLock {
+            hikeRoutes.forEach { hikeRoute ->
+              val hikeFlow = _hikeFlowsMap[hikeRoute.id] ?: return@forEach
+              val hike = hikeFlow.value
+
+              val newHike =
+                  hike.copy(
+                      name = hikeRoute.name,
+                      description = DeferredData.Obtained(hikeRoute.description),
+                      bounds = DeferredData.Obtained(hikeRoute.bounds),
+                      waypoints = DeferredData.Obtained(hikeRoute.ways))
+              hikeFlow.value = newHike
+            }
+
+            // Update whether all hikes have their OSM data loaded
+            updateOsmDataAvailabilityStatus()
+
+            // Update the selected hike if necessary
+            updateSelectedHike()
+          }
+
+          // Release the mutex before calling onSuccess to avoid deadlocks or performance issues
+          success = true
         }
 
-        // Release the mutex before calling onSuccess to avoid deadlocks or performance issues
-        onSuccess()
+        // Indicate the heavy loading operation has terminated
+        setLoading(false)
+
+        // Call the appropriate callback
+        if (success) {
+          onSuccess()
+        } else {
+          onFailure()
+        }
       }
 
   /**

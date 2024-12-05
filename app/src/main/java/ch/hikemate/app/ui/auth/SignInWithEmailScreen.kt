@@ -12,11 +12,7 @@ import androidx.compose.foundation.layout.imeNestedScroll
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -31,8 +27,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ch.hikemate.app.R
@@ -40,10 +34,10 @@ import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.ui.components.BackButton
 import ch.hikemate.app.ui.components.BigButton
 import ch.hikemate.app.ui.components.ButtonType
+import ch.hikemate.app.ui.components.CustomTextField
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
-import ch.hikemate.app.ui.theme.primaryColor
 
 object SignInWithEmailScreen {
   const val TEST_TAG_TITLE = "sign_in_with_email_title"
@@ -69,19 +63,6 @@ fun SignInWithEmailScreen(
 
   val scrollState = rememberScrollState()
 
-  // Define the colors for the input fields
-  val inputColors =
-      OutlinedTextFieldDefaults.colors()
-          .copy(
-              focusedLabelColor = primaryColor,
-              focusedIndicatorColor = primaryColor,
-              cursorColor = primaryColor,
-              textSelectionColors =
-                  TextSelectionColors(
-                      handleColor = primaryColor,
-                      backgroundColor = primaryColor,
-                  ))
-
   // Define the email and password state
   var email by remember { mutableStateOf("") }
   var password by remember { mutableStateOf("") }
@@ -104,24 +85,22 @@ fun SignInWithEmailScreen(
             style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 32.sp),
             modifier = Modifier.testTag(SignInWithEmailScreen.TEST_TAG_TITLE))
 
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().testTag(SignInWithEmailScreen.TEST_TAG_EMAIL_INPUT),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            colors = inputColors,
+        CustomTextField(
             value = email,
             onValueChange = { email = it },
-            label = { Text(stringResource(R.string.sign_in_with_email_email_label)) },
-            singleLine = true)
+            label = stringResource(R.string.sign_in_with_email_email_label),
+            maxLength = CustomTextField.MAX_EMAIL_LENGTH,
+            modifier = Modifier.testTag(SignInWithEmailScreen.TEST_TAG_EMAIL_INPUT),
+        )
 
-        OutlinedTextField(
-            modifier =
-                Modifier.fillMaxWidth().testTag(SignInWithEmailScreen.TEST_TAG_PASSWORD_INPUT),
-            visualTransformation = PasswordVisualTransformation(),
-            colors = inputColors,
+        CustomTextField(
             value = password,
             onValueChange = { password = it },
-            label = { Text(stringResource(R.string.sign_in_with_email_password_label)) },
-            singleLine = true)
+            label = stringResource(R.string.sign_in_with_email_password_label),
+            isPassword = true,
+            maxLength = CustomTextField.MAX_PASSWORD_LENGTH,
+            modifier = Modifier.testTag(SignInWithEmailScreen.TEST_TAG_PASSWORD_INPUT),
+        )
 
         BigButton(
             modifier =
@@ -138,7 +117,7 @@ fun SignInWithEmailScreen(
                   },
                   onErrorAction = {
                     // Show an error message in a toast
-                    Toast.makeText(context, it.message, Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, context.getString(it), Toast.LENGTH_SHORT).show()
                   })
             })
 

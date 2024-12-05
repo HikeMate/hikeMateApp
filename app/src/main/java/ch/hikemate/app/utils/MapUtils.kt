@@ -10,7 +10,8 @@ import android.widget.Toast
 import androidx.appcompat.content.res.AppCompatResources
 import ch.hikemate.app.R
 import ch.hikemate.app.model.route.Bounds
-import ch.hikemate.app.model.route.HikeRoute
+import ch.hikemate.app.model.route.LatLong
+import ch.hikemate.app.ui.map.MapInitialValues
 import ch.hikemate.app.ui.map.MapScreen
 import kotlin.math.cos
 import org.osmdroid.util.GeoPoint
@@ -24,19 +25,20 @@ object MapUtils {
   /**
    * Shows a hike on the map.
    *
-   * @param mapView The map view where the hike will be shown. the function just returns.
-   * @param hike The hike to be shown.
+   * @param mapView The map view where the hike will be shown.
+   * @param waypoints The points that compose the line to show on the map.
    * @param color The color of the hike.
+   * @param onLineClick To be called when the line on the map is clicked.
    */
   fun showHikeOnMap(
       mapView: MapView,
-      hike: HikeRoute,
+      waypoints: List<LatLong>,
       color: Int,
       onLineClick: () -> Unit,
   ) {
     val line = Polyline()
 
-    line.setPoints(hike.ways.map { GeoPoint(it.lat, it.lon) })
+    line.setPoints(waypoints.map { GeoPoint(it.lat, it.lon) })
     line.outlinePaint.color = color
     line.outlinePaint.strokeWidth = MapScreen.STROKE_WIDTH
 
@@ -263,4 +265,9 @@ object MapUtils {
         mapView.zoomLevelDouble,
         MapScreen.CENTER_MAP_ANIMATION_TIME)
   }
+
+  data class MapViewState(
+      val center: GeoPoint? = MapInitialValues().mapInitialCenter,
+      val zoom: Double = MapInitialValues().mapInitialZoomLevel,
+  )
 }
