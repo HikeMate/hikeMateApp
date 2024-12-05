@@ -68,13 +68,12 @@ fun SavedHikesScreen(hikesViewModel: HikesViewModel, navigationActions: Navigati
   ) { paddingValues ->
     var currentSection by remember { mutableStateOf(SavedHikesSection.Saved) }
     val loading by hikesViewModel.loading.collectAsState()
+    val hikesType by hikesViewModel.loadedHikesType.collectAsState()
     val savedHikes by hikesViewModel.hikeFlows.collectAsState()
     val selectedHike by hikesViewModel.selectedHike.collectAsState()
     val osmDataAvailable by hikesViewModel.allOsmDataLoaded.collectAsState()
 
     val pagerState = rememberPagerState { SavedHikesSection.values().size }
-
-    LaunchedEffect(Unit) { hikesViewModel.loadSavedHikes() }
 
     LaunchedEffect(selectedHike) {
       if (selectedHike != null) {
@@ -104,6 +103,13 @@ fun SavedHikesScreen(hikesViewModel: HikesViewModel, navigationActions: Navigati
             loading ->
                 CenteredLoadingAnimation(
                     stringResource(R.string.saved_hikes_screen_loading_message))
+
+            // There is no loading operation ongoing, but the saved hikes are not the ones
+            // currently displayed, reload the saved hikes
+            hikesType != HikesViewModel.LoadedHikes.FromSaved -> {
+              hikesViewModel.loadSavedHikes()
+              CenteredLoadingAnimation(stringResource(R.string.saved_hikes_screen_loading_message))
+            }
 
             // All data is available, start displaying the list of saved hikes
             osmDataAvailable -> {
