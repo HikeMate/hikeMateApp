@@ -23,6 +23,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navigation
 import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.model.authentication.FirebaseAuthRepository
+import ch.hikemate.app.model.facilities.FacilitiesRepositoryOverpass
+import ch.hikemate.app.model.facilities.FacilitiesViewModel
 import ch.hikemate.app.model.profile.ProfileRepositoryFirestore
 import ch.hikemate.app.model.profile.ProfileViewModel
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
@@ -45,6 +47,7 @@ import ch.hikemate.app.ui.saved.SavedHikesScreen
 import ch.hikemate.app.ui.theme.HikeMateTheme
 import com.google.firebase.FirebaseApp
 import com.google.firebase.firestore.FirebaseFirestore
+import okhttp3.OkHttpClient
 
 class MainActivity : ComponentActivity() {
   @SuppressLint("SourceLockedOrientationActivity")
@@ -88,6 +91,8 @@ fun HikeMateApp() {
   val listOfHikeRoutesViewModel: ListOfHikeRoutesViewModel =
       viewModel(factory = ListOfHikeRoutesViewModel.Factory)
   val savedHikesViewModel: SavedHikesViewModel = viewModel(factory = SavedHikesViewModel.Factory)
+
+  val facilitiesViewModel = FacilitiesViewModel(FacilitiesRepositoryOverpass(OkHttpClient()))
 
   val user by authViewModel.currentUser.collectAsState()
 
@@ -150,7 +155,7 @@ fun HikeMateApp() {
                 profileViewModel = profileViewModel,
                 authViewModel = authViewModel,
                 navigationActions = navigationActions,
-            )
+                facilitiesViewModel = facilitiesViewModel)
           }
 
           composable(Screen.RUN_HIKE) {
