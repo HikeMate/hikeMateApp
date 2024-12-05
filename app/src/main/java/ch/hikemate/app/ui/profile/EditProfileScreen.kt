@@ -8,10 +8,7 @@ import androidx.compose.foundation.layout.imeNestedScroll
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -41,6 +38,7 @@ import ch.hikemate.app.ui.components.BackButton
 import ch.hikemate.app.ui.components.BigButton
 import ch.hikemate.app.ui.components.ButtonType
 import ch.hikemate.app.ui.components.CenteredLoadingAnimation
+import ch.hikemate.app.ui.components.CustomTextField
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
@@ -120,23 +118,13 @@ fun EditProfileScreen(
               style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 32.sp),
               modifier = Modifier.testTag(EditProfileScreen.TEST_TAG_TITLE))
 
-          OutlinedTextField(
-              modifier = Modifier.fillMaxWidth().testTag(EditProfileScreen.TEST_TAG_NAME_INPUT),
-              colors =
-                  OutlinedTextFieldDefaults.colors()
-                      .copy(
-                          focusedLabelColor = primaryColor,
-                          focusedIndicatorColor = primaryColor,
-                          cursorColor = primaryColor,
-                          textSelectionColors =
-                              TextSelectionColors(
-                                  handleColor = primaryColor,
-                                  backgroundColor = primaryColor,
-                              )),
+          CustomTextField(
               value = name,
               onValueChange = { name = it },
-              label = { Text(context.getString(R.string.profile_screen_name_label)) },
-              singleLine = true)
+              label = context.getString(R.string.profile_screen_name_label),
+              maxLength = CustomTextField.MAX_NAME_LENGTH,
+              modifier = Modifier.testTag(EditProfileScreen.TEST_TAG_NAME_INPUT),
+          )
 
           Column(
               verticalArrangement = Arrangement.spacedBy(2.dp),

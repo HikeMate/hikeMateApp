@@ -7,9 +7,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.text.selection.TextSelectionColors
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -22,7 +19,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ch.hikemate.app.R
@@ -30,10 +26,10 @@ import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.ui.components.BackButton
 import ch.hikemate.app.ui.components.BigButton
 import ch.hikemate.app.ui.components.ButtonType
+import ch.hikemate.app.ui.components.CustomTextField
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
-import ch.hikemate.app.ui.theme.primaryColor
 
 object DeleteAccountScreen {
   const val TEST_TAG_TITLE = "delete_account_title"
@@ -54,19 +50,6 @@ fun DeleteAccountScreen(navigationActions: NavigationActions, authViewModel: Aut
 
   val passwordMustNotBeEmptyError =
       stringResource(R.string.delete_account_password_must_be_filled_error)
-
-  // Define the colors for the input fields
-  val inputColors =
-      OutlinedTextFieldDefaults.colors()
-          .copy(
-              focusedLabelColor = primaryColor,
-              focusedIndicatorColor = primaryColor,
-              cursorColor = primaryColor,
-              textSelectionColors =
-                  TextSelectionColors(
-                      handleColor = primaryColor,
-                      backgroundColor = primaryColor,
-                  ))
 
   var password by remember { mutableStateOf("") }
 
@@ -92,14 +75,13 @@ fun DeleteAccountScreen(navigationActions: NavigationActions, authViewModel: Aut
             modifier = Modifier.testTag(DeleteAccountScreen.TEST_TAG_INFO_TEXT))
 
         if (authViewModel.isEmailProvider())
-            OutlinedTextField(
-                modifier =
-                    Modifier.fillMaxWidth().testTag(DeleteAccountScreen.TEST_TAG_PASSWORD_INPUT),
-                visualTransformation = PasswordVisualTransformation(),
-                colors = inputColors,
+            CustomTextField(
                 value = password,
                 onValueChange = { password = it },
-                label = { Text(stringResource(R.string.delete_account_password_label)) })
+                label = stringResource(R.string.delete_account_password_label),
+                maxLength = CustomTextField.MAX_PASSWORD_LENGTH,
+                isPassword = true,
+                modifier = Modifier.testTag(DeleteAccountScreen.TEST_TAG_PASSWORD_INPUT))
 
         BigButton(
             modifier =
