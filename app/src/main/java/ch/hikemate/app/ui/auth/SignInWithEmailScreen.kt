@@ -138,7 +138,7 @@ fun SignInWithEmailScreen(
                   },
                   onErrorAction = {
                     // Show an error message in a toast
-                    Toast.makeText(context, it.message, Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, context.getString(it), Toast.LENGTH_SHORT).show()
                   })
             })
 

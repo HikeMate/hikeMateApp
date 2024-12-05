@@ -45,4 +45,25 @@ sealed class DeferredData<out T> {
    * job of [DeferredData].
    */
   data class Obtained<out T>(val data: T) : DeferredData<T>()
+
+  /** Returns `true` if the data has been obtained, `false` otherwise. */
+  fun obtained(): Boolean = this is Obtained
+
+  /** Returns the data if it has been obtained, otherwise returns `null`. */
+  fun getOrNull(): T? {
+    return when (this) {
+      is Obtained -> data
+      else -> null
+    }
+  }
+
+  /**
+   * Returns the data if it has been obtained, otherwise throws an [IllegalStateException].
+   *
+   * @throws IllegalStateException If the data hasn't been obtained yet.
+   */
+  fun getOrThrow(): T {
+    check(this is Obtained)
+    return this.data
+  }
 }

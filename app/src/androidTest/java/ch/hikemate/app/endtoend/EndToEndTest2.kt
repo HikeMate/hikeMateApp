@@ -162,11 +162,31 @@ class EndToEndTest2 : TestCase() {
     // Check that we are on the map
     composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_MAP).assertIsDisplayed()
 
+    // Check that the zoom out button is displayed
+    composeTestRule.onNodeWithTag(ZoomMapButton.ZOOM_OUT_BUTTON).assertIsDisplayed()
+
+    // Click once on the zoom out button
+    composeTestRule.onNodeWithTag(ZoomMapButton.ZOOM_OUT_BUTTON).performClick()
+
+    // Wait for animation
+    composeTestRule.waitForIdle()
+
     // Check that the zoom in button is displayed
     composeTestRule.onNodeWithTag(ZoomMapButton.ZOOM_IN_BUTTON).assertIsDisplayed()
 
-    // Click once on the zoom in button
+    // Click twice (one here and one below) on the zoom in button, since we need to zoom in twice to
+    // enable
+    // the search hike here button
     composeTestRule.onNodeWithTag(ZoomMapButton.ZOOM_IN_BUTTON).performClick()
+
+    // Wait for animation
+    composeTestRule.waitForIdle()
+
+    // Click a second time (see above)
+    composeTestRule.onNodeWithTag(ZoomMapButton.ZOOM_IN_BUTTON).performClick()
+
+    // Wait for animation
+    composeTestRule.waitForIdle()
 
     // Check that the search hike here button is displayed
     composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).assertIsDisplayed()
