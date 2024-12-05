@@ -24,18 +24,18 @@ object CustomTextField {
  * @param value The value of the text field.
  * @param onValueChange The callback when the value changes.
  * @param label The label of the text field.
+ * @param modifier The modifier of the text field.
  * @param isPassword Whether the text field is a password field.
  * @param maxLength The maximum length of the text field.
- * @param modifier The modifier of the text field.
  */
 @Composable
 fun CustomTextField(
     value: String,
     onValueChange: (String) -> Unit,
     label: String,
+    modifier: Modifier = Modifier,
     isPassword: Boolean = false,
     maxLength: Int? = null,
-    modifier: Modifier = Modifier,
 ) {
 
   OutlinedTextField(
