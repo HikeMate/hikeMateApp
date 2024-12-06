@@ -4,8 +4,15 @@ import android.content.Context
 import android.graphics.drawable.Drawable
 import android.location.Location
 import android.widget.Toast
+import androidx.core.content.ContextCompat
+import ch.hikemate.app.R
+import ch.hikemate.app.model.facilities.Facility
+import ch.hikemate.app.model.facilities.FacilityType
 import ch.hikemate.app.model.route.Bounds
+import ch.hikemate.app.model.route.LatLong
 import ch.hikemate.app.utils.MapUtils.calculateBestZoomLevel
+import ch.hikemate.app.utils.MapUtils.clearFacilities
+import ch.hikemate.app.utils.MapUtils.displayFacilities
 import ch.hikemate.app.utils.MapUtils.getGeographicalCenter
 import io.mockk.clearAllMocks
 import io.mockk.every
@@ -15,14 +22,34 @@ import io.mockk.mockkStatic
 import io.mockk.slot
 import io.mockk.unmockkAll
 import io.mockk.verify
+import io.mockk.verifySequence
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
+import org.osmdroid.views.overlay.Overlay
 
 class MapUtilsTest {
+  private lateinit var context: Context
+  private lateinit var mapView: MapView
+  private lateinit var mockDrawable: Drawable
+  private val overlayList = mutableListOf<Marker>()
+
+  @Before
+  fun setup() {
+    context = mockk(relaxed = true)
+    mapView = mockk(relaxed = true)
+    mockDrawable = mockk(relaxed = true)
+
+    // Setup default mocking behavior
+    every { ContextCompat.getDrawable(context, any()) } returns mockDrawable
+
+    every { mapView.overlays } returns overlayList as List<Overlay>?
+  }
 
   /*
    * Tests for the calculateBestZoomLevel function
@@ -214,6 +241,122 @@ class MapUtilsTest {
 
     // Then
     verify { map.controller.animateTo(any(), any(), any()) }
+  }
+
+  @Test
+  fun displayFacilities_EmptyList_NoMarkersAdded() {
+    // When
+    displayFacilities(emptyList(), mapView, context)
+
+    // Then
+    assertTrue(overlayList.isEmpty())
+    verify(exactly = 1) { mapView.invalidate() }
+  }
+
+  @Test
+  fun displayFacilities_SingleFacility_AddsMarkerCorrectly() {
+    // Given
+    val facility = Facility(type = FacilityType.TOILETS, coordinates = LatLong(46.0, 7.0))
+
+    // When
+    displayFacilities(listOf(facility), mapView, context)
+
+    // Then
+    assertEquals(1, overlayList.size)
+    val marker = overlayList.first()
+    assertEquals(GeoPoint(46.0, 7.0), marker.position)
+    assertEquals(R.string.facility_marker, marker.relatedObject)
+    assertEquals(mockDrawable, marker.icon)
+    verify(exactly = 1) { ContextCompat.getDrawable(context, R.drawable.toilets) }
+    verify(exactly = 1) { mapView.invalidate() }
+  }
+
+  @Test
+  fun displayFacilities_MultipleFacilities_AddsAllMarkersCorrectly() {
+    // Given
+    val facilities =
+        listOf(
+            Facility(FacilityType.TOILETS, LatLong(46.0, 7.0)),
+            Facility(FacilityType.PARKING, LatLong(46.1, 7.1)),
+            Facility(FacilityType.DRINKING_WATER, LatLong(46.2, 7.2)))
+
+    // When
+    displayFacilities(facilities, mapView, context)
+
+    // Then
+    assertEquals(3, overlayList.size)
+    verifySequence {
+      ContextCompat.getDrawable(context, R.drawable.toilets)
+      ContextCompat.getDrawable(context, R.drawable.parking)
+      ContextCompat.getDrawable(context, R.drawable.drinking_water)
+    }
+    verify(exactly = 1) { mapView.invalidate() }
+  }
+
+  @Test
+  fun displayFacilities_AllFacilityTypes_LoadsCorrectDrawables() {
+    // Given
+    val facilities = FacilityType.values().map { type -> Facility(type, LatLong(46.0, 7.0)) }
+
+    // When
+    displayFacilities(facilities, mapView, context)
+
+    // Then
+    verify {
+      ContextCompat.getDrawable(context, R.drawable.toilets)
+      ContextCompat.getDrawable(context, R.drawable.parking)
+      ContextCompat.getDrawable(context, R.drawable.waste_basket)
+      ContextCompat.getDrawable(context, R.drawable.supermarket)
+      ContextCompat.getDrawable(context, R.drawable.drinking_water)
+      ContextCompat.getDrawable(context, R.drawable.ranger_station)
+      ContextCompat.getDrawable(context, R.drawable.bbq)
+      ContextCompat.getDrawable(context, R.drawable.bench)
+      ContextCompat.getDrawable(context, R.drawable.restaurant)
+      ContextCompat.getDrawable(context, R.drawable.biergarten)
+    }
+    verify(exactly = 1) { mapView.invalidate() }
+  }
+
+  @Test
+  fun clearFacilities_RemovesAllFacilityMarkers() {
+    // Given
+    val facilities =
+        listOf(
+            Facility(FacilityType.TOILETS, LatLong(46.0, 7.0)),
+            Facility(FacilityType.PARKING, LatLong(46.1, 7.1)))
+    displayFacilities(facilities, mapView, context)
+    assertEquals(2, overlayList.size)
+
+    // When
+    clearFacilities(mapView)
+
+    // Then
+    assertTrue(overlayList.isEmpty())
+    verify(exactly = 2) { mapView.invalidate() }
+  }
+
+  @Test
+  fun clearFacilities_OnlyRemovesFacilityMarkers() {
+    // Given
+    val facilities = listOf(Facility(FacilityType.TOILETS, LatLong(46.0, 7.0)))
+    displayFacilities(facilities, mapView, context)
+
+    // Add a non-facility marker
+    val otherMarker =
+        Marker(mapView).apply {
+          position = GeoPoint(46.0, 7.0)
+          relatedObject = "something else"
+        }
+    overlayList.add(otherMarker)
+    assertEquals(2, overlayList.size)
+
+    // When
+    clearFacilities(mapView)
+
+    // Then
+    assertEquals(1, overlayList.size)
+    assertEquals("something else", overlayList.first().relatedObject)
+    verify(exactly = 2) { mapView.invalidate() }
   }
 
   @After

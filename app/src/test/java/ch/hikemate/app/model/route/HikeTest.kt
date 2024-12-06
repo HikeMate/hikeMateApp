@@ -165,4 +165,103 @@ class HikeTest {
     assertEquals(elevationGain, detailed.elevationGain, deltaForDoubleComparison)
     assertEquals(difficulty, detailed.difficulty)
   }
+
+  @Test
+  fun segmentsWorksAsExpected() {
+    // Case 1: Empty waypoints list
+    val emptyHike =
+        createHike(
+                description = "description",
+                bounds = Bounds(0.0, 0.0, 0.0, 0.0),
+                waypoints = emptyList(),
+                elevation = emptyList(),
+                distance = 0.0,
+                estimatedTime = 0.0,
+                elevationGain = 0.0,
+                difficulty = HikeDifficulty.EASY)
+            .withDetailsOrThrow()
+
+    assertTrue(emptyHike.segments.isEmpty())
+
+    // Case 2: Single waypoint - should also result in empty segments
+    val singleWaypointHike =
+        createHike(
+                description = "description",
+                bounds = Bounds(0.0, 0.0, 0.0, 0.0),
+                waypoints = listOf(LatLong(0.0, 0.0)),
+                elevation = listOf(0.0),
+                distance = 0.0,
+                estimatedTime = 0.0,
+                elevationGain = 0.0,
+                difficulty = HikeDifficulty.EASY)
+            .withDetailsOrThrow()
+
+    assertTrue(singleWaypointHike.segments.isEmpty())
+
+    // Case 3: Two waypoints - should create one segment
+    val p1 = LatLong(0.0, 0.0)
+    val p2 = LatLong(1.0, 1.0)
+    val twoPointHike =
+        createHike(
+                description = "description",
+                bounds = Bounds(0.0, 0.0, 1.0, 1.0),
+                waypoints = listOf(p1, p2),
+                elevation = listOf(0.0, 100.0),
+                distance = p1.distanceTo(p2),
+                estimatedTime = 1.0,
+                elevationGain = 100.0,
+                difficulty = HikeDifficulty.EASY)
+            .withDetailsOrThrow()
+
+    assertEquals(1, twoPointHike.segments.size)
+    assertEquals(p1, twoPointHike.segments[0].start)
+    assertEquals(p2, twoPointHike.segments[0].end)
+    assertEquals(p1.distanceTo(p2), twoPointHike.segments[0].length, 0.0001)
+
+    // Case 4: Multiple waypoints
+    val points = listOf(LatLong(0.0, 0.0), LatLong(1.0, 1.0), LatLong(2.0, 2.0), LatLong(3.0, 3.0))
+    val multiPointHike =
+        createHike(
+                description = "description",
+                bounds = Bounds(0.0, 0.0, 3.0, 3.0),
+                waypoints = points,
+                elevation = List(points.size) { it * 100.0 },
+                distance = points.zipWithNext().sumOf { (a, b) -> a.distanceTo(b) },
+                estimatedTime = 2.0,
+                elevationGain = 300.0,
+                difficulty = HikeDifficulty.MODERATE)
+            .withDetailsOrThrow()
+
+    assertEquals(3, multiPointHike.segments.size)
+
+    // Verify each segment
+    points.zipWithNext().forEachIndexed { index, (start, end) ->
+      assertEquals(start, multiPointHike.segments[index].start)
+      assertEquals(end, multiPointHike.segments[index].end)
+      assertEquals(start.distanceTo(end), multiPointHike.segments[index].length, 0.0001)
+    }
+
+    // Case 5: Verify segment lengths are correct with known distances
+    val knownPoints =
+        listOf(
+            LatLong(0.0, 0.0),
+            LatLong(0.0, 1.0), // 1 degree longitude at equator
+            LatLong(1.0, 1.0) // 1 degree latitude
+            )
+    val knownDistanceHike =
+        createHike(
+                description = "description",
+                bounds = Bounds(0.0, 0.0, 1.0, 1.0),
+                waypoints = knownPoints,
+                elevation = List(knownPoints.size) { it * 100.0 },
+                distance = knownPoints.zipWithNext().sumOf { (a, b) -> a.distanceTo(b) },
+                estimatedTime = 1.5,
+                elevationGain = 200.0,
+                difficulty = HikeDifficulty.EASY)
+            .withDetailsOrThrow()
+
+    assertEquals(2, knownDistanceHike.segments.size)
+    assertTrue(knownDistanceHike.segments[0].length > 0)
+    assertTrue(knownDistanceHike.segments[1].length > 0)
+  }
 }

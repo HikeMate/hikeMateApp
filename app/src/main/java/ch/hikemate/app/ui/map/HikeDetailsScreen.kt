@@ -34,6 +34,7 @@ import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -169,6 +170,23 @@ fun HikeDetailScreen(
       val detailedHike = selectedHike!!.withDetailsOrThrow()
       val errorMessageIdState = profileViewModel.errorMessageId.collectAsState()
       val profileState = profileViewModel.profile.collectAsState()
+
+      // This is the list of all the facilities inside the hike's bounds
+      val facilities = remember { mutableStateOf<List<Facility>>(emptyList()) }
+      LaunchedEffect(Unit) {
+        // This is calculated so that elements that are near but not contained into the bounds of a
+        // Hike
+        // are still displayed this is actually a very common occurrence.
+        val boundsWithMargin =
+            Bounds(
+                detailedHike.bounds.minLat - HikeDetailScreen.MARGIN_BOUNDS,
+                detailedHike.bounds.minLon - HikeDetailScreen.MARGIN_BOUNDS,
+                detailedHike.bounds.maxLat + HikeDetailScreen.MARGIN_BOUNDS,
+                detailedHike.bounds.maxLon + HikeDetailScreen.MARGIN_BOUNDS)
+        // Get all the facilities within the bounds.
+        facilitiesViewModel.getFacilities(boundsWithMargin, { facilities.value = it }, {})
+      }
+
       AsyncStateHandler(
           errorMessageIdState = errorMessageIdState,
           actionContentDescriptionStringId = R.string.go_back,
@@ -178,11 +196,7 @@ fun HikeDetailScreen(
         Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {
           // Display the hike's actual information
           HikeDetailsContent(
-              detailedHike,
-              navigationActions,
-              hikesViewModel,
-              profile.hikingLevel,
-              facilitiesViewModel)
+              detailedHike, navigationActions, hikesViewModel, profile.hikingLevel, facilities)
         }
       }
     }
@@ -213,13 +227,13 @@ fun HikeDetailsContent(
     navigationActions: NavigationActions,
     hikesViewModel: HikesViewModel,
     userHikingLevel: HikingLevel,
-    facilitiesViewModel: FacilitiesViewModel
+    facilities: MutableState<List<Facility>>
 ) {
   BackHandler { hikesViewModel.unselectHike() }
 
   Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {
     // Display the map and the zoom buttons
-    val mapView = hikeDetailsMap(hike, facilitiesViewModel)
+    val mapView = hikeDetailsMap(hike, facilities)
 
     // Display the back button on top of the map
     BackButton(
@@ -248,11 +262,11 @@ fun HikeDetailsContent(
 }
 
 @Composable
-fun hikeDetailsMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel): MapView {
+fun hikeDetailsMap(hike: DetailedHike, facilities: MutableState<List<Facility>>): MapView {
   val context = LocalContext.current
 
   val scope = rememberCoroutineScope()
-  val facilities = remember { mutableStateOf<List<Facility>>(emptyList()) }
+
   val facilitiesDisplayed = remember { mutableStateOf(false) }
   val hikeZoomLevel = MapUtils.calculateBestZoomLevel(hike.bounds).toDouble()
   val hikeCenter = MapUtils.getGeographicalCenter(hike.bounds)
@@ -282,19 +296,6 @@ fun hikeDetailsMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel)
   val boundingBoxState = remember { MutableStateFlow(mapView.boundingBox) }
   // The state of the current zoom level
   val zoomLevelState = remember { MutableStateFlow(mapView.zoomLevelDouble) }
-  LaunchedEffect(Unit) {
-    // This is calculated so that elements that are near but not contained into the bounds of a Hike
-    // are still displayed this is actually a very common occurrence.
-    val boundsWithMargin =
-        Bounds(
-            hike.bounds.minLat - HikeDetailScreen.MARGIN_BOUNDS,
-            hike.bounds.minLon - HikeDetailScreen.MARGIN_BOUNDS,
-            hike.bounds.maxLat + HikeDetailScreen.MARGIN_BOUNDS,
-            hike.bounds.maxLon + HikeDetailScreen.MARGIN_BOUNDS)
-    // Get all the facilities within the bounds.
-    facilitiesViewModel.getFacilities(boundsWithMargin, { facilities.value = it }, {})
-  }
-
   // Display the facilities according to changes in the boundingBoxState and zoomLevelState
   LaunchedEffect(mapView) {
     combine(

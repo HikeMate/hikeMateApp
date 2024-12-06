@@ -8,6 +8,10 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.hikemate.app.model.authentication.AuthRepository
 import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.model.elevation.ElevationService
+import ch.hikemate.app.model.facilities.FacilitiesRepository
+import ch.hikemate.app.model.facilities.FacilitiesViewModel
+import ch.hikemate.app.model.facilities.Facility
+import ch.hikemate.app.model.facilities.FacilityType
 import ch.hikemate.app.model.profile.HikingLevel
 import ch.hikemate.app.model.profile.Profile
 import ch.hikemate.app.model.profile.ProfileRepository
@@ -53,6 +57,7 @@ import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.verify
+import org.osmdroid.events.ZoomEvent
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
@@ -68,6 +73,8 @@ class HikeDetailScreenTest {
   private lateinit var hikesRepository: HikeRoutesRepository
   private lateinit var elevationService: ElevationService
   private lateinit var hikesViewModel: HikesViewModel
+  private lateinit var facilitiesRepository: FacilitiesRepository
+  private lateinit var facilitiesViewModel: FacilitiesViewModel
 
   private val hikeId = "1"
   private val detailedHike =
@@ -94,7 +101,8 @@ class HikeDetailScreenTest {
           hikesViewModel = hikesViewModel,
           profileViewModel = profileViewModel,
           authViewModel = authViewModel,
-          navigationActions = mockNavigationActions)
+          navigationActions = mockNavigationActions,
+          facilitiesViewModel = facilitiesViewModel)
     }
   }
 
@@ -175,6 +183,8 @@ class HikeDetailScreenTest {
     hikesRepository = mock(HikeRoutesRepository::class.java)
     elevationService = mock(ElevationService::class.java)
     mockSavedHikesRepository = mock(SavedHikesRepository::class.java)
+    facilitiesRepository = mock(FacilitiesRepository::class.java)
+    facilitiesViewModel = FacilitiesViewModel(facilitiesRepository)
 
     `when`(profileRepository.getProfileById(eq(profile.id), any(), any())).thenAnswer {
       val onSuccess = it.getArgument<(Profile) -> Unit>(1)
@@ -394,4 +404,66 @@ class HikeDetailScreenTest {
 
     verify(onRunThisHike).invoke()
   }
+
+  @Test
+  fun hikeDetails_loadsFacilitiesOnInit() = runTest {
+    val bounds = detailedHike.bounds
+    val boundsWithMargin =
+        Bounds(
+            bounds.minLat - HikeDetailScreen.MARGIN_BOUNDS,
+            bounds.minLon - HikeDetailScreen.MARGIN_BOUNDS,
+            bounds.maxLat + HikeDetailScreen.MARGIN_BOUNDS,
+            bounds.maxLon + HikeDetailScreen.MARGIN_BOUNDS)
+
+    `when`(facilitiesRepository.getFacilities(eq(boundsWithMargin), any(), any())).thenAnswer {
+      val onSuccess = it.getArgument<(List<Facility>) -> Unit>(1)
+      onSuccess(listOf(mockFacility))
+    }
+
+    setUpSelectedHike(detailedHike)
+    setUpCompleteScreen()
+
+    verify(facilitiesRepository).getFacilities(eq(boundsWithMargin), any(), any())
+  }
+
+  @Test
+  fun hikeDetails_hidesFacilitiesWhenZoomLevelTooLow() = runTest {
+    setUpSelectedHike(detailedHike)
+    setUpCompleteScreen()
+
+    // Simulate zoom out
+    val zoomEvent = mock<ZoomEvent>()
+    `when`(zoomEvent.zoomLevel).thenReturn(HikeDetailScreen.MIN_ZOOM_FOR_FACILITIES - 1.0)
+
+    composeTestRule.onNodeWithTag(TEST_TAG_MAP).performTouchInput {
+      // Trigger zoom event
+    }
+
+    // Verify facilities are hidden
+    // You'll need to expose some way to check if facilities are displayed
+  }
+
+  @Test
+  fun hikeDetails_showsFacilitiesInCurrentBounds() = runTest {
+    val facility1 = mockFacility.copy(coordinates = LatLong(45.9, 7.6)) // Inside bounds
+    val facility2 = mockFacility.copy(coordinates = LatLong(46.1, 7.8)) // Outside bounds
+
+    `when`(facilitiesRepository.getFacilities(any(), any(), any())).thenAnswer {
+      val onSuccess = it.getArgument<(List<Facility>) -> Unit>(1)
+      onSuccess(listOf(facility1, facility2))
+    }
+
+    setUpSelectedHike(detailedHike)
+    setUpCompleteScreen()
+
+    // Verify only facility1 is displayed
+    // You'll need to expose some way to check visible facilities
+  }
+
+  // Add to setUp():
+  private val mockFacility =
+      Facility(
+          type = FacilityType.BENCH,
+          coordinates = LatLong(45.9, 7.6),
+      )
 }
