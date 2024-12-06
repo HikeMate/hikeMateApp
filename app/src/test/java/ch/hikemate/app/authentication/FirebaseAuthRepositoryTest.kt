@@ -1,6 +1,5 @@
 package ch.hikemate.app.authentication
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import androidx.activity.compose.ManagedActivityResultLauncher
@@ -31,9 +30,12 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
 import io.mockk.*
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -67,6 +69,8 @@ class FirebaseAuthRepositoryTest {
 
   @Before
   fun setUp() {
+    Dispatchers.setMain(UnconfinedTestDispatcher())
+
     context = ApplicationProvider.getApplicationContext()
 
     // Initialize mocks
@@ -351,10 +355,10 @@ class FirebaseAuthRepositoryTest {
       every { mockDocument.delete() } returns mockVoidTask
 
       val onSuccess: () -> Unit = mockk(relaxed = true)
-      val mockActivity: Activity = mockk(relaxed = true)
 
-      repository.deleteAccount("password", mockActivity, onSuccess, mockOnError)
+      repository.deleteAccount("password", context, this, onSuccess, mockOnError)
 
+      verify { mockFirebaseUser.reauthenticate(any()) }
       verify { mockFirebaseUser.delete() }
       verify(exactly = 2) { mockDocument.delete() }
       verify { onSuccess() }
@@ -372,10 +376,10 @@ class FirebaseAuthRepositoryTest {
       every { mockDocument.delete() } returns mockVoidTask
 
       val onSuccess: () -> Unit = mockk(relaxed = true)
-      val mockActivity: Activity = mockk(relaxed = true)
 
-      repository.deleteAccount("password", mockActivity, onSuccess, mockOnError)
+      repository.deleteAccount("password", context, this, onSuccess, mockOnError)
 
+      verify { mockFirebaseUser.reauthenticate(any()) }
       verify { mockOnError(any()) }
     }
   }
