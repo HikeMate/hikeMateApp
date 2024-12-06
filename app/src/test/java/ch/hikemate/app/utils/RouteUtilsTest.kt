@@ -1,6 +1,6 @@
 package ch.hikemate.app.utils
 
-import ch.hikemate.app.model.elevation.ElevationServiceRepository
+import ch.hikemate.app.model.elevation.ElevationRepository
 import ch.hikemate.app.model.route.HikeDifficulty
 import ch.hikemate.app.model.route.LatLong
 import io.mockk.coEvery
@@ -89,18 +89,18 @@ class RouteUtilsTest {
   @Test
   fun test_getElevationGain_returns_correct_elevation_gain_from_service() =
       runTest(timeout = 10.seconds) {
-        // mock elevationService
-        val mockElevationService = mockk<ElevationServiceRepository>()
+        // mock elevationRepository
+        val mockElevationRepository = mockk<ElevationRepository>()
         val mockElevations = listOf(100.0, 150.0, 140.0, 200.0, 190.0)
 
-        coEvery { mockElevationService.getElevation(any(), any(), any(), any()) } answers
+        coEvery { mockElevationRepository.getElevation(any(), any(), any()) } answers
             {
-              val onSuccess = thirdArg<(List<Double>) -> Unit>()
+              val onSuccess = secondArg<(List<Double>) -> Unit>()
               onSuccess(mockElevations)
             }
 
         // The coordinates we pass and the hikeId do not matter since we mock the elevation service
-        val elevationGain = RouteUtils.getElevationGain(emptyList(), "0", mockElevationService)
+        val elevationGain = RouteUtils.getElevationGain(emptyList(), mockElevationRepository)
 
         assertEquals(110.0, elevationGain, 0.01)
       }

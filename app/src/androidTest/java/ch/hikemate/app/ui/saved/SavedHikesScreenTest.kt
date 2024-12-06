@@ -7,7 +7,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
-import ch.hikemate.app.model.elevation.ElevationService
+import ch.hikemate.app.model.elevation.ElevationRepository
 import ch.hikemate.app.model.route.Bounds
 import ch.hikemate.app.model.route.DetailedHike
 import ch.hikemate.app.model.route.Hike
@@ -36,7 +36,7 @@ import org.mockito.kotlin.any
 class SavedHikesScreenTest : TestCase() {
   private lateinit var savedHikesRepository: SavedHikesRepository
   private lateinit var osmHikesRepository: HikeRoutesRepository
-  private lateinit var elevationService: ElevationService
+  private lateinit var elevationRepository: ElevationRepository
   private lateinit var hikesViewModel: HikesViewModel
   private lateinit var navigationActions: NavigationActions
 
@@ -48,10 +48,13 @@ class SavedHikesScreenTest : TestCase() {
     navigationActions = mock(NavigationActions::class.java)
     savedHikesRepository = mock(SavedHikesRepository::class.java)
     osmHikesRepository = mock(HikeRoutesRepository::class.java)
-    elevationService = mock(ElevationService::class.java)
+    elevationRepository = mock(ElevationRepository::class.java)
     hikesViewModel =
         HikesViewModel(
-            savedHikesRepository, osmHikesRepository, elevationService, UnconfinedTestDispatcher())
+            savedHikesRepository,
+            osmHikesRepository,
+            elevationRepository,
+            UnconfinedTestDispatcher())
   }
 
   private val hikeId = "1"
@@ -91,11 +94,10 @@ class SavedHikesScreenTest : TestCase() {
                     detailed.description)
               })
     }
-    `when`(elevationService.getElevation(any(), any(), any(), any())).thenAnswer {
+    `when`(elevationRepository.getElevation(any(), any(), any())).thenAnswer {
       val waypoints = it.getArgument<List<LatLong>>(0)
-      val id = it.getArgument<String>(1)
-      val onSuccess = it.getArgument<(List<Double>) -> Unit>(3)
-      onSuccess(hikes.find { hike -> hike.id == id }?.elevation ?: waypoints.map { 0.0 })
+      val onSuccess = it.getArgument<(List<Double>) -> Unit>(1)
+      onSuccess(waypoints.map { 0.0 })
     }
   }
 
