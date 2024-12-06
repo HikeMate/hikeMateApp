@@ -267,7 +267,7 @@ object MapUtils {
   }
 
   data class MapViewState(
-      val center: GeoPoint? = MapInitialValues().mapInitialCenter,
+      val center: GeoPoint = MapInitialValues().mapInitialCenter,
       val zoom: Double = MapInitialValues().mapInitialZoomLevel,
   )
 }
