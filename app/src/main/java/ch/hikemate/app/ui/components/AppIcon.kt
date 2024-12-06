@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import ch.hikemate.app.R
 
@@ -22,7 +23,7 @@ object AppIcon {
 fun AppIcon(size: Dp) {
   Image(
       painter = painterResource(id = R.drawable.app_icon),
-      contentDescription = "App Logo",
+      contentDescription = stringResource(R.string.app_icon_content_description),
       modifier = Modifier.size(size).testTag(AppIcon.TEST_TAG),
   )
 }

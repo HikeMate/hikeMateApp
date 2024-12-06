@@ -219,7 +219,7 @@ private fun SavedHikesTabsMenu(selectedIndex: Int, onSelectedChange: (SavedHikes
       modifier = Modifier.testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_TABS_MENU)) {
         SavedHikesSection.values().forEachIndexed { index, screen ->
           Tab(
-              text = { Text(screen.label) },
+              text = { Text(stringResource(screen.labelId)) },
               icon = { Icon(painter = painterResource(screen.icon), contentDescription = null) },
               selected = selectedIndex == index,
               onClick = { onSelectedChange(screen) },
@@ -236,7 +236,7 @@ private fun SavedHikesTabsMenu(selectedIndex: Int, onSelectedChange: (SavedHikes
  * The order of the enum values determines the order of the sections in the bottom menu. The first
  * element of the enum will be the left-most section in the bottom menu.
  */
-enum class SavedHikesSection(val label: String, @DrawableRes val icon: Int) {
-  Saved("Saved", R.drawable.bookmark),
-  Planned("Planned", R.drawable.calendar_today)
+enum class SavedHikesSection(val labelId: Int, @DrawableRes val icon: Int) {
+  Saved(R.string.saved_hikes_saved_label, R.drawable.bookmark),
+  Planned(R.string.saved_hikes_planned_label, R.drawable.calendar_today)
 }

@@ -7,10 +7,13 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import ch.hikemate.app.R
 import ch.hikemate.app.ui.theme.primaryColor
+import java.util.Locale
 
 object CustomTextField {
   const val MAX_NAME_LENGTH = 40
@@ -64,7 +67,12 @@ fun CustomTextField(
           if (maxLength != null) {
             {
               Text(
-                  text = "${value.length} / $maxLength",
+                  text =
+                      String.format(
+                          Locale.getDefault(),
+                          stringResource(R.string.field_supportive_text_format),
+                          value.length,
+                          maxLength),
                   modifier = Modifier.fillMaxWidth(),
                   textAlign = TextAlign.End,
               )
