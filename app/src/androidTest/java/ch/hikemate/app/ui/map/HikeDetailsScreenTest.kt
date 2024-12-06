@@ -1,10 +1,19 @@
 package ch.hikemate.app.ui.map
 
 import android.content.Context
+import android.view.View
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsNode
+import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.junit4.ComposeTestRule
+import android.graphics.drawable.Drawable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.core.content.ContextCompat
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import ch.hikemate.app.R
 import ch.hikemate.app.model.authentication.AuthRepository
 import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.model.elevation.ElevationService
@@ -41,11 +50,19 @@ import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_PLANNED_DATE_TEXT_BOX
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_RUN_HIKE_BUTTON
 import ch.hikemate.app.ui.navigation.NavigationActions
 import com.google.firebase.Timestamp
+import io.mockk.every
+import io.mockk.slot
+import kotlinx.coroutines.Dispatchers
 import java.util.Locale
 import kotlin.math.roundToInt
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import okhttp3.Dispatcher
+import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Rule
@@ -55,9 +72,15 @@ import org.mockito.Mockito.doNothing
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
+import org.mockito.kotlin.capture
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.verify
 import org.osmdroid.events.ZoomEvent
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Marker
+import androidx.compose.ui.viewinterop.AndroidView
+import kotlinx.coroutines.test.setMain
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
@@ -75,6 +98,11 @@ class HikeDetailScreenTest {
   private lateinit var hikesViewModel: HikesViewModel
   private lateinit var facilitiesRepository: FacilitiesRepository
   private lateinit var facilitiesViewModel: FacilitiesViewModel
+  private lateinit var mapView:MapView
+  private lateinit var drawable:Drawable
+  private lateinit var context:Context
+  private lateinit var testDispatcher:TestDispatcher
+
 
   private val hikeId = "1"
   private val detailedHike =
@@ -185,6 +213,12 @@ class HikeDetailScreenTest {
     mockSavedHikesRepository = mock(SavedHikesRepository::class.java)
     facilitiesRepository = mock(FacilitiesRepository::class.java)
     facilitiesViewModel = FacilitiesViewModel(facilitiesRepository)
+      mapView=mock(MapView::class.java)
+      drawable=mock(Drawable::class.java)
+      context=mock(Context::class.java)
+      testDispatcher = UnconfinedTestDispatcher()
+      Dispatchers.setMain(testDispatcher)
+
 
     `when`(profileRepository.getProfileById(eq(profile.id), any(), any())).thenAnswer {
       val onSuccess = it.getArgument<(Profile) -> Unit>(1)
@@ -424,46 +458,192 @@ class HikeDetailScreenTest {
     setUpCompleteScreen()
 
     verify(facilitiesRepository).getFacilities(eq(boundsWithMargin), any(), any())
+
   }
 
-  @Test
-  fun hikeDetails_hidesFacilitiesWhenZoomLevelTooLow() = runTest {
-    setUpSelectedHike(detailedHike)
-    setUpCompleteScreen()
+    @Test
+    fun hikeDetails_drawsFacilitiesOnMapWhenZoomSufficient() = runTest {
+        // Setup facilities
+        val testFacility = Facility(
+            type = FacilityType.BENCH,
+            coordinates = LatLong(45.9, 7.6),
+        )
 
-    // Simulate zoom out
-    val zoomEvent = mock<ZoomEvent>()
-    `when`(zoomEvent.zoomLevel).thenReturn(HikeDetailScreen.MIN_ZOOM_FOR_FACILITIES - 1.0)
+        // Mock facilities repository response
+        `when`(facilitiesRepository.getFacilities(any(), any(), any())).thenAnswer {
+            val onSuccess = it.getArgument<(List<Facility>) -> Unit>(1)
+            onSuccess(listOf(testFacility))
+        }
 
-    composeTestRule.onNodeWithTag(TEST_TAG_MAP).performTouchInput {
-      // Trigger zoom event
+        setUpSelectedHike(detailedHike)
+        setUpCompleteScreen()
+
+        var mapView: MapView? = context.
+
+        composeTestRule.setContent {
+            AndroidView(
+                factory = { context ->
+                    MapView(context).also { mapView = it }
+                },
+                modifier = Modifier.testTag(TEST_TAG_MAP)
+            )
+        }
+
+        composeTestRule.waitForIdle()
+        assertNotNull(mapView)
+
+        // Now you can test the overlays
+        assertTrue(
+            mapView!!.overlays.any { overlay ->
+                overlay is Marker &&
+                        overlay.relatedObject == R.string.facility_marker &&
+                        overlay.position.latitude == testFacility.coordinates.lat &&
+                        overlay.position.longitude == testFacility.coordinates.lon
+            }
+        )
     }
 
-    // Verify facilities are hidden
-    // You'll need to expose some way to check if facilities are displayed
-  }
+    @Test
+    fun hikeDetails_removesFacilitiesWhenZoomInsufficent() = runTest {
+        val testFacility = Facility(
+            type = FacilityType.BENCH,
+            coordinates = LatLong(45.9, 7.6),
+        )
 
-  @Test
-  fun hikeDetails_showsFacilitiesInCurrentBounds() = runTest {
-    val facility1 = mockFacility.copy(coordinates = LatLong(45.9, 7.6)) // Inside bounds
-    val facility2 = mockFacility.copy(coordinates = LatLong(46.1, 7.8)) // Outside bounds
+        `when`(facilitiesRepository.getFacilities(any(), any(), any())).thenAnswer {
+            val onSuccess = it.getArgument<(List<Facility>) -> Unit>(1)
+            onSuccess(listOf(testFacility))
+        }
 
-    `when`(facilitiesRepository.getFacilities(any(), any(), any())).thenAnswer {
-      val onSuccess = it.getArgument<(List<Facility>) -> Unit>(1)
-      onSuccess(listOf(facility1, facility2))
+        setUpSelectedHike(detailedHike)
+        setUpCompleteScreen()
+
+        val mapView = composeTestRule.onNodeWithTag(TEST_TAG_MAP)
+            .fetchSemanticsNode().layoutInfo.getModifierInfo()
+            .find { it.modifier is AndroidView }?.let {
+                (it.modifier as AndroidView).view as MapView
+            }
+
+        assertNotNull(mapView)
+
+        // Simulate zoom out below threshold
+        mapView!!.controller.setZoom(HikeDetailScreen.MIN_ZOOM_FOR_FACILITIES - 1.0)
+
+        // Verify facilities are removed
+        assertFalse(
+            mapView.overlays.any { overlay ->
+                overlay is Marker && overlay.relatedObject == R.string.facility_marker
+            }
+        )
     }
 
-    setUpSelectedHike(detailedHike)
-    setUpCompleteScreen()
+    @Test
+    fun hikeDetails_drawsOnlyFacilitiesWithinBounds() = runTest {
+        // Create facilities inside and outside bounds
+        val facilityInBounds = Facility(
+            type = FacilityType.BENCH,
+            coordinates = LatLong(45.95, 7.65), // Inside detailedHike bounds
+        )
 
-    // Verify only facility1 is displayed
-    // You'll need to expose some way to check visible facilities
-  }
+        val facilityOutOfBounds = Facility(
+            type = FacilityType.BENCH,
+            coordinates = LatLong(47.0, 8.0), // Outside detailedHike bounds
+        )
 
+        `when`(facilitiesRepository.getFacilities(any(), any(), any())).thenAnswer {
+            val onSuccess = it.getArgument<(List<Facility>) -> Unit>(1)
+            onSuccess(listOf(facilityInBounds, facilityOutOfBounds))
+        }
+
+        setUpSelectedHike(detailedHike)
+        setUpCompleteScreen()
+
+        val mapView = composeTestRule.onNodeWithTag(TEST_TAG_MAP)
+            .fetchSemanticsNode().layoutInfo.getModifierInfo()
+            .find { it.modifier is AndroidView }?.let {
+                (it.modifier as AndroidView).view as MapView
+            }
+
+        assertNotNull(mapView)
+
+        // Verify only in-bounds facility is shown
+        val facilityMarkers = mapView!!.overlays.filterIsInstance<Marker>()
+            .filter { it.relatedObject == R.string.facility_marker }
+
+        assertEquals(1, facilityMarkers.size)
+        assertEquals(facilityInBounds.coordinates.lat, facilityMarkers[0].position.latitude, 0.0001)
+        assertEquals(facilityInBounds.coordinates.lon, facilityMarkers[0].position.longitude, 0.0001)
+    }
+
+    @Test
+    fun hikeDetails_updatesDisplayedFacilitiesOnMapScroll() = runTest {
+        val initialFacility = Facility(
+            type = FacilityType.BENCH,
+            coordinates = LatLong(45.95, 7.65),
+        )
+
+        var facilitiesList = listOf(initialFacility)
+
+        `when`(facilitiesRepository.getFacilities(any(), any(), any())).thenAnswer {
+            val onSuccess = it.getArgument<(List<Facility>) -> Unit>(1)
+            onSuccess(facilitiesList)
+        }
+
+        setUpSelectedHike(detailedHike)
+        setUpCompleteScreen()
+        var mapView: MapView? = null
+
+        composeTestRule.setContent {
+            AndroidView(
+                factory = { context ->
+                    MapView(context).also { mapView = it }
+                },
+                modifier = Modifier.testTag(TEST_TAG_MAP)
+            )
+        }
+
+        composeTestRule.waitForIdle()
+        assertNotNull(mapView)
+
+        // Now you can test the overlays
+        assertTrue(
+            mapView!!.overlays.any { overlay ->
+                overlay is Marker &&
+                        overlay.relatedObject == R.string.facility_marker &&
+                        overlay.position.latitude == testFacility.coordinates.lat &&
+                        overlay.position.longitude == testFacility.coordinates.lon
+            }
+        )
+        // Update facilities list for next query
+        val newFacility = Facility(
+            type = FacilityType.BENCH,
+            coordinates = LatLong(46.0, 7.7),
+        )
+        facilitiesList = listOf(newFacility)
+
+        // Simulate scroll
+        mapView.controller.setCenter(GeoPoint(46.0, 7.7))
+
+        // Wait for debounce
+        advanceTimeBy(HikeDetailScreen.DEBOUNCE_DURATION + 100)
+
+        // Verify new facility is shown
+        assertTrue(
+            mapView.overlays.any { overlay ->
+                overlay is Marker &&
+                        overlay.relatedObject == R.string.facility_marker &&
+                        overlay.position.latitude == newFacility.coordinates.lat
+            }
+        )
+    }
   // Add to setUp():
   private val mockFacility =
       Facility(
           type = FacilityType.BENCH,
           coordinates = LatLong(45.9, 7.6),
       )
+    @After
+    fun tearDown(){
+        Dispatchers.resetMain()
+    }
 }
