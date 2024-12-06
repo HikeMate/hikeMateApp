@@ -250,4 +250,27 @@ class ElevationRepositoryTest {
     assert(onSuccessCalled)
     coVerify { call.enqueue(any()) }
   }
+
+  @Test
+  fun keepsReceiving500() = runTest {
+    val call: Call = mockk()
+    coEvery { client.newCall(any()) } returns call
+
+    coEvery { call.enqueue(any()) } answers
+        {
+          firstArg<Callback>().onResponse(call, serverErrorResponse)
+        }
+
+    var onFailureCalled = false
+
+    elevationRepository.getElevation(longLatLongList, { fail("Should not have succeeded") }) {
+      onFailureCalled = true
+    }
+
+    // Wait for the coroutine to finish
+    advanceUntilIdle()
+
+    assert(onFailureCalled)
+    coVerify { call.enqueue(any()) }
+  }
 }
