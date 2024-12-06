@@ -31,9 +31,9 @@ class ElevationRepositoryTest {
   private lateinit var elevationRepository: ElevationRepository
   private val longList =
       listOf(515.0, 545.0, 117.0, 620.0, 480.0, 200.0, 750.0, 1020.0, 890.0, 1500.0, 340.0, 670.0)
-  private val smallList = listOf(515.0, 545.0, 117.0)
+  private val simpleList = listOf(515.0, 545.0, 117.0)
 
-  private val latLongList =
+  private val simpleLatLongList =
       listOf(LatLong(10.0, 10.0), LatLong(20.0, 20.0), LatLong(41.161758, -8.583933))
 
   private val longLatLongList =
@@ -149,9 +149,9 @@ class ElevationRepositoryTest {
     var onSuccessCalled = false
 
     elevationRepository.getElevation(
-        latLongList,
+        simpleLatLongList,
         { list ->
-          assertEquals(smallList, list)
+          assertEquals(simpleList, list)
           onSuccessCalled = true
         }) {
           fail("Failed to fetch routes from Overpass API")
