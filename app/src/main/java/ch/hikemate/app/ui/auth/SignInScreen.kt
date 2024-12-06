@@ -58,9 +58,6 @@ object SignInScreen {
   const val TEST_TAG_SIGN_IN_WITH_GOOGLE = "sign_in_with_google_button"
 }
 
-private const val CONNECTED_ACCOUNT_MESSAGE =
-    "Connected Google Account to your device successfully. Please wait while we retry the signup."
-
 /** A composable function to display the sign in screen */
 @Composable
 fun SignInScreen(
@@ -77,7 +74,11 @@ fun SignInScreen(
   val addAccountLauncher =
       rememberLauncherForActivityResult(
           contract = ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
-            Toast.makeText(context, CONNECTED_ACCOUNT_MESSAGE, Toast.LENGTH_LONG).show()
+            Toast.makeText(
+                    context,
+                    context.getString(R.string.google_account_created_confirmation),
+                    Toast.LENGTH_LONG)
+                .show()
             // startAddAccountIntentLauncher is null, since it is only called when the user has no
             // Google account connected to the device, however they just added one.
             authViewModel.signInWithGoogle(coroutineScope, context, null)
@@ -113,7 +114,8 @@ fun SignInScreen(
             ) {
               Image(
                   painter = painterResource(id = R.drawable.sign_in_background),
-                  contentDescription = "Background Image",
+                  contentDescription =
+                      stringResource(R.string.background_image_content_description),
                   modifier = Modifier.fillMaxSize().blur(10.dp),
                   contentScale = ContentScale.Crop,
               )
@@ -133,7 +135,7 @@ fun SignInScreen(
                 // App name Text
                 Text(
                     modifier = Modifier.testTag(SignInScreen.TEST_TAG_TITLE),
-                    text = "HikeMate",
+                    text = stringResource(R.string.app_name),
                     style =
                         TextStyle(
                             color = Color.White,

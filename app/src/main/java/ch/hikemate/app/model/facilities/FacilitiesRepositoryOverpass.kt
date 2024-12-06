@@ -52,12 +52,14 @@ class FacilitiesRepositoryOverpass(private val client: OkHttpClient) :
     override fun onResponse(call: okhttp3.Call, response: okhttp3.Response) {
       try {
         if (!response.isSuccessful) {
-          onFailure(
-              Exception(
-                  "Failed to fetch facilities from Overpass API. Response code: ${response.code}"))
+          onFailure(Exception())
         } else {
-          val responseJsonReader =
-              response.body?.charStream() ?: throw Exception("Response body is null")
+          if (response.body == null) {
+            onFailure(Exception())
+            return
+          }
+
+          val responseJsonReader = response.body!!.charStream()
           val facilities = parseAmenities(responseJsonReader)
           Log.d("FacilitiesRepository", "Got ${facilities.size} facilities")
           onSuccess(facilities)

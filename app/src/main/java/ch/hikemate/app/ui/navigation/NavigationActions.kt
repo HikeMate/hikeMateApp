@@ -9,6 +9,7 @@ import androidx.compose.material.icons.outlined.Person
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
+import ch.hikemate.app.R
 
 /** Object containing route constants. */
 object Route {
@@ -42,16 +43,18 @@ object Screen {
  * @property icon The icon associated with the destination.
  * @property textId The text identifier for the destination.
  */
-data class TopLevelDestination(val route: String, val icon: ImageVector, val textId: String)
+data class TopLevelDestination(val route: String, val icon: ImageVector, val textId: Int)
 
 /** Object containing top-level destinations. */
 object TopLevelDestinations {
-  val SAVED_HIKES = TopLevelDestination(Route.SAVED_HIKES, Icons.Outlined.Bookmark, "Saved Hikes")
-  val MAP = TopLevelDestination(Route.MAP, Icons.Filled.LocationOn, "Map")
-  val PROFILE = TopLevelDestination(Route.PROFILE, Icons.Filled.Person, "Profile")
-  val AUTH = TopLevelDestination(Route.AUTH, Icons.Outlined.Person, "Auth")
+  val SAVED_HIKES =
+      TopLevelDestination(Route.SAVED_HIKES, Icons.Outlined.Bookmark, R.string.nav_saved_hikes)
+  val MAP = TopLevelDestination(Route.MAP, Icons.Filled.LocationOn, R.string.nav_map)
+  val PROFILE = TopLevelDestination(Route.PROFILE, Icons.Filled.Person, R.string.nav_profile)
+  val AUTH = TopLevelDestination(Route.AUTH, Icons.Outlined.Person, R.string.nav_auth)
   val TUTORIAL =
-      TopLevelDestination(Route.TUTORIAL, Icons.AutoMirrored.Outlined.HelpOutline, "Tutorial")
+      TopLevelDestination(
+          Route.TUTORIAL, Icons.AutoMirrored.Outlined.HelpOutline, R.string.nav_tutorial)
 }
 
 /** List of top-level destinations. */
