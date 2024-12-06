@@ -331,13 +331,13 @@ class ElevationRepositoryCopernicus(
         onSuccess(elevationResponse.elevations)
         failedRequests = 0
       } else {
-        if (handleError(response)) return
+        handleError(response)
       }
 
       response.close()
     }
 
-    private fun handleError(response: Response): Boolean {
+    private fun handleError(response: Response) {
       when (response.code) {
         500,
         504,
@@ -349,7 +349,7 @@ class ElevationRepositoryCopernicus(
           if (failedRequests > MAX_FAILED_REQUESTS) {
             failedRequests = 0
             onFailure(Exception("Failed to get elevation. Status code: ${response.code}"))
-            return true
+            return
           } else {
             CoroutineScope(repoDispatcher).launch {
               delay(failedRequests * FAILED_REQUEST_DELAY)
@@ -367,7 +367,7 @@ class ElevationRepositoryCopernicus(
             Log.d(LOG_TAG, "Split requests in half")
             mutex.withLock {
               requests.forEachIndexed { index, it ->
-                if (index < requests.size / 2) {
+                if (index <= requests.size / 2) {
                   firstHalf += it
                 } else {
                   secondHalf += it
@@ -393,7 +393,6 @@ class ElevationRepositoryCopernicus(
           onFailure(Exception("Failed to get elevation. Status code: ${response.code}"))
         }
       }
-      return false
     }
   }
 }
