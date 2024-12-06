@@ -54,7 +54,8 @@ data class ElevationRequest(
  */
 class ElevationRepositoryCopernicus(
     private val client: OkHttpClient,
-    private val repoDispatcher: CoroutineDispatcher = Dispatchers.IO
+    private val repoDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val maxCacheSize: Int = DEFAULT_CACHE_MAX_SIZE
 ) : ElevationRepository {
 
   companion object {
@@ -67,7 +68,7 @@ class ElevationRepositoryCopernicus(
 
     // Limit the cache size to avoid memory issues
     // This has been tested with a cache size of 150000, on a Google Pixel 8 Pro, without any issues
-    const val CACHE_MAX_SIZE = 100000
+    const val DEFAULT_CACHE_MAX_SIZE = 100000
 
     // The maximum number of failed requests before giving up
     private const val MAX_FAILED_REQUESTS = 5
@@ -264,7 +265,7 @@ class ElevationRepositoryCopernicus(
       // This is done after returning onSuccess to not have issues with graph being not
       // shown because of the cleanup
       Log.d(LOG_TAG, "Cache size: ${getCacheSize()}")
-      if (getCacheSize() > CACHE_MAX_SIZE) {
+      if (getCacheSize() > maxCacheSize) {
         launchCacheCleanup()
       }
 
@@ -273,18 +274,18 @@ class ElevationRepositoryCopernicus(
   }
 
   /**
-   * The cache is limited to [CACHE_MAX_SIZE] entries. If the cache exceeds this size, we remove the
+   * The cache is limited to [maxCacheSize] entries. If the cache exceeds this size, we remove the
    * oldest entries to free up space.
    */
   private fun launchCacheCleanup() {
     Log.d(LOG_TAG, "Cache cleanup launched")
     CoroutineScope(repoDispatcher).launch {
       mutex.withLock {
-        if (cache.size <= CACHE_MAX_SIZE) return@launch
+        if (cache.size <= maxCacheSize) return@launch
 
         val sortedCache = cache.toList().sortedBy { it.second.timestamp }
 
-        val deletionTimestamp = sortedCache[sortedCache.size - CACHE_MAX_SIZE].second.timestamp
+        val deletionTimestamp = sortedCache[sortedCache.size - maxCacheSize].second.timestamp
 
         // The current cache must keep entries related to currently being processed requests
         val currentRequestCoordinates = requests.flatMap { it.coordinates }

@@ -133,7 +133,8 @@ class ElevationRepositoryTest {
   fun setup() {
     Dispatchers.setMain(dispatcher)
     client = mockk()
-    elevationRepository = ElevationRepositoryCopernicus(client, dispatcher)
+    // We test with a small cache size to make sure the cache is working correctly
+    elevationRepository = ElevationRepositoryCopernicus(client, dispatcher, 10)
   }
 
   @Test
