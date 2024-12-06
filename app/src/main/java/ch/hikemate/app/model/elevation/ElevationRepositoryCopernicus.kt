@@ -165,11 +165,19 @@ class ElevationRepositoryCopernicus(
           // This is purely empirical and can be adjusted
           // If we already have enough data for a request, we don't need to wait
           var coordinates: Set<LatLong> = emptySet()
-          mutex.withLock { coordinates = requests.flatMap { it.coordinates }.toSet() }
+          val currentlyProcessedRequests = mutableSetOf<ElevationRequest>()
+          mutex.withLock {
+            coordinates = requests.flatMap { it.coordinates }.toSet()
+            currentlyProcessedRequests.addAll(requests)
+          }
           if (coordinates.size < MAX_COORDINATES_PER_REQUEST) {
             delay(WAITING_DELAY_BEFORE_SENDING_REQUEST_FOR_BATCHING)
             // If there were new requests in the meantime, we need to update the coordinates
-            mutex.withLock { coordinates = requests.flatMap { it.coordinates }.toSet() }
+            mutex.withLock {
+              coordinates = requests.flatMap { it.coordinates }.toSet()
+              currentlyProcessedRequests.clear()
+              currentlyProcessedRequests.addAll(requests)
+            }
           }
           mutex.withLock {
             val chunks = coordinates.chunked(MAX_COORDINATES_PER_REQUEST)
@@ -195,7 +203,14 @@ class ElevationRepositoryCopernicus(
 
               val onFailureCallback: (Exception) -> Unit = { exception ->
                 CoroutineScope(repoDispatcher).launch {
-                  mutex.withLock { requests.forEach { request -> request.onFailure(exception) } }
+                  mutex.withLock {
+                    currentlyProcessedRequests
+                        .filter { it.coordinates.containsAll(chunk) }
+                        .forEach { request ->
+                          requests.remove(request)
+                          request.onFailure(exception)
+                        }
+                  }
                   onFailure(exception)
                 }
               }
