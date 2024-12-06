@@ -200,7 +200,7 @@ fun HikeDetailScreen(
 @Composable
 fun HikeDetailsContent(
     hike: DetailedHike,
-    mapView: MutableState<MapView?>,
+    mapViewState: MutableState<MapView?>,
     navigationActions: NavigationActions,
     hikesViewModel: HikesViewModel,
     userHikingLevel: HikingLevel
@@ -209,7 +209,7 @@ fun HikeDetailsContent(
 
   Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {
     // Display the map and the zoom buttons
-    mapView.value = hikeDetailsMap(hike)
+    mapViewState.value = hikeDetailsMap(hike)
 
     // Display the back button on top of the map
     BackButton(
@@ -219,8 +219,8 @@ fun HikeDetailsContent(
 
     // Zoom buttons at the bottom right of the screen
     ZoomMapButton(
-        onZoomIn = { mapView.value?.controller?.zoomIn() },
-        onZoomOut = { mapView.value?.controller?.zoomOut() },
+        onZoomIn = { mapViewState.value?.controller?.zoomIn() },
+        onZoomOut = { mapViewState.value?.controller?.zoomOut() },
         modifier =
             Modifier.align(Alignment.BottomEnd)
                 .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
