@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -17,7 +19,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -33,24 +34,22 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import ch.hikemate.app.R
-import ch.hikemate.app.model.elevation.ElevationServiceRepository
-import ch.hikemate.app.model.profile.ProfileViewModel
-import ch.hikemate.app.model.route.DetailedHikeRoute
-import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
-import ch.hikemate.app.ui.components.AsyncStateHandler
+import ch.hikemate.app.model.route.DetailedHike
+import ch.hikemate.app.model.route.HikesViewModel
 import ch.hikemate.app.ui.components.BackButton
 import ch.hikemate.app.ui.components.BigButton
 import ch.hikemate.app.ui.components.ButtonType
+import ch.hikemate.app.ui.components.CenteredErrorAction
 import ch.hikemate.app.ui.components.DetailRow
 import ch.hikemate.app.ui.components.ElevationGraph
 import ch.hikemate.app.ui.components.ElevationGraphStyleProperties
+import ch.hikemate.app.ui.components.WithDetailedHike
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.utils.MapUtils
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
-import okhttp3.OkHttpClient
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 
@@ -68,30 +67,80 @@ object RunHikeScreen {
 
 @Composable
 fun RunHikeScreen(
-    listOfHikeRoutesViewModel: ListOfHikeRoutesViewModel,
-    profileViewModel: ProfileViewModel,
+    hikesViewModel: HikesViewModel,
     navigationActions: NavigationActions,
 ) {
+  val selectedHike by hikesViewModel.selectedHike.collectAsState()
 
-  val context = LocalContext.current
-
-  val selectedRoute by listOfHikeRoutesViewModel.selectedHikeRoute.collectAsState()
-
-  LaunchedEffect(selectedRoute) {
-    if (selectedRoute == null) {
+  LaunchedEffect(selectedHike) {
+    if (selectedHike == null) {
       navigationActions.goBack()
     }
   }
-  val route = selectedRoute!!
 
-  // This will need to be changed when the "run" feature of this screen is implemented
-  val routeZoomLevel = MapUtils.calculateBestZoomLevel(route.bounds).toDouble()
+  // Can't display the details without a selected hike
+  if (selectedHike == null) {
+    return
+  }
+
+  val hike = selectedHike!!
+
+  WithDetailedHike(
+      hike = hike,
+      hikesViewModel = hikesViewModel,
+      withDetailedHike = { RunHikeContent(it, navigationActions) },
+      whenError = {
+        CenteredErrorAction(
+            errorMessageId = R.string.loading_hike_error,
+            actionIcon = Icons.AutoMirrored.Filled.ArrowBack,
+            actionContentDescriptionStringId = R.string.go_back,
+            onAction = { navigationActions.goBack() })
+      })
+}
+
+@Composable
+private fun RunHikeContent(hike: DetailedHike, navigationActions: NavigationActions) {
+  // Avoids the app crashing when spamming the back button
+  var wantToNavigateBack by remember { mutableStateOf(false) }
+  LaunchedEffect(wantToNavigateBack) { if (wantToNavigateBack) navigationActions.goBack() }
+
+  Box(modifier = Modifier.fillMaxSize().testTag(Screen.RUN_HIKE)) {
+    // Display the map
+    val mapView = runHikeMap(hike)
+
+    // Back Button at the top of the screen
+    BackButton(
+        navigationActions = navigationActions,
+        modifier =
+            Modifier.padding(top = 40.dp, start = 16.dp, end = 16.dp)
+                .testTag(RunHikeScreen.TEST_TAG_BACK_BUTTON),
+        onClick = { wantToNavigateBack = true })
+
+    // Zoom buttons at the bottom right of the screen
+    ZoomMapButton(
+        onZoomIn = { mapView.controller.zoomIn() },
+        onZoomOut = { mapView.controller.zoomOut() },
+        modifier =
+            Modifier.align(Alignment.BottomEnd)
+                .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
+                .testTag(RunHikeScreen.TEST_TAG_ZOOM_BUTTONS))
+
+    // Display the bottom sheet with the hike details
+    RunHikeBottomSheet(hike = hike, onStopTheRun = { wantToNavigateBack = true })
+  }
+}
+
+@Composable
+private fun runHikeMap(hike: DetailedHike): MapView {
+  val context = LocalContext.current
+  val routeZoomLevel = MapUtils.calculateBestZoomLevel(hike.bounds).toDouble()
+  val hikeCenter = MapUtils.getGeographicalCenter(hike.bounds)
 
   // Avoid re-creating the MapView on every recomposition
   val mapView = remember {
     MapView(context).apply {
       controller.setZoom(routeZoomLevel)
-      controller.setCenter(MapUtils.getGeographicalCenter(route.bounds))
+      controller.setCenter(hikeCenter)
       // Limit the zoom to avoid the user zooming out or out too much
       minZoomLevel = routeZoomLevel
       // Avoid repeating the map when the user reaches the edge or zooms out
@@ -113,8 +162,8 @@ fun RunHikeScreen(
         min(MapScreen.MAP_MAX_LATITUDE, mapView.boundingBox.latNorth),
         max(MapScreen.MAP_MIN_LATITUDE, mapView.boundingBox.latSouth),
         HikeDetailScreen.MAP_BOUNDS_MARGIN)
-    if (route.bounds.maxLon < HikeDetailScreen.MAP_MAX_LONGITUDE ||
-        route.bounds.minLon > HikeDetailScreen.MAP_MIN_LONGITUDE) {
+    if (hike.bounds.maxLon < HikeDetailScreen.MAP_MAX_LONGITUDE ||
+        hike.bounds.minLon > HikeDetailScreen.MAP_MIN_LONGITUDE) {
       mapView.setScrollableAreaLimitLongitude(
           max(HikeDetailScreen.MAP_MIN_LONGITUDE, mapView.boundingBox.lonWest),
           min(HikeDetailScreen.MAP_MAX_LONGITUDE, mapView.boundingBox.lonEast),
@@ -122,67 +171,24 @@ fun RunHikeScreen(
     }
   }
 
-  val elevationData = remember { mutableStateListOf<Double>() }
-
-  LaunchedEffect(Unit) {
-    listOfHikeRoutesViewModel.getRoutesElevation(route, { elevationData.addAll(it) })
-  }
-
-  val hikeLineColor = route.getColor()
   MapUtils.showHikeOnMap(
-      mapView = mapView, waypoints = route.ways, color = hikeLineColor, onLineClick = {})
+      mapView = mapView, waypoints = hike.waypoints, color = hike.color, onLineClick = {})
 
-  // avoids the app crashing when spamming the back button
-  var wantToNavigateBack by remember { mutableStateOf(false) }
-  LaunchedEffect(wantToNavigateBack) { if (wantToNavigateBack) navigationActions.goBack() }
+  // Map
+  AndroidView(
+      factory = { mapView },
+      modifier =
+          Modifier.fillMaxWidth()
+              .padding(bottom = 300.dp) // Reserve space for the scaffold at the bottom
+              .testTag(RunHikeScreen.TEST_TAG_MAP))
 
-  val errorMessageIdState = profileViewModel.errorMessageId.collectAsState()
-  val profileState = profileViewModel.profile.collectAsState()
-
-  AsyncStateHandler(
-      errorMessageIdState = errorMessageIdState,
-      actionContentDescriptionStringId = R.string.go_back,
-      actionOnErrorAction = { navigationActions.goBack() },
-      valueState = profileState,
-  ) { _ ->
-    Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {
-      // Map
-      AndroidView(
-          factory = { mapView },
-          modifier =
-              Modifier.fillMaxWidth()
-                  .padding(bottom = 300.dp) // Reserve space for the scaffold at the bottom
-                  .testTag(RunHikeScreen.TEST_TAG_MAP))
-      // Back Button at the top of the screen
-      BackButton(
-          navigationActions = navigationActions,
-          modifier =
-              Modifier.padding(top = 40.dp, start = 16.dp, end = 16.dp)
-                  .testTag(RunHikeScreen.TEST_TAG_BACK_BUTTON),
-          onClick = { wantToNavigateBack = true })
-      // Zoom buttons at the bottom right of the screen
-      ZoomMapButton(
-          onZoomIn = { mapView.controller.zoomIn() },
-          onZoomOut = { mapView.controller.zoomOut() },
-          modifier =
-              Modifier.align(Alignment.BottomEnd)
-                  .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
-                  .testTag(RunHikeScreen.TEST_TAG_ZOOM_BUTTONS))
-
-      RunHikeBottomSheet(
-          hikeRoute = DetailedHikeRoute.create(route, ElevationServiceRepository(OkHttpClient())),
-          elevationData = elevationData,
-          onStopTheRun = { wantToNavigateBack = true },
-      )
-    }
-  }
+  return mapView
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RunHikeBottomSheet(
-    hikeRoute: DetailedHikeRoute,
-    elevationData: List<Double>,
+    hike: DetailedHike,
     onStopTheRun: () -> Unit,
 ) {
   val scaffoldState = rememberBottomSheetScaffoldState()
@@ -197,16 +203,16 @@ fun RunHikeBottomSheet(
             modifier = Modifier.padding(16.dp).weight(1f),
         ) {
           Text(
-              text = hikeRoute.route.name ?: stringResource(R.string.map_screen_hike_title_default),
+              text = hike.name ?: stringResource(R.string.map_screen_hike_title_default),
               style = MaterialTheme.typography.titleLarge,
               textAlign = TextAlign.Left,
               modifier = Modifier.testTag(RunHikeScreen.TEST_TAG_HIKE_NAME))
 
           // Elevation graph and the progress details below the graph
           Column {
-            val hikeColor = Color(hikeRoute.route.getColor())
+            val hikeColor = Color(hike.color)
             ElevationGraph(
-                elevations = elevationData,
+                elevations = hike.elevation,
                 styleProperties =
                     ElevationGraphStyleProperties(
                         strokeColor = hikeColor, fillColor = hikeColor.copy(0.1f)),
@@ -241,7 +247,7 @@ fun RunHikeBottomSheet(
                       text =
                           stringResource(
                               R.string.run_hike_screen_distance_progress_value_format,
-                              hikeRoute.totalDistance),
+                              hike.distance),
                       style = MaterialTheme.typography.bodyLarge,
                       fontWeight = FontWeight.Bold,
                       textAlign = TextAlign.Right,
@@ -249,8 +255,8 @@ fun RunHikeBottomSheet(
                   )
                 }
 
-            val hours = (hikeRoute.estimatedTime / 60).toInt()
-            val minutes = (hikeRoute.estimatedTime % 60).roundToInt()
+            val hours = (hike.estimatedTime / 60).toInt()
+            val minutes = (hike.estimatedTime % 60).roundToInt()
 
             DetailRow(
                 label = stringResource(R.string.run_hike_screen_label_current_elevation),
@@ -261,7 +267,7 @@ fun RunHikeBottomSheet(
                 value =
                     stringResource(
                         R.string.run_hike_screen_value_format_elevation_gain,
-                        hikeRoute.elevationGain.roundToInt()))
+                        hike.elevationGain.roundToInt()))
             DetailRow(
                 label = stringResource(R.string.run_hike_screen_label_estimated_time),
                 value =
@@ -275,8 +281,8 @@ fun RunHikeBottomSheet(
                             minutes))
             DetailRow(
                 label = stringResource(R.string.run_hike_screen_label_difficulty),
-                value = stringResource(hikeRoute.difficulty.nameResourceId),
-                valueColor = colorResource(hikeRoute.difficulty.colorResourceId))
+                value = stringResource(hike.difficulty.nameResourceId),
+                valueColor = colorResource(hike.difficulty.colorResourceId))
 
             BigButton(
                 buttonType = ButtonType.PRIMARY,
