@@ -2,6 +2,7 @@ package ch.hikemate.app.ui.components
 
 import android.graphics.Paint
 import android.util.Log
+import androidx.annotation.FloatRange
 import androidx.compose.foundation.Canvas
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -13,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ClipOp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
@@ -22,6 +24,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.math.MathUtils
 import ch.hikemate.app.R
+import ch.hikemate.app.utils.MapUtils
 import kotlin.math.ceil
 
 /**
@@ -30,11 +33,13 @@ import kotlin.math.ceil
  * @param fillColor The color of the fill of the graph (default to black)
  * @param strokeColor The color of the line of the graph (default to black)
  * @param strokeWidth The width of the line the graph (default to 3f)
+ * @param locationMarkerSize The size of the location marker drawable (default to 24f)
  */
 data class ElevationGraphStyleProperties(
     val strokeColor: Color = Color.Black,
     val fillColor: Color = Color.Black,
     val strokeWidth: Float = 3f,
+    val locationMarkerSize: Float = 24f // Size for the location marker drawable
 )
 
 /**
@@ -54,6 +59,8 @@ data class ElevationGraphStyleProperties(
  * @param graphInnerPaddingPercentage The padding inside the graph, defined as a percentage of the
  *   canvas height, used so that the minimal point doesn't overlap the bottom line of the graph
  *   (default to 20.0f)
+ * @param progressThroughHike the progress the user has made in the hike from 0.0 to 1.0
+ *   (normalized)
  */
 @Composable
 fun ElevationGraph(
@@ -61,10 +68,10 @@ fun ElevationGraph(
     modifier: Modifier = Modifier,
     maxNumberOfPoints: Int = 40,
     styleProperties: ElevationGraphStyleProperties = ElevationGraphStyleProperties(),
-    graphInnerPaddingPercentage: Float = 10.0f
+    graphInnerPaddingPercentage: Float = 10.0f,
+    @FloatRange(from = 0.0, to = 1.0) progressThroughHike: Float? = null
 ) {
   val context = LocalContext.current
-
   val textColor = MaterialTheme.colorScheme.onSurface.toArgb()
 
   val elevationData = if (elevations.isNullOrEmpty()) listOf(0.0) else elevations
@@ -84,7 +91,6 @@ fun ElevationGraph(
   val elevationStep = if (elevationRange == 0.0) 1.0 else elevationRange / height
 
   val widthStep = width / (elevationDataAveraged.size - 1)
-
   val graphInnerPadding = height * graphInnerPaddingPercentage / 100
 
   // Build (x, y) tuples to draw the path
@@ -121,6 +127,7 @@ fun ElevationGraph(
       modifier.onGloballyPositioned { coordinates ->
         height = coordinates.size.height.toFloat()
         width = coordinates.size.width.toFloat()
+        Log.d("ElevationGraph", "Canvas dimensions: Width=$width, Height=$height")
       }) {
         if (elevations == null) {
           // If there is no data, we draw a text in the middle of the canvas
@@ -152,6 +159,53 @@ fun ElevationGraph(
               styleProperties.strokeColor,
               style = Stroke(width = styleProperties.strokeWidth))
           clipPath(path, clipOp = ClipOp.Intersect) { drawRect(color = styleProperties.fillColor) }
+
+          // If the progressThroughHike is not null then display the location marker
+          progressThroughHike?.let { progress ->
+            // The X component of the marker
+            val markerX = width * progress
+
+            // For progress = 0.6 (60% along total path) in data with 5 points:
+            // points:    0    1    2    3    4
+            // progress:  0.0  0.25 0.5  0.75 1.0
+            // pointIndex = floor(0.6 * 4) = floor(2.4) = 2
+            val pointIndex = (progress * (scaledData.size - 1)).toInt()
+
+            // pointProgress = 0.6 * 4 % 1 = 2.4 % 1 = 0.4
+            // So we're 40% between points 2 and 3
+            val pointProgress = (progress * (scaledData.size - 1)) % 1
+
+            // The Y component of the marker
+            val markerY =
+                if (pointIndex < scaledData.size - 1) {
+                  val y1 = scaledData[pointIndex].second
+                  val y2 = scaledData[pointIndex + 1].second
+                  y1 + (y2 - y1) * pointProgress
+                } else {
+                  scaledData.last().second
+                }
+
+            val markerDrawable = MapUtils.getUserLocationMarkerIcon(context)
+            val originalBitmap = (markerDrawable as android.graphics.drawable.BitmapDrawable).bitmap
+
+            // Scale Bitmap to ensure it fits the desired size
+            val scaledBitmap =
+                android.graphics.Bitmap.createScaledBitmap(
+                    originalBitmap,
+                    styleProperties.locationMarkerSize.toInt(),
+                    styleProperties.locationMarkerSize.toInt(),
+                    true)
+            val bitmap = scaledBitmap.asImageBitmap()
+
+            // Draws the location marker at the calculated position
+            drawImage(
+                image = bitmap,
+                topLeft =
+                    androidx.compose.ui.geometry.Offset(
+                        x = markerX - styleProperties.locationMarkerSize / 2,
+                        y = markerY - styleProperties.locationMarkerSize / 2),
+                alpha = 1.0f)
+          }
         }
       }
 }
