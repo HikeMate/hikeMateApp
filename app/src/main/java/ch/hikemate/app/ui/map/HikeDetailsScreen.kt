@@ -34,10 +34,12 @@ import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,10 +57,14 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.hikemate.app.R
 import ch.hikemate.app.model.authentication.AuthViewModel
+import ch.hikemate.app.model.facilities.FacilitiesViewModel
+import ch.hikemate.app.model.facilities.Facility
 import ch.hikemate.app.model.profile.HikingLevel
 import ch.hikemate.app.model.profile.ProfileViewModel
+import ch.hikemate.app.model.route.Bounds
 import ch.hikemate.app.model.route.DetailedHike
 import ch.hikemate.app.model.route.HikesViewModel
+import ch.hikemate.app.model.route.LatLong
 import ch.hikemate.app.ui.components.AsyncStateHandler
 import ch.hikemate.app.ui.components.BackButton
 import ch.hikemate.app.ui.components.BigButton
@@ -81,6 +87,7 @@ import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_RUN_HIKE_BUTTON
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
+import ch.hikemate.app.utils.LocationUtils
 import ch.hikemate.app.utils.MapUtils
 import ch.hikemate.app.utils.humanReadableFormat
 import com.google.firebase.Timestamp
@@ -89,6 +96,14 @@ import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.launchIn
+import org.osmdroid.events.MapListener
+import org.osmdroid.events.ScrollEvent
+import org.osmdroid.events.ZoomEvent
+import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 
@@ -97,6 +112,12 @@ object HikeDetailScreen {
   const val MAP_MAX_LONGITUDE = 180.0
   const val MAP_MIN_LONGITUDE = -180.0
   const val MAP_BOUNDS_MARGIN: Int = 100
+  const val MARGIN_BOUNDS = 0.001
+
+  const val MIN_ZOOM_FOR_FACILITIES = 15.0
+  const val DEBOUNCE_DURATION = 150L
+  const val MAX_DISTANCE_FROM_ROUTE_TO_FACILITY = 3000
+  const val MAX_AMOUNT_OF_FACILITIES = 30
 
   const val LOG_TAG = "HikeDetailScreen"
 
@@ -117,7 +138,8 @@ fun HikeDetailScreen(
     hikesViewModel: HikesViewModel,
     profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory),
     authViewModel: AuthViewModel,
-    navigationActions: NavigationActions
+    navigationActions: NavigationActions,
+    facilitiesViewModel: FacilitiesViewModel
 ) {
   // Load the user's profile to get their hiking level
   LaunchedEffect(Unit) {
@@ -148,6 +170,23 @@ fun HikeDetailScreen(
       val detailedHike = selectedHike!!.withDetailsOrThrow()
       val errorMessageIdState = profileViewModel.errorMessageId.collectAsState()
       val profileState = profileViewModel.profile.collectAsState()
+
+      // This is the list of all the facilities inside the hike's bounds
+      val facilities = remember { mutableStateOf<List<Facility>>(emptyList()) }
+      LaunchedEffect(Unit) {
+        // This is calculated so that elements that are near but not contained into the bounds of a
+        // Hike
+        // are still displayed this is actually a very common occurrence.
+        val boundsWithMargin =
+            Bounds(
+                detailedHike.bounds.minLat - HikeDetailScreen.MARGIN_BOUNDS,
+                detailedHike.bounds.minLon - HikeDetailScreen.MARGIN_BOUNDS,
+                detailedHike.bounds.maxLat + HikeDetailScreen.MARGIN_BOUNDS,
+                detailedHike.bounds.maxLon + HikeDetailScreen.MARGIN_BOUNDS)
+        // Get all the facilities within the bounds.
+        facilitiesViewModel.getFacilities(boundsWithMargin, { facilities.value = it }, {})
+      }
+
       AsyncStateHandler(
           errorMessageIdState = errorMessageIdState,
           actionContentDescriptionStringId = R.string.go_back,
@@ -156,7 +195,8 @@ fun HikeDetailScreen(
       ) { profile ->
         Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {
           // Display the hike's actual information
-          HikeDetailsContent(detailedHike, navigationActions, hikesViewModel, profile.hikingLevel)
+          HikeDetailsContent(
+              detailedHike, navigationActions, hikesViewModel, profile.hikingLevel, facilities)
         }
       }
     }
@@ -186,13 +226,14 @@ fun HikeDetailsContent(
     hike: DetailedHike,
     navigationActions: NavigationActions,
     hikesViewModel: HikesViewModel,
-    userHikingLevel: HikingLevel
+    userHikingLevel: HikingLevel,
+    facilities: MutableState<List<Facility>>
 ) {
   BackHandler { hikesViewModel.unselectHike() }
 
   Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {
     // Display the map and the zoom buttons
-    val mapView = hikeDetailsMap(hike)
+    val mapView = hikeDetailsMap(hike, facilities)
 
     // Display the back button on top of the map
     BackButton(
@@ -221,9 +262,12 @@ fun HikeDetailsContent(
 }
 
 @Composable
-fun hikeDetailsMap(hike: DetailedHike): MapView {
+fun hikeDetailsMap(hike: DetailedHike, facilities: MutableState<List<Facility>>): MapView {
   val context = LocalContext.current
 
+  val scope = rememberCoroutineScope()
+
+  val facilitiesDisplayed = remember { mutableStateOf(false) }
   val hikeZoomLevel = MapUtils.calculateBestZoomLevel(hike.bounds).toDouble()
   val hikeCenter = MapUtils.getGeographicalCenter(hike.bounds)
 
@@ -247,6 +291,69 @@ fun hikeDetailsMap(hike: DetailedHike): MapView {
       setMultiTouchControls(true)
     }
   }
+
+  // The state of the current bounds
+  val boundingBoxState = remember { MutableStateFlow(mapView.boundingBox) }
+  // The state of the current zoom level
+  val zoomLevelState = remember { MutableStateFlow(mapView.zoomLevelDouble) }
+  // Display the facilities according to changes in the boundingBoxState and zoomLevelState
+  LaunchedEffect(mapView) {
+    combine(
+            // Debounce acts as a delay triggering less redrawings and thus being more performant.
+            boundingBoxState.debounce(HikeDetailScreen.DEBOUNCE_DURATION),
+            zoomLevelState.debounce(HikeDetailScreen.DEBOUNCE_DURATION)) { boundingBox, zoomLevel ->
+              // If the user is too far away the facilities won't be displayed
+              if (zoomLevel > HikeDetailScreen.MIN_ZOOM_FOR_FACILITIES) {
+                val distanceFromCenterToHike =
+                    LocationUtils.projectLocationOnHike(
+                            LatLong(
+                                mapView.boundingBox.centerLatitude,
+                                mapView.boundingBox.centerLongitude),
+                            hike)!!
+                        .distanceFromRoute
+                // This particular case is useful for hikes with very big bounds around big cities
+                // this avoids drawing facilities that are really far away but are contained into
+                // the bounds
+                // since these are useless
+                if (distanceFromCenterToHike <=
+                    HikeDetailScreen.MAX_DISTANCE_FROM_ROUTE_TO_FACILITY) {
+                  // We make a list with facilities that are contained into the current bounds and
+                  // don't
+                  // surpass the max amount of facilities to not draw too many facilities.
+                  val filteredFacilities = mutableListOf<Facility>()
+                  for (facility in facilities.value) {
+                    if (filteredFacilities.size >= HikeDetailScreen.MAX_AMOUNT_OF_FACILITIES) break
+                    if (boundingBox.contains(
+                        GeoPoint(facility.coordinates.lat, facility.coordinates.lon))) {
+                      filteredFacilities.add(facility)
+                    }
+                  }
+                  // Function call to draw the icons.
+                  MapUtils.displayFacilities(filteredFacilities, mapView, context)
+                  facilitiesDisplayed.value = true
+                }
+              } else if (facilitiesDisplayed.value) {
+                // Removes any facilities that are drawn inside the map.
+                MapUtils.clearFacilities(mapView)
+                facilitiesDisplayed.value = false
+              }
+            }
+        .launchIn(scope)
+  }
+
+  // This listener basically updates the state of the variables of the bounds and zoom level
+  mapView.addMapListener(
+      object : MapListener {
+        override fun onScroll(event: ScrollEvent?): Boolean {
+          event?.let { boundingBoxState.value = mapView.boundingBox }
+          return true
+        }
+
+        override fun onZoom(event: ZoomEvent?): Boolean {
+          event?.let { zoomLevelState.value = mapView.zoomLevelDouble }
+          return true
+        }
+      })
 
   // When the map is ready, it will have computed its bounding box
   mapView.addOnFirstLayoutListener { _, _, _, _, _ ->
