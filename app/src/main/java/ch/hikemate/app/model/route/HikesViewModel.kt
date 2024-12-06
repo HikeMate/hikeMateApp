@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import ch.hikemate.app.model.elevation.ElevationRepository
-import ch.hikemate.app.model.elevation.ElevationServiceRepository
+import ch.hikemate.app.model.elevation.ElevationRepositoryCopernicus
 import ch.hikemate.app.model.extensions.toBounds
 import ch.hikemate.app.model.route.saved.SavedHike
 import ch.hikemate.app.model.route.saved.SavedHikesRepository
@@ -56,7 +56,7 @@ class HikesViewModel(
                     SavedHikesRepositoryFirestore(
                         FirebaseFirestore.getInstance(), FirebaseAuth.getInstance()),
                 osmHikesRepo = HikeRoutesRepositoryOverpass(client),
-                elevationRepository = ElevationServiceRepository(client))
+                elevationRepository = ElevationRepositoryCopernicus(client))
                 as T
           }
         }

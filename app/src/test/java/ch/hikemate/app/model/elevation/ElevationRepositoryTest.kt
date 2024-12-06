@@ -133,7 +133,7 @@ class ElevationRepositoryTest {
   fun setup() {
     Dispatchers.setMain(dispatcher)
     client = mockk()
-    elevationRepository = ElevationServiceRepository(client, dispatcher)
+    elevationRepository = ElevationRepositoryCopernicus(client, dispatcher)
   }
 
   @Test

@@ -52,7 +52,7 @@ class ElevationIntegrationTest {
   @Before
   fun setup() {
     client = OkHttpClient.Builder().build()
-    repository = ElevationServiceRepository(client)
+    repository = ElevationRepositoryCopernicus(client)
   }
 
   @Test

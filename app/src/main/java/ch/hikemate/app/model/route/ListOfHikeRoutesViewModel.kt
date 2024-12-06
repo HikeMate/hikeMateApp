@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import ch.hikemate.app.model.elevation.ElevationRepository
-import ch.hikemate.app.model.elevation.ElevationServiceRepository
+import ch.hikemate.app.model.elevation.ElevationRepositoryCopernicus
 import ch.hikemate.app.model.extensions.crossesDateLine
 import ch.hikemate.app.model.extensions.splitByDateLine
 import ch.hikemate.app.model.extensions.toBounds
@@ -43,7 +43,7 @@ open class ListOfHikeRoutesViewModel(
           override fun <T : ViewModel> create(modelClass: Class<T>): T {
             return ListOfHikeRoutesViewModel(
                 HikeRoutesRepositoryOverpass(OkHttpClient()),
-                ElevationServiceRepository(OkHttpClient()))
+                ElevationRepositoryCopernicus(OkHttpClient()))
                 as T
           }
         }

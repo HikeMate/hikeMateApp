@@ -1,7 +1,7 @@
 package ch.hikemate.app.model.route
 
 import ch.hikemate.app.model.elevation.ElevationRepository
-import ch.hikemate.app.model.elevation.ElevationServiceRepository
+import ch.hikemate.app.model.elevation.ElevationRepositoryCopernicus
 import ch.hikemate.app.utils.RouteUtils
 import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
@@ -40,7 +40,7 @@ data class DetailedHikeRoute(
      */
     fun create(
         hikeRoute: HikeRoute,
-        elevationRepository: ElevationRepository = ElevationServiceRepository(OkHttpClient())
+        elevationRepository: ElevationRepository = ElevationRepositoryCopernicus(OkHttpClient())
     ): DetailedHikeRoute {
 
       val totalDistance = RouteUtils.computeTotalDistance(hikeRoute.ways)

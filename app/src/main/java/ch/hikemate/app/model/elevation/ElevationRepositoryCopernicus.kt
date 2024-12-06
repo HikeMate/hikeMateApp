@@ -17,8 +17,14 @@ import kotlinx.serialization.json.Json.Default.decodeFromString
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
 import okhttp3.OkHttpClient
+import okhttp3.Response
 
-/** Serializable data class for the response from the Elevation API */
+/**
+ * Serializable data class for the response from the Elevation API
+ *
+ * @param elevations The list of elevations. An elevation returned as null means that the API
+ *   couldn't find the elevation for the corresponding coordinate
+ */
 @Serializable data class ElevationResponse(val elevations: List<Double?>)
 
 /**
@@ -30,7 +36,7 @@ import okhttp3.OkHttpClient
 data class ElevationCacheEntry(val timestamp: Date, val elevation: Double)
 
 /**
- * A request for the ElevationService
+ * A request for the ElevationRepository
  *
  * @param coordinates The list of coordinates to get the elevation of
  * @param onSuccess The callback to be called when the request is successful
@@ -43,11 +49,12 @@ data class ElevationRequest(
 )
 
 /**
- * A repository for the ElevationService. This class is responsible for making the network request
+ * A repository for the ElevationRepository. This class is responsible for making the network
+ * request
  */
-class ElevationServiceRepository(
+class ElevationRepositoryCopernicus(
     private val client: OkHttpClient,
-    private val dispatcher: CoroutineDispatcher = Dispatchers.IO
+    private val repoDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : ElevationRepository {
 
   companion object {
@@ -56,7 +63,7 @@ class ElevationServiceRepository(
 
     // We need to wait some time before updating the cache to allow for multiple requests to be
     // batched together
-    private const val CACHE_UPDATE_DELAY = 500L
+    private const val WAITING_DELAY_BEFORE_SENDING_REQUEST_FOR_BATCHING = 500L
 
     // Limit the cache size to avoid memory issues
     // This has been tested with a cache size of 150000, on a Google Pixel 8 Pro, without any issues
@@ -70,6 +77,9 @@ class ElevationServiceRepository(
 
     // The max number of coordinates that can be sent in a single request
     private const val MAX_COORDINATES_PER_REQUEST = 500
+
+    // The log tag
+    private val LOG_TAG = this::class.simpleName
   }
 
   // The number of failed requests made to the Elevation API since the last successful request
@@ -106,23 +116,23 @@ class ElevationServiceRepository(
       return
     }
 
-    if (coordinates.minus(cache.keys).isEmpty()) {
-      // All coordinates are in the cache
-      onSuccess(
-          coordinates.map {
-            val value = cache[it]
-            if (value == null) {
-              Log.e("ElevationServiceRepository", "Coordinate is missing in cache")
-              return@map 0.0
-            } else {
-              value.elevation
-            }
-          })
-      return
-    }
-
-    CoroutineScope(dispatcher).launch {
+    CoroutineScope(repoDispatcher).launch {
       mutex.withLock {
+        if (coordinates.minus(cache.keys).isEmpty()) {
+          // All coordinates are in the cache
+          onSuccess(
+              coordinates.map {
+                val value = cache[it]
+                if (value == null) {
+                  Log.e(LOG_TAG, "Coordinate is missing in cache")
+                  return@map 0.0
+                } else {
+                  value.elevation
+                }
+              })
+          return@withLock
+        }
+
         requests.add(ElevationRequest(coordinates, onSuccess, onFailure))
 
         if (cacheUpdateJob == null || cacheUpdateJob?.isCompleted == true) {
@@ -135,7 +145,7 @@ class ElevationServiceRepository(
   /**
    * Launch the update of the cache
    *
-   * The update will be delayed by 1 second to allow for multiple requests to be batched together
+   * The update will be delayed by some time to allow for multiple requests to be batched together
    *
    * @param onSuccess The callback to be called when the request is successful
    * @param onFailure The callback to be called when the request fails
@@ -149,17 +159,17 @@ class ElevationServiceRepository(
 
     // We need to start a new job to update the cache
     cacheUpdateJob =
-        CoroutineScope(dispatcher).launch {
+        CoroutineScope(repoDispatcher).launch {
           // Delay the update by some amount of time to allow for multiple requests
           // to be batched together
           // This is purely empirical and can be adjusted
           // If we already have enough data for a request, we don't need to wait
-          var coordinates: List<LatLong> = emptyList()
-          mutex.withLock { coordinates = requests.flatMap { it.coordinates } }
+          var coordinates: Set<LatLong> = emptySet()
+          mutex.withLock { coordinates = requests.flatMap { it.coordinates }.toSet() }
           if (coordinates.size < MAX_COORDINATES_PER_REQUEST) {
-            delay(CACHE_UPDATE_DELAY)
+            delay(WAITING_DELAY_BEFORE_SENDING_REQUEST_FOR_BATCHING)
             // If there were new requests in the meantime, we need to update the coordinates
-            mutex.withLock { coordinates = requests.flatMap { it.coordinates } }
+            mutex.withLock { coordinates = requests.flatMap { it.coordinates }.toSet() }
           }
           mutex.withLock {
             val chunks = coordinates.chunked(MAX_COORDINATES_PER_REQUEST)
@@ -184,7 +194,7 @@ class ElevationServiceRepository(
                   parseCacheOnDataRetrieval(chunk, onSuccess)
 
               val onFailureCallback: (Exception) -> Unit = { exception ->
-                CoroutineScope(dispatcher).launch {
+                CoroutineScope(repoDispatcher).launch {
                   mutex.withLock { requests.forEach { request -> request.onFailure(exception) } }
                   onFailure(exception)
                 }
@@ -211,7 +221,7 @@ class ElevationServiceRepository(
   ): (List<Double?>) -> Unit = { listOfElevation ->
     val nonNullListOfElevation = listOfElevation.map { it ?: 0.0 }
 
-    CoroutineScope(dispatcher).launch {
+    CoroutineScope(repoDispatcher).launch {
 
       // Update the cache with the new data
       mutex.withLock {
@@ -226,22 +236,19 @@ class ElevationServiceRepository(
           val elevations = request.coordinates.map { cache[it]?.elevation }
           val notNullElevations = elevations.filterNotNull()
           if (notNullElevations.size != elevations.size) {
-            Log.e(
-                "ElevationServiceRepository",
-                "Some elevations are missing in cache, waiting for more data")
+            Log.i(LOG_TAG, "Some elevations are missing in cache, waiting for more data")
             return@forEach
           }
-          request.onSuccess(notNullElevations)
           processedRequests += request
+          request.onSuccess(notNullElevations)
         }
         requests.removeAll(processedRequests)
       }
 
       // If the cache is too big, we need to clean it up
       // This is done after returning onSuccess to not have issues with graph being not
-      // shown
-      // because of the cleanup
-      Log.d("ElevationServiceRepository", "Cache size: ${getCacheSize()}")
+      // shown because of the cleanup
+      Log.d(LOG_TAG, "Cache size: ${getCacheSize()}")
       if (getCacheSize() > CACHE_MAX_SIZE) {
         launchCacheCleanup()
       }
@@ -255,8 +262,8 @@ class ElevationServiceRepository(
    * oldest entries to free up space.
    */
   private fun launchCacheCleanup() {
-    Log.d("ElevationServiceRepository", "Cache cleanup launched")
-    CoroutineScope(dispatcher).launch {
+    Log.d(LOG_TAG, "Cache cleanup launched")
+    CoroutineScope(repoDispatcher).launch {
       mutex.withLock {
         if (cache.size <= CACHE_MAX_SIZE) return@launch
 
@@ -291,13 +298,13 @@ class ElevationServiceRepository(
       onFailure(e)
     }
 
-    override fun onResponse(call: okhttp3.Call, response: okhttp3.Response) {
+    override fun onResponse(call: okhttp3.Call, response: Response) {
       if (response.isSuccessful) {
         val body = response.body?.string()
 
         if (body == null) {
-          onFailure(Exception("Failed to get elevation. Body is null"))
           response.close()
+          onFailure(Exception("Failed to get elevation. Body is null"))
           return
         }
 
@@ -309,60 +316,69 @@ class ElevationServiceRepository(
         onSuccess(elevationResponse.elevations)
         failedRequests = 0
       } else {
-        when (response.code) {
-          500,
-          504,
-          429 -> {
-            failedRequests++
-            Log.e(
-                "ElevationServiceRepository",
-                "Failed to get elevation. Status code: ${response.code}, retrying, failedRequests: $failedRequests")
-            if (failedRequests > MAX_FAILED_REQUESTS) {
-              onFailure(Exception("Failed to get elevation. Status code: ${response.code}"))
-              failedRequests = 0
-              return
-            } else {
-              CoroutineScope(dispatcher).launch {
-                delay(failedRequests * FAILED_REQUEST_DELAY)
-                launchUpdateOfCache()
-              }
-            }
-          }
-          413 -> {
-            Log.e(
-                "ElevationServiceRepository",
-                "Failed to get elevation. Status code: ${response.code}, too many coordinates")
-            CoroutineScope(dispatcher).launch {
-              var firstHalf: List<ElevationRequest>
-              var secondHalf: List<ElevationRequest> = emptyList()
-              Log.d("ElevationServiceRepository", "Split requests in half")
-              mutex.withLock {
-                val halves = requests.partition { requests.indexOf(it) <= requests.size / 2 }
-                firstHalf = halves.first
-                secondHalf = halves.second
-                requests.clear()
-                requests.addAll(firstHalf)
-                Log.d("ElevationServiceRepository", "First half size: ${firstHalf.size}")
-              }
-              launchUpdateOfCache(
-                  onSuccess = {
-                    CoroutineScope(dispatcher).launch {
-                      mutex.withLock {
-                        Log.d("ElevationServiceRepository", "Second half size: ${secondHalf.size}")
-                        requests.addAll(secondHalf)
-                      }
-                      launchUpdateOfCache()
-                    }
-                  })
-            }
-          }
-          else -> {
-            onFailure(Exception("Failed to get elevation. Status code: ${response.code}"))
-          }
-        }
+        if (handleError(response)) return
       }
 
       response.close()
+    }
+
+    private fun handleError(response: Response): Boolean {
+      when (response.code) {
+        500,
+        504,
+        429 -> {
+          failedRequests++
+          Log.e(
+              LOG_TAG,
+              "Failed to get elevation. Status code: ${response.code}, retrying, failedRequests: $failedRequests")
+          if (failedRequests > MAX_FAILED_REQUESTS) {
+            failedRequests = 0
+            onFailure(Exception("Failed to get elevation. Status code: ${response.code}"))
+            return true
+          } else {
+            CoroutineScope(repoDispatcher).launch {
+              delay(failedRequests * FAILED_REQUEST_DELAY)
+              launchUpdateOfCache()
+            }
+          }
+        }
+        413 -> {
+          Log.e(
+              LOG_TAG,
+              "Failed to get elevation. Status code: ${response.code}, too many coordinates")
+          CoroutineScope(repoDispatcher).launch {
+            val firstHalf: MutableList<ElevationRequest> = mutableListOf()
+            val secondHalf: MutableList<ElevationRequest> = mutableListOf()
+            Log.d(LOG_TAG, "Split requests in half")
+            mutex.withLock {
+              requests.forEachIndexed { index, it ->
+                if (index < requests.size / 2) {
+                  firstHalf += it
+                } else {
+                  secondHalf += it
+                }
+              }
+              requests.clear()
+              requests.addAll(firstHalf)
+              Log.d(LOG_TAG, "First half size: ${firstHalf.size}")
+            }
+            launchUpdateOfCache(
+                onSuccess = {
+                  CoroutineScope(repoDispatcher).launch {
+                    mutex.withLock {
+                      Log.d(LOG_TAG, "Second half size: ${secondHalf.size}")
+                      requests.addAll(secondHalf)
+                    }
+                    launchUpdateOfCache()
+                  }
+                })
+          }
+        }
+        else -> {
+          onFailure(Exception("Failed to get elevation. Status code: ${response.code}"))
+        }
+      }
+      return false
     }
   }
 }

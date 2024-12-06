@@ -47,9 +47,7 @@ object RouteUtils {
       runBlocking {
 
         // Since elevationRepository.getElevation is asynchronous, we use a CompletableDeferred to
-        // wait
-        // for
-        // the result
+        // wait for the result
         val deferredResult = CompletableDeferred<List<Double>>()
 
         elevationRepository.getElevation(

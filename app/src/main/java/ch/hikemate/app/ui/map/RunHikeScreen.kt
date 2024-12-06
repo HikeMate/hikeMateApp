@@ -33,7 +33,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import ch.hikemate.app.R
-import ch.hikemate.app.model.elevation.ElevationServiceRepository
+import ch.hikemate.app.model.elevation.ElevationRepositoryCopernicus
 import ch.hikemate.app.model.profile.ProfileViewModel
 import ch.hikemate.app.model.route.DetailedHikeRoute
 import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
@@ -170,7 +170,8 @@ fun RunHikeScreen(
                   .testTag(RunHikeScreen.TEST_TAG_ZOOM_BUTTONS))
 
       RunHikeBottomSheet(
-          hikeRoute = DetailedHikeRoute.create(route, ElevationServiceRepository(OkHttpClient())),
+          hikeRoute =
+              DetailedHikeRoute.create(route, ElevationRepositoryCopernicus(OkHttpClient())),
           elevationData = elevationData,
           onStopTheRun = { wantToNavigateBack = true },
       )
