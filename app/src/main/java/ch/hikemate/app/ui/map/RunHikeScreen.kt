@@ -187,7 +187,7 @@ private fun runHikeMap(hike: DetailedHike): MapView {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RunHikeBottomSheet(
+private fun RunHikeBottomSheet(
     hike: DetailedHike,
     onStopTheRun: () -> Unit,
 ) {
