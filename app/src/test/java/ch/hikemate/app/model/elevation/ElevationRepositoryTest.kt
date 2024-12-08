@@ -4,6 +4,7 @@ import ch.hikemate.app.model.route.LatLong
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -138,140 +139,148 @@ class ElevationRepositoryTest {
   }
 
   @Test
-  fun worksWithSimpleAnswer() = runTest {
-    val call: Call = mockk()
-    coEvery { client.newCall(any()) } returns call
+  fun worksWithSimpleAnswer() =
+      runTest(timeout = 5.seconds) {
+        val call: Call = mockk()
+        coEvery { client.newCall(any()) } returns call
 
-    coEvery { call.enqueue(any()) } answers
-        {
-          firstArg<Callback>().onResponse(call, simpleResponse)
-        }
+        coEvery { call.enqueue(any()) } answers
+            {
+              firstArg<Callback>().onResponse(call, simpleResponse)
+            }
 
-    var onSuccessCalled = false
+        var onSuccessCalled = false
 
-    elevationRepository.getElevation(
-        simpleLatLongList,
-        { list ->
-          assertEquals(simpleList, list)
-          onSuccessCalled = true
-        }) {
-          fail("Failed to fetch routes from Overpass API")
-        }
+        elevationRepository.getElevation(
+            simpleLatLongList,
+            { list ->
+              assertEquals(simpleList, list)
+              onSuccessCalled = true
+            }) {
+              fail("Failed to fetch routes from Overpass API")
+            }
 
-    // Wait for the coroutine to finish
-    advanceUntilIdle()
+        // Wait for the coroutine to finish
+        advanceUntilIdle()
 
-    assert(onSuccessCalled)
-    coVerify { call.enqueue(any()) }
-  }
-
-  @Test
-  fun worksWithLongAnswer() = runTest {
-    val call: Call = mockk()
-    coEvery { client.newCall(any()) } returns call
-
-    coEvery { call.enqueue(any()) } answers { firstArg<Callback>().onResponse(call, longResponse) }
-
-    var onSuccessCalled = false
-
-    elevationRepository.getElevation(
-        longLatLongList,
-        { list ->
-          assertEquals(longList, list)
-          onSuccessCalled = true
-        }) {
-          fail("Failed to fetch routes from Overpass API")
-        }
-
-    // Wait for the coroutine to finish
-    advanceUntilIdle()
-
-    assert(onSuccessCalled)
-    coVerify { call.enqueue(any()) }
-  }
+        assert(onSuccessCalled)
+        coVerify { call.enqueue(any()) }
+      }
 
   @Test
-  fun worksWith413() = runTest {
-    val call: Call = mockk()
-    coEvery { client.newCall(any()) } returns call
+  fun worksWithLongAnswer() =
+      runTest(timeout = 5.seconds) {
+        val call: Call = mockk()
+        coEvery { client.newCall(any()) } returns call
 
-    coEvery { call.enqueue(any()) } answers
-        {
-          firstArg<Callback>().onResponse(call, requestEntityTooLargeResponse)
-        } andThenAnswer
-        {
-          firstArg<Callback>().onResponse(call, longResponse)
-        }
+        coEvery { call.enqueue(any()) } answers
+            {
+              firstArg<Callback>().onResponse(call, longResponse)
+            }
 
-    var onSuccessCalled = false
+        var onSuccessCalled = false
 
-    elevationRepository.getElevation(
-        longLatLongList,
-        { list ->
-          assertEquals(longList, list)
-          onSuccessCalled = true
-        }) {
-          fail("Should not have failed")
-        }
+        elevationRepository.getElevation(
+            longLatLongList,
+            { list ->
+              assertEquals(longList, list)
+              onSuccessCalled = true
+            }) {
+              fail("Failed to fetch routes from Overpass API")
+            }
 
-    // Wait for the coroutine to finish
-    advanceUntilIdle()
+        // Wait for the coroutine to finish
+        advanceUntilIdle()
 
-    assert(onSuccessCalled)
-    coVerify { call.enqueue(any()) }
-  }
+        assert(onSuccessCalled)
+        coVerify { call.enqueue(any()) }
+      }
 
   @Test
-  fun worksWith500() = runTest {
-    val call: Call = mockk()
-    coEvery { client.newCall(any()) } returns call
+  fun worksWith413() =
+      runTest(timeout = 5.seconds) {
+        val call: Call = mockk()
+        coEvery { client.newCall(any()) } returns call
 
-    coEvery { call.enqueue(any()) } answers
-        {
-          firstArg<Callback>().onResponse(call, serverErrorResponse)
-        } andThenAnswer
-        {
-          firstArg<Callback>().onResponse(call, longResponse)
-        }
+        coEvery { call.enqueue(any()) } answers
+            {
+              firstArg<Callback>().onResponse(call, requestEntityTooLargeResponse)
+            } andThenAnswer
+            {
+              firstArg<Callback>().onResponse(call, longResponse)
+            }
 
-    var onSuccessCalled = false
+        var onSuccessCalled = false
 
-    elevationRepository.getElevation(
-        longLatLongList,
-        { list ->
-          assertEquals(longList, list)
-          onSuccessCalled = true
-        }) {
-          fail("Should not have failed")
-        }
+        elevationRepository.getElevation(
+            longLatLongList,
+            { list ->
+              assertEquals(longList, list)
+              onSuccessCalled = true
+            }) {
+              fail("Should not have failed")
+            }
 
-    // Wait for the coroutine to finish
-    advanceUntilIdle()
+        // Wait for the coroutine to finish
+        advanceUntilIdle()
 
-    assert(onSuccessCalled)
-    coVerify { call.enqueue(any()) }
-  }
+        assert(onSuccessCalled)
+        coVerify { call.enqueue(any()) }
+      }
 
   @Test
-  fun keepsReceiving500() = runTest {
-    val call: Call = mockk()
-    coEvery { client.newCall(any()) } returns call
+  fun worksWith500() =
+      runTest(timeout = 5.seconds) {
+        val call: Call = mockk()
+        coEvery { client.newCall(any()) } returns call
 
-    coEvery { call.enqueue(any()) } answers
-        {
-          firstArg<Callback>().onResponse(call, serverErrorResponse)
+        coEvery { call.enqueue(any()) } answers
+            {
+              firstArg<Callback>().onResponse(call, serverErrorResponse)
+            } andThenAnswer
+            {
+              firstArg<Callback>().onResponse(call, longResponse)
+            }
+
+        var onSuccessCalled = false
+
+        elevationRepository.getElevation(
+            longLatLongList,
+            { list ->
+              assertEquals(longList, list)
+              onSuccessCalled = true
+            }) {
+              fail("Should not have failed")
+            }
+
+        // Wait for the coroutine to finish
+        advanceUntilIdle()
+
+        assert(onSuccessCalled)
+        coVerify { call.enqueue(any()) }
+      }
+
+  @Test
+  fun keepsReceiving500() =
+      runTest(timeout = 5.seconds) {
+        val call: Call = mockk()
+        coEvery { client.newCall(any()) } returns call
+
+        coEvery { call.enqueue(any()) } answers
+            {
+              firstArg<Callback>().onResponse(call, serverErrorResponse)
+            }
+
+        var onFailureCalled = false
+
+        elevationRepository.getElevation(longLatLongList, { fail("Should not have succeeded") }) {
+          onFailureCalled = true
         }
 
-    var onFailureCalled = false
+        // Wait for the coroutine to finish
+        advanceUntilIdle()
 
-    elevationRepository.getElevation(longLatLongList, { fail("Should not have succeeded") }) {
-      onFailureCalled = true
-    }
-
-    // Wait for the coroutine to finish
-    advanceUntilIdle()
-
-    assert(onFailureCalled)
-    coVerify { call.enqueue(any()) }
-  }
+        assert(onFailureCalled)
+        coVerify { call.enqueue(any()) }
+      }
 }
