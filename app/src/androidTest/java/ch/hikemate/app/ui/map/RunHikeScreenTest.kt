@@ -9,8 +9,6 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import ch.hikemate.app.model.elevation.ElevationService
-import ch.hikemate.app.model.profile.HikingLevel
-import ch.hikemate.app.model.profile.Profile
 import ch.hikemate.app.model.route.Bounds
 import ch.hikemate.app.model.route.DetailedHike
 import ch.hikemate.app.model.route.Hike
@@ -24,7 +22,6 @@ import ch.hikemate.app.model.route.saved.SavedHikesRepository
 import ch.hikemate.app.model.route.toBoundingBox
 import ch.hikemate.app.ui.components.DetailRow
 import ch.hikemate.app.ui.navigation.NavigationActions
-import com.google.firebase.Timestamp
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
