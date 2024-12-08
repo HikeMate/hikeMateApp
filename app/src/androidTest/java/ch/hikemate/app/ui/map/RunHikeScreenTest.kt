@@ -121,24 +121,6 @@ class RunHikeScreenTest {
     }
   }
 
-  private val route =
-      HikeRoute(
-          id = "1",
-          bounds = Bounds(minLat = 45.9, minLon = 7.6, maxLat = 46.0, maxLon = 7.7),
-          ways = listOf(LatLong(45.9, 7.6), LatLong(45.95, 7.65), LatLong(46.0, 7.7)),
-          name = "Sample Hike",
-          description =
-              "A scenic trail with breathtaking views of the Matterhorn and surrounding glaciers.")
-
-  private val profile =
-      Profile(
-          id = "1",
-          name = "John Doe",
-          email = "john-doe@gmail.com",
-          hikingLevel = HikingLevel.INTERMEDIATE,
-          joinedDate = Timestamp.now())
-
-  @OptIn(ExperimentalCoroutinesApi::class)
   @Before
   fun setUp() {
     mockNavigationActions = mock(NavigationActions::class.java)
