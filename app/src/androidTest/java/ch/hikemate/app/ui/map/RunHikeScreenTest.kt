@@ -67,7 +67,10 @@ class RunHikeScreenTest {
           difficulty = HikeDifficulty.DIFFICULT,
       )
 
-  private suspend fun setupCompleteScreenWithSelected(hike: DetailedHike) {
+  private suspend fun setupCompleteScreenWithSelected(
+    hike: DetailedHike,
+    boundsRetrievalSucceeds: Boolean = true,
+    elevationRetrievalSucceeds: Boolean = true) {
     val asSavedHike = SavedHike(hike.id, hike.name ?: "", hike.plannedDate)
 
     val hikeAsOsm =
@@ -83,16 +86,34 @@ class RunHikeScreenTest {
     `when`(savedHikesRepository.loadSavedHikes())
         .thenReturn(if (hike.isSaved) listOf(asSavedHike) else emptyList())
 
-    // Make sure that the hike is loaded from bounds when the view model gets it
-    `when`(hikesRepository.getRoutes(any(), any(), any())).thenAnswer {
-      val onSuccess = it.getArgument<(List<HikeRoute>) -> Unit>(1)
-      onSuccess(listOf(hikeAsOsm))
+    if (boundsRetrievalSucceeds) {
+      // Make sure that the hike is loaded from bounds when the view model gets it
+      `when`(hikesRepository.getRoutes(any(), any(), any())).thenAnswer {
+        val onSuccess = it.getArgument<(List<HikeRoute>) -> Unit>(1)
+        onSuccess(listOf(hikeAsOsm))
+      }
+    }
+    else {
+      // Make sure that the hike's bounds can't be loaded when the view model gets it
+      `when`(hikesRepository.getRoutes(any(), any(), any())).thenAnswer {
+        val onFailure = it.getArgument<(Exception) -> Unit>(2)
+        onFailure(Exception("Failed to load hike bounds"))
+      }
     }
 
-    // Make sure the appropriate elevation profile is obtained when requested
-    `when`(elevationService.getElevation(any(), any(), any(), any())).thenAnswer {
-      val onSuccess = it.getArgument<(List<Double>) -> Unit>(2)
-      onSuccess(hike.elevation)
+    if (boundsRetrievalSucceeds && elevationRetrievalSucceeds) {
+      // Make sure the appropriate elevation profile is obtained when requested
+      `when`(elevationService.getElevation(any(), any(), any(), any())).thenAnswer {
+        val onSuccess = it.getArgument<(List<Double>) -> Unit>(2)
+        onSuccess(hike.elevation)
+      }
+    }
+    else {
+      // Make sure the elevation profile can't be obtained when requested
+      `when`(elevationService.getElevation(any(), any(), any(), any())).thenAnswer {
+        val onFailure = it.getArgument<(Exception) -> Unit>(3)
+        onFailure(Exception("Failed to load elevation data"))
+      }
     }
 
     // Reset the view model
