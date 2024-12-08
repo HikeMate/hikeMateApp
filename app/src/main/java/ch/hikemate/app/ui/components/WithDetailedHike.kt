@@ -1,5 +1,6 @@
 package ch.hikemate.app.ui.components
 
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import ch.hikemate.app.R
@@ -9,7 +10,21 @@ import ch.hikemate.app.model.route.HikesViewModel
 
 private const val LOG_TAG = "WithDetailedHike"
 
-/** Acts as a wrapper. */
+/**
+ * Utility composable that acts as a wrapper.
+ *
+ * If a section of the interface needs a [DetailedHike] object, this composable will perform the
+ * loading and error handling logic, then provide a callback for when the [DetailedHike] instance is
+ * ready.
+ *
+ * It will also display a loading screen while the data is being fetched.
+ *
+ * @param hike The hike for which the details are needed
+ * @param hikesViewModel The view model that will be used to fetch the data
+ * @param withDetailedHike The callback that will be called when the hike details are ready
+ * @param whenError The callback that will be called when an error occurs
+ * @see DetailedHike
+ */
 @Composable
 fun WithDetailedHike(
     hike: Hike,
@@ -24,6 +39,7 @@ fun WithDetailedHike(
           try {
             hike.withDetailsOrThrow()
           } catch (e: Exception) {
+            Log.d(LOG_TAG, "Error while getting detailed hike: $e")
             null
           }
 
