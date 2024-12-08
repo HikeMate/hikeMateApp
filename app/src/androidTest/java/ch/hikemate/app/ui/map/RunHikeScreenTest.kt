@@ -166,7 +166,7 @@ class RunHikeScreenTest {
   }
 
   @Test
-  fun runHikeScreen_displaysLoadingForWaypoints() = runTest {
+  fun runHikeScreen_displaysLoadingAnimationForWaypoints() = runTest {
     setupCompleteScreenWithSelected(detailedHike, waypointsRetrievalSucceeds = false)
 
     composeTestRule
