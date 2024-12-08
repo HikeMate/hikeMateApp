@@ -8,7 +8,9 @@ import ch.hikemate.app.model.route.DetailedHike
 import ch.hikemate.app.model.route.Hike
 import ch.hikemate.app.model.route.HikesViewModel
 
-private const val LOG_TAG = "WithDetailedHike"
+object WithDetailedHike {
+  const val LOG_TAG = "WithDetailedHike"
+}
 
 /**
  * Utility composable that acts as a wrapper.
@@ -39,7 +41,7 @@ fun WithDetailedHike(
           try {
             hike.withDetailsOrThrow()
           } catch (e: Exception) {
-            Log.d(LOG_TAG, "Error while getting detailed hike: $e")
+            Log.d(WithDetailedHike.LOG_TAG, "Error while getting detailed hike: $e")
             null
           }
 
