@@ -1,8 +1,10 @@
 package ch.hikemate.app.ui.map
 
+import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -19,12 +21,13 @@ import ch.hikemate.app.model.route.HikesViewModel
 import ch.hikemate.app.model.route.LatLong
 import ch.hikemate.app.model.route.saved.SavedHike
 import ch.hikemate.app.model.route.saved.SavedHikesRepository
-import ch.hikemate.app.model.route.toBoundingBox
+import ch.hikemate.app.ui.components.CenteredLoadingAnimation
 import ch.hikemate.app.ui.components.DetailRow
 import ch.hikemate.app.ui.navigation.NavigationActions
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -49,8 +52,8 @@ class RunHikeScreenTest {
   private val detailedHike =
       DetailedHike(
           id = hikeId,
-          color = Hike(hikeId, false, null, null).getColor(),
-          isSaved = false,
+          color = Hike(hikeId, true, null, null).getColor(),
+          isSaved = true,
           plannedDate = null,
           name = "Sample Hike",
           description =
@@ -64,10 +67,22 @@ class RunHikeScreenTest {
           difficulty = HikeDifficulty.DIFFICULT,
       )
 
+  /** @param hike The hike to display on the screen. For test purposes, should always be saved. */
   private suspend fun setupCompleteScreenWithSelected(
-    hike: DetailedHike,
-    boundsRetrievalSucceeds: Boolean = true,
-    elevationRetrievalSucceeds: Boolean = true) {
+      hike: DetailedHike,
+      waypointsRetrievalSucceeds: Boolean = true,
+      elevationRetrievalSucceeds: Boolean = true,
+      alreadyLoadData: Boolean = true
+  ) {
+
+    // This setup function is designed for saved hikes only. If the provided hike is not saved, it
+    // won't be loaded in the view model, hence the test will fail for sure. This message helps the
+    // developer to find out this cause without many hours of debugging.
+    if (!hike.isSaved) {
+      fail(
+          "setupCompleteScreenWithSelected is designed for saved hikes only, you provided a hike with isSaved=false.")
+    }
+
     val asSavedHike = SavedHike(hike.id, hike.name ?: "", hike.plannedDate)
 
     val hikeAsOsm =
@@ -83,29 +98,27 @@ class RunHikeScreenTest {
     `when`(savedHikesRepository.loadSavedHikes())
         .thenReturn(if (hike.isSaved) listOf(asSavedHike) else emptyList())
 
-    if (boundsRetrievalSucceeds) {
+    if (waypointsRetrievalSucceeds) {
       // Make sure that the hike is loaded from bounds when the view model gets it
-      `when`(hikesRepository.getRoutes(any(), any(), any())).thenAnswer {
+      `when`(hikesRepository.getRoutesByIds(any(), any(), any())).thenAnswer {
         val onSuccess = it.getArgument<(List<HikeRoute>) -> Unit>(1)
         onSuccess(listOf(hikeAsOsm))
       }
-    }
-    else {
+    } else {
       // Make sure that the hike's bounds can't be loaded when the view model gets it
-      `when`(hikesRepository.getRoutes(any(), any(), any())).thenAnswer {
+      `when`(hikesRepository.getRoutesByIds(any(), any(), any())).thenAnswer {
         val onFailure = it.getArgument<(Exception) -> Unit>(2)
         onFailure(Exception("Failed to load hike bounds"))
       }
     }
 
-    if (boundsRetrievalSucceeds && elevationRetrievalSucceeds) {
+    if (waypointsRetrievalSucceeds && elevationRetrievalSucceeds) {
       // Make sure the appropriate elevation profile is obtained when requested
       `when`(elevationService.getElevation(any(), any(), any(), any())).thenAnswer {
         val onSuccess = it.getArgument<(List<Double>) -> Unit>(2)
         onSuccess(hike.elevation)
       }
-    }
-    else {
+    } else {
       // Make sure the elevation profile can't be obtained when requested
       `when`(elevationService.getElevation(any(), any(), any(), any())).thenAnswer {
         val onFailure = it.getArgument<(Exception) -> Unit>(3)
@@ -118,14 +131,19 @@ class RunHikeScreenTest {
         HikesViewModel(
             savedHikesRepository, hikesRepository, elevationService, UnconfinedTestDispatcher())
 
-    // Load the hike from OSM, as if the user had searched it on the map
-    hikesViewModel.loadHikesInBounds(detailedHike.bounds.toBoundingBox())
+    // Load the hike from saved hikes
+    hikesViewModel.loadSavedHikes()
 
-    // Retrieve the hike's elevation data from the repository
-    hikesViewModel.retrieveElevationDataFor(hikeId)
+    if (alreadyLoadData) {
+      // Load the hike's waypoints
+      hikesViewModel.retrieveLoadedHikesOsmData()
 
-    // Compute the hike's details
-    hikesViewModel.computeDetailsFor(hikeId)
+      // Retrieve the hike's elevation data from the repository
+      hikesViewModel.retrieveElevationDataFor(hikeId)
+
+      // Compute the hike's details
+      hikesViewModel.computeDetailsFor(hikeId)
+    }
 
     // Mark the hike as selected, to make sure it is the one displayed on the details screen
     hikesViewModel.selectHike(hikeId)
@@ -145,6 +163,36 @@ class RunHikeScreenTest {
     savedHikesRepository = mock(SavedHikesRepository::class.java)
     hikesRepository = mock(HikeRoutesRepository::class.java)
     elevationService = mock(ElevationService::class.java)
+  }
+
+  @Test
+  fun runHikeScreen_displaysLoadingForWaypoints() = runTest {
+    setupCompleteScreenWithSelected(detailedHike, waypointsRetrievalSucceeds = false)
+
+    composeTestRule
+        .onNodeWithTag(CenteredLoadingAnimation.TEST_TAG_CENTERED_LOADING_ANIMATION)
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun runHikeScreen_displaysLoadingForElevation() = runTest {
+    setupCompleteScreenWithSelected(detailedHike, elevationRetrievalSucceeds = false)
+
+    composeTestRule
+        .onNodeWithTag(CenteredLoadingAnimation.TEST_TAG_CENTERED_LOADING_ANIMATION)
+        .assertIsDisplayed()
+  }
+
+  @OptIn(ExperimentalTestApi::class)
+  @Test
+  fun runHikeScreen_loadsMissingData() = runTest {
+    setupCompleteScreenWithSelected(detailedHike, alreadyLoadData = false)
+
+    composeTestRule.waitUntilExactlyOneExists(
+        hasTestTag(RunHikeScreen.TEST_TAG_MAP), timeoutMillis = 10000)
+
+    verify(hikesRepository).getRoutesByIds(any(), any(), any())
+    verify(elevationService).getElevation(any(), any(), any(), any())
   }
 
   @Test
