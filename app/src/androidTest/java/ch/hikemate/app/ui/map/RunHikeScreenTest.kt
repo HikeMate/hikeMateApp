@@ -175,7 +175,7 @@ class RunHikeScreenTest {
   }
 
   @Test
-  fun runHikeScreen_displaysLoadingForElevation() = runTest {
+  fun runHikeScreen_displaysLoadingAnimationForElevation() = runTest {
     setupCompleteScreenWithSelected(detailedHike, elevationRetrievalSucceeds = false)
 
     composeTestRule
