@@ -139,6 +139,8 @@ fun HikeDetailScreen(
     }
   }
 
+  BackHandler { hikesViewModel.unselectHike() }
+
   when {
     // If the hike is null, the LaunchedEffect will navigate back, don't handle it here
     selectedHike == null -> CenteredLoadingAnimation()
@@ -188,8 +190,6 @@ fun HikeDetailsContent(
     hikesViewModel: HikesViewModel,
     userHikingLevel: HikingLevel
 ) {
-  BackHandler { hikesViewModel.unselectHike() }
-
   Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {
     // Display the map and the zoom buttons
     val mapView = hikeDetailsMap(hike)
