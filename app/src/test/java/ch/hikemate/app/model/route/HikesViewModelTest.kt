@@ -1562,6 +1562,39 @@ class HikesViewModelTest {
       }
 
   @Test
+  fun `retrieveElevationDataFor sets data to Error if computation fails`() =
+      runTest(dispatcher) {
+        // Load a hike with its OSM data
+        loadOsmHikes(singleOsmHike1)
+        // The hike should be loaded, and its elevation should not be requested yet
+        assertEquals(1, hikesViewModel.hikeFlows.value.size)
+        assertTrue(hikesViewModel.hikeFlows.value[0].value.elevation is DeferredData.NotRequested)
+
+        // Make sure the elevation repository fails
+        coEvery { elevationRepo.getElevation(any(), any(), any(), any()) } answers
+            {
+              val onFailure = arg<(Exception) -> Unit>(3)
+              onFailure(Exception("Failed to compute elevation data"))
+            }
+
+        // Try to retrieve the elevation data for the loaded hike
+        var onFailureCalled = false
+        hikesViewModel.retrieveElevationDataFor(
+            hikeId = singleOsmHike1[0].id,
+            onSuccess = { fail("onSuccess should not have been called") },
+            onFailure = { onFailureCalled = true })
+
+        // The elevation repository should be called exactly once
+        coVerify(exactly = 1) { elevationRepo.getElevation(any(), any(), any(), any()) }
+        // The appropriate callback should be called
+        assertTrue(onFailureCalled)
+        // The hike should now have its elevation data set to Error
+        assertEquals(1, hikesViewModel.hikeFlows.value.size)
+        assertEquals(singleOsmHike1[0].id, hikesViewModel.hikeFlows.value[0].value.id)
+        assertTrue(hikesViewModel.hikeFlows.value[0].value.elevation is DeferredData.Error)
+      }
+
+  @Test
   fun `retrieveElevationDataFor updates the hike with its elevation data`() =
       runTest(dispatcher) {
         // Make sure there is one loaded hike with waypoints
