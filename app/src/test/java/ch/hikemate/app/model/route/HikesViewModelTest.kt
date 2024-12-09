@@ -19,7 +19,6 @@ import io.mockk.unmockkAll
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -408,24 +407,24 @@ class HikesViewModelTest {
   @Test
   fun `refreshSavedHikesCache sets loading to true then false`() =
       runTest(dispatcher) {
-        // Listen to the changes made to loading during the call
-        val emissions = mutableListOf<Boolean>()
-        val job = backgroundScope.launch { hikesViewModel.loading.collect { emissions.add(it) } }
+        // Before launching the operation, loading should be false
+        assertFalse(hikesViewModel.loading.value)
 
         // Set the repository to throw an exception because we do not care
-        coEvery { savedHikesRepo.loadSavedHikes() } throws Exception("Failed to load saved hikes")
+        coEvery { savedHikesRepo.loadSavedHikes() } answers
+            {
+              // Check that during the operation, loading is set to true
+              assertTrue(hikesViewModel.loading.value)
+              throw Exception("Failed to load saved hikes")
+            }
 
         // Refresh the saved hikes cache
         hikesViewModel.refreshSavedHikesCache()
 
-        // Because we are on an UnconfinedTestDispatcher(), the coroutine should be done by now,
-        // hence
-        // we can stop listening to the values emitted by loading.
-        job.cancel()
-
-        // Check that loading was false at first, then true during the call, and false again at the
-        // end
-        assertEquals(listOf(false, true, false), emissions)
+        // Check that the operation occurred, i.e. the repo was called
+        coVerify(exactly = 1) { savedHikesRepo.loadSavedHikes() }
+        // Check that loading was set back to false at the end of the operation
+        assertFalse(hikesViewModel.loading.value)
       }
 
   @Test
@@ -540,24 +539,24 @@ class HikesViewModelTest {
   @Test
   fun `loadSavedHikes sets loading to true then false`() =
       runTest(dispatcher) {
-        // Listen to the changes made to loading during the call
-        val emissions = mutableListOf<Boolean>()
-        val job = backgroundScope.launch { hikesViewModel.loading.collect { emissions.add(it) } }
+        // Before launching the operation, loading should be false
+        assertFalse(hikesViewModel.loading.value)
 
         // Set the repository to throw an exception because we do not care
-        coEvery { savedHikesRepo.loadSavedHikes() } throws Exception("Failed to load saved hikes")
+        coEvery { savedHikesRepo.loadSavedHikes() } answers
+            {
+              // Check that during the operation, loading is set to true
+              assertTrue(hikesViewModel.loading.value)
+              throw Exception("Failed to load saved hikes")
+            }
 
         // Load the saved hikes
         hikesViewModel.loadSavedHikes()
 
-        // Because we are on an UnconfinedTestDispatcher(), the coroutine should be done by now,
-        // hence
-        // we can stop listening to the values emitted by loading.
-        job.cancel()
-
-        // Check that loading was false at first, then true during the call, and false again at the
-        // end
-        assertEquals(listOf(false, true, false), emissions)
+        // Check that the operation occurred, i.e. the repo was called
+        coVerify(exactly = 1) { savedHikesRepo.loadSavedHikes() }
+        // Check that loading was set back to false at the end of the operation
+        assertFalse(hikesViewModel.loading.value)
       }
 
   @Test
@@ -1216,25 +1215,25 @@ class HikesViewModelTest {
   @Test
   fun `loadHikesInBounds sets loading to true then false`() =
       runTest(dispatcher) {
-        // Listen to the changes made to loading during the call
-        val emissions = mutableListOf<Boolean>()
-        val job = backgroundScope.launch { hikesViewModel.loading.collect { emissions.add(it) } }
+        // Before launching the operation, loading should be false
+        assertFalse(hikesViewModel.loading.value)
 
         // Set the repository to throw an exception because we do not care
-        coEvery { osmHikesRepo.getRoutes(any(), any(), any()) } throws
-            Exception("Failed to load saved hikes")
+        coEvery { osmHikesRepo.getRoutes(any(), any(), any()) } answers
+            {
+              // Check that during the operation, loading is set to true
+              assertTrue(hikesViewModel.loading.value)
+              val onFailure = thirdArg<(Exception) -> Unit>()
+              onFailure(Exception("Failed to load hikes in bounds"))
+            }
 
         // Load hikes in bounds
         hikesViewModel.loadHikesInBounds(BoundingBox(0.0, 0.0, 0.0, 0.0))
 
-        // Because we are on an UnconfinedTestDispatcher(), the coroutine should be done by now,
-        // hence
-        // we can stop listening to the values emitted by loading.
-        job.cancel()
-
-        // Check that loading was false at first, then true during the call, and false again at the
-        // end
-        assertEquals(listOf(false, true, false), emissions)
+        // Check that the operation occurred, i.e. the repo was called
+        coVerify(exactly = 1) { osmHikesRepo.getRoutes(any(), any(), any()) }
+        // Check that after the operation, loading is set to false
+        assertFalse(hikesViewModel.loading.value)
       }
 
   @Test
