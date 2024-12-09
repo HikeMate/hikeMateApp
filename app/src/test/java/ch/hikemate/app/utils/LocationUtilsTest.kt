@@ -3,7 +3,8 @@ package ch.hikemate.app.utils
 import android.content.Context
 import android.location.Location
 import ch.hikemate.app.model.route.Bounds
-import ch.hikemate.app.model.route.HikeRoute
+import ch.hikemate.app.model.route.DetailedHike
+import ch.hikemate.app.model.route.HikeDifficulty
 import ch.hikemate.app.model.route.LatLong
 import ch.hikemate.app.utils.LocationUtils.projectLocationOnHike
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -154,23 +155,59 @@ class LocationUtilsTest {
 
   @Test
   fun projectLocationOnHike_withInvalidRoute_returnsNull() {
-    val emptyRoute = HikeRoute(id = "test", bounds = Bounds(0.0, 0.0, 1.0, 1.0), ways = listOf())
+    val emptyRoute =
+        DetailedHike(
+            id = "test",
+            color = 0,
+            isSaved = false,
+            plannedDate = null,
+            name = null,
+            description = null,
+            bounds = Bounds(0.0, 0.0, 1.0, 1.0),
+            waypoints = listOf(),
+            elevation = listOf(),
+            distance = 0.0,
+            estimatedTime = 0.0,
+            elevationGain = 0.0,
+            difficulty = HikeDifficulty.EASY)
     val location = LatLong(45.0, 7.0)
     assertNull(projectLocationOnHike(location, emptyRoute))
 
     val singlePointRoute =
-        HikeRoute(
-            id = "test", bounds = Bounds(44.0, 6.0, 46.0, 8.0), ways = listOf(LatLong(45.0, 7.0)))
+        DetailedHike(
+            id = "test",
+            color = 0,
+            isSaved = false,
+            plannedDate = null,
+            name = null,
+            description = null,
+            bounds = Bounds(44.0, 6.0, 46.0, 8.0),
+            waypoints = listOf(LatLong(45.0, 7.0)),
+            elevation = listOf(0.0),
+            distance = 0.0,
+            estimatedTime = 0.0,
+            elevationGain = 0.0,
+            difficulty = HikeDifficulty.EASY)
     assertNull(projectLocationOnHike(location, singlePointRoute))
   }
 
   @Test
   fun projectLocationOnHike_withSingleSegment_projectsCorrectly() {
     val route =
-        HikeRoute(
+        DetailedHike(
             id = "test",
+            color = 0,
+            isSaved = false,
+            plannedDate = null,
+            name = null,
+            description = null,
             bounds = Bounds(44.0, 6.0, 46.0, 8.0),
-            ways = listOf(LatLong(45.0, 7.0), LatLong(45.0, 8.0)))
+            waypoints = listOf(LatLong(45.0, 7.0), LatLong(45.0, 8.0)),
+            elevation = listOf(0.0, 0.0),
+            distance = 0.0,
+            estimatedTime = 0.0,
+            elevationGain = 0.0,
+            difficulty = HikeDifficulty.EASY)
 
     val location = LatLong(45.1, 7.5) // Should project exactly at mid-segment
 
@@ -197,16 +234,26 @@ class LocationUtilsTest {
   @Test
   fun projectLocationOnHike_selectsClosestSegmentFromThree() {
     val route =
-        HikeRoute(
+        DetailedHike(
             id = "test",
+            color = 0,
+            isSaved = false,
+            plannedDate = null,
+            name = null,
+            description = null,
             bounds = Bounds(44.0, 6.0, 46.0, 8.0),
-            ways =
+            waypoints =
                 listOf(
                     LatLong(45.0, 7.0), // Start
                     LatLong(45.0, 7.5), // End of first segment (horizontal)
                     LatLong(45.5, 7.5), // End of second segment (vertical)
                     LatLong(45.5, 8.0) // End of third segment (horizontal)
-                    ))
+                    ),
+            elevation = listOf(0.0, 0.0, 0.0, 0.0),
+            distance = 0.0,
+            estimatedTime = 0.0,
+            elevationGain = 0.0,
+            difficulty = HikeDifficulty.EASY)
 
     run {
       val point = LatLong(45.1, 7.2)
