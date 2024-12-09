@@ -141,13 +141,13 @@ fun HikeDetailScreen(
       navigationActions.goBack()
     }
   }
-  
+
   if (selectedHike == null) {
     return
   }
-  
+
   BackHandler { hikesViewModel.unselectHike() }
-  
+
   val hike = selectedHike!!
 
   WithDetailedHike(
