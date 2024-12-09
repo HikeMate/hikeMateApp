@@ -28,63 +28,16 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 @OptIn(ExperimentalCoroutinesApi::class)
-class ElevationRepositoryTest {
+class ElevationRepositoryCopernicusTest {
   private lateinit var client: OkHttpClient
-  private lateinit var elevationRepository: ElevationRepository
-  private val longList =
-      listOf(515.0, 545.0, 117.0, 620.0, 480.0, 200.0, 750.0, 1020.0, 890.0, 1500.0, 340.0, 670.0)
+  private lateinit var elevationRepositoryCopernicus: ElevationRepositoryCopernicus
+
+  private val dispatcher = UnconfinedTestDispatcher()
+
   private val simpleList = listOf(515.0, 545.0, 117.0)
 
   private val simpleLatLongList =
       listOf(LatLong(10.1, 10.1), LatLong(20.1, 20.1), LatLong(41.261758, -8.683933))
-
-  private val longLatLongList =
-      listOf(
-          LatLong(10.0, 10.0),
-          LatLong(20.0, 20.0),
-          LatLong(41.161758, -8.583933),
-          LatLong(25.5, 15.5),
-          LatLong(35.0, 30.0),
-          LatLong(45.0, -5.0),
-          LatLong(50.0, 50.0),
-          LatLong(60.5, 60.5),
-          LatLong(40.0, -70.0),
-          LatLong(50.0, 90.0),
-          LatLong(55.0, 100.0),
-          LatLong(30.0, -120.0),
-      )
-
-  private val longResponse =
-      Response.Builder()
-          .code(200)
-          .message("OK")
-          .body(
-              """
-{
-   "elevations":
-   [
-      515.0,
-      545.0,
-      117.0,
-      620.0,
-      480.0,
-      200.0,
-      750.0,
-      1020.0,
-      890.0,
-      1500.0,
-      340.0,
-      670.0
-   ]
-}
-            """
-                  .trimIndent()
-                  .replace("\n", "")
-                  .toResponseBody("application/json; charset=utf-8".toMediaType()))
-          .protocol(Protocol.HTTP_1_1)
-          .header("Content-Type", "application/json")
-          .request(mockk())
-          .build()
 
   private val simpleResponse =
       Response.Builder()
@@ -109,33 +62,29 @@ class ElevationRepositoryTest {
           .request(mockk())
           .build()
 
-  private val simpleAndLongResponse =
+  private val chunkSizedList: List<LatLong> = run {
+    val list = mutableListOf<LatLong>()
+    for (i in 0 until ElevationRepositoryCopernicus.MAX_COORDINATES_PER_REQUEST) {
+      list.add(
+          LatLong(
+              i.toDouble() / ElevationRepositoryCopernicus.MAX_COORDINATES_PER_REQUEST,
+              i.toDouble() / ElevationRepositoryCopernicus.MAX_COORDINATES_PER_REQUEST))
+    }
+    list
+  }
+
+  private val chunkSizedResponse =
       Response.Builder()
           .code(200)
           .message("OK")
           .body(
               """
-{
-   "elevations":
-   [
-      515.0,
-      545.0,
-      117.0,
-      515.0,
-      545.0,
-      117.0,
-      620.0,
-      480.0,
-      200.0,
-      750.0,
-      1020.0,
-      890.0,
-      1500.0,
-      340.0,
-      670.0
-   ]
-}
-            """
+    {
+      "elevations": [
+        ${chunkSizedList.joinToString(",") { "${it.lat}" }}
+      ]
+    }
+  """
                   .trimIndent()
                   .replace("\n", "")
                   .toResponseBody("application/json; charset=utf-8".toMediaType()))
@@ -144,239 +93,89 @@ class ElevationRepositoryTest {
           .request(mockk())
           .build()
 
-  private val serverErrorResponse =
+  private val twiceChunkSizedList: List<LatLong> = run {
+    val list = mutableListOf<LatLong>()
+    val size = ElevationRepositoryCopernicus.MAX_COORDINATES_PER_REQUEST * 2
+    for (i in 0 until size) {
+      list.add(LatLong(i.toDouble() / size, i.toDouble() / size))
+    }
+    list
+  }
+
+  private val twiceChunkSizedResponsePart1 =
       Response.Builder()
-          .code(500)
-          .message("Internal Server Error")
-          .body("Internal Server Error".toResponseBody(null))
+          .code(200)
+          .message("OK")
+          .body(
+              """
+    {
+      "elevations": [
+        ${twiceChunkSizedList.take(ElevationRepositoryCopernicus.MAX_COORDINATES_PER_REQUEST).joinToString(",") { "${it.lat}" }}
+      ]
+    }
+  """
+                  .trimIndent()
+                  .replace("\n", "")
+                  .toResponseBody("application/json; charset=utf-8".toMediaType()))
           .protocol(Protocol.HTTP_1_1)
-          .header("Content-Type", "text/plain")
+          .header("Content-Type", "application/json")
           .request(mockk())
           .build()
 
-  private val dispatcher = UnconfinedTestDispatcher()
+  private val twiceChunkSizedResponsePart2 =
+      Response.Builder()
+          .code(200)
+          .message("OK")
+          .body(
+              """
+    {
+      "elevations": [
+        ${twiceChunkSizedList.drop(ElevationRepositoryCopernicus.MAX_COORDINATES_PER_REQUEST).joinToString(",") { "${it.lat}" }}
+      ]
+    }
+  """
+                  .trimIndent()
+                  .replace("\n", "")
+                  .toResponseBody("application/json; charset=utf-8".toMediaType()))
+          .protocol(Protocol.HTTP_1_1)
+          .header("Content-Type", "application/json")
+          .request(mockk())
+          .build()
 
   @Before
   fun setup() {
     Dispatchers.setMain(dispatcher)
     client = mockk()
     // We test with a small cache size to make sure the cache is working correctly
-    elevationRepository = ElevationRepositoryCopernicus(client, dispatcher, 10)
+    elevationRepositoryCopernicus = ElevationRepositoryCopernicus(client, dispatcher)
   }
 
   @Test
-  fun worksWithSimpleAnswer() =
+  fun worksWithMultipleRequestsOnMultipleChunks() =
       runTest(timeout = 5.seconds) {
         val call: Call = mockk()
         coEvery { client.newCall(any()) } returns call
 
         coEvery { call.enqueue(any()) } answers
             {
-              firstArg<Callback>().onResponse(call, simpleResponse)
-            }
-
-        val onSuccessLatch = CountDownLatch(1)
-
-        elevationRepository.getElevation(
-            simpleLatLongList,
-            { list ->
-              assertEquals(simpleList, list)
-              onSuccessLatch.countDown()
-            }) {
-              fail("Failed to fetch routes from Overpass API")
-            }
-
-        // Wait for the coroutine to finish
-        advanceUntilIdle()
-
-        assertEquals(0L, onSuccessLatch.count)
-        coVerify { call.enqueue(any()) }
-      }
-
-  @Test
-  fun worksWithLongAnswer() =
-      runTest(timeout = 5.seconds) {
-        val call: Call = mockk()
-        coEvery { client.newCall(any()) } returns call
-
-        coEvery { call.enqueue(any()) } answers
-            {
-              firstArg<Callback>().onResponse(call, longResponse)
-            }
-
-        val onSuccessLatch = CountDownLatch(1)
-
-        elevationRepository.getElevation(
-            longLatLongList,
-            { list ->
-              assertEquals(longList, list)
-              onSuccessLatch.countDown()
-            }) {
-              fail("Failed to fetch routes from Overpass API")
-            }
-
-        // Wait for the coroutine to finish
-        advanceUntilIdle()
-
-        assertEquals(0L, onSuccessLatch.count)
-        coVerify { call.enqueue(any()) }
-      }
-
-  @Test
-  fun worksWith500() =
-      runTest(timeout = 5.seconds) {
-        val call: Call = mockk()
-        coEvery { client.newCall(any()) } returns call
-
-        coEvery { call.enqueue(any()) } answers
-            {
-              firstArg<Callback>().onResponse(call, serverErrorResponse)
+              firstArg<Callback>().onResponse(call, chunkSizedResponse)
             } andThenAnswer
             {
-              firstArg<Callback>().onResponse(call, longResponse)
-            }
-
-        val onSuccessLatch = CountDownLatch(1)
-
-        elevationRepository.getElevation(
-            longLatLongList,
-            { list ->
-              assertEquals(longList, list)
-              onSuccessLatch.countDown()
-            }) {
-              fail("Should not have failed")
-            }
-
-        // Wait for the coroutine to finish
-        advanceUntilIdle()
-
-        assertEquals(0L, onSuccessLatch.count)
-        coVerify { call.enqueue(any()) }
-      }
-
-  @Test
-  fun keepsReceiving500() =
-      runTest(timeout = 5.seconds) {
-        val call: Call = mockk()
-        coEvery { client.newCall(any()) } returns call
-
-        coEvery { call.enqueue(any()) } answers
-            {
-              firstArg<Callback>().onResponse(call, serverErrorResponse)
-            }
-
-        val onFailureLatch = CountDownLatch(1)
-
-        elevationRepository.getElevation(longLatLongList, { fail("Should not have succeeded") }) {
-          onFailureLatch.countDown()
-        }
-
-        // Wait for the coroutine to finish
-        advanceUntilIdle()
-
-        assertEquals(0L, onFailureLatch.count)
-        coVerify { call.enqueue(any()) }
-      }
-
-  @Test
-  fun worksWithMultipleRequests() =
-      runTest(timeout = 5.seconds) {
-        val call: Call = mockk()
-        coEvery { client.newCall(any()) } returns call
-
-        coEvery { call.enqueue(any()) } answers
-            {
-              firstArg<Callback>().onResponse(call, simpleAndLongResponse)
-            }
-
-        val onSuccessLatch = CountDownLatch(2)
-
-        elevationRepository.getElevation(
-            simpleLatLongList,
-            { list ->
-              assertEquals(simpleList, list)
-              onSuccessLatch.countDown()
-            }) {
-              fail("Failed to fetch routes from Overpass API")
-            }
-
-        elevationRepository.getElevation(
-            longLatLongList,
-            { list ->
-              assertEquals(longList, list)
-              onSuccessLatch.countDown()
-            }) {
-              fail("Failed to fetch routes from Overpass API")
-            }
-
-        // Wait for the coroutine to finish
-        advanceUntilIdle()
-
-        assertEquals(0L, onSuccessLatch.count)
-        coVerify(exactly = 1) { call.enqueue(any()) }
-      }
-
-  @Test
-  fun worksWithRequestsOnMultipleChunks() =
-      runTest(timeout = 5.seconds) {
-        val call: Call = mockk()
-        coEvery { client.newCall(any()) } returns call
-
-        coEvery { call.enqueue(any()) } answers
-            {
-              firstArg<Callback>().onResponse(call, simpleAndLongResponse)
-            }
-
-        val onSuccessLatch = CountDownLatch(2)
-
-        elevationRepository.getElevation(
-            simpleLatLongList,
-            { list ->
-              assertEquals(simpleList, list)
-              onSuccessLatch.countDown()
-            }) {
-              fail("Failed to fetch routes from Overpass API")
-            }
-
-        elevationRepository.getElevation(
-            longLatLongList,
-            { list ->
-              assertEquals(longList, list)
-              onSuccessLatch.countDown()
-            }) {
-              fail("Failed to fetch routes from Overpass API")
-            }
-
-        // Wait for the coroutine to finish
-        advanceUntilIdle()
-
-        assertEquals(0L, onSuccessLatch.count)
-        coVerify(exactly = 1) { call.enqueue(any()) }
-      }
-
-  @Test
-  fun worksWithSameRequestMultipleTime() =
-      runTest(timeout = 5.seconds) {
-        val call: Call = mockk()
-        coEvery { client.newCall(any()) } returns call
-
-        coEvery { call.enqueue(any()) } answers
-            {
               firstArg<Callback>().onResponse(call, simpleResponse)
             }
 
         val onSuccessLatch = CountDownLatch(2)
 
-        elevationRepository.getElevation(
-            simpleLatLongList,
+        elevationRepositoryCopernicus.getElevation(
+            chunkSizedList,
             { list ->
-              assertEquals(simpleList, list)
+              assertEquals(chunkSizedList.map { it.lat }, list)
               onSuccessLatch.countDown()
             }) {
               fail("Failed to fetch routes from Overpass API")
             }
 
-        elevationRepository.getElevation(
+        elevationRepositoryCopernicus.getElevation(
             simpleLatLongList,
             { list ->
               assertEquals(simpleList, list)
@@ -389,6 +188,125 @@ class ElevationRepositoryTest {
         advanceUntilIdle()
 
         assertEquals(0L, onSuccessLatch.count)
-        coVerify(exactly = 1) { call.enqueue(any()) }
+        coVerify(exactly = 2) { call.enqueue(any()) }
+      }
+
+  @Test
+  fun worksWithOneRequestOnMultipleChunks() =
+      runTest(timeout = 5.seconds) {
+        val call: Call = mockk()
+        coEvery { client.newCall(any()) } returns call
+
+        coEvery { call.enqueue(any()) } answers
+            {
+              firstArg<Callback>().onResponse(call, twiceChunkSizedResponsePart1)
+            } andThenAnswer
+            {
+              firstArg<Callback>().onResponse(call, twiceChunkSizedResponsePart2)
+            }
+
+        val onSuccessLatch = CountDownLatch(1)
+
+        elevationRepositoryCopernicus.getElevation(
+            twiceChunkSizedList,
+            { list ->
+              assertEquals(twiceChunkSizedList.map { it.lat }, list)
+              onSuccessLatch.countDown()
+            }) {
+              fail("Failed to fetch routes from Overpass API")
+            }
+
+        // Wait for the coroutine to finish
+        advanceUntilIdle()
+
+        assertEquals(0L, onSuccessLatch.count)
+        coVerify(exactly = 2) { call.enqueue(any()) }
+      }
+
+  @Test
+  fun worksWithSameRequestOnMultipleChunksMultipleTimesWithoutDelay() =
+      runTest(timeout = 5.seconds) {
+        val call: Call = mockk()
+        coEvery { client.newCall(any()) } returns call
+
+        coEvery { call.enqueue(any()) } answers
+            {
+              firstArg<Callback>().onResponse(call, twiceChunkSizedResponsePart1)
+            } andThenAnswer
+            {
+              firstArg<Callback>().onResponse(call, twiceChunkSizedResponsePart2)
+            }
+
+        val onSuccessLatch = CountDownLatch(2)
+
+        elevationRepositoryCopernicus.getElevation(
+            twiceChunkSizedList,
+            { list ->
+              assertEquals(twiceChunkSizedList.map { it.lat }, list)
+              onSuccessLatch.countDown()
+            }) {
+              fail("Failed to fetch routes from Overpass API")
+            }
+
+        elevationRepositoryCopernicus.getElevation(
+            twiceChunkSizedList,
+            { list ->
+              assertEquals(twiceChunkSizedList.map { it.lat }, list)
+              onSuccessLatch.countDown()
+            }) {
+              fail("Failed to fetch routes from Overpass API")
+            }
+
+        // Wait for the coroutine to finish
+        advanceUntilIdle()
+
+        assertEquals(0L, onSuccessLatch.count)
+        coVerify(exactly = 2) { call.enqueue(any()) }
+      }
+
+  @Test
+  fun worksWithSameRequestOnMultipleChunksMultipleTimesWithDelay() =
+      runTest(timeout = 5.seconds) {
+        val call: Call = mockk()
+        coEvery { client.newCall(any()) } returns call
+
+        coEvery { call.enqueue(any()) } answers
+            {
+              firstArg<Callback>().onResponse(call, twiceChunkSizedResponsePart1)
+            } andThenAnswer
+            {
+              firstArg<Callback>().onResponse(call, twiceChunkSizedResponsePart2)
+            }
+
+        val onSuccessLatch = CountDownLatch(2)
+
+        elevationRepositoryCopernicus.getElevation(
+            twiceChunkSizedList,
+            { list ->
+              assertEquals(twiceChunkSizedList.map { it.lat }, list)
+              onSuccessLatch.countDown()
+            }) {
+              fail("Failed to fetch routes from Overpass API")
+            }
+
+        // Wait for the coroutine to finish
+        while (onSuccessLatch.count > 1) {
+          advanceUntilIdle()
+        }
+
+        elevationRepositoryCopernicus.getElevation(
+            twiceChunkSizedList,
+            { list ->
+              assertEquals(twiceChunkSizedList.map { it.lat }, list)
+              onSuccessLatch.countDown()
+            }) {
+              fail("Failed to fetch routes from Overpass API")
+            }
+
+        // Wait for the coroutine to finish
+        advanceUntilIdle()
+
+        assertEquals(0L, onSuccessLatch.count)
+        coVerify(exactly = 2) { call.enqueue(any()) }
       }
 }
