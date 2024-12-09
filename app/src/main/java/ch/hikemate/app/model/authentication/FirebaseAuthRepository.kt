@@ -218,7 +218,8 @@ class FirebaseAuthRepository : AuthRepository {
       onSuccess: () -> Unit,
       onFailure: () -> Unit
   ) {
-    val email = user.email ?: throw Exception("User email is null")
+    val email = user.email ?: return onFailure()
+
     val credential: AuthCredential = EmailAuthProvider.getCredential(email, password)
     user.reauthenticate(credential).addOnCompleteListener { task ->
       if (task.isSuccessful) {
