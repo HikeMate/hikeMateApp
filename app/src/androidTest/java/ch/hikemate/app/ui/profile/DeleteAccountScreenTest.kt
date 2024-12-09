@@ -82,8 +82,8 @@ class DeleteAccountScreenTest : TestCase() {
         .performTextInput(password)
     composeTestRule.onNodeWithTag(DeleteAccountScreen.TEST_TAG_DELETE_ACCOUNT_BUTTON).performClick()
 
-    verify(exactly = 1) { authViewModel.deleteAccount(eq(password), any(), any(), any()) }
-    verify(exactly = 0) { authViewModel.deleteAccount(neq(password), any(), any(), any()) }
+    verify(exactly = 1) { authViewModel.deleteAccount(eq(password), any(), any(), any(), any()) }
+    verify(exactly = 0) { authViewModel.deleteAccount(neq(password), any(), any(), any(), any()) }
   }
 
   @Test
@@ -92,6 +92,6 @@ class DeleteAccountScreenTest : TestCase() {
 
     composeTestRule.onNodeWithTag(DeleteAccountScreen.TEST_TAG_DELETE_ACCOUNT_BUTTON).performClick()
 
-    verify(exactly = 0) { authViewModel.deleteAccount(any(), any(), any(), any()) }
+    verify(exactly = 0) { authViewModel.deleteAccount(any(), any(), any(), any(), any()) }
   }
 }
