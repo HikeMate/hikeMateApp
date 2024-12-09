@@ -19,6 +19,12 @@
     <string name="nav_tutorial">Tutorial</string>
     <string name="nav_auth">Auth</string>
 
+    <!-- HikesViewModel -->
+    <string name="hikes_vm_error_refreshing_saved_hikes">Error while loading saved hikes. Please check your Internet connection and try again.</string>
+    <string name="hikes_vm_error_loading_saved_hikes">Error while loading saved hikes. Please check your Internet connection and try again.</string>
+    <string name="hikes_vm_error_loading_hikes_in_bounds">Error while searching for hikes. Please check your Internet connection and try again.</string>
+    <string name="hikes_vm_error_loading_hikes_osm_data">Error while loading hikes data. Please check your Internet connection and try again.</string>
+
     <!-- Hike Card -->
     <string name="hike_card_elevation_gain_label">Elevation gain</string>
     <string name="hike_card_elevation_gain_value_template">%.0fm</string>

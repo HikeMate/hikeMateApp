@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import ch.hikemate.app.R
 import ch.hikemate.app.model.elevation.ElevationService
 import ch.hikemate.app.model.elevation.ElevationServiceRepository
 import ch.hikemate.app.model.extensions.toBounds
@@ -214,14 +215,12 @@ class HikesViewModel(
 
         val success = refreshSavedHikesCacheAsync(forceOverwriteHikesList = false)
         if (success) {
+          setLoading(value = false, errorMessageId = null)
           onSuccess()
         } else {
+          setLoading(value = false, errorMessageId = R.string.hikes_vm_error_refreshing_saved_hikes)
           onFailure()
         }
-
-        // The heavy loading operation is done now
-        // TODO: Move this to the refreshSavedHikesCacheAsync function to handle error messages
-        setLoading(value = false, errorMessageId = null)
       }
 
   /**
@@ -236,16 +235,7 @@ class HikesViewModel(
    * @param onFailure Will be called if an error is encountered.
    */
   fun loadSavedHikes(onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}) =
-      viewModelScope.launch {
-        // Let the user know a heavy load operation is being performed
-        setLoading(value = true, errorMessageId = null)
-
-        loadSavedHikesAsync(onSuccess, onFailure)
-
-        // The heavy loading operation is done now
-        // TODO: Move this to the loadSavedHikesAsync function to handle error messages
-        setLoading(value = false, errorMessageId = null)
-      }
+      viewModelScope.launch { loadSavedHikesAsync(onSuccess, onFailure) }
 
   /**
    * Marks a hike as saved by the current user.
@@ -312,17 +302,7 @@ class HikesViewModel(
       bounds: BoundingBox,
       onSuccess: () -> Unit = {},
       onFailure: () -> Unit = {}
-  ) =
-      viewModelScope.launch {
-        // Let the user know a heavy load operation is being performed
-        setLoading(value = true, errorMessageId = null)
-
-        loadHikesInBoundsAsync(bounds, onSuccess, onFailure)
-
-        // The heavy loading operation is done now
-        // TODO: Move this to the loadHikesInBoundsAsync function to handle error messages
-        setLoading(value = false, errorMessageId = null)
-      }
+  ) = viewModelScope.launch { loadHikesInBoundsAsync(bounds, onSuccess, onFailure) }
 
   /**
    * Retrieves the bounding box and way points of the currently loaded hikes.
@@ -708,12 +688,17 @@ class HikesViewModel(
    */
   private suspend fun loadSavedHikesAsync(onSuccess: () -> Unit, onFailure: () -> Unit) =
       withContext(dispatcher) {
+        // Let the user know a heavy load operation is being performed
+        setLoading(value = true, errorMessageId = null)
+
         // Update the local cache of saved hikes and add them to _hikeFlows
         val success = refreshSavedHikesCacheAsync(forceOverwriteHikesList = true)
 
         if (success) {
+          setLoading(value = false, errorMessageId = null)
           onSuccess()
         } else {
+          setLoading(value = false, errorMessageId = R.string.hikes_vm_error_loading_saved_hikes)
           onFailure()
         }
       }
@@ -952,12 +937,17 @@ class HikesViewModel(
       onFailure: () -> Unit
   ) =
       withContext(dispatcher) {
+        // Let the user know a heavy load operation is being performed
+        setLoading(value = true, errorMessageId = null)
+
         // Load the hikes from the repository
         val hikes: List<HikeRoute>
         try {
           hikes = loadHikesInBoundsRepoWrapper(boundingBox.toBounds())
         } catch (e: Exception) {
           Log.e(LOG_TAG, "Error encountered while loading hikes in bounds", e)
+          setLoading(
+              value = false, errorMessageId = R.string.hikes_vm_error_loading_hikes_in_bounds)
           onFailure()
           return@withContext
         }
@@ -1023,6 +1013,7 @@ class HikesViewModel(
         }
 
         // Call the success callback once the mutex has been released to avoid locking for too long
+        setLoading(value = false, errorMessageId = null)
         onSuccess()
       }
 
@@ -1119,13 +1110,12 @@ class HikesViewModel(
           success = true
         }
 
-        // Indicate the heavy loading operation has terminated
-        setLoading(value = false, errorMessageId = null)
-
-        // Call the appropriate callback
+        // Call the appropriate callback and indicate the heavy loading operation has terminated
         if (success) {
+          setLoading(value = false, errorMessageId = null)
           onSuccess()
         } else {
+          setLoading(value = false, errorMessageId = R.string.hikes_vm_error_loading_hikes_osm_data)
           onFailure()
         }
       }
