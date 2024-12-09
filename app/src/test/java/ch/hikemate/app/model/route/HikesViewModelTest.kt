@@ -1710,7 +1710,7 @@ class HikesViewModelTest {
       }
 
   @Test
-  fun `computeDetailsFor resets data to NotRequested if computation fails`() =
+  fun `computeDetailsFor sets data to Error if computation fails`() =
       runTest(dispatcher) {
         // Load a hike with its OSM data and elevation
         loadOsmHikes(singleOsmHike1)
@@ -1744,12 +1744,10 @@ class HikesViewModelTest {
         // The view model should now contain the loaded hike with its details reset to NotRequested
         assertEquals(1, hikesViewModel.hikeFlows.value.size)
         assertEquals(singleOsmHike1[0].id, hikesViewModel.hikeFlows.value[0].value.id)
-        assertTrue(hikesViewModel.hikeFlows.value[0].value.distance is DeferredData.NotRequested)
-        assertTrue(
-            hikesViewModel.hikeFlows.value[0].value.elevationGain is DeferredData.NotRequested)
-        assertTrue(
-            hikesViewModel.hikeFlows.value[0].value.estimatedTime is DeferredData.NotRequested)
-        assertTrue(hikesViewModel.hikeFlows.value[0].value.difficulty is DeferredData.NotRequested)
+        assertTrue(hikesViewModel.hikeFlows.value[0].value.distance is DeferredData.Error)
+        assertTrue(hikesViewModel.hikeFlows.value[0].value.elevationGain is DeferredData.Error)
+        assertTrue(hikesViewModel.hikeFlows.value[0].value.estimatedTime is DeferredData.Error)
+        assertTrue(hikesViewModel.hikeFlows.value[0].value.difficulty is DeferredData.Error)
       }
 
   @Test
