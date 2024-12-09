@@ -27,7 +27,6 @@ import ch.hikemate.app.model.authentication.FirebaseAuthRepository
 import ch.hikemate.app.model.profile.ProfileRepositoryFirestore
 import ch.hikemate.app.model.profile.ProfileViewModel
 import ch.hikemate.app.model.route.HikesViewModel
-import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
 import ch.hikemate.app.ui.auth.CreateAccountScreen
 import ch.hikemate.app.ui.auth.SignInScreen
 import ch.hikemate.app.ui.auth.SignInWithEmailScreen
@@ -86,8 +85,6 @@ fun HikeMateApp() {
       AuthViewModel(
           FirebaseAuthRepository(), ProfileRepositoryFirestore(FirebaseFirestore.getInstance()))
 
-  val listOfHikeRoutesViewModel: ListOfHikeRoutesViewModel =
-      viewModel(factory = ListOfHikeRoutesViewModel.Factory)
   val hikesViewModel: HikesViewModel = viewModel(factory = HikesViewModel.Factory)
 
   // When a user logs-in again with a different account, get the new profile and the new user's
