@@ -1169,6 +1169,11 @@ class HikesViewModel(
         try {
           elevation = getElevationRepoWrapper(waypoints, hikeId)
         } catch (e: Exception) {
+          _hikesMutex.withLock {
+            val hikeFlow = _hikeFlowsMap[hikeId] ?: return@withLock
+            hikeFlow.value = hikeFlow.value.copy(elevation = DeferredData.Error(e))
+            updateSelectedHike()
+          }
           Log.e(LOG_TAG, "Error encountered while retrieving elevation", e)
           onFailure()
           return@withContext
@@ -1248,10 +1253,10 @@ class HikesViewModel(
             val hikeFlow = _hikeFlowsMap[hikeId] ?: return@withLock
             hikeFlow.value =
                 hikeFlow.value.copy(
-                    distance = DeferredData.NotRequested,
-                    elevationGain = DeferredData.NotRequested,
-                    estimatedTime = DeferredData.NotRequested,
-                    difficulty = DeferredData.NotRequested,
+                    distance = DeferredData.Error(e),
+                    elevationGain = DeferredData.Error(e),
+                    estimatedTime = DeferredData.Error(e),
+                    difficulty = DeferredData.Error(e),
                 )
 
             // Update the selected hike if necessary
