@@ -80,6 +80,8 @@ class HikesViewModel(
 
   private val _loading = MutableStateFlow(false)
 
+  private val _loadingErrorMessageId = MutableStateFlow<Int?>(null)
+
   private val _hikeFlowsList = MutableStateFlow<List<StateFlow<Hike>>>(emptyList())
 
   private val _selectedHike = MutableStateFlow<Hike?>(null)
@@ -139,6 +141,18 @@ class HikesViewModel(
   val loading: StateFlow<Boolean> = _loading.asStateFlow()
 
   /**
+   * The resource ID of the error message to display to the user when a loading operation fails.
+   *
+   * A loading operation can be either [refreshSavedHikesCache], [loadSavedHikes],
+   * [loadHikesInBounds] or [retrieveLoadedHikesOsmData]. If any of those operations fail, this
+   * value will be set to the corresponding error message ID.
+   *
+   * This value is null as long as no loading operation fails. It resets to null when a loading
+   * operation succeeds.
+   */
+  val loadingErrorMessageId: StateFlow<Int?> = _loadingErrorMessageId.asStateFlow()
+
+  /**
    * The list of hikes currently loaded in the view model.
    *
    * For example, this could be the list of hikes in a certain rectangle on the map (bounds), or the
@@ -196,7 +210,7 @@ class HikesViewModel(
   fun refreshSavedHikesCache(onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}) =
       viewModelScope.launch {
         // Let the user know a heavy load operation is being performed
-        setLoading(true)
+        setLoading(value = true, errorMessageId = null)
 
         val success = refreshSavedHikesCacheAsync(forceOverwriteHikesList = false)
         if (success) {
@@ -206,7 +220,8 @@ class HikesViewModel(
         }
 
         // The heavy loading operation is done now
-        setLoading(false)
+        // TODO: Move this to the refreshSavedHikesCacheAsync function to handle error messages
+        setLoading(value = false, errorMessageId = null)
       }
 
   /**
@@ -222,9 +237,14 @@ class HikesViewModel(
    */
   fun loadSavedHikes(onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}) =
       viewModelScope.launch {
-        setLoading(true)
+        // Let the user know a heavy load operation is being performed
+        setLoading(value = true, errorMessageId = null)
+
         loadSavedHikesAsync(onSuccess, onFailure)
-        setLoading(false)
+
+        // The heavy loading operation is done now
+        // TODO: Move this to the loadSavedHikesAsync function to handle error messages
+        setLoading(value = false, errorMessageId = null)
       }
 
   /**
@@ -295,12 +315,13 @@ class HikesViewModel(
   ) =
       viewModelScope.launch {
         // Let the user know a heavy load operation is being performed
-        setLoading(true)
+        setLoading(value = true, errorMessageId = null)
 
         loadHikesInBoundsAsync(bounds, onSuccess, onFailure)
 
         // The heavy loading operation is done now
-        setLoading(false)
+        // TODO: Move this to the loadHikesInBoundsAsync function to handle error messages
+        setLoading(value = false, errorMessageId = null)
       }
 
   /**
@@ -421,8 +442,15 @@ class HikesViewModel(
    *
    * If [_ongoingLoadingOperations] becomes negative, it is clamped at 0. [setLoading] should always
    * be used in pair, one call to set loading to true, and one to set it to false.
+   *
+   * Additionally, updates [_loadingErrorMessageId] with the [errorMessageId] parameter.
+   *
+   * @param value The new value of the loading state, whether loading (true) or not (false).
+   * @param errorMessageId The ID of the string resource to display to the user if the loading
+   *   operation has failed. This parameter is only considered if [value] is false. This value will
+   *   be set even if other loading operations are still ongoing.
    */
-  private suspend fun setLoading(value: Boolean) =
+  private suspend fun setLoading(value: Boolean, errorMessageId: Int?) =
       _loadingMutex.withLock {
         if (value) {
           // setLoading(true) is called to indicate the start of a new loading operation
@@ -431,6 +459,11 @@ class HikesViewModel(
           // setLoading(false) indicates the end of a loading operation. Ensure the counter does not
           // go below 0.
           _ongoingLoadingOperations -= 1
+        }
+
+        // Update the error message ID
+        if (!value) {
+          _loadingErrorMessageId.value = errorMessageId
         }
 
         // Adapt the _loading state flow accordingly
@@ -1048,7 +1081,7 @@ class HikesViewModel(
           }
 
           // If the request is needed, indicate a heavy loading operation is being performed
-          setLoading(true)
+          setLoading(value = true, errorMessageId = null)
 
           // Retrieve the OSM data of the hikes
           val hikeRoutes: List<HikeRoute>
@@ -1087,7 +1120,7 @@ class HikesViewModel(
         }
 
         // Indicate the heavy loading operation has terminated
-        setLoading(false)
+        setLoading(value = false, errorMessageId = null)
 
         // Call the appropriate callback
         if (success) {
