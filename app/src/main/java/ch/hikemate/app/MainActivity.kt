@@ -29,7 +29,6 @@ import ch.hikemate.app.model.facilities.FacilitiesViewModel
 import ch.hikemate.app.model.profile.ProfileRepositoryFirestore
 import ch.hikemate.app.model.profile.ProfileViewModel
 import ch.hikemate.app.model.route.HikesViewModel
-import ch.hikemate.app.model.route.ListOfHikeRoutesViewModel
 import ch.hikemate.app.ui.auth.CreateAccountScreen
 import ch.hikemate.app.ui.auth.SignInScreen
 import ch.hikemate.app.ui.auth.SignInWithEmailScreen
@@ -89,8 +88,6 @@ fun HikeMateApp() {
       AuthViewModel(
           FirebaseAuthRepository(), ProfileRepositoryFirestore(FirebaseFirestore.getInstance()))
 
-  val listOfHikeRoutesViewModel: ListOfHikeRoutesViewModel =
-      viewModel(factory = ListOfHikeRoutesViewModel.Factory)
   val hikesViewModel: HikesViewModel = viewModel(factory = HikesViewModel.Factory)
   val facilitiesViewModel = FacilitiesViewModel(FacilitiesRepositoryOverpass(OkHttpClient()))
 
@@ -179,10 +176,7 @@ fun HikeMateApp() {
       }
 
       composable(Screen.RUN_HIKE) {
-        RunHikeScreen(
-            listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
-            profileViewModel = profileViewModel,
-            navigationActions = navigationActions)
+        RunHikeScreen(hikesViewModel = hikesViewModel, navigationActions = navigationActions)
       }
     }
 

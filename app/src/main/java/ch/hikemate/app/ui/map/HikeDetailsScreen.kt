@@ -22,6 +22,8 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -70,10 +72,11 @@ import ch.hikemate.app.ui.components.AsyncStateHandler
 import ch.hikemate.app.ui.components.BackButton
 import ch.hikemate.app.ui.components.BigButton
 import ch.hikemate.app.ui.components.ButtonType
-import ch.hikemate.app.ui.components.CenteredLoadingAnimation
+import ch.hikemate.app.ui.components.CenteredErrorAction
 import ch.hikemate.app.ui.components.DetailRow
 import ch.hikemate.app.ui.components.ElevationGraph
 import ch.hikemate.app.ui.components.ElevationGraphStyleProperties
+import ch.hikemate.app.ui.components.WithDetailedHike
 import ch.hikemate.app.ui.map.HikeDetailScreen.MAP_MAX_ZOOM
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_ADD_DATE_BUTTON
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_BOOKMARK_ICON
@@ -164,81 +167,46 @@ fun HikeDetailScreen(
 
     val selectedHike by hikesViewModel.selectedHike.collectAsState()
 
-    LaunchedEffect(selectedHike) {
-        if (selectedHike == null) {
-            Log.e(HikeDetailScreen.LOG_TAG, "No selected hike, going back")
-            navigationActions.goBack()
-        }
+  LaunchedEffect(selectedHike) {
+    if (selectedHike == null) {
+      Log.e(HikeDetailScreen.LOG_TAG, "No selected hike, going back")
+      navigationActions.goBack()
     }
+  }
 
-    when {
-        // If the hike is null, the LaunchedEffect will navigate back, don't handle it here
-        selectedHike == null -> CenteredLoadingAnimation()
+  if (selectedHike == null) {
+    return
+  }
 
-        // All the details of the hike have been computed, display them
-        hikesViewModel.areDetailsComputedFor(selectedHike!!) -> {
-            val detailedHike = selectedHike!!.withDetailsOrThrow()
-            val errorMessageIdState = profileViewModel.errorMessageId.collectAsState()
-            val profileState = profileViewModel.profile.collectAsState()
+  BackHandler { hikesViewModel.unselectHike() }
 
-            // This is the list of all the facilities inside the hike's bounds
-            val facilities = remember { mutableStateOf<List<Facility>?>( null)}
-            LaunchedEffect(Unit) {
-                // This is calculated so that elements that are near but not contained into the bounds of a
-                // Hike
-                // are still displayed this is actually a very common occurrence.
-                val boundsWithMargin =
-                    Bounds(
-                        detailedHike.bounds.minLat - HikeDetailScreen.MARGIN_BOUNDS,
-                        detailedHike.bounds.minLon - HikeDetailScreen.MARGIN_BOUNDS,
-                        detailedHike.bounds.maxLat + HikeDetailScreen.MARGIN_BOUNDS,
-                        detailedHike.bounds.maxLon + HikeDetailScreen.MARGIN_BOUNDS
-                    )
-                // Get all the facilities within the bounds.
-                facilitiesViewModel.getFacilities(boundsWithMargin, { facilities.value = it }, {})
-            }
+  val hike = selectedHike!!
 
-            AsyncStateHandler(
-                errorMessageIdState = errorMessageIdState,
-                actionContentDescriptionStringId = R.string.go_back,
-                actionOnErrorAction = { navigationActions.navigateTo(Route.MAP) },
-                valueState = profileState,
-            ) { profile ->
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .testTag(Screen.HIKE_DETAILS)
-                ) {
-                    // Display the hike's actual information
-                    HikeDetailsContent(
-                        detailedHike,
-                        navigationActions,
-                        hikesViewModel,
-                        profile.hikingLevel,
-                        facilities
-                    )
-                }
-            }
+  WithDetailedHike(
+      hike = hike,
+      hikesViewModel = hikesViewModel,
+      withDetailedHike = { detailedHike ->
+        val errorMessageIdState = profileViewModel.errorMessageId.collectAsState()
+        val profileState = profileViewModel.profile.collectAsState()
+        AsyncStateHandler(
+            errorMessageIdState = errorMessageIdState,
+            actionContentDescriptionStringId = R.string.go_back,
+            actionOnErrorAction = { navigationActions.navigateTo(Route.MAP) },
+            valueState = profileState,
+        ) { profile ->
+          Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {
+            // Display the hike's actual information
+            HikeDetailsContent(detailedHike, navigationActions, hikesViewModel, profile.hikingLevel)
+          }
         }
-
-        // Details have not been computed yet, but the elevation has been retrieved
-        selectedHike!!.elevation.obtained() -> {
-            hikesViewModel.computeDetailsFor(selectedHike!!.id)
-            CenteredLoadingAnimation(stringResource(R.string.hike_details_screen_computing_details))
-        }
-
-        // Waypoints are available, but elevation hasn't been retrieved yet. Retrieve it
-        hikesViewModel.canElevationDataBeRetrievedFor(selectedHike!!) -> {
-            hikesViewModel.retrieveElevationDataFor(selectedHike!!.id)
-            CenteredLoadingAnimation(stringResource(R.string.hike_details_screen_obtaining_elevation))
-        }
-
-        // Waypoints are not available, retrieve them
-        else -> {
-            hikesViewModel.retrieveLoadedHikesOsmData()
-            CenteredLoadingAnimation(stringResource(R.string.hike_details_screen_obtaining_osm_data))
-        }
-    }
+      },
+      whenError = {
+        CenteredErrorAction(
+            errorMessageId = R.string.loading_hike_error,
+            actionIcon = Icons.AutoMirrored.Filled.ArrowBack,
+            actionContentDescriptionStringId = R.string.go_back,
+            onAction = { hikesViewModel.unselectHike() })
+      })
 }
 
 @Composable
@@ -249,40 +217,33 @@ fun HikeDetailsContent(
     userHikingLevel: HikingLevel,
     facilities: MutableState<List<Facility>?>
 ) {
-    BackHandler { hikesViewModel.unselectHike() }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag(Screen.HIKE_DETAILS)
-    ) {
-        // Display the map and the zoom buttons
-        val mapView = hikeDetailsMap(hike, facilities)
+  Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {
+    // Display the map and the zoom buttons
+    val mapView = hikeDetailsMap(hike)
 
-        // Display the back button on top of the map
-        BackButton(
-            navigationActions = navigationActions,
-            modifier = Modifier
-                .padding(top = 40.dp, start = 16.dp, end = 16.dp)
-                .safeDrawingPadding(),
-            onClick = { hikesViewModel.unselectHike() })
+    // Display the back button on top of the map
+    BackButton(
+        navigationActions = navigationActions,
+        modifier = Modifier.padding(top = 40.dp, start = 16.dp, end = 16.dp).safeDrawingPadding(),
+        onClick = { hikesViewModel.unselectHike() })
 
-        // Zoom buttons at the bottom right of the screen
-        ZoomMapButton(
-            onZoomIn = { mapView.controller.zoomIn() },
-            onZoomOut = { mapView.controller.zoomOut() },
-            modifier =
-            Modifier
-                .align(Alignment.BottomEnd)
-                .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
-        )
+    // Zoom buttons at the bottom right of the screen
+    ZoomMapButton(
+        onZoomIn = { mapView.controller.zoomIn() },
+        onZoomOut = { mapView.controller.zoomOut() },
+        modifier =
+            Modifier.align(Alignment.BottomEnd)
+                .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
 
-        // Prevent the app from crashing when the "run hike" button is spammed
-        var wantToRunHike by remember { mutableStateOf(false) }
-        LaunchedEffect(wantToRunHike) {
-            if (wantToRunHike) navigationActions.navigateTo(Screen.RUN_HIKE)
-        }
-
+    // Prevent the app from crashing when the "run hike" button is spammed
+    var wantToRunHike by remember { mutableStateOf(false) }
+    LaunchedEffect(wantToRunHike) {
+      if (wantToRunHike) {
+        navigationActions.navigateTo(Screen.RUN_HIKE)
+        wantToRunHike = false
+      }
+    }
         // Display the details of the hike at the bottom of the screen
         HikesDetailsBottomScaffold(
             hike, hikesViewModel, userHikingLevel, onRunThisHike = { wantToRunHike = true })
