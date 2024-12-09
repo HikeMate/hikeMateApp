@@ -101,13 +101,13 @@ fun RunHikeScreen(
 @Composable
 private fun RunHikeContent(hike: DetailedHike, navigationActions: NavigationActions) {
   // Avoids the app crashing when spamming the back button
-    var wantToNavigateBack by remember { mutableStateOf(false) }
-    LaunchedEffect(wantToNavigateBack) {
-        if (wantToNavigateBack) {
-            navigationActions.goBack()
-            wantToNavigateBack = false
-        }
+  var wantToNavigateBack by remember { mutableStateOf(false) }
+  LaunchedEffect(wantToNavigateBack) {
+    if (wantToNavigateBack) {
+      navigationActions.goBack()
+      wantToNavigateBack = false
     }
+  }
 
   Box(modifier = Modifier.fillMaxSize().testTag(Screen.RUN_HIKE)) {
     // Display the map
