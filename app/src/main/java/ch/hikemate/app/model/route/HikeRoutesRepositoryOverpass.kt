@@ -109,16 +109,13 @@ class HikeRoutesRepositoryOverpass(private val client: OkHttpClient) :
 
     override fun onResponse(call: okhttp3.Call, response: okhttp3.Response) {
       if (!response.isSuccessful) {
-        onFailure(Exception())
+        onFailure(
+            Exception("Failed to fetch routes from Overpass API. Response code: ${response.code}"))
         return
       }
 
-      if (response.body == null) {
-        onFailure(Exception())
-        return
-      }
-
-      val responseBody = response.body!!.charStream()
+      val responseBody =
+          response.body?.charStream() ?: return onFailure(Exception("Response body is null"))
       val routes = parseRoutes(responseBody)
 
       if (requestedBounds != null) {
@@ -461,8 +458,8 @@ class HikeRoutesRepositoryOverpass(private val client: OkHttpClient) :
           requestedBounds = null,
           onSuccess = { routes ->
             when {
-              routes.isEmpty() -> noSingleHike(Exception())
-              routes.size != 1 -> noSingleHike(Exception())
+              routes.isEmpty() -> noSingleHike(Exception("No route found"))
+              routes.size != 1 -> noSingleHike(Exception("Multiple routes found"))
               else -> onHike(routes.first())
             }
           },

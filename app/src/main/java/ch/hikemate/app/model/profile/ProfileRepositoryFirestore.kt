@@ -28,7 +28,7 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
       context: Context
   ) {
     if (fireUser == null) {
-      onFailure(Exception())
+      onFailure(Exception("User is null"))
       return
     }
     val displayName = fireUser.displayName ?: context.getString(R.string.default_display_name)
@@ -81,7 +81,8 @@ class ProfileRepositoryFirestore(private val db: FirebaseFirestore) : ProfileRep
     db.collection(PROFILES_COLLECTION).document(id).get().addOnCompleteListener { task ->
       if (task.isSuccessful) {
         val profile = task.result?.let { documentToProfile(it) }
-        if (profile != null) onSuccess(profile) else onFailure(Exception())
+        if (profile != null) onSuccess(profile)
+        else onFailure(Exception("Error converting document to Profile"))
       } else {
         task.exception?.let { e ->
           Log.e("ProfileRepositoryFirestore", "Error getting document", e)

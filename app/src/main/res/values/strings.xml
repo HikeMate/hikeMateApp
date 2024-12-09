@@ -17,7 +17,7 @@
     <string name="nav_saved_hikes">Saved Hikes</string>
     <string name="nav_profile">Profile</string>
     <string name="nav_tutorial">Tutorial</string>
-    <string name="nav_auth">Auth(never used)</string>
+    <string name="nav_auth">Auth</string>
 
     <!-- Hike Card -->
     <string name="hike_card_elevation_gain_label">Elevation gain</string>
@@ -65,6 +65,10 @@
     <string name="map_search_for_hikes">Searching for hikes…</string>
 
     <!-- Hike data formatting -->
+    <string name="hike_detail_screen_distance_format">%.2fkm</string>
+    <string name="hike_detail_screen_elevation_gain_format">%dm</string>
+    <string name="hike_detail_screen_estimated_time_format_hour">%02dh%02d</string>
+    <string name="hike_detail_screen_estimated_time_format_minute">%02dmin</string>
 
     <!-- Hike Details Screen -->
     <string name="hike_details_screen_obtaining_osm_data">Loading hike data…</string>
@@ -83,10 +87,6 @@
     <string name="hike_detail_screen_value_planned">Planned</string>
     <string name="hike_detail_screen_add_a_date_button_text">Add a date</string>
     <string name="hike_detail_screen_run_this_hike_button_label">Run this hike!</string>
-    <string name="hike_detail_screen_distance_format">%.2fkm</string>
-    <string name="hike_detail_screen_elevation_gain_format">%dm</string>
-    <string name="hike_detail_screen_estimated_time_format_hour">%02dh%02d</string>
-    <string name="hike_detail_screen_estimated_time_format_minute">%02dmin</string>
 
     <!-- Hike Details Screen - Date Picker -->
     <string name="hike_detail_screen_date_picker_cancel_button">Cancel</string>
