@@ -8,8 +8,6 @@ import ch.hikemate.app.model.route.LatLong
 import ch.hikemate.app.utils.LocationUtils
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.osmdroid.util.BoundingBox
@@ -34,8 +32,6 @@ class FacilitiesViewModel(
   }
 
   private val _cache = mutableMapOf<Bounds, List<Facility>>()
-  private val _filteredFacilities = MutableStateFlow<List<Facility>>(emptyList())
-  val filteredFacilities = _filteredFacilities.asStateFlow()
 
   fun filterFacilitiesForDisplay(
       facilities: List<Facility>,
@@ -43,12 +39,11 @@ class FacilitiesViewModel(
       zoomLevel: Double,
       hikeRoute: DetailedHike,
       onSuccess: (List<Facility>) -> Unit,
-      onFail: () -> Unit
+      onNoFacilitiesForState: () -> Unit
   ) {
     viewModelScope.launch(dispatcher) {
       if (zoomLevel < MIN_ZOOM_FOR_FACILITIES) {
-        _filteredFacilities.value = emptyList()
-        onFail()
+        onNoFacilitiesForState()
         return@launch
       }
 
@@ -56,12 +51,11 @@ class FacilitiesViewModel(
       val distanceFromRoute =
           LocationUtils.projectLocationOnHike(centerPoint, hikeRoute)?.distanceFromRoute
               ?: run {
-                onFail()
+                onNoFacilitiesForState()
                 return@launch
               }
       if (distanceFromRoute > MAX_DISTANCE_FROM_ROUTE_TO_FACILITY) {
-        _filteredFacilities.value = emptyList()
-        onFail()
+        onNoFacilitiesForState()
         return@launch
       }
 
@@ -82,7 +76,6 @@ class FacilitiesViewModel(
         return@launch
       }
       onSuccess(filteredFacilities)
-      _filteredFacilities.value = filteredFacilities
     }
   }
 

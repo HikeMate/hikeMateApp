@@ -81,6 +81,7 @@ class HikeDetailScreenTest {
   private lateinit var hikesViewModel: HikesViewModel
   private lateinit var facilitiesViewModel: FacilitiesViewModel
   private lateinit var facilitiesRepository: FacilitiesRepository
+  private lateinit var elevationRepository: ElevationRepository
 
   private val hikeId = "1"
   private val detailedHike =

@@ -41,9 +41,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -116,7 +114,6 @@ object HikeDetailScreen {
   const val MARGIN_BOUNDS = 0.001
 
   const val DEBOUNCE_DURATION = 300L
-  const val MAX_DISTANCE_FROM_ROUTE_TO_FACILITY = 3000
 
   const val LOG_TAG = "HikeDetailScreen"
 
@@ -269,8 +266,6 @@ fun hikeDetailsMap(
 ): MapView {
   val context = LocalContext.current
 
-  val scope = rememberCoroutineScope()
-
   val hikeZoomLevel = MapUtils.calculateBestZoomLevel(hike.bounds).toDouble()
   val hikeCenter = MapUtils.getGeographicalCenter(hike.bounds)
 
@@ -295,11 +290,8 @@ fun hikeDetailsMap(
     }
   }
 
-  val filteredFacilities by facilitiesViewModel.filteredFacilities.collectAsState()
-  val facilitiesDisplayed = remember { mutableStateOf(false) }
   // Create state values that we can actually observe in the LaunchedEffect
   // We keep our StateFlows for debouncing
-  // First, we actually don't need the separate state variables since we're using StateFlow
   val boundingBoxState = remember { MutableStateFlow(mapView.boundingBox) }
   val zoomLevelState = remember { MutableStateFlow(mapView.zoomLevelDouble) }
 
@@ -307,6 +299,7 @@ fun hikeDetailsMap(
   mapView.addMapListener(
       object : MapListener {
         override fun onScroll(event: ScrollEvent?): Boolean {
+          // On a Scroll event the boundingBox will change
           event?.let { boundingBoxState.value = mapView.boundingBox }
           return true
         }
@@ -319,15 +312,15 @@ fun hikeDetailsMap(
 
   LaunchedEffect(Unit) {
     combine(
+            // We use debounce to call this with a delay.
             boundingBoxState.debounce(HikeDetailScreen.DEBOUNCE_DURATION),
-            zoomLevelState.debounce(HikeDetailScreen.DEBOUNCE_DURATION),
-            snapshotFlow { facilities.value }) { boundingBox, zoomLevel, facilitiesList ->
+            zoomLevelState.debounce(HikeDetailScreen.DEBOUNCE_DURATION)) { boundingBox, zoomLevel ->
               // We need to ensure the MapView is still valid when we try to update facilities
               try {
                 // Only proceed if mapView is still valid
                 if (mapView.repository != null) {
                   facilitiesViewModel.filterFacilitiesForDisplay(
-                      facilitiesList ?: emptyList(),
+                      facilities.value ?: emptyList(),
                       bounds = boundingBox,
                       zoomLevel = zoomLevel,
                       hikeRoute = hike,
@@ -340,16 +333,20 @@ fun hikeDetailsMap(
                           }
                         }
                       },
-                      onFail = {
-                        // And here too
+                      onNoFacilitiesForState = {
+                        // Double check mapView is still valid before updating
                         if (mapView.repository != null) {
                           MapUtils.clearFacilities(mapView)
                         }
                       })
-                } else {}
+                }
+                // The compiler needs this else statement.
+                else {
+                  Log.d(HikeDetailScreen.LOG_TAG, "MapView is no longer valid")
+                }
               } catch (e: Exception) {
                 // Log the error but don't crash
-                Log.e("HikeDetailScreen", "Error updating facilities", e)
+                Log.e(HikeDetailScreen.LOG_TAG, "Error updating facilities", e)
               }
             }
         .launchIn(this)
@@ -369,18 +366,20 @@ fun hikeDetailsMap(
           min(HikeDetailScreen.MAP_MAX_LONGITUDE, mapView.boundingBox.lonEast),
           HikeDetailScreen.MAP_BOUNDS_MARGIN)
     }
+    // This is useful for the first composition since there won't be any zoom or scroll events at
+    // first so the hike displays the possible facilities from the get go.
     facilitiesViewModel.filterFacilitiesForDisplay(
         facilities.value ?: emptyList(),
         bounds = boundingBoxState.value,
         zoomLevel = zoomLevelState.value,
         hikeRoute = hike,
         onSuccess = { MapUtils.displayFacilities(it, mapView, context) },
-        onFail = {})
+        onNoFacilitiesForState = { /*Nothing since nothing is displayed yet*/})
   }
 
   // Show the selected hike on the map
   // OnLineClick does nothing, the line should not be clickable
-  Log.d("HikeDetailScreen", "Drawing hike on map: ${hike.bounds}")
+  Log.d(HikeDetailScreen.LOG_TAG, "Drawing hike on map: ${hike.bounds}")
   MapUtils.showHikeOnMap(
       mapView = mapView, waypoints = hike.waypoints, color = hike.color, onLineClick = {})
 
