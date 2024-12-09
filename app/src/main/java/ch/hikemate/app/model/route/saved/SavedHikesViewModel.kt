@@ -105,10 +105,7 @@ class SavedHikesViewModel(
           }
         } else {
           val savedHikeInfo =
-              SavedHike(
-                  id = current.hike.id,
-                  name = current.hike.name ?: "Unnamed",
-                  date = current.plannedDate)
+              SavedHike(id = current.hike.id, name = current.hike.name, date = current.plannedDate)
           // This will mark the current hike as saved and update the saved hikes list
           addSavedHikeAsync(savedHikeInfo)
         }
@@ -130,8 +127,7 @@ class SavedHikesViewModel(
       withContext(dispatcher) {
         val current = _hikeDetailState.value ?: return@withContext
 
-        val updated =
-            SavedHike(id = current.hike.id, name = current.hike.name ?: "Unnamed", date = timestamp)
+        val updated = SavedHike(id = current.hike.id, name = current.hike.name, date = timestamp)
 
         // If the hike is already saved, we unsave it to save the new instance of it instead
         if (current.isSaved) {
