@@ -9,6 +9,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 
 const val TEST_TAG_BOTTOM_BAR = "TEST_TAG_BOTTOM_BAR"
 const val TEST_TAG_MENU_ITEM_PREFIX = "TEST_TAG_MENU_ITEM_"
@@ -39,10 +40,10 @@ fun BottomBarNavigation(
                 icon = {
                   Icon(
                       tab.icon,
-                      contentDescription = tab.textId,
+                      contentDescription = stringResource(tab.textId),
                   )
                 },
-                label = { Text(text = tab.textId) },
+                label = { Text(stringResource(tab.textId)) },
                 selected = tab.route == selectedItem,
                 onClick = { onTabSelect(tab) },
                 modifier = Modifier.testTag(TEST_TAG_MENU_ITEM_PREFIX + tab.route),
