@@ -89,6 +89,8 @@ fun ProfileScreen(
   AsyncStateHandler(
       errorMessageIdState = errorMessageIdState,
       actionContentDescriptionStringId = R.string.go_back,
+      // Whenever there's an error the user needs to re-authenticate
+      // thus forcing him to sign out and navigate to the Auth screen
       actionOnErrorAction = { authViewModel.signOut { navigationActions.navigateTo(Route.AUTH) } },
       valueState = profileState,
   ) { profile ->
