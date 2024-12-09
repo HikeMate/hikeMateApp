@@ -53,14 +53,10 @@ data class ElevationRequest(
  * A part of a request for the ElevationRepository
  *
  * @param coordinates The chunk of coordinates to get the elevation of
- * @param onSuccess The callback to be called when the request is successful
- * @param onFailure The callback to be called when the request fails
  * @param associatedRequests The [ElevationRequest]s that are associated with this chunk
  */
 data class ElevationRequestChunk(
     val coordinates: List<LatLong>,
-    val onSuccess: (List<Double>) -> Unit,
-    val onFailure: (Exception) -> Unit,
     val associatedRequests: Set<ElevationRequest>
 )
 
@@ -132,7 +128,6 @@ class ElevationRepositoryCopernicus(
 
     CoroutineScope(repoDispatcher).launch {
       mutex.withLock {
-        Log.d(LOG_TAG, "Adding request to requests list")
         requests.add(ElevationRequest(coordinates, onSuccess, onFailure))
 
         if (cacheUpdateJob == null || cacheUpdateJob?.isCompleted == true) {
@@ -237,8 +232,6 @@ class ElevationRepositoryCopernicus(
       chunksWithRequests.add(
           ElevationRequestChunk(
               chunk,
-              { elevations -> associatedRequests.forEach { it.onSuccess(elevations) } },
-              { exception -> associatedRequests.forEach { it.onFailure(exception) } },
               associatedRequests))
     }
 
@@ -267,11 +260,20 @@ class ElevationRepositoryCopernicus(
     // Callback for the network request, it also updates the cache
     val onSuccessWithCache: (List<Double?>) -> Unit = parseCacheOnDataRetrieval(chunkRequest)
 
+    val onFailure: (Exception) -> Unit = { e ->
+      CoroutineScope(repoDispatcher).launch {
+        chunkRequest.associatedRequests.forEach { request ->
+          requests.remove(request)
+          request.onFailure(e)
+        }
+      }
+    }
+
     client
         .newCall(request)
         .enqueue(
             ElevationServiceCallback(
-                onSuccessWithCache, chunkRequest.onFailure, failedRequests, chunkRequest))
+                onSuccessWithCache, onFailure, failedRequests, chunkRequest))
   }
 
   /**
