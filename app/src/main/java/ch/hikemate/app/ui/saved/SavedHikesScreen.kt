@@ -119,10 +119,10 @@ fun SavedHikesScreen(hikesViewModel: HikesViewModel, navigationActions: Navigati
                 Column {
                   // Display either the planned or saved hikes section
                   when (SavedHikesSection.values()[pageIndex]) {
-                    SavedHikesSection.Planned ->
-                        PlannedHikes(hikes = savedHikes, hikesViewModel = hikesViewModel)
                     SavedHikesSection.Saved ->
                         SavedHikes(savedHikes = savedHikes, hikesViewModel = hikesViewModel)
+                    SavedHikesSection.Planned ->
+                        PlannedHikes(hikes = savedHikes, hikesViewModel = hikesViewModel)
                   }
                 }
               }
@@ -141,29 +141,31 @@ fun SavedHikesScreen(hikesViewModel: HikesViewModel, navigationActions: Navigati
 @Composable
 private fun PlannedHikes(hikes: List<StateFlow<Hike>>?, hikesViewModel: HikesViewModel) {
   val context = LocalContext.current
-  Text(
-      context.getString(R.string.saved_hikes_screen_planned_section_title),
-      style = MaterialTheme.typography.titleLarge,
-      modifier =
-          Modifier.padding(16.dp).testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_PLANNED_TITLE))
+  Column(modifier = Modifier.fillMaxSize()) {
+    Text(
+        context.getString(R.string.saved_hikes_screen_planned_section_title),
+        style = MaterialTheme.typography.titleLarge,
+        modifier =
+            Modifier.padding(16.dp).testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_PLANNED_TITLE))
 
-  val plannedHikes =
-      hikes?.filter { it.value.plannedDate != null }?.sortedBy { it.value.plannedDate }
+    val plannedHikes =
+        hikes?.filter { it.value.plannedDate != null }?.sortedBy { it.value.plannedDate }
 
-  if (plannedHikes.isNullOrEmpty()) {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-      Text(
-          text = context.getString(R.string.saved_hikes_screen_planned_section_empty_message),
-          style = MaterialTheme.typography.bodyLarge,
-          modifier =
-              Modifier.padding(16.dp)
-                  .testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_PLANNED_EMPTY_MESSAGE))
-    }
-  } else {
-    LazyColumn {
-      items(plannedHikes.size, key = { plannedHikes[it].value.id }) { index ->
-        val hike by plannedHikes[index].collectAsState()
-        SavedHikeCardFor(hike, hikesViewModel)
+    if (plannedHikes.isNullOrEmpty()) {
+      Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text(
+            text = context.getString(R.string.saved_hikes_screen_planned_section_empty_message),
+            style = MaterialTheme.typography.bodyLarge,
+            modifier =
+                Modifier.padding(16.dp)
+                    .testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_PLANNED_EMPTY_MESSAGE))
+      }
+    } else {
+      LazyColumn {
+        items(plannedHikes.size, key = { plannedHikes[it].value.id }) { index ->
+          val hike by plannedHikes[index].collectAsState()
+          SavedHikeCardFor(hike, hikesViewModel)
+        }
       }
     }
   }
@@ -172,25 +174,28 @@ private fun PlannedHikes(hikes: List<StateFlow<Hike>>?, hikesViewModel: HikesVie
 @Composable
 private fun SavedHikes(savedHikes: List<StateFlow<Hike>>?, hikesViewModel: HikesViewModel) {
   val context = LocalContext.current
-  Text(
-      context.getString(R.string.saved_hikes_screen_saved_section_title),
-      style = MaterialTheme.typography.titleLarge,
-      modifier = Modifier.padding(16.dp).testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_SAVED_TITLE))
+  Column(modifier = Modifier.fillMaxSize()) {
+    Text(
+        context.getString(R.string.saved_hikes_screen_saved_section_title),
+        style = MaterialTheme.typography.titleLarge,
+        modifier =
+            Modifier.padding(16.dp).testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_SAVED_TITLE))
 
-  if (savedHikes.isNullOrEmpty()) {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-      Text(
-          text = context.getString(R.string.saved_hikes_screen_saved_section_empty_message),
-          style = MaterialTheme.typography.bodyLarge,
-          modifier =
-              Modifier.padding(16.dp)
-                  .testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_SAVED_EMPTY_MESSAGE))
-    }
-  } else {
-    LazyColumn {
-      items(savedHikes.size, key = { savedHikes[it].value.id }) { index ->
-        val hike by savedHikes[index].collectAsState()
-        SavedHikeCardFor(hike, hikesViewModel)
+    if (savedHikes.isNullOrEmpty()) {
+      Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text(
+            text = context.getString(R.string.saved_hikes_screen_saved_section_empty_message),
+            style = MaterialTheme.typography.bodyLarge,
+            modifier =
+                Modifier.padding(16.dp)
+                    .testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_SAVED_EMPTY_MESSAGE))
+      }
+    } else {
+      LazyColumn {
+        items(savedHikes.size, key = { savedHikes[it].value.id }) { index ->
+          val hike by savedHikes[index].collectAsState()
+          SavedHikeCardFor(hike, hikesViewModel)
+        }
       }
     }
   }
