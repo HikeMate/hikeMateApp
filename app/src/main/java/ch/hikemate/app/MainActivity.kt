@@ -178,6 +178,7 @@ fun HikeMateApp() {
         RunHikeScreen(
             listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
             profileViewModel = profileViewModel,
+            authViewModel = authViewModel,
             navigationActions = navigationActions)
       }
     }
@@ -194,7 +195,9 @@ fun HikeMateApp() {
       }
       composable(Screen.EDIT_PROFILE) {
         EditProfileScreen(
-            navigationActions = navigationActions, profileViewModel = profileViewModel)
+            navigationActions = navigationActions,
+            profileViewModel = profileViewModel,
+            authViewModel = authViewModel)
       }
     }
     navigation(startDestination = Screen.TUTORIAL, route = Route.TUTORIAL) {

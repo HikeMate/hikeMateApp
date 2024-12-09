@@ -33,6 +33,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import ch.hikemate.app.R
+import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.model.elevation.ElevationServiceRepository
 import ch.hikemate.app.model.profile.ProfileViewModel
 import ch.hikemate.app.model.route.DetailedHikeRoute
@@ -45,6 +46,7 @@ import ch.hikemate.app.ui.components.DetailRow
 import ch.hikemate.app.ui.components.ElevationGraph
 import ch.hikemate.app.ui.components.ElevationGraphStyleProperties
 import ch.hikemate.app.ui.navigation.NavigationActions
+import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.utils.MapUtils
 import kotlin.math.max
@@ -71,6 +73,7 @@ fun RunHikeScreen(
     listOfHikeRoutesViewModel: ListOfHikeRoutesViewModel,
     profileViewModel: ProfileViewModel,
     navigationActions: NavigationActions,
+    authViewModel: AuthViewModel
 ) {
 
   val context = LocalContext.current
@@ -142,7 +145,7 @@ fun RunHikeScreen(
   AsyncStateHandler(
       errorMessageIdState = errorMessageIdState,
       actionContentDescriptionStringId = R.string.go_back,
-      actionOnErrorAction = { navigationActions.goBack() },
+      actionOnErrorAction = { authViewModel.signOut { navigationActions.navigateTo(Route.AUTH) } },
       valueState = profileState,
   ) { _ ->
     Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {

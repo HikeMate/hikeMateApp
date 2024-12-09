@@ -8,6 +8,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.model.elevation.ElevationService
 import ch.hikemate.app.model.profile.HikingLevel
 import ch.hikemate.app.model.profile.Profile
@@ -43,6 +44,7 @@ class RunHikeScreenTest {
   private lateinit var profileViewModel: ProfileViewModel
   private lateinit var hikesRepository: HikeRoutesRepository
   private lateinit var elevationService: ElevationService
+  private lateinit var authViewModel: AuthViewModel
   private lateinit var listOfHikeRoutesViewModel: ListOfHikeRoutesViewModel
   private val route =
       HikeRoute(
@@ -70,6 +72,8 @@ class RunHikeScreenTest {
     hikesRepository = mock(HikeRoutesRepository::class.java)
     elevationService = mock(ElevationService::class.java)
 
+    authViewModel = AuthViewModel(mock(), mock())
+
     listOfHikeRoutesViewModel =
         ListOfHikeRoutesViewModel(hikesRepository, elevationService, UnconfinedTestDispatcher())
 
@@ -89,7 +93,7 @@ class RunHikeScreenTest {
           listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
           profileViewModel = profileViewModel,
           navigationActions = mockNavigationActions,
-      )
+          authViewModel = authViewModel)
     }
     composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_MAP).assertIsDisplayed()
   }
@@ -101,7 +105,7 @@ class RunHikeScreenTest {
           listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
           profileViewModel = profileViewModel,
           navigationActions = mockNavigationActions,
-      )
+          authViewModel = authViewModel)
     }
     composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_BACK_BUTTON).assertIsDisplayed()
   }
@@ -113,7 +117,7 @@ class RunHikeScreenTest {
           listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
           profileViewModel = profileViewModel,
           navigationActions = mockNavigationActions,
-      )
+          authViewModel = authViewModel)
     }
     composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_ZOOM_BUTTONS).assertIsDisplayed()
   }
@@ -125,7 +129,7 @@ class RunHikeScreenTest {
           listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
           profileViewModel = profileViewModel,
           navigationActions = mockNavigationActions,
-      )
+          authViewModel = authViewModel)
     }
     composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_BOTTOM_SHEET).assertExists()
   }
@@ -138,7 +142,7 @@ class RunHikeScreenTest {
           listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
           profileViewModel = profileViewModel,
           navigationActions = mockNavigationActions,
-      )
+          authViewModel = authViewModel)
     }
 
     composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_HIKE_NAME).assertIsDisplayed()
@@ -159,7 +163,7 @@ class RunHikeScreenTest {
           listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
           profileViewModel = profileViewModel,
           navigationActions = mockNavigationActions,
-      )
+          authViewModel = authViewModel)
     }
 
     composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_ELEVATION_GRAPH).assertIsDisplayed()
@@ -172,7 +176,7 @@ class RunHikeScreenTest {
           listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
           profileViewModel = profileViewModel,
           navigationActions = mockNavigationActions,
-      )
+          authViewModel = authViewModel)
     }
 
     composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_STOP_HIKE_BUTTON).assertIsDisplayed()
@@ -185,7 +189,7 @@ class RunHikeScreenTest {
           listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
           profileViewModel = profileViewModel,
           navigationActions = mockNavigationActions,
-      )
+          authViewModel = authViewModel)
     }
     doNothing().`when`(mockNavigationActions).goBack()
 
@@ -210,7 +214,7 @@ class RunHikeScreenTest {
           listOfHikeRoutesViewModel = listOfHikeRoutesViewModel,
           profileViewModel = profileViewModel,
           navigationActions = mockNavigationActions,
-      )
+          authViewModel = authViewModel)
     }
 
     composeTestRule

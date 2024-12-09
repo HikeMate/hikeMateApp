@@ -89,7 +89,7 @@ fun ProfileScreen(
   AsyncStateHandler(
       errorMessageIdState = errorMessageIdState,
       actionContentDescriptionStringId = R.string.go_back,
-      actionOnErrorAction = { navigationActions.navigateTo(Route.MAP) },
+      actionOnErrorAction = { authViewModel.signOut { navigationActions.navigateTo(Route.AUTH) } },
       valueState = profileState,
   ) { profile ->
     BottomBarNavigation(
