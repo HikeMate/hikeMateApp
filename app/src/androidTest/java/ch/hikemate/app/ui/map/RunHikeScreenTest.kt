@@ -10,7 +10,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
-import ch.hikemate.app.model.elevation.ElevationService
+import ch.hikemate.app.model.elevation.ElevationRepository
 import ch.hikemate.app.model.route.Bounds
 import ch.hikemate.app.model.route.DetailedHike
 import ch.hikemate.app.model.route.Hike
@@ -45,7 +45,7 @@ class RunHikeScreenTest {
   private lateinit var mockNavigationActions: NavigationActions
   private lateinit var savedHikesRepository: SavedHikesRepository
   private lateinit var hikesRepository: HikeRoutesRepository
-  private lateinit var elevationService: ElevationService
+  private lateinit var elevationRepository: ElevationRepository
   private lateinit var hikesViewModel: HikesViewModel
 
   private val hikeId = "1"
@@ -114,14 +114,14 @@ class RunHikeScreenTest {
 
     if (waypointsRetrievalSucceeds && elevationRetrievalSucceeds) {
       // Make sure the appropriate elevation profile is obtained when requested
-      `when`(elevationService.getElevation(any(), any(), any(), any())).thenAnswer {
-        val onSuccess = it.getArgument<(List<Double>) -> Unit>(2)
+      `when`(elevationRepository.getElevation(any(), any(), any())).thenAnswer {
+        val onSuccess = it.getArgument<(List<Double>) -> Unit>(1)
         onSuccess(hike.elevation)
       }
     } else {
       // Make sure the elevation profile can't be obtained when requested
-      `when`(elevationService.getElevation(any(), any(), any(), any())).thenAnswer {
-        val onFailure = it.getArgument<(Exception) -> Unit>(3)
+      `when`(elevationRepository.getElevation(any(), any(), any())).thenAnswer {
+        val onFailure = it.getArgument<(Exception) -> Unit>(2)
         onFailure(Exception("Failed to load elevation data"))
       }
     }
@@ -129,7 +129,7 @@ class RunHikeScreenTest {
     // Reset the view model
     hikesViewModel =
         HikesViewModel(
-            savedHikesRepository, hikesRepository, elevationService, UnconfinedTestDispatcher())
+            savedHikesRepository, hikesRepository, elevationRepository, UnconfinedTestDispatcher())
 
     // Load the hike from saved hikes
     hikesViewModel.loadSavedHikes()
@@ -162,7 +162,7 @@ class RunHikeScreenTest {
     mockNavigationActions = mock(NavigationActions::class.java)
     savedHikesRepository = mock(SavedHikesRepository::class.java)
     hikesRepository = mock(HikeRoutesRepository::class.java)
-    elevationService = mock(ElevationService::class.java)
+    elevationRepository = mock(ElevationRepository::class.java)
   }
 
   @Test
@@ -192,7 +192,7 @@ class RunHikeScreenTest {
         hasTestTag(RunHikeScreen.TEST_TAG_MAP), timeoutMillis = 10000)
 
     verify(hikesRepository).getRoutesByIds(any(), any(), any())
-    verify(elevationService).getElevation(any(), any(), any(), any())
+    verify(elevationRepository).getElevation(any(), any(), any())
   }
 
   @Test
@@ -229,6 +229,7 @@ class RunHikeScreenTest {
     composeTestRule.onAllNodesWithTag(DetailRow.TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(4)
     composeTestRule.onAllNodesWithTag(DetailRow.TEST_TAG_DETAIL_ROW_VALUE).assertCountEquals(4)
 
+    // TODO: THIS IS NOT LOCALE FRIENDLY
     composeTestRule
         .onNodeWithTag(RunHikeScreen.TEST_TAG_TOTAL_DISTANCE_TEXT)
         .assertIsDisplayed()

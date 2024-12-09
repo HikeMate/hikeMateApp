@@ -1,6 +1,7 @@
 package ch.hikemate.app.model.route
 
 import ch.hikemate.app.ui.theme.hikeColors
+import java.math.RoundingMode
 import kotlin.math.abs
 import kotlin.math.asin
 import kotlin.math.cos
@@ -106,7 +107,16 @@ fun Bounds.toBoundingBox(): BoundingBox {
 }
 
 /** A simple data class to represent a latitude and longitude */
-data class LatLong(val lat: Double, val lon: Double) {
+class LatLong(lat: Double, lon: Double) {
+
+  companion object {
+    /** The precision of the coordinates */
+    const val PRECISION = 6
+  }
+
+  val lat: Double = lat.toBigDecimal().setScale(PRECISION, RoundingMode.HALF_UP).toDouble()
+  val lon: Double = lon.toBigDecimal().setScale(PRECISION, RoundingMode.HALF_UP).toDouble()
+
   /**
    * Calculate the distance between this point and another point, using the Haversine formula to
    * account for earth's curvature.
@@ -169,7 +179,7 @@ data class LatLong(val lat: Double, val lon: Double) {
   }
 
   override fun hashCode(): Int {
-    return super.hashCode()
+    return lat.hashCode() * 31 + lon.hashCode()
   }
 }
 

@@ -28,11 +28,12 @@ class SavedHikesViewModelTest {
 
   @Before
   fun setUp() {
+    val dispatcher = UnconfinedTestDispatcher()
     // Testing coroutines is easier if everything is set to run on a single thread
-    Dispatchers.setMain(UnconfinedTestDispatcher())
+    Dispatchers.setMain(dispatcher)
 
     savedHikesRepository = mock(SavedHikesRepository::class.java)
-    savedHikesViewModel = SavedHikesViewModel(savedHikesRepository, UnconfinedTestDispatcher())
+    savedHikesViewModel = SavedHikesViewModel(savedHikesRepository, dispatcher)
   }
 
   @Test
