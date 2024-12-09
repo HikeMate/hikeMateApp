@@ -146,6 +146,8 @@ fun HikeDetailScreen(
     return
   }
 
+  BackHandler { hikesViewModel.unselectHike() }
+
   val hike = selectedHike!!
 
   WithDetailedHike(
@@ -186,8 +188,6 @@ fun HikeDetailsContent(
     hikesViewModel: HikesViewModel,
     userHikingLevel: HikingLevel
 ) {
-  BackHandler { hikesViewModel.unselectHike() }
-
   Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {
     // Display the map and the zoom buttons
     val mapView = hikeDetailsMap(hike)
