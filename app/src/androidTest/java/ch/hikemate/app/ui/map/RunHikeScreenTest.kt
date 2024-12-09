@@ -115,13 +115,13 @@ class RunHikeScreenTest {
     if (waypointsRetrievalSucceeds && elevationRetrievalSucceeds) {
       // Make sure the appropriate elevation profile is obtained when requested
       `when`(elevationRepository.getElevation(any(), any(), any())).thenAnswer {
-        val onSuccess = it.getArgument<(List<Double>) -> Unit>(2)
+        val onSuccess = it.getArgument<(List<Double>) -> Unit>(1)
         onSuccess(hike.elevation)
       }
     } else {
       // Make sure the elevation profile can't be obtained when requested
       `when`(elevationRepository.getElevation(any(), any(), any())).thenAnswer {
-        val onFailure = it.getArgument<(Exception) -> Unit>(3)
+        val onFailure = it.getArgument<(Exception) -> Unit>(2)
         onFailure(Exception("Failed to load elevation data"))
       }
     }
