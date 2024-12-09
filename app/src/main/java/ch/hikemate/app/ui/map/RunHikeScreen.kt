@@ -184,7 +184,11 @@ private fun runHikeMap(hike: DetailedHike): MapView {
       factory = { mapView },
       modifier =
           Modifier.fillMaxWidth()
-              .padding(bottom = 300.dp) // Reserve space for the scaffold at the bottom
+              .padding(
+                  bottom =
+                      300.dp -
+                          20.dp) // Reserve space for the scaffold at the bottom, -20.dp to avoid
+              // the map being to small under the bottomSheet
               .testTag(RunHikeScreen.TEST_TAG_MAP))
 
   return mapView
