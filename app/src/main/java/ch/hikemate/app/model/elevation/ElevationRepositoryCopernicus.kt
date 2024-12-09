@@ -229,10 +229,7 @@ class ElevationRepositoryCopernicus(
     for (chunk in chunks) {
       val associatedRequests =
           requests.filter { it.coordinates.any { latLong -> chunk.contains(latLong) } }.toSet()
-      chunksWithRequests.add(
-          ElevationRequestChunk(
-              chunk,
-              associatedRequests))
+      chunksWithRequests.add(ElevationRequestChunk(chunk, associatedRequests))
     }
 
     return Pair(coordinates.size.toLong(), chunksWithRequests)
@@ -272,8 +269,7 @@ class ElevationRepositoryCopernicus(
     client
         .newCall(request)
         .enqueue(
-            ElevationServiceCallback(
-                onSuccessWithCache, onFailure, failedRequests, chunkRequest))
+            ElevationServiceCallback(onSuccessWithCache, onFailure, failedRequests, chunkRequest))
   }
 
   /**
