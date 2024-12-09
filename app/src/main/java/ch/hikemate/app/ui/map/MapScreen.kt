@@ -446,7 +446,11 @@ fun MapScreen(
                     modifier =
                         Modifier.fillMaxSize()
                             .testTag(MapScreen.TEST_TAG_MAP)
-                            .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT - 20.dp))
+                            .padding(
+                                bottom =
+                                    MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT -
+                                        20.dp)) // -20.dp to avoid the map being to small under
+                // the bottomSheet
 
                 // Button to center the map on the user's location
                 MapMyLocationButton(
