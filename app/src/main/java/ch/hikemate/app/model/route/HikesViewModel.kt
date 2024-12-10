@@ -1153,7 +1153,7 @@ class HikesViewModel(
           val hike = hikeFlow.value
 
           // If the elevation of this hike is already computed or requested, do nothing
-          alreadyComputed = hike.elevation !is DeferredData.NotRequested
+          alreadyComputed = hike.elevation.obtained() || hike.elevation is DeferredData.Requested
           if (alreadyComputed) {
             success = true
             return@withLock
