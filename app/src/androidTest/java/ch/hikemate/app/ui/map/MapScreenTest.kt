@@ -290,6 +290,16 @@ class MapScreenTest : TestCase() {
   }
 
   @Test
+  fun zoomingOutMakesTheSearchButtonDisabled() {
+    setUpMap()
+    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).assertIsEnabled()
+    composeTestRule.onNodeWithTag(ZoomMapButton.ZOOM_OUT_BUTTON).performClick()
+    composeTestRule.onNodeWithTag(ZoomMapButton.ZOOM_OUT_BUTTON).performClick()
+    composeTestRule.onNodeWithTag(ZoomMapButton.ZOOM_OUT_BUTTON).performClick()
+    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).assertIsNotEnabled()
+  }
+
+  @Test
   fun searchingHikesTakesAMinimalTime() = runTest {
     setUpMap()
     `when`(hikesRepository.getRoutes(any(), any(), any())).thenAnswer {
