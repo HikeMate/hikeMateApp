@@ -1,8 +1,10 @@
 package ch.hikemate.app.ui.map
 
+import android.content.Context
 import android.graphics.drawable.Drawable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
@@ -13,6 +15,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import ch.hikemate.app.R
 import ch.hikemate.app.model.elevation.ElevationRepository
@@ -36,8 +39,11 @@ import ch.hikemate.app.ui.components.CenteredLoadingAnimation
 import ch.hikemate.app.ui.components.DetailRow
 import ch.hikemate.app.ui.navigation.NavigationActions
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Before
@@ -48,6 +54,7 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.verify
+import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 
@@ -349,7 +356,141 @@ class RunHikeScreenTest {
   }
 
   @Test
-  fun hikeDetails_hidesFacilities_whenZoomLevelIsInsufficient() = runTest {
+  fun runHike_displaysCorrectDrawableForFacilityType() = runTest {
+    // Setup a detailed hike
+    setUpSelectedHike(detailedHike2)
+
+    val bounds = detailedHike2.bounds.toBoundingBox()
+    val center = LatLong(bounds.centerLatitude, bounds.centerLongitude)
+    val testFacility = Facility(type = FacilityType.TOILETS, coordinates = center)
+
+    val facilities: MutableState<List<Facility>?> = mutableStateOf(listOf(testFacility))
+
+    lateinit var mapView: MapView
+    lateinit var context: Context
+
+    composeTestRule.setContent {
+      context = LocalContext.current
+      mapView = hikeDetailsMap(detailedHike2, facilitiesViewModel, facilities)
+    }
+
+    // Create a custom waiter that checks for the marker presence
+    var attempts = 0
+    val maxAttempts = 500 // Adjust as needed
+    val delayMs = 100L // Small delay between checks
+
+    // Wait for the marker to appear using polling
+    while (attempts < maxAttempts) {
+      val facilityMarkers =
+          mapView.overlays.filterIsInstance<Marker>().filter {
+            it.relatedObject == R.string.facility_marker
+          }
+
+      if (facilityMarkers.isNotEmpty()) {
+        // Marker found, proceed with assertions
+        val marker = facilityMarkers.first()
+        val expectedDrawable = ContextCompat.getDrawable(context, R.drawable.toilets)
+
+        assertEquals(1, facilityMarkers.size)
+        assertTrue(
+            "Marker should have correct drawable icon",
+            areSameDrawable(expectedDrawable, marker.icon))
+        assertEquals(testFacility.coordinates.lat, marker.position.latitude, 0.0001)
+        assertEquals(testFacility.coordinates.lon, marker.position.longitude, 0.0001)
+        return@runTest // Exit successfully
+      }
+
+      delay(delayMs) // Use coroutine delay instead of Thread.sleep
+      attempts++
+    }
+
+    // If we get here, the marker never appeared
+    fail("Marker was not added to map after ${maxAttempts * delayMs}ms")
+  }
+
+  @Test
+  fun runHike_markersRemainAfterMapMovement() = runTest {
+    // First set up our test components
+    setUpSelectedHike(detailedHike2)
+
+    val bounds = detailedHike2.bounds.toBoundingBox()
+    val center = LatLong(bounds.centerLatitude, bounds.centerLongitude)
+    val testFacility = Facility(type = FacilityType.TOILETS, coordinates = center)
+    val facilities: MutableState<List<Facility>?> = mutableStateOf(listOf(testFacility))
+
+    lateinit var mapView: MapView
+    lateinit var context: Context
+
+    composeTestRule.setContent {
+      context = LocalContext.current
+      mapView = hikeDetailsMap(detailedHike2, facilitiesViewModel, facilities)
+    }
+
+    // Wait for initial marker
+    var attempts = 0
+    val maxAttempts = 500
+    val delayMs = 100L
+    var initialMarker: Marker? = null
+
+    while (attempts < maxAttempts) {
+      val facilityMarkers =
+          mapView.overlays.filterIsInstance<Marker>().filter {
+            it.relatedObject == R.string.facility_marker
+          }
+
+      if (facilityMarkers.isNotEmpty()) {
+        initialMarker = facilityMarkers.first()
+        break
+      }
+      delay(delayMs)
+      attempts++
+    }
+
+    assertNotNull("Initial marker should be present", initialMarker)
+
+    // Now move the map, but do it on the main thread
+    composeTestRule.runOnUiThread {
+      val currentCenter = mapView.mapCenter
+      val newCenter = GeoPoint(currentCenter.latitude + 0.0001, currentCenter.longitude + 0.0001)
+      mapView.controller.setCenter(newCenter)
+    }
+
+    // Wait for any debounced updates
+    delay(500)
+
+    // Check if marker is still present
+    attempts = 0
+    var markerStillPresent = false
+
+    while (attempts < maxAttempts) {
+      val currentMarkers =
+          mapView.overlays.filterIsInstance<Marker>().filter {
+            it.relatedObject == R.string.facility_marker
+          }
+
+      if (currentMarkers.isNotEmpty()) {
+        val currentMarker = currentMarkers.first()
+        val expectedDrawable = ContextCompat.getDrawable(context, R.drawable.toilets)
+
+        assertEquals(1, currentMarkers.size)
+        assertTrue(
+            "Marker should still have correct drawable icon",
+            areSameDrawable(expectedDrawable, currentMarker.icon))
+        assertEquals(testFacility.coordinates.lat, currentMarker.position.latitude, 0.0001)
+        assertEquals(testFacility.coordinates.lon, currentMarker.position.longitude, 0.0001)
+
+        markerStillPresent = true
+        break
+      }
+      delay(delayMs)
+      attempts++
+    }
+
+    assertTrue("Marker should remain visible after map movement", markerStillPresent)
+  }
+
+  @Test
+  fun runHike_hidesFacilities_whenZoomLevelIsInsufficient() = runTest {
     setUpSelectedHike(detailedHike3)
 
     val testFacilities =

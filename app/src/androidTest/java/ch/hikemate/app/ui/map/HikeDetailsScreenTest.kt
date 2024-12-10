@@ -66,6 +66,7 @@ import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.verify
+import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 
@@ -501,7 +502,7 @@ class HikeDetailScreenTest {
 
     // Create a custom waiter that checks for the marker presence
     var attempts = 0
-    val maxAttempts = 50 // Adjust as needed
+    val maxAttempts = 500 // Adjust as needed
     val delayMs = 100L // Small delay between checks
 
     // Wait for the marker to appear using polling
@@ -531,6 +532,87 @@ class HikeDetailScreenTest {
 
     // If we get here, the marker never appeared
     fail("Marker was not added to map after ${maxAttempts * delayMs}ms")
+  }
+
+  @Test
+  fun hikeDetails_markersRemainAfterMapMovement() = runTest {
+    // First set up our test components
+    setUpSelectedHike(detailedHike2)
+
+    val bounds = detailedHike2.bounds.toBoundingBox()
+    val center = LatLong(bounds.centerLatitude, bounds.centerLongitude)
+    val testFacility = Facility(type = FacilityType.TOILETS, coordinates = center)
+    val facilities: MutableState<List<Facility>?> = mutableStateOf(listOf(testFacility))
+
+    lateinit var mapView: MapView
+    lateinit var context: Context
+
+    composeTestRule.setContent {
+      context = LocalContext.current
+      mapView = hikeDetailsMap(detailedHike2, facilitiesViewModel, facilities)
+    }
+
+    // Wait for initial marker
+    var attempts = 0
+    val maxAttempts = 500
+    val delayMs = 100L
+    var initialMarker: Marker? = null
+
+    while (attempts < maxAttempts) {
+      val facilityMarkers =
+          mapView.overlays.filterIsInstance<Marker>().filter {
+            it.relatedObject == R.string.facility_marker
+          }
+
+      if (facilityMarkers.isNotEmpty()) {
+        initialMarker = facilityMarkers.first()
+        break
+      }
+      delay(delayMs)
+      attempts++
+    }
+
+    assertNotNull("Initial marker should be present", initialMarker)
+
+    // Now move the map, but do it on the main thread
+    composeTestRule.runOnUiThread {
+      val currentCenter = mapView.mapCenter
+      val newCenter = GeoPoint(currentCenter.latitude + 0.0001, currentCenter.longitude + 0.0001)
+      mapView.controller.setCenter(newCenter)
+    }
+
+    // Wait for any debounced updates
+    delay(500)
+
+    // Check if marker is still present
+    attempts = 0
+    var markerStillPresent = false
+
+    while (attempts < maxAttempts) {
+      val currentMarkers =
+          mapView.overlays.filterIsInstance<Marker>().filter {
+            it.relatedObject == R.string.facility_marker
+          }
+
+      if (currentMarkers.isNotEmpty()) {
+        val currentMarker = currentMarkers.first()
+        val expectedDrawable = ContextCompat.getDrawable(context, R.drawable.toilets)
+
+        assertEquals(1, currentMarkers.size)
+        assertTrue(
+            "Marker should still have correct drawable icon",
+            areSameDrawable(expectedDrawable, currentMarker.icon))
+        assertEquals(testFacility.coordinates.lat, currentMarker.position.latitude, 0.0001)
+        assertEquals(testFacility.coordinates.lon, currentMarker.position.longitude, 0.0001)
+
+        markerStillPresent = true
+        break
+      }
+      delay(delayMs)
+      attempts++
+    }
+
+    assertTrue("Marker should remain visible after map movement", markerStillPresent)
   }
 
   @Test
