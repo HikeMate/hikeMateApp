@@ -371,7 +371,7 @@ class RunHikeScreenTest {
 
     composeTestRule.setContent {
       context = LocalContext.current
-      mapView = hikeDetailsMap(detailedHike2, facilitiesViewModel, facilities)
+      mapView = runHikeMap(detailedHike2, facilitiesViewModel, facilities)
     }
 
     // Create a custom waiter that checks for the marker presence
@@ -423,7 +423,7 @@ class RunHikeScreenTest {
 
     composeTestRule.setContent {
       context = LocalContext.current
-      mapView = hikeDetailsMap(detailedHike2, facilitiesViewModel, facilities)
+      mapView = runHikeMap(detailedHike2, facilitiesViewModel, facilities)
     }
 
     // Wait for initial marker
