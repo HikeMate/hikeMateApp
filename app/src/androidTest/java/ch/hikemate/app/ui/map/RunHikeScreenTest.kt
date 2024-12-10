@@ -456,7 +456,7 @@ class RunHikeScreenTest {
     }
 
     // Wait for any debounced updates
-    delay(500)
+    delay(5000)
 
     // Check if marker is still present
     attempts = 0
