@@ -5,6 +5,20 @@
     <!--Google APi-->
     <string name="default_web_client_id">154591189513-eilbr2jtms0av2ses4tsvo62009q5t7n.apps.googleusercontent.com</string>
 
+    <!-- Global -->
+    <string name="app_icon_content_description">HikeMate icon</string>
+    <string name="back_button_content_description">Back</string>
+
+    <!-- Fields -->
+    <string name="field_supportive_text_format">%d / %d</string>
+
+    <!-- Navigation -->
+    <string name="nav_map">Map</string>
+    <string name="nav_saved_hikes">Saved Hikes</string>
+    <string name="nav_profile">Profile</string>
+    <string name="nav_tutorial">Tutorial</string>
+    <string name="nav_auth">Auth</string>
+
     <!-- Hike Card -->
     <string name="hike_card_elevation_gain_label">Elevation gain</string>
     <string name="hike_card_elevation_gain_value_template">%.0fm</string>
@@ -13,6 +27,7 @@
     <!-- Map Screen -->
     <string name="map_screen_menu_button_content_description">Menu</string>
     <string name="map_screen_search_button_text">Search hikes here</string>
+    <string name="map_screen_error_while_searching_hikes">Error while searching for hikes</string>
     <string name="map_screen_empty_hikes_list_message">
         No hikes found in the displayed area.\n\nTry zooming out or moving the map to see more hikes.
     </string>
@@ -48,6 +63,12 @@
     <string name="zoom_in">Zoom in</string>
     <string name="zoom_out">Zoom out</string>
     <string name="map_search_for_hikes">Searching for hikes…</string>
+
+    <!-- Hike data formatting -->
+    <string name="hike_detail_screen_distance_format">%.2fkm</string>
+    <string name="hike_detail_screen_elevation_gain_format">%dm</string>
+    <string name="hike_detail_screen_estimated_time_format_hour">%02dh%02d</string>
+    <string name="hike_detail_screen_estimated_time_format_minute">%02dmin</string>
 
     <!-- WithDetailedHike helper component -->
     <string name="loading_hike_details">Last computations…</string>
@@ -98,6 +119,9 @@
 
 
     <!-- Saved Hikes Screen -->
+    <string name="saved_hikes_saved_label">Saved</string>
+    <string name="saved_hikes_planned_label">Planned</string>
+
     <string name="saved_hikes_screen_loading_message">Loading saved hikes…</string>
     <string name="saved_hikes_screen_generic_error">
         An error occurred while loading saved hikes.
@@ -149,6 +173,7 @@
     <string name="edit_profile_screen_save_button_text">Save profile</string>
 
     <!-- Authentication -->
+    <string name="background_image_content_description">Nature image, blurred</string>
     <string name="sign_in_with_email">Sign in with Email</string>
     <string name="sign_in_with_google">Sign in with Google</string>
 
@@ -195,6 +220,10 @@
 
     <!-- Error handling -->
     <string name="retry">Retry</string>
+
     <!-- Map Utils -->
     <string name="facility_marker">facility_marker</string>
+
+    <string name="delete_account_button_label">Delete Account</string>
+    <string name="google_account_created_confirmation">Connected Google Account to your device successfully. Please wait while we retry the signup.</string>
 </resources>

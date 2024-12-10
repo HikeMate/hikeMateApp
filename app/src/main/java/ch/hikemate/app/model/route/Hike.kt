@@ -48,7 +48,7 @@ data class Hike(
     val difficulty: DeferredData<HikeDifficulty> = DeferredData.NotRequested
 ) {
   /** Helper to convert this [Hike] to a [SavedHike] object. */
-  fun toSavedHike() = SavedHike(id, name ?: "", plannedDate)
+  fun toSavedHike() = SavedHike(id, name, plannedDate)
 
   /**
    * Get the color of the route from its id. The color should be the same for the same route id.

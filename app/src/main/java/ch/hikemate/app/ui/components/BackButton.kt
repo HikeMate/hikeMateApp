@@ -14,7 +14,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import ch.hikemate.app.R
 import ch.hikemate.app.ui.navigation.NavigationActions
 
 object BackButton {
@@ -47,7 +49,7 @@ fun BackButton(
         Icon(
             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
             modifier = Modifier.fillMaxSize(),
-            contentDescription = "Back",
+            contentDescription = stringResource(R.string.back_button_content_description),
             tint = MaterialTheme.colorScheme.onSurface)
       }
 }

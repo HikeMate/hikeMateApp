@@ -14,10 +14,14 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.hikemate.app.R
 import ch.hikemate.app.model.authentication.AuthRepository
 import ch.hikemate.app.model.authentication.AuthViewModel
+
 import ch.hikemate.app.model.facilities.FacilitiesRepository
 import ch.hikemate.app.model.facilities.FacilitiesViewModel
 import ch.hikemate.app.model.facilities.Facility
 import ch.hikemate.app.model.facilities.FacilityType
+
+import ch.hikemate.app.model.elevation.ElevationRepository
+
 import ch.hikemate.app.model.profile.HikingLevel
 import ch.hikemate.app.model.profile.Profile
 import ch.hikemate.app.model.profile.ProfileRepository
@@ -78,6 +82,9 @@ class HikeDetailScreenTest {
   private lateinit var profileViewModel: ProfileViewModel
   private lateinit var mockSavedHikesRepository: SavedHikesRepository
   private lateinit var hikesRepository: HikeRoutesRepository
+
+  private lateinit var elevationRepository: ElevationRepository
+
   private lateinit var hikesViewModel: HikesViewModel
   private lateinit var facilitiesViewModel: FacilitiesViewModel
   private lateinit var facilitiesRepository: FacilitiesRepository
@@ -208,6 +215,9 @@ class HikeDetailScreenTest {
     authRepository = mock(AuthRepository::class.java)
     authViewModel = AuthViewModel(authRepository, profileRepository)
     hikesRepository = mock(HikeRoutesRepository::class.java)
+
+    elevationRepository = mock(ElevationRepository::class.java)
+
     mockSavedHikesRepository = mock(SavedHikesRepository::class.java)
     facilitiesRepository = mock(FacilitiesRepository::class.java)
     facilitiesViewModel = FacilitiesViewModel(facilitiesRepository)
