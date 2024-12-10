@@ -25,6 +25,7 @@ import com.google.firebase.Timestamp
 import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
 import java.text.SimpleDateFormat
 import java.util.Calendar
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -254,7 +255,10 @@ class ProfileScreenTest : TestCase() {
       val onError = it.getArgument<(Exception) -> Unit>(2)
       onError(Exception("Profile not found"))
     }
-
+    `when`(authRepository.signOut(any())).thenAnswer {
+      val onSuccess = it.getArgument<() -> Unit>(0)
+      onSuccess()
+    }
     profileViewModel.getProfileById(profile.id)
 
     composeTestRule.setContent {
@@ -273,6 +277,9 @@ class ProfileScreenTest : TestCase() {
         .assertIsDisplayed()
 
     composeTestRule.onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_BUTTON).performClick()
-    verify(navigationActions).navigateTo(Route.MAP)
+
+    verify(authRepository).signOut(any())
+    verify(navigationActions).navigateTo(Route.AUTH)
+    assertNull(authViewModel.currentUser.value)
   }
 }
