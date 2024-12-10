@@ -81,6 +81,7 @@
     <string name="loading_hike_elevation">Loading hike elevation…</string>
     <string name="loading_hike_osm_data">Loading hike data…</string>
     <string name="loading_hike_error">An error was encountered while loading the hike…</string>
+    <string name="loading_hike_elevation_retrieval_error">An error was encountered while loading the hike\'s elevation.</string>
 
     <!-- Hike Details Screen -->
     <string name="hike_details_screen_obtaining_osm_data">Loading hike data…</string>
