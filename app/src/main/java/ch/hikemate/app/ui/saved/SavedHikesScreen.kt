@@ -213,6 +213,10 @@ private fun SavedHikes(savedHikes: List<StateFlow<Hike>>?, hikesViewModel: Hikes
 
 @Composable
 private fun SavedHikeCardFor(hike: Hike, hikesViewModel: HikesViewModel) {
+  // This variable contains the current state of the hike's elevation data. It can be:
+  // - null: the elevation data is not available yet
+  // - emptyList(): the elevation data is not available because of an error
+  // - List<Double>: the elevation data is available
   val elevation: List<Double>?
   if (hike.elevation is DeferredData.Error) {
     // Display an empty elevation graph if the data is not available because of an error
