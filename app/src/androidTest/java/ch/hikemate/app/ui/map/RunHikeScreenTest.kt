@@ -1,8 +1,11 @@
 package ch.hikemate.app.ui.map
 
+import android.content.Context
 import android.graphics.drawable.Drawable
+import android.preference.PreferenceManager
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
@@ -13,7 +16,9 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
+import androidx.test.core.app.ApplicationProvider
 import ch.hikemate.app.R
 import ch.hikemate.app.model.elevation.ElevationRepository
 import ch.hikemate.app.model.facilities.FacilitiesRepository
@@ -36,8 +41,10 @@ import ch.hikemate.app.ui.components.CenteredLoadingAnimation
 import ch.hikemate.app.ui.components.DetailRow
 import ch.hikemate.app.ui.navigation.NavigationActions
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Before
@@ -48,6 +55,7 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.verify
+import org.osmdroid.config.Configuration
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 
@@ -346,6 +354,101 @@ class RunHikeScreenTest {
     }
     setupCompleteScreenWithSelected(detailedHike2)
     verify(facilitiesRepository).getFacilities(any(), any(), any())
+  }
+
+  @Test
+  fun hikeDetails_displaysCorrectDrawableForFacilityType() = runTest {
+    // First, ensure OsmDroid is properly configured for testing
+    Configuration.getInstance().apply {
+      userAgentValue = "TestAgent"
+      load(
+          ApplicationProvider.getApplicationContext(),
+          PreferenceManager.getDefaultSharedPreferences(
+              ApplicationProvider.getApplicationContext()))
+    }
+
+    // Setup a detailed hike
+    setUpSelectedHike(detailedHike2)
+
+    val testFacility = Facility(type = FacilityType.TOILETS, coordinates = LatLong(45.9, 7.6))
+
+    val facilities: MutableState<List<Facility>?> = mutableStateOf(listOf(testFacility))
+
+    lateinit var mapView: MapView
+    lateinit var context: Context
+
+    // Add a listener to track map initialization
+    var mapInitialized = false
+
+    composeTestRule.setContent {
+      context = LocalContext.current
+      mapView =
+          hikeDetailsMap(detailedHike2, facilitiesViewModel, facilities).also { map ->
+            // Add initialization listener
+            map.addOnFirstLayoutListener { _, _, _, _, _ ->
+              println("Map first layout completed")
+              mapInitialized = true
+            }
+          }
+    }
+
+    // First wait for map initialization
+    var attempts = 0
+    val maxAttempts = 50
+    while (!mapInitialized && attempts < maxAttempts) {
+      println("Waiting for map initialization, attempt ${attempts + 1}")
+      delay(100)
+      attempts++
+    }
+
+    if (!mapInitialized) {
+      fail("Map failed to initialize after ${maxAttempts * 100}ms")
+    }
+
+    // Now wait for markers with detailed logging
+    attempts = 0
+    while (attempts < 500) {
+      println("Checking for markers, attempt ${attempts + 1}")
+      println("Current overlay count: ${mapView.overlays.size}")
+
+      val facilityMarkers =
+          mapView.overlays.filterIsInstance<Marker>().filter {
+            it.relatedObject == R.string.facility_marker
+          }
+
+      println("Found ${facilityMarkers.size} facility markers")
+
+      if (facilityMarkers.isNotEmpty()) {
+        // Log marker details
+        val marker = facilityMarkers.first()
+        println("Marker found: pos=${marker.position}, icon=${marker.icon != null}")
+
+        val expectedDrawable = ContextCompat.getDrawable(context, R.drawable.toilets)
+        assertEquals(1, facilityMarkers.size)
+        assertTrue(
+            "Marker should have correct drawable icon",
+            areSameDrawable(expectedDrawable, marker.icon))
+        assertEquals(testFacility.coordinates.lat, marker.position.latitude, 0.0001)
+        assertEquals(testFacility.coordinates.lon, marker.position.longitude, 0.0001)
+        return@runTest
+      }
+
+      // Check if facilities are being processed
+      println("Current facilities state: ${facilities.value?.size ?: 0}")
+
+      delay(100)
+      attempts++
+    }
+
+    // If we get here, dump the current state for debugging
+    println("Final map state:")
+    println("Total overlays: ${mapView.overlays.size}")
+    println("Overlay types: ${mapView.overlays.map { it.javaClass.simpleName }}")
+    println("Is map initialized: $mapInitialized")
+    println("Current zoom level: ${mapView.zoomLevelDouble}")
+    println("Current center: ${mapView.mapCenter}")
+
+    fail("Marker was not added to map after 50 seconds")
   }
 
   @Test
