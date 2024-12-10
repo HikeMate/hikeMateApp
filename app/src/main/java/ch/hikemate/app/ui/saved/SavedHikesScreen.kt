@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Tab
@@ -32,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import ch.hikemate.app.R
 import ch.hikemate.app.model.route.Hike
 import ch.hikemate.app.model.route.HikesViewModel
+import ch.hikemate.app.ui.components.CenteredErrorAction
 import ch.hikemate.app.ui.components.CenteredLoadingAnimation
 import ch.hikemate.app.ui.components.HikeCard
 import ch.hikemate.app.ui.components.HikeCardStyleProperties
@@ -71,6 +74,7 @@ fun SavedHikesScreen(hikesViewModel: HikesViewModel, navigationActions: Navigati
     val savedHikes by hikesViewModel.hikeFlows.collectAsState()
     val selectedHike by hikesViewModel.selectedHike.collectAsState()
     val osmDataAvailable by hikesViewModel.allOsmDataLoaded.collectAsState()
+    val loadingErrorMessageId by hikesViewModel.loadingErrorMessageId.collectAsState()
 
     val pagerState = rememberPagerState { SavedHikesSection.values().size }
 
@@ -102,6 +106,16 @@ fun SavedHikesScreen(hikesViewModel: HikesViewModel, navigationActions: Navigati
             loading ->
                 CenteredLoadingAnimation(
                     stringResource(R.string.saved_hikes_screen_loading_message))
+
+            // An error occurred while loading the saved hikes, or their OSM data, display an error
+            // message and a retry button
+            loadingErrorMessageId != null ->
+                CenteredErrorAction(
+                    errorMessageId = loadingErrorMessageId!!,
+                    actionIcon = Icons.Default.Refresh,
+                    actionContentDescriptionStringId =
+                        R.string.saved_hikes_screen_refresh_button_action,
+                    onAction = { hikesViewModel.loadSavedHikes() })
 
             // There is no loading operation ongoing, but the saved hikes are not the ones
             // currently displayed, reload the saved hikes
