@@ -168,7 +168,7 @@ class RunHikeScreenTest {
   }
 
   @Test
-  fun runHikeScreen_displaysErrorMessageForWaypoints() = runTest {
+  fun runHikeScreen_displaysError_whenWaypointsRetrievalFails() = runTest {
     setupCompleteScreenWithSelected(detailedHike, waypointsRetrievalSucceeds = false)
 
     // So far, the waypoints retrieval should have happened once
@@ -187,7 +187,7 @@ class RunHikeScreenTest {
   }
 
   @Test
-  fun runHikeScreen_displaysLoadingAnimationForElevation() = runTest {
+  fun runHikeScreen_displaysError_whenElevationRetrievalFails() = runTest {
     setupCompleteScreenWithSelected(detailedHike, elevationRetrievalSucceeds = false)
 
     // So far, the elevation retrieval should have happened once

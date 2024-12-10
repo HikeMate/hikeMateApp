@@ -228,7 +228,7 @@ class HikeDetailScreenTest {
   }
 
   @Test
-  fun hikeDetailsScreen_displaysErrorMessageForWaypoints() = runTest {
+  fun hikeDetailsScreen_displaysError_whenWaypointsRetrievalFails() = runTest {
     setUpSelectedHike(detailedHike, waypointsRetrievalSucceeds = false)
     setUpCompleteScreen()
 
@@ -248,7 +248,7 @@ class HikeDetailScreenTest {
   }
 
   @Test
-  fun hikeDetailsScreen_displaysLoadingAnimationForElevation() = runTest {
+  fun hikeDetailsScreen_displaysError_whenElevationRetrievalFails() = runTest {
     setUpSelectedHike(detailedHike, elevationRetrievalSucceeds = false)
     setUpCompleteScreen()
 
