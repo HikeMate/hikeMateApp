@@ -131,6 +131,12 @@ class ElevationRepositoryCopernicus(
 
     CoroutineScope(repoDispatcher).launch {
       mutex.withLock {
+        if (coordinates.minus(cache.keys).isEmpty()) {
+          // All coordinates are in the cache
+          onSuccess(coordinates.map { cache[it]?.elevation ?: 0.0 })
+          return@launch
+        }
+
         requests.add(ElevationRequest(coordinates, onSuccess, onFailure))
 
         if ((cacheUpdateJob == null || cacheUpdateJob?.isCompleted == true) && chunksPending == 0) {
@@ -192,7 +198,6 @@ class ElevationRepositoryCopernicus(
 
     requests.forEach { req ->
       if (req.coordinates.minus(cache.keys).isEmpty()) {
-        Log.d(LOG_TAG, "All coordinates are in the cache")
         // All coordinates are in the cache
         CoroutineScope(repoDispatcher).launch {
           req.onSuccess(
