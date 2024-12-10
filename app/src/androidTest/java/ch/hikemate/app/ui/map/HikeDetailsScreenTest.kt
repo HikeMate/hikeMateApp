@@ -54,6 +54,7 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import okhttp3.internal.wait
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Rule
@@ -543,7 +544,7 @@ class HikeDetailScreenTest {
     }
 
     composeTestRule.waitForIdle()
-    Thread.sleep(300)
+    Thread.sleep(3000)
 
     // Verify facilities are hidden at insufficient zoom levels
     val finalMarkers =

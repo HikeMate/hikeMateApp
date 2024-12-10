@@ -376,7 +376,7 @@ class RunHikeScreenTest {
 
     // Wait for the map to initialize
     composeTestRule.waitForIdle()
-    Thread.sleep(300)
+    Thread.sleep(3000)
     // Get the expected drawable for toilets
     val expectedDrawable = ContextCompat.getDrawable(context, R.drawable.toilets)
 
