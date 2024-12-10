@@ -1,5 +1,6 @@
 package ch.hikemate.app.model.facilities
 
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import ch.hikemate.app.model.route.Bounds
@@ -32,6 +33,7 @@ class FacilitiesViewModel(
   }
 
   private val _cache = mutableMapOf<Bounds, List<Facility>>()
+  private val numberFacilities = mutableIntStateOf(0)
   /**
    * Filters facilities for display based on the current map view state and zoom level. The function
    * performs several checks to determine which facilities should be displayed:
@@ -81,12 +83,6 @@ class FacilitiesViewModel(
               }
               .take(maxFacilities)
               .toList()
-
-      // 4. Handle empty result
-      if (filteredFacilities.isEmpty()) {
-        onNoFacilitiesForState()
-        return@launch
-      }
 
       onSuccess(filteredFacilities)
     }
