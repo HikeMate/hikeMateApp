@@ -3,6 +3,7 @@ package ch.hikemate.app.ui.map
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
@@ -21,7 +22,7 @@ import ch.hikemate.app.model.route.HikesViewModel
 import ch.hikemate.app.model.route.LatLong
 import ch.hikemate.app.model.route.saved.SavedHike
 import ch.hikemate.app.model.route.saved.SavedHikesRepository
-import ch.hikemate.app.ui.components.CenteredLoadingAnimation
+import ch.hikemate.app.ui.components.CenteredErrorAction
 import ch.hikemate.app.ui.components.DetailRow
 import ch.hikemate.app.ui.navigation.NavigationActions
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -35,6 +36,7 @@ import org.mockito.Mockito.doNothing
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -166,21 +168,41 @@ class RunHikeScreenTest {
   }
 
   @Test
-  fun runHikeScreen_displaysLoadingAnimationForWaypoints() = runTest {
+  fun runHikeScreen_displaysError_whenWaypointsRetrievalFails() = runTest {
     setupCompleteScreenWithSelected(detailedHike, waypointsRetrievalSucceeds = false)
 
+    // So far, the waypoints retrieval should have happened once
+    verify(hikesRepository, times(1)).getRoutesByIds(any(), any(), any())
+
+    // An error message should be displayed to the user, along with a go back action
+    composeTestRule.onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_MESSAGE)
     composeTestRule
-        .onNodeWithTag(CenteredLoadingAnimation.TEST_TAG_CENTERED_LOADING_ANIMATION)
+        .onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_BUTTON)
         .assertIsDisplayed()
+        .assertHasClickAction()
+        .performClick()
+
+    // Clicking the button should trigger going back with the navigation
+    verify(mockNavigationActions, times(1)).goBack()
   }
 
   @Test
-  fun runHikeScreen_displaysLoadingAnimationForElevation() = runTest {
+  fun runHikeScreen_displaysError_whenElevationRetrievalFails() = runTest {
     setupCompleteScreenWithSelected(detailedHike, elevationRetrievalSucceeds = false)
 
+    // So far, the elevation retrieval should have happened once
+    verify(elevationRepository, times(1)).getElevation(any(), any(), any())
+
+    // An error message should be displayed to the user, along with a retry action
+    composeTestRule.onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_MESSAGE)
     composeTestRule
-        .onNodeWithTag(CenteredLoadingAnimation.TEST_TAG_CENTERED_LOADING_ANIMATION)
+        .onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_BUTTON)
         .assertIsDisplayed()
+        .assertHasClickAction()
+        .performClick()
+
+    // Clicking the button should trigger a retry of the elevation retrieval
+    verify(elevationRepository, times(2)).getElevation(any(), any(), any())
   }
 
   @OptIn(ExperimentalTestApi::class)

@@ -19,7 +19,6 @@ import io.mockk.unmockkAll
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -249,6 +248,9 @@ class HikesViewModelTest {
         // Whenever asked for saved hikes, the repository will throw an exception
         coEvery { savedHikesRepo.loadSavedHikes() } throws Exception("Failed to load saved hikes")
 
+        // The loading error message should be null at the start
+        assertNull(hikesViewModel.loadingErrorMessageId.value)
+
         // Try refreshing the saved hikes cache through the view model
         var onFailureCalled = false
         hikesViewModel.refreshSavedHikesCache(
@@ -259,6 +261,8 @@ class HikesViewModelTest {
         coVerify(exactly = 1) { savedHikesRepo.loadSavedHikes() }
         // The failure callback should be called
         assertTrue(onFailureCalled)
+        // A loading error message should be set
+        assertNotNull(hikesViewModel.loadingErrorMessageId.value)
       }
 
   /**
@@ -273,6 +277,8 @@ class HikesViewModelTest {
         loadSavedHikes(singleSavedHike1)
         // Check that the loading happened correctly
         assertEquals(singleSavedHike1.size, hikesViewModel.hikeFlows.value.size)
+        // The loading error message should be null
+        assertNull(hikesViewModel.loadingErrorMessageId.value)
 
         // For the second loading, provide a different list of saved hikes
         coEvery { savedHikesRepo.loadSavedHikes() } returns singleSavedHike2
@@ -290,6 +296,8 @@ class HikesViewModelTest {
         // Check that the view model now contains the new saved hikes list
         assertEquals(singleSavedHike2.size, hikesViewModel.hikeFlows.value.size)
         assertEquals(singleSavedHike2[0].id, hikesViewModel.hikeFlows.value[0].value.id)
+        // The loading error message should still be null
+        assertNull(hikesViewModel.loadingErrorMessageId.value)
       }
 
   /**
@@ -309,6 +317,8 @@ class HikesViewModelTest {
         assertEquals(singleOsmHike1.size, hikesViewModel.hikeFlows.value.size)
         // Check that for now, the loaded OSM hike is not marked as saved
         assertFalse(hikesViewModel.hikeFlows.value[0].value.isSaved)
+        // Loading error message should be null
+        assertNull(hikesViewModel.loadingErrorMessageId.value)
 
         // Include the loaded OSM hike in the saved hikes list, and add another unrelated one
         // This is to make sure that the view model correctly updates the loaded hikes
@@ -332,6 +342,8 @@ class HikesViewModelTest {
         assertEquals(singleOsmHike1.size, hikesViewModel.hikeFlows.value.size)
         // Check that the loaded hike is now marked as saved
         assertTrue(hikesViewModel.hikeFlows.value[0].value.isSaved)
+        // The loading error message should still be null
+        assertNull(hikesViewModel.loadingErrorMessageId.value)
       }
 
   /**
@@ -353,6 +365,9 @@ class HikesViewModelTest {
         // Check that the loading happened correctly
         assertEquals(singleSavedHike1.size, hikesViewModel.hikeFlows.value.size)
         assertEquals(singleSavedHike1[0].id, hikesViewModel.hikeFlows.value[0].value.id)
+
+        // The loading error message should be null
+        assertNull(hikesViewModel.loadingErrorMessageId.value)
 
         // Then load OSM hikes to make sure that the saved hikes are not loaded anymore
         loadOsmHikes(singleOsmHike1)
@@ -385,29 +400,31 @@ class HikesViewModelTest {
         assertEquals(singleOsmHike1[0].id, hikesViewModel.hikeFlows.value[0].value.id)
         // Check that the loaded hike is now marked as saved
         assertTrue(hikesViewModel.hikeFlows.value[0].value.isSaved)
+        // The loading error message should still be null
+        assertNull(hikesViewModel.loadingErrorMessageId.value)
       }
 
   @Test
   fun `refreshSavedHikesCache sets loading to true then false`() =
       runTest(dispatcher) {
-        // Listen to the changes made to loading during the call
-        val emissions = mutableListOf<Boolean>()
-        val job = backgroundScope.launch { hikesViewModel.loading.collect { emissions.add(it) } }
+        // Before launching the operation, loading should be false
+        assertFalse(hikesViewModel.loading.value)
 
         // Set the repository to throw an exception because we do not care
-        coEvery { savedHikesRepo.loadSavedHikes() } throws Exception("Failed to load saved hikes")
+        coEvery { savedHikesRepo.loadSavedHikes() } answers
+            {
+              // Check that during the operation, loading is set to true
+              assertTrue(hikesViewModel.loading.value)
+              throw Exception("Failed to load saved hikes")
+            }
 
         // Refresh the saved hikes cache
         hikesViewModel.refreshSavedHikesCache()
 
-        // Because we are on an UnconfinedTestDispatcher(), the coroutine should be done by now,
-        // hence
-        // we can stop listening to the values emitted by loading.
-        job.cancel()
-
-        // Check that loading was false at first, then true during the call, and false again at the
-        // end
-        assertEquals(listOf(false, true, false), emissions)
+        // Check that the operation occurred, i.e. the repo was called
+        coVerify(exactly = 1) { savedHikesRepo.loadSavedHikes() }
+        // Check that loading was set back to false at the end of the operation
+        assertFalse(hikesViewModel.loading.value)
       }
 
   @Test
@@ -470,6 +487,9 @@ class HikesViewModelTest {
         // Whenever asked for saved hikes, the repository will throw an exception
         coEvery { savedHikesRepo.loadSavedHikes() } throws Exception("Failed to load saved hikes")
 
+        // Loading error message should be null at the start
+        assertNull(hikesViewModel.loadingErrorMessageId.value)
+
         // Try loading saved hikes through the view model
         var onFailureCalled = false
         hikesViewModel.loadSavedHikes(
@@ -480,6 +500,8 @@ class HikesViewModelTest {
         coVerify(exactly = 1) { savedHikesRepo.loadSavedHikes() }
         // The failure callback should be called
         assertTrue(onFailureCalled)
+        // Loading error message should be set
+        assertNotNull(hikesViewModel.loadingErrorMessageId.value)
       }
 
   @Test
@@ -487,6 +509,9 @@ class HikesViewModelTest {
       runTest(dispatcher) {
         // Check nothing is in the hikes list before further operations
         assertEquals(0, hikesViewModel.hikeFlows.value.size)
+
+        // Loading error message should be null at the start
+        assertNull(hikesViewModel.loadingErrorMessageId.value)
 
         // Make sure the saved hikes repository provides a hike to be loaded
         coEvery { savedHikesRepo.loadSavedHikes() } returns singleSavedHike1
@@ -507,29 +532,31 @@ class HikesViewModelTest {
         assertFalse(hikesViewModel.allOsmDataLoaded.value)
         // Check that the type of loaded hikes is updated accordingly
         assertEquals(HikesViewModel.LoadedHikes.FromSaved, hikesViewModel.loadedHikesType.value)
+        // Loading error message should be null
+        assertNull(hikesViewModel.loadingErrorMessageId.value)
       }
 
   @Test
   fun `loadSavedHikes sets loading to true then false`() =
       runTest(dispatcher) {
-        // Listen to the changes made to loading during the call
-        val emissions = mutableListOf<Boolean>()
-        val job = backgroundScope.launch { hikesViewModel.loading.collect { emissions.add(it) } }
+        // Before launching the operation, loading should be false
+        assertFalse(hikesViewModel.loading.value)
 
         // Set the repository to throw an exception because we do not care
-        coEvery { savedHikesRepo.loadSavedHikes() } throws Exception("Failed to load saved hikes")
+        coEvery { savedHikesRepo.loadSavedHikes() } answers
+            {
+              // Check that during the operation, loading is set to true
+              assertTrue(hikesViewModel.loading.value)
+              throw Exception("Failed to load saved hikes")
+            }
 
         // Load the saved hikes
         hikesViewModel.loadSavedHikes()
 
-        // Because we are on an UnconfinedTestDispatcher(), the coroutine should be done by now,
-        // hence
-        // we can stop listening to the values emitted by loading.
-        job.cancel()
-
-        // Check that loading was false at first, then true during the call, and false again at the
-        // end
-        assertEquals(listOf(false, true, false), emissions)
+        // Check that the operation occurred, i.e. the repo was called
+        coVerify(exactly = 1) { savedHikesRepo.loadSavedHikes() }
+        // Check that loading was set back to false at the end of the operation
+        assertFalse(hikesViewModel.loading.value)
       }
 
   @Test
@@ -1041,6 +1068,9 @@ class HikesViewModelTest {
         coEvery { osmHikesRepo.getRoutes(any(), any(), any()) } throws
             Exception("Failed to load hikes in bounds")
 
+        // Loading error message should be null at the start
+        assertNull(hikesViewModel.loadingErrorMessageId.value)
+
         // Try to load hikes in bounds through the view model
         var onFailureCalled = false
         hikesViewModel.loadHikesInBounds(
@@ -1052,6 +1082,8 @@ class HikesViewModelTest {
         coVerify(exactly = 1) { osmHikesRepo.getRoutes(any(), any(), any()) }
         // The appropriate callback should be called
         assertTrue(onFailureCalled)
+        // Loading error message should be set
+        assertNotNull(hikesViewModel.loadingErrorMessageId.value)
       }
 
   @Test
@@ -1063,6 +1095,9 @@ class HikesViewModelTest {
               val onSuccess = secondArg<(List<HikeRoute>) -> Unit>()
               onSuccess(doubleOsmHikes1)
             }
+
+        // Loading error message should be null at the start
+        assertNull(hikesViewModel.loadingErrorMessageId.value)
 
         // Try to load hikes in bounds through the view model
         var onSuccessCalled = false
@@ -1083,6 +1118,8 @@ class HikesViewModelTest {
         assertTrue(hikesViewModel.allOsmDataLoaded.value)
         // Check that the type of loaded hikes is updated accordingly
         assertEquals(HikesViewModel.LoadedHikes.FromBounds, hikesViewModel.loadedHikesType.value)
+        // Loading error message should be null
+        assertNull(hikesViewModel.loadingErrorMessageId.value)
       }
 
   /**
@@ -1178,25 +1215,25 @@ class HikesViewModelTest {
   @Test
   fun `loadHikesInBounds sets loading to true then false`() =
       runTest(dispatcher) {
-        // Listen to the changes made to loading during the call
-        val emissions = mutableListOf<Boolean>()
-        val job = backgroundScope.launch { hikesViewModel.loading.collect { emissions.add(it) } }
+        // Before launching the operation, loading should be false
+        assertFalse(hikesViewModel.loading.value)
 
         // Set the repository to throw an exception because we do not care
-        coEvery { osmHikesRepo.getRoutes(any(), any(), any()) } throws
-            Exception("Failed to load saved hikes")
+        coEvery { osmHikesRepo.getRoutes(any(), any(), any()) } answers
+            {
+              // Check that during the operation, loading is set to true
+              assertTrue(hikesViewModel.loading.value)
+              val onFailure = thirdArg<(Exception) -> Unit>()
+              onFailure(Exception("Failed to load hikes in bounds"))
+            }
 
         // Load hikes in bounds
         hikesViewModel.loadHikesInBounds(BoundingBox(0.0, 0.0, 0.0, 0.0))
 
-        // Because we are on an UnconfinedTestDispatcher(), the coroutine should be done by now,
-        // hence
-        // we can stop listening to the values emitted by loading.
-        job.cancel()
-
-        // Check that loading was false at first, then true during the call, and false again at the
-        // end
-        assertEquals(listOf(false, true, false), emissions)
+        // Check that the operation occurred, i.e. the repo was called
+        coVerify(exactly = 1) { osmHikesRepo.getRoutes(any(), any(), any()) }
+        // Check that after the operation, loading is set to false
+        assertFalse(hikesViewModel.loading.value)
       }
 
   @Test
@@ -1272,6 +1309,9 @@ class HikesViewModelTest {
         // Make sure there are loaded hikes with missing OSM details
         loadSavedHikes(singleSavedHike1)
 
+        // Loading error message should be null at the start
+        assertNull(hikesViewModel.loadingErrorMessageId.value)
+
         // Make sure the repository throws an exception when asked for hikes IDs
         coEvery { osmHikesRepo.getRoutesByIds(any(), any(), any()) } throws
             Exception("Failed to load hikes in bounds")
@@ -1286,6 +1326,8 @@ class HikesViewModelTest {
         coVerify(exactly = 1) { osmHikesRepo.getRoutesByIds(any(), any(), any()) }
         // The appropriate callback should be called
         assertTrue(onFailureCalled)
+        // Loading error message should be set
+        assertNotNull(hikesViewModel.loadingErrorMessageId.value)
       }
 
   @Test
@@ -1301,6 +1343,9 @@ class HikesViewModelTest {
               val onSuccess = secondArg<(List<HikeRoute>) -> Unit>()
               onSuccess(singleOsmHike1)
             }
+
+        // Loading error message should be null at the start
+        assertNull(hikesViewModel.loadingErrorMessageId.value)
 
         // Retrieve the OSM data for the loaded hikes
         var onSuccessCalled = false
@@ -1326,6 +1371,8 @@ class HikesViewModelTest {
             (hikesViewModel.hikeFlows.value[0].value.waypoints as DeferredData.Obtained).data)
         // Make sure the OSM data is marked as available accordingly
         assertTrue(hikesViewModel.allOsmDataLoaded.value)
+        // Loading error message should still be null
+        assertNull(hikesViewModel.loadingErrorMessageId.value)
       }
 
   @Test
@@ -1515,6 +1562,39 @@ class HikesViewModelTest {
       }
 
   @Test
+  fun `retrieveElevationDataFor sets data to Error if computation fails`() =
+      runTest(dispatcher) {
+        // Load a hike with its OSM data
+        loadOsmHikes(singleOsmHike1)
+        // The hike should be loaded, and its elevation should not be requested yet
+        assertEquals(1, hikesViewModel.hikeFlows.value.size)
+        assertTrue(hikesViewModel.hikeFlows.value[0].value.elevation is DeferredData.NotRequested)
+
+        // Make sure the elevation repository fails
+        coEvery { elevationRepo.getElevation(any(), any(), any()) } answers
+            {
+              val onFailure = arg<(Exception) -> Unit>(3)
+              onFailure(Exception("Failed to compute elevation data"))
+            }
+
+        // Try to retrieve the elevation data for the loaded hike
+        var onFailureCalled = false
+        hikesViewModel.retrieveElevationDataFor(
+            hikeId = singleOsmHike1[0].id,
+            onSuccess = { fail("onSuccess should not have been called") },
+            onFailure = { onFailureCalled = true })
+
+        // The elevation repository should be called exactly once
+        coVerify(exactly = 1) { elevationRepo.getElevation(any(), any(), any()) }
+        // The appropriate callback should be called
+        assertTrue(onFailureCalled)
+        // The hike should now have its elevation data set to Error
+        assertEquals(1, hikesViewModel.hikeFlows.value.size)
+        assertEquals(singleOsmHike1[0].id, hikesViewModel.hikeFlows.value[0].value.id)
+        assertTrue(hikesViewModel.hikeFlows.value[0].value.elevation is DeferredData.Error)
+      }
+
+  @Test
   fun `retrieveElevationDataFor updates the hike with its elevation data`() =
       runTest(dispatcher) {
         // Make sure there is one loaded hike with waypoints
@@ -1663,7 +1743,7 @@ class HikesViewModelTest {
       }
 
   @Test
-  fun `computeDetailsFor resets data to NotRequested if computation fails`() =
+  fun `computeDetailsFor sets data to Error if computation fails`() =
       runTest(dispatcher) {
         // Load a hike with its OSM data and elevation
         loadOsmHikes(singleOsmHike1)
@@ -1697,12 +1777,10 @@ class HikesViewModelTest {
         // The view model should now contain the loaded hike with its details reset to NotRequested
         assertEquals(1, hikesViewModel.hikeFlows.value.size)
         assertEquals(singleOsmHike1[0].id, hikesViewModel.hikeFlows.value[0].value.id)
-        assertTrue(hikesViewModel.hikeFlows.value[0].value.distance is DeferredData.NotRequested)
-        assertTrue(
-            hikesViewModel.hikeFlows.value[0].value.elevationGain is DeferredData.NotRequested)
-        assertTrue(
-            hikesViewModel.hikeFlows.value[0].value.estimatedTime is DeferredData.NotRequested)
-        assertTrue(hikesViewModel.hikeFlows.value[0].value.difficulty is DeferredData.NotRequested)
+        assertTrue(hikesViewModel.hikeFlows.value[0].value.distance is DeferredData.Error)
+        assertTrue(hikesViewModel.hikeFlows.value[0].value.elevationGain is DeferredData.Error)
+        assertTrue(hikesViewModel.hikeFlows.value[0].value.estimatedTime is DeferredData.Error)
+        assertTrue(hikesViewModel.hikeFlows.value[0].value.difficulty is DeferredData.Error)
       }
 
   @Test

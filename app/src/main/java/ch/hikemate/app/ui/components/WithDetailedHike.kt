@@ -1,9 +1,14 @@
 package ch.hikemate.app.ui.components
 
 import android.util.Log
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.res.stringResource
 import ch.hikemate.app.R
+import ch.hikemate.app.model.route.DeferredData
 import ch.hikemate.app.model.route.DetailedHike
 import ch.hikemate.app.model.route.Hike
 import ch.hikemate.app.model.route.HikesViewModel
@@ -34,6 +39,8 @@ fun WithDetailedHike(
     withDetailedHike: @Composable (DetailedHike) -> Unit,
     whenError: @Composable () -> Unit
 ) {
+  val loadingErrorMessageId by hikesViewModel.loadingErrorMessageId.collectAsState()
+
   when {
     // All the details of the hike have been computed, pass them on to the content callback
     hike.isFullyLoaded() -> {
@@ -52,6 +59,15 @@ fun WithDetailedHike(
       }
     }
 
+    // Elevation data has been retrieved, but an error occurred
+    hike.elevation is DeferredData.Error -> {
+      CenteredErrorAction(
+          errorMessageId = R.string.loading_hike_elevation_retrieval_error,
+          actionIcon = Icons.Default.Refresh,
+          actionContentDescriptionStringId = R.string.retry,
+          onAction = { hikesViewModel.retrieveElevationDataFor(hike.id) })
+    }
+
     // Details have not been computed yet, but the elevation has been retrieved
     hike.elevation.obtained() -> {
       hikesViewModel.computeDetailsFor(hike.id)
@@ -62,6 +78,11 @@ fun WithDetailedHike(
     hikesViewModel.canElevationDataBeRetrievedFor(hike) -> {
       hikesViewModel.retrieveElevationDataFor(hike.id)
       CenteredLoadingAnimation(stringResource(R.string.loading_hike_elevation))
+    }
+
+    // An error occurred while loading the hike's OSM data or while refreshing the saved hikes list
+    loadingErrorMessageId != null -> {
+      whenError()
     }
 
     // Waypoints are not available, retrieve them

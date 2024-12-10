@@ -179,6 +179,23 @@ class MapScreenTest : TestCase() {
   }
 
   @Test
+  fun errorMessageDisplayedWhenSearchFails() {
+    setUpMap()
+
+    // Ensure a search will fail
+    `when`(hikesRepository.getRoutes(any(), any(), any())).thenAnswer {
+      val onFailure = it.getArgument<(Exception) -> Unit>(2)
+      onFailure(Exception("Test exception"))
+    }
+
+    // Perform a search
+    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).performClick()
+
+    // Check that the error message is displayed
+    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_LOADING_ERROR_MESSAGE).assertIsDisplayed()
+  }
+
+  @Test
   fun clickingSearchDisplaysSearchingMessageAndClearsList() {
     setUpMap()
     composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCHING_MESSAGE).assertIsNotDisplayed()

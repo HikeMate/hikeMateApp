@@ -46,6 +46,14 @@ sealed class DeferredData<out T> {
    */
   data class Obtained<out T>(val data: T) : DeferredData<T>()
 
+  /**
+   * The deferred data has been requested and the request has finished (not ongoing anymore) but
+   * encountered an error.
+   *
+   * The encountered exception is stored in [exception].
+   */
+  data class Error(val exception: Throwable) : DeferredData<Nothing>()
+
   /** Returns `true` if the data has been obtained, `false` otherwise. */
   fun obtained(): Boolean = this is Obtained
 
