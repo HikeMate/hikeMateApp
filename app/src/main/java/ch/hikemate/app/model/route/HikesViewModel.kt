@@ -4,13 +4,13 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import ch.hikemate.app.R
 import ch.hikemate.app.model.elevation.ElevationRepository
 import ch.hikemate.app.model.elevation.ElevationRepositoryCopernicus
 import ch.hikemate.app.model.extensions.toBounds
 import ch.hikemate.app.model.route.saved.SavedHike
 import ch.hikemate.app.model.route.saved.SavedHikesRepository
 import ch.hikemate.app.model.route.saved.SavedHikesRepositoryFirestore
-import ch.hikemate.app.R
 import ch.hikemate.app.utils.RouteUtils
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
