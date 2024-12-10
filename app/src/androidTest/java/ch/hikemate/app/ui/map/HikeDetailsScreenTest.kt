@@ -36,6 +36,7 @@ import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_MAP
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_PLANNED_DATE_TEXT_BOX
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_RUN_HIKE_BUTTON
 import ch.hikemate.app.ui.navigation.NavigationActions
+import ch.hikemate.app.utils.MapUtils
 import com.google.firebase.Timestamp
 import java.util.Locale
 import kotlin.math.roundToInt
@@ -396,5 +397,20 @@ class HikeDetailScreenTest {
         .performClick()
 
     verify(onRunThisHike).invoke()
+  }
+
+  @Test
+  fun hikeDetails_savesMapStateOnGoBack() = runTest {
+    setUpSelectedHike(detailedHike)
+    setUpCompleteScreen()
+
+    composeTestRule.onNodeWithTag(BACK_BUTTON_TEST_TAG).performClick()
+    composeTestRule.waitForIdle()
+
+    val zoomLevel = MapUtils.calculateBestZoomLevel(detailedHike.bounds).toDouble()
+    val center = MapUtils.getGeographicalCenter(detailedHike.bounds)
+    assertEquals(zoomLevel, hikesViewModel.getMapState().zoom, 0.1)
+    assertEquals(center.latitude, hikesViewModel.getMapState().center.latitude, 0.1)
+    assertEquals(center.longitude, hikesViewModel.getMapState().center.longitude, 0.1)
   }
 }
