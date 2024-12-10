@@ -917,7 +917,7 @@ class HikesViewModel(
     }
 
     // Set the hike's planned date to the right one
-    val newSavedHike = SavedHike(id = hike.id, name = hike.name ?: "", date = date)
+    val newSavedHike = SavedHike(id = hike.id, name = hike.name, date = date)
     try {
       savedHikesRepo.addSavedHike(newSavedHike)
     } catch (e: Exception) {

@@ -59,7 +59,7 @@ class HikeTest {
     for (hike in hikes) {
       val saved = hike.toSavedHike()
       assertEquals(hike.id, saved.id)
-      assertEquals(hike.name ?: "", saved.name)
+      assertEquals(hike.name, saved.name)
       assertEquals(hike.plannedDate, saved.date)
     }
   }

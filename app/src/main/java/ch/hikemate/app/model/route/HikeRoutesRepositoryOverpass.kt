@@ -114,7 +114,8 @@ class HikeRoutesRepositoryOverpass(private val client: OkHttpClient) :
         return
       }
 
-      val responseBody = response.body?.charStream() ?: throw Exception("Response body is null")
+      val responseBody =
+          response.body?.charStream() ?: return onFailure(Exception("Response body is null"))
       val routes = parseRoutes(responseBody)
 
       if (requestedBounds != null) {
