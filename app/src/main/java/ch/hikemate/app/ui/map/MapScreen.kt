@@ -680,19 +680,33 @@ fun CollapsibleHikesList(
                   val hike by hikes[index].collectAsState()
                   val elevation: List<Double>?
                   val suitable: Boolean
-                  if (!hike.elevation.obtained()) {
-                    hikesViewModel.retrieveElevationDataFor(hike.id)
-                    elevation = null
-                    suitable = false
-                  } else if (!hikesViewModel.areDetailsComputedFor(hike)) {
-                    hikesViewModel.computeDetailsFor(hike.id)
-                    elevation = hike.elevation.getOrThrow()
-                    suitable = false
-                  } else {
+                  when {
+                    // The hike's elevation data was retrieved, but an error occurred
+                    hike.elevation is DeferredData.Error -> {
+                      elevation = emptyList()
+                      suitable = false
+                    }
+
+                    // The hike has no elevation data and it wasn't requested yet
+                    !hike.elevation.obtained() -> {
+                      hikesViewModel.retrieveElevationDataFor(hike.id)
+                      elevation = null
+                      suitable = false
+                    }
+
+                    // The hike has elevation data but no details computed
+                    !hikesViewModel.areDetailsComputedFor(hike) -> {
+                      hikesViewModel.computeDetailsFor(hike.id)
+                      elevation = hike.elevation.getOrThrow()
+                      suitable = false
+                    }
+
                     // The hike has elevation data and details computed
-                    val detailed = hike.withDetailsOrThrow()
-                    elevation = detailed.elevation
-                    suitable = detailed.difficulty.ordinal <= userHikingLevel.ordinal
+                    else -> {
+                      val detailed = hike.withDetailsOrThrow()
+                      elevation = detailed.elevation
+                      suitable = detailed.difficulty.ordinal <= userHikingLevel.ordinal
+                    }
                   }
                   HikeCardFor(
                       name = hike.name,
