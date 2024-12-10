@@ -6,7 +6,7 @@ import android.os.Looper
 import android.util.Log
 import android.widget.Toast
 import ch.hikemate.app.R
-import ch.hikemate.app.model.route.HikeRoute
+import ch.hikemate.app.model.route.DetailedHike
 import ch.hikemate.app.model.route.LatLong
 import ch.hikemate.app.model.route.RouteSegment
 import ch.hikemate.app.ui.map.MapScreen
@@ -230,9 +230,9 @@ object LocationUtils {
    * @param route The hiking route to project onto
    * @return RouteProjectionResponse containing projection details
    */
-  fun projectLocationOnHike(location: LatLong, route: HikeRoute): RouteProjectionResponse? {
+  fun projectLocationOnHike(location: LatLong, route: DetailedHike): RouteProjectionResponse? {
     // Validate input
-    if (route.ways.size < 2) return null
+    if (route.waypoints.size < 2) return null
 
     val segments = route.segments
 
@@ -252,7 +252,7 @@ object LocationUtils {
     var closestSegment = segments[0]
     var closestSegmentIndex = 0
     var minDistance = Double.MAX_VALUE
-    var projectedPoint = route.ways[0]
+    var projectedPoint = route.waypoints[0]
     // The distance that has been traveled according to the projection
     var progressDistance = 0.0
     var distanceCovered = 0.0

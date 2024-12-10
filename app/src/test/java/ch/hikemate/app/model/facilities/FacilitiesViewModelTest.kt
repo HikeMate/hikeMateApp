@@ -1,6 +1,10 @@
 package ch.hikemate.app.model.facilities
 
+import ch.hikemate.app.model.facilities.FacilitiesViewModel.Companion.MIN_ZOOM_FOR_FACILITIES
 import ch.hikemate.app.model.route.Bounds
+import ch.hikemate.app.model.route.DetailedHike
+import ch.hikemate.app.model.route.Hike
+import ch.hikemate.app.model.route.HikeDifficulty
 import ch.hikemate.app.model.route.LatLong
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -21,11 +25,19 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.osmdroid.util.BoundingBox
 
 class FacilitiesViewModelTest {
 
   private lateinit var mockFacilitiesRepository: FacilitiesRepositoryOverpass
   private lateinit var testDispatcher: TestDispatcher
+  private lateinit var mockHikeRoute: DetailedHike
+
+  private val testBoundingBox = BoundingBox(46.51, 6.62, 46.5, 6.6) // north, east, south, west
+  private val testFacilities2 =
+      listOf(
+          Facility(FacilityType.TOILETS, LatLong(46.505, 6.61)),
+          Facility(FacilityType.BENCH, LatLong(46.508, 6.615)))
 
   private lateinit var facilitiesViewModel: FacilitiesViewModel // SUT
 
@@ -40,6 +52,9 @@ class FacilitiesViewModelTest {
 
     mockFacilitiesRepository = mock()
     facilitiesViewModel = FacilitiesViewModel(mockFacilitiesRepository, testDispatcher)
+    testDispatcher = StandardTestDispatcher()
+    Dispatchers.setMain(testDispatcher)
+    mockHikeRoute = mock()
   }
 
   @OptIn(ExperimentalCoroutinesApi::class)
@@ -228,5 +243,106 @@ class FacilitiesViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     verify(mockFacilitiesRepository, times(2)).getFacilities(any(), any(), any())
+  }
+
+  @Test
+  fun testFilterFacilities_zoomBelowMinimum() = runTest {
+    var onSuccessCalled = false
+    var onNoFacilitiesCalled = false
+
+    facilitiesViewModel.filterFacilitiesForDisplay(
+        facilities = testFacilities2,
+        bounds = testBoundingBox,
+        zoomLevel = MIN_ZOOM_FOR_FACILITIES - 1,
+        hikeRoute = mockHikeRoute,
+        onSuccess = {
+          onSuccessCalled = true
+          fail("onSuccess should not be called")
+        },
+        onNoFacilitiesForState = { onNoFacilitiesCalled = true })
+
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    assertTrue("onNoFacilitiesForState should be called", onNoFacilitiesCalled)
+    assertTrue("onSuccess should not be called", !onSuccessCalled)
+  }
+
+  @Test
+  fun testFilterFacilities_distanceFromRouteTooLarge() = runTest {
+    var onSuccessCalled = false
+    var onNoFacilitiesCalled = false
+    testBoundingBox.set(
+        testBoundingBox.latNorth + 1.0,
+        testBoundingBox.lonEast + 1.0,
+        testBoundingBox.latSouth - 1.0,
+        testBoundingBox.lonWest - 1.0)
+
+    facilitiesViewModel.filterFacilitiesForDisplay(
+        facilities = testFacilities,
+        bounds = testBoundingBox,
+        zoomLevel = MIN_ZOOM_FOR_FACILITIES + 1,
+        hikeRoute = mockHikeRoute,
+        onSuccess = {
+          onSuccessCalled = true
+          fail("onSuccess should not be called")
+        },
+        onNoFacilitiesForState = { onNoFacilitiesCalled = true })
+
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    assertTrue("onNoFacilitiesForState should be called", onNoFacilitiesCalled)
+    assertTrue("onSuccess should not be called", !onSuccessCalled)
+  }
+
+  @Test
+  fun testFilterFacilities_respectsMaxFacilitiesForZoom() = runTest {
+    var returnedFacilities: List<Facility>? = null
+
+    // Create more facilities than the max allowed for testing
+    val manyFacilities =
+        (1..10).map { Facility(FacilityType.TOILETS, LatLong(46.505 + it * 0.001, 6.61)) }
+    val boundingBox =
+        BoundingBox(
+            manyFacilities.minOf { it.coordinates.lat - 1 },
+            manyFacilities.maxOf { it.coordinates.lon + 1 },
+            manyFacilities.maxOf { it.coordinates.lat + 1 },
+            manyFacilities.minOf { it.coordinates.lon - 1 })
+
+    val detailedHike =
+        DetailedHike(
+            id = "1",
+            color = Hike("1", false, null, null).getColor(),
+            isSaved = false,
+            plannedDate = null,
+            name = "Sample Hike",
+            description =
+                "A scenic trail with breathtaking views of the Matterhorn and surrounding glaciers.",
+            bounds = Bounds(minLat = 45.9, minLon = 7.6, maxLat = 46.0, maxLon = 7.7),
+            waypoints =
+                listOf(
+                    LatLong(boundingBox.centerLatitude, boundingBox.centerLongitude),
+                    LatLong(boundingBox.latNorth - 0.001, boundingBox.lonEast - 0.001),
+                    LatLong(boundingBox.latSouth + 0.001, boundingBox.lonWest + 0.001)),
+            elevation = listOf(0.0, 10.0, 20.0, 30.0),
+            distance = 13.543077559212616,
+            elevationGain = 68.0,
+            estimatedTime = 169.3169307105514,
+            difficulty = HikeDifficulty.DIFFICULT,
+        )
+
+    facilitiesViewModel.filterFacilitiesForDisplay(
+        facilities = manyFacilities,
+        bounds = boundingBox,
+        zoomLevel = 15.0, // Assuming this zoom level has a specific max facilities
+        hikeRoute = detailedHike,
+        onSuccess = { facilities -> returnedFacilities = facilities },
+        onNoFacilitiesForState = { fail("onNoFacilitiesForState should not be called") })
+
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    assertTrue("returnedFacilities should not be null", returnedFacilities != null)
+    assertTrue(
+        "Number of facilities should not exceed max for zoom level",
+        returnedFacilities!!.size <= 10)
   }
 }

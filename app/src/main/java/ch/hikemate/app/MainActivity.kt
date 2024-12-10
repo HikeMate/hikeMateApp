@@ -24,6 +24,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navigation
 import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.model.authentication.FirebaseAuthRepository
+import ch.hikemate.app.model.facilities.FacilitiesRepositoryOverpass
+import ch.hikemate.app.model.facilities.FacilitiesViewModel
 import ch.hikemate.app.model.profile.ProfileRepositoryFirestore
 import ch.hikemate.app.model.profile.ProfileViewModel
 import ch.hikemate.app.model.route.HikesViewModel
@@ -45,6 +47,7 @@ import ch.hikemate.app.ui.saved.SavedHikesScreen
 import ch.hikemate.app.ui.theme.HikeMateTheme
 import com.google.firebase.FirebaseApp
 import com.google.firebase.firestore.FirebaseFirestore
+import okhttp3.OkHttpClient
 import org.osmdroid.config.Configuration
 
 class MainActivity : ComponentActivity() {
@@ -86,6 +89,7 @@ fun HikeMateApp() {
           FirebaseAuthRepository(), ProfileRepositoryFirestore(FirebaseFirestore.getInstance()))
 
   val hikesViewModel: HikesViewModel = viewModel(factory = HikesViewModel.Factory)
+  val facilitiesViewModel = FacilitiesViewModel(FacilitiesRepositoryOverpass(OkHttpClient()))
 
   // When a user logs-in again with a different account, get the new profile and the new user's
   // saved hikes list
@@ -168,11 +172,14 @@ fun HikeMateApp() {
             authViewModel = authViewModel,
             navigationActions = navigationActions,
             hikesViewModel = hikesViewModel,
-        )
+            facilitiesViewModel = facilitiesViewModel)
       }
 
       composable(Screen.RUN_HIKE) {
-        RunHikeScreen(hikesViewModel = hikesViewModel, navigationActions = navigationActions)
+        RunHikeScreen(
+            hikesViewModel = hikesViewModel,
+            navigationActions = navigationActions,
+            facilitiesViewModel = facilitiesViewModel)
       }
     }
 

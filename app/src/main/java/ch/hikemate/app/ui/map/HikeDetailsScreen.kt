@@ -36,6 +36,7 @@ import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -57,8 +58,11 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.hikemate.app.R
 import ch.hikemate.app.model.authentication.AuthViewModel
+import ch.hikemate.app.model.facilities.FacilitiesViewModel
+import ch.hikemate.app.model.facilities.Facility
 import ch.hikemate.app.model.profile.HikingLevel
 import ch.hikemate.app.model.profile.ProfileViewModel
+import ch.hikemate.app.model.route.Bounds
 import ch.hikemate.app.model.route.DetailedHike
 import ch.hikemate.app.model.route.HikesViewModel
 import ch.hikemate.app.ui.components.AsyncStateHandler
@@ -89,9 +93,16 @@ import ch.hikemate.app.utils.humanReadableFormat
 import com.google.firebase.Timestamp
 import java.util.Date
 import java.util.Locale
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
+import org.osmdroid.events.MapListener
+import org.osmdroid.events.ScrollEvent
+import org.osmdroid.events.ZoomEvent
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 
@@ -100,6 +111,9 @@ object HikeDetailScreen {
   const val MAP_MAX_LONGITUDE = 180.0
   const val MAP_MIN_LONGITUDE = -180.0
   const val MAP_BOUNDS_MARGIN: Int = 100
+  const val MARGIN_BOUNDS = 0.001
+
+  const val DEBOUNCE_DURATION = 300L
 
   const val LOG_TAG = "HikeDetailScreen"
 
@@ -120,7 +134,8 @@ fun HikeDetailScreen(
     hikesViewModel: HikesViewModel,
     profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory),
     authViewModel: AuthViewModel,
-    navigationActions: NavigationActions
+    navigationActions: NavigationActions,
+    facilitiesViewModel: FacilitiesViewModel
 ) {
   // Load the user's profile to get their hiking level
   LaunchedEffect(Unit) {
@@ -132,8 +147,8 @@ fun HikeDetailScreen(
     // Load or reload the saved hikes list to see if the currently selected one is saved
     hikesViewModel.refreshSavedHikesCache()
   }
-
   val selectedHike by hikesViewModel.selectedHike.collectAsState()
+  val facilities = remember { mutableStateOf<List<Facility>?>(null) }
 
   LaunchedEffect(selectedHike) {
     if (selectedHike == null) {
@@ -156,6 +171,23 @@ fun HikeDetailScreen(
       withDetailedHike = { detailedHike ->
         val errorMessageIdState = profileViewModel.errorMessageId.collectAsState()
         val profileState = profileViewModel.profile.collectAsState()
+        LaunchedEffect(Unit) {
+          // This is calculated so that elements that are near but not contained into the bounds of
+          // a
+          // Hike
+          // are still displayed this is actually a very common occurrence.
+          val boundsWithMargin =
+              Bounds(
+                  detailedHike.bounds.minLat - HikeDetailScreen.MARGIN_BOUNDS,
+                  detailedHike.bounds.minLon - HikeDetailScreen.MARGIN_BOUNDS,
+                  detailedHike.bounds.maxLat + HikeDetailScreen.MARGIN_BOUNDS,
+                  detailedHike.bounds.maxLon + HikeDetailScreen.MARGIN_BOUNDS)
+          // Get all the facilities within the bounds.
+          facilitiesViewModel.getFacilities(
+              boundsWithMargin,
+              { facilities.value = it },
+              { Log.e(HikeDetailScreen.LOG_TAG, "Error while getting facilities: $it") })
+        }
         AsyncStateHandler(
             errorMessageIdState = errorMessageIdState,
             actionContentDescriptionStringId = R.string.go_back,
@@ -163,8 +195,15 @@ fun HikeDetailScreen(
             valueState = profileState,
         ) { profile ->
           Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {
+
             // Display the hike's actual information
-            HikeDetailsContent(detailedHike, navigationActions, hikesViewModel, profile.hikingLevel)
+            HikeDetailsContent(
+                detailedHike,
+                navigationActions,
+                hikesViewModel,
+                profile.hikingLevel,
+                facilitiesViewModel,
+                facilities)
           }
         }
       },
@@ -182,11 +221,14 @@ fun HikeDetailsContent(
     hike: DetailedHike,
     navigationActions: NavigationActions,
     hikesViewModel: HikesViewModel,
-    userHikingLevel: HikingLevel
+    userHikingLevel: HikingLevel,
+    facilitiesViewModel: FacilitiesViewModel,
+    facilities: MutableState<List<Facility>?>
 ) {
+
   Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {
     // Display the map and the zoom buttons
-    val mapView = hikeDetailsMap(hike)
+    val mapView = hikeDetailsMap(hike, facilitiesViewModel, facilities)
 
     // Display the back button on top of the map
     BackButton(
@@ -210,7 +252,6 @@ fun HikeDetailsContent(
         wantToRunHike = false
       }
     }
-
     // Display the details of the hike at the bottom of the screen
     HikesDetailsBottomScaffold(
         hike, hikesViewModel, userHikingLevel, onRunThisHike = { wantToRunHike = true })
@@ -218,7 +259,11 @@ fun HikeDetailsContent(
 }
 
 @Composable
-fun hikeDetailsMap(hike: DetailedHike): MapView {
+fun hikeDetailsMap(
+    hike: DetailedHike,
+    facilitiesViewModel: FacilitiesViewModel,
+    facilities: MutableState<List<Facility>?>
+): MapView {
   val context = LocalContext.current
 
   val hikeZoomLevel = MapUtils.calculateBestZoomLevel(hike.bounds).toDouble()
@@ -245,6 +290,82 @@ fun hikeDetailsMap(hike: DetailedHike): MapView {
     }
   }
 
+  // Create state values that we can actually observe in the LaunchedEffect
+  // We keep our StateFlows for debouncing
+  val boundingBoxState = remember { MutableStateFlow(mapView.boundingBox) }
+  val zoomLevelState = remember { MutableStateFlow(mapView.zoomLevelDouble) }
+
+  // Update the map listener to just update the StateFlows
+  mapView.addMapListener(
+      object : MapListener {
+        override fun onScroll(event: ScrollEvent?): Boolean {
+          // On a Scroll event the boundingBox will change
+          event?.let {
+            val newBoundingBox = mapView.boundingBox
+            if (newBoundingBox != boundingBoxState.value) {
+              boundingBoxState.value = newBoundingBox
+            }
+          }
+          return true
+        }
+
+        override fun onZoom(event: ZoomEvent?): Boolean {
+          event?.let {
+            val newZoomLevel = mapView.zoomLevelDouble
+            if (newZoomLevel != zoomLevelState.value) {
+              zoomLevelState.value = newZoomLevel
+            }
+          }
+          return true
+        }
+      })
+
+  LaunchedEffect(Unit) {
+
+    // Create our combined flow
+    val combinedFlow =
+        combine(
+            boundingBoxState.debounce(HikeDetailScreen.DEBOUNCE_DURATION),
+            zoomLevelState.debounce(HikeDetailScreen.DEBOUNCE_DURATION)) { boundingBox, zoomLevel ->
+              // Return a pair of our values
+              boundingBox to zoomLevel
+            }
+
+    // Collect the flow with proper error handling
+    try {
+      combinedFlow.collect { (boundingBox, zoomLevel) ->
+        // Only proceed if the map is still valid
+        if (mapView.repository != null) {
+          facilitiesViewModel.filterFacilitiesForDisplay(
+              facilities.value ?: emptyList(),
+              bounds = boundingBox,
+              zoomLevel = zoomLevel,
+              hikeRoute = hike,
+              onSuccess = { newFacilities ->
+                // Double check map validity before updates
+                if (mapView.repository != null) {
+                  MapUtils.clearFacilities(mapView)
+                  if (newFacilities.isNotEmpty()) {
+                    MapUtils.displayFacilities(newFacilities, mapView, context)
+                  }
+                }
+              },
+              onNoFacilitiesForState = {
+                if (mapView.repository != null) {
+                  MapUtils.clearFacilities(mapView)
+                }
+              })
+        }
+      }
+    } catch (e: CancellationException) {
+      // Rethrow cancellation exceptions to allow proper coroutine cancellation
+      throw e
+    } catch (e: Exception) {
+      // Log other exceptions but don't crash
+      Log.e(HikeDetailScreen.LOG_TAG, "Error in facility updates flow", e)
+    }
+  }
+
   // When the map is ready, it will have computed its bounding box
   mapView.addOnFirstLayoutListener { _, _, _, _, _ ->
     // Limit the vertical scrollable area to avoid the user scrolling too far from the hike
@@ -259,11 +380,20 @@ fun hikeDetailsMap(hike: DetailedHike): MapView {
           min(HikeDetailScreen.MAP_MAX_LONGITUDE, mapView.boundingBox.lonEast),
           HikeDetailScreen.MAP_BOUNDS_MARGIN)
     }
+    // This is useful for the first composition since there won't be any zoom or scroll events at
+    // first so the hike displays the possible facilities from the get go.
+    facilitiesViewModel.filterFacilitiesForDisplay(
+        facilities.value ?: emptyList(),
+        bounds = boundingBoxState.value,
+        zoomLevel = zoomLevelState.value,
+        hikeRoute = hike,
+        onSuccess = { MapUtils.displayFacilities(it, mapView, context) },
+        onNoFacilitiesForState = { /*Nothing since nothing is displayed yet*/})
   }
 
   // Show the selected hike on the map
   // OnLineClick does nothing, the line should not be clickable
-  Log.d("HikeDetailScreen", "Drawing hike on map: ${hike.bounds}")
+  Log.d(HikeDetailScreen.LOG_TAG, "Drawing hike on map: ${hike.bounds}")
   MapUtils.showHikeOnMap(
       mapView = mapView, waypoints = hike.waypoints, color = hike.color, onLineClick = {})
 
@@ -545,8 +675,9 @@ fun AppropriatenessMessage(isSuitable: Boolean) {
 
   Row(verticalAlignment = Alignment.CenterVertically) {
     Icon(
-        painter = suitableLabelIcon,
-        // The icon is only decorative, the following message is enough for accessibility
+        painter =
+            suitableLabelIcon, // The icon is only decorative, the following message is enough for
+        // accessibility
         contentDescription = null,
         tint = suitableLabelColor,
         modifier = Modifier.size(16.dp))
