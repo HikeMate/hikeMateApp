@@ -23,6 +23,7 @@ import org.osmdroid.views.overlay.Polyline
 
 object MapUtils {
   private const val LOG_TAG = "MapUtils"
+  const val MIN_DISTANCE_BETWEEN_FACILITIES = 15
 
   /**
    * Shows a hike on the map.
@@ -277,6 +278,7 @@ object MapUtils {
    * @param context
    */
   fun displayFacilities(facilities: List<Facility>, mapView: MapView, context: Context) {
+    val displayedFacilities = mutableSetOf<GeoPoint>()
 
     facilities.forEach { facility ->
       // Get the drawable corresponding to the facility type
@@ -291,32 +293,37 @@ object MapUtils {
             FacilityType.RANGER_STATION ->
                 ContextCompat.getDrawable(context, R.drawable.ranger_station)
             FacilityType.BBQ -> ContextCompat.getDrawable(context, R.drawable.bbq)
-            FacilityType.BENCH -> ContextCompat.getDrawable(context, R.drawable.bench)
             FacilityType.RESTAURANT -> ContextCompat.getDrawable(context, R.drawable.restaurant)
             FacilityType.BIERGARTEN -> ContextCompat.getDrawable(context, R.drawable.biergarten)
+            FacilityType.BENCH -> ContextCompat.getDrawable(context, R.drawable.bench)
           }
 
       // Draw the marker in the Map
       drawable?.let {
-        Marker(mapView).apply {
-          position = GeoPoint(facility.coordinates.lat, facility.coordinates.lon)
-          // The icon is the drawable
-          icon = it
-          setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-          // This disables the click feature since it pops up a text window we haven't
-          // handled yet.
-          setOnMarkerClickListener { _, _ -> true }
-          // The relatedObject makes it easier for them to be all removed at once
-          // and enables the possibility of not constantly storing them in memory.
-          relatedObject = R.string.facility_marker
-          mapView.overlays.add(this)
+        val geoPoint = GeoPoint(facility.coordinates.lat, facility.coordinates.lon)
+        if (displayedFacilities.none {
+          it.distanceToAsDouble(geoPoint) < MIN_DISTANCE_BETWEEN_FACILITIES
+        }) {
+          displayedFacilities.add(geoPoint)
+          Marker(mapView).apply {
+            position = geoPoint
+            // The icon is the drawable
+            icon = it
+            setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+            // This disables the click feature since it pops up a text window we haven't
+            // handled yet.
+            setOnMarkerClickListener { _, _ -> true }
+            // The relatedObject makes it easier for them to be all removed at once
+            // and enables the possibility of not constantly storing them in memory.
+            relatedObject = R.string.facility_marker
+            mapView.overlays.add(this)
+          }
         }
       }
     }
     // Trigger the map to be drawn again
     mapView.invalidate()
   }
-
   /**
    * Remove any facility that is being displayed in the map.
    *
