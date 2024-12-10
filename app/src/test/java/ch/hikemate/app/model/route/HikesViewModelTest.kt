@@ -1571,7 +1571,7 @@ class HikesViewModelTest {
         assertTrue(hikesViewModel.hikeFlows.value[0].value.elevation is DeferredData.NotRequested)
 
         // Make sure the elevation repository fails
-        coEvery { elevationRepo.getElevation(any(), any(), any(), any()) } answers
+        coEvery { elevationRepo.getElevation(any(), any(), any()) } answers
             {
               val onFailure = arg<(Exception) -> Unit>(3)
               onFailure(Exception("Failed to compute elevation data"))
@@ -1585,7 +1585,7 @@ class HikesViewModelTest {
             onFailure = { onFailureCalled = true })
 
         // The elevation repository should be called exactly once
-        coVerify(exactly = 1) { elevationRepo.getElevation(any(), any(), any(), any()) }
+        coVerify(exactly = 1) { elevationRepo.getElevation(any(), any(), any()) }
         // The appropriate callback should be called
         assertTrue(onFailureCalled)
         // The hike should now have its elevation data set to Error
