@@ -2,7 +2,9 @@ package ch.hikemate.app.ui.map
 
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -149,33 +151,33 @@ class MapScreenTest : TestCase() {
   }
 
   @Test
-  fun searchButtonDisappearsWhenClicked() {
+  fun searchButtonIsNotEnabledWhenClicked() {
     setUpMap()
-    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).assertIsEnabled()
     composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).performClick()
-    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).assertIsNotDisplayed()
+    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).assertIsNotEnabled()
   }
 
   @Test
-  fun searchButtonReappearsWhenSearchSucceeded() {
+  fun searchButtonIsEnabledWhenSearchSucceeded() {
     setUpMap()
     `when`(hikesRepository.getRoutes(any(), any(), any())).thenAnswer {
       val onSuccess = it.getArgument<(List<HikeRoute>) -> Unit>(1)
       onSuccess(listOf())
     }
     composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).performClick()
-    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).assertIsEnabled()
   }
 
   @Test
-  fun searchButtonReappearsWhenSearchFailed() {
+  fun searchButtonIsEnabledWhenSearchFailed() {
     setUpMap()
     `when`(hikesRepository.getRoutes(any(), any(), any())).thenAnswer {
       val onFailure = it.getArgument<(Exception) -> Unit>(2)
       onFailure(Exception("Test exception"))
     }
     composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).performClick()
-    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).assertIsEnabled()
   }
 
   @Test
