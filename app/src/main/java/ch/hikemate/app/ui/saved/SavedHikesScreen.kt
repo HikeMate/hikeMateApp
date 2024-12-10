@@ -141,6 +141,9 @@ fun SavedHikesScreen(hikesViewModel: HikesViewModel, navigationActions: Navigati
 @Composable
 private fun PlannedHikes(hikes: List<StateFlow<Hike>>?, hikesViewModel: HikesViewModel) {
   val context = LocalContext.current
+  // Use fillMaxSize() to ensure consistent layout when switching between tabs
+  // This prevents unwanted UI resizing that can occur when sections have different
+  // numbers of items, particularly when transitioning between saved and planned hikes
   Column(modifier = Modifier.fillMaxSize()) {
     Text(
         context.getString(R.string.saved_hikes_screen_planned_section_title),
@@ -174,6 +177,9 @@ private fun PlannedHikes(hikes: List<StateFlow<Hike>>?, hikesViewModel: HikesVie
 @Composable
 private fun SavedHikes(savedHikes: List<StateFlow<Hike>>?, hikesViewModel: HikesViewModel) {
   val context = LocalContext.current
+  // Use fillMaxSize() to ensure consistent layout when switching between tabs
+  // This prevents unwanted UI resizing that can occur when sections have different
+  // numbers of items, particularly when transitioning between saved and planned hikes
   Column(modifier = Modifier.fillMaxSize()) {
     Text(
         context.getString(R.string.saved_hikes_screen_saved_section_title),
