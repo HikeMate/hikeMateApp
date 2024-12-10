@@ -218,7 +218,11 @@ object MapScreen {
         onFailure = {
           isSearching.value = false
           Handler(Looper.getMainLooper()).post {
-            Toast.makeText(context, "Error while searching for hikes", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                    context,
+                    context.getString(R.string.map_screen_error_while_searching_hikes),
+                    Toast.LENGTH_SHORT)
+                .show()
           }
         })
   }

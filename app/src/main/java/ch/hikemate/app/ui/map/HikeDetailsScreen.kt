@@ -355,25 +355,42 @@ fun HikesDetailsBottomScaffold(
                   ElevationGraphStyleProperties(
                       strokeColor = hikeColor, fillColor = hikeColor.copy(0.1f)))
 
-          val distanceString = String.format(Locale.getDefault(), "%.2f", detailedHike.distance)
-          val elevationGainString = detailedHike.elevationGain.roundToInt().toString()
-          val hourString =
-              String.format(Locale.getDefault(), "%02d", (detailedHike.estimatedTime / 60).toInt())
-          val minuteString =
+          val distanceString =
               String.format(
-                  Locale.getDefault(), "%02d", (detailedHike.estimatedTime % 60).roundToInt())
+                  Locale.getDefault(),
+                  stringResource(R.string.hike_detail_screen_distance_format),
+                  detailedHike.distance)
+          val elevationGainString =
+              String.format(
+                  Locale.getDefault(),
+                  stringResource(R.string.hike_detail_screen_elevation_gain_format),
+                  detailedHike.elevationGain.roundToInt())
+          val hour = (detailedHike.estimatedTime / 60).toInt()
+          val minute = (detailedHike.estimatedTime % 60).roundToInt()
+
+          val remainingTimeString =
+              if (hour > 0) {
+                String.format(
+                    Locale.getDefault(),
+                    stringResource(R.string.hike_detail_screen_estimated_time_format_hour),
+                    hour,
+                    minute)
+              } else {
+                String.format(
+                    Locale.getDefault(),
+                    stringResource(R.string.hike_detail_screen_estimated_time_format_minute),
+                    minute)
+              }
 
           DetailRow(
               label = stringResource(R.string.hike_detail_screen_label_distance),
-              value = "${distanceString}km")
+              value = distanceString)
           DetailRow(
               label = stringResource(R.string.hike_detail_screen_label_elevation_gain),
-              value = "${elevationGainString}m")
+              value = elevationGainString)
           DetailRow(
               label = stringResource(R.string.hike_detail_screen_label_estimated_time),
-              value =
-                  if (detailedHike.estimatedTime / 60 < 1) "${minuteString}min"
-                  else "${hourString}h${minuteString}")
+              value = remainingTimeString)
           DetailRow(
               label = stringResource(R.string.hike_detail_screen_label_difficulty),
               value = stringResource(detailedHike.difficulty.nameResourceId),

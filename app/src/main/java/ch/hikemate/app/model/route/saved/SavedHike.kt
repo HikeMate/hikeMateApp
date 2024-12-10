@@ -18,7 +18,7 @@ data class SavedHike(
      * The human-friendly and readable name of the hike. Can be used, for example, to be displayed
      * in a list of saved hikes without querying the API to get all the names.
      */
-    val name: String = "",
+    val name: String? = null,
 
     /**
      * The date at which the user plans to go on the hike. Can be null if the user has not set a
