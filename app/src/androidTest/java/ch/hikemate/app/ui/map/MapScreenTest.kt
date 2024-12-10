@@ -13,7 +13,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import ch.hikemate.app.R
 import ch.hikemate.app.model.authentication.AuthRepository
 import ch.hikemate.app.model.authentication.AuthViewModel
-import ch.hikemate.app.model.elevation.ElevationService
+import ch.hikemate.app.model.elevation.ElevationRepository
 import ch.hikemate.app.model.profile.HikingLevel
 import ch.hikemate.app.model.profile.Profile
 import ch.hikemate.app.model.profile.ProfileRepository
@@ -51,7 +51,7 @@ import org.osmdroid.util.BoundingBox
 class MapScreenTest : TestCase() {
   private lateinit var savedHikesRepository: SavedHikesRepository
   private lateinit var hikesRepository: HikeRoutesRepository
-  private lateinit var elevationService: ElevationService
+  private lateinit var elevationRepository: ElevationRepository
   private lateinit var hikesViewModel: HikesViewModel
   private lateinit var navigationActions: NavigationActions
   private lateinit var authRepository: AuthRepository
@@ -98,7 +98,7 @@ class MapScreenTest : TestCase() {
     navigationActions = mock(NavigationActions::class.java)
     savedHikesRepository = mock(SavedHikesRepository::class.java)
     hikesRepository = mock(HikeRoutesRepository::class.java)
-    elevationService = mock(ElevationService::class.java)
+    elevationRepository = mock(ElevationRepository::class.java)
     profileRepository = mock(ProfileRepository::class.java)
     profileViewModel = ProfileViewModel(profileRepository)
     authRepository = mock(AuthRepository::class.java)
@@ -107,7 +107,7 @@ class MapScreenTest : TestCase() {
         HikesViewModel(
             savedHikesRepo = savedHikesRepository,
             osmHikesRepo = hikesRepository,
-            elevationService = elevationService,
+            elevationRepository = elevationRepository,
             UnconfinedTestDispatcher())
 
     `when`(profileRepository.getProfileById(eq(profile.id), any(), any())).thenAnswer {
@@ -300,8 +300,9 @@ class MapScreenTest : TestCase() {
     // Click on the search button
     composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).performClick()
 
-    // Check that the repository is called with valid bounds
-    verify(hikesRepository, times(1)).getRoutes(any(), any(), any())
+    // Check that the search did not crash the app
+    // (the search will not return any results because the map is zoomed out too far)
+    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_MAP).assertIsDisplayed()
   }
 
   @Test

@@ -4,13 +4,13 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import ch.hikemate.app.R
-import ch.hikemate.app.model.elevation.ElevationService
-import ch.hikemate.app.model.elevation.ElevationServiceRepository
+import ch.hikemate.app.model.elevation.ElevationRepository
+import ch.hikemate.app.model.elevation.ElevationRepositoryCopernicus
 import ch.hikemate.app.model.extensions.toBounds
 import ch.hikemate.app.model.route.saved.SavedHike
 import ch.hikemate.app.model.route.saved.SavedHikesRepository
 import ch.hikemate.app.model.route.saved.SavedHikesRepositoryFirestore
+import ch.hikemate.app.R
 import ch.hikemate.app.utils.RouteUtils
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
@@ -37,13 +37,13 @@ import org.osmdroid.util.BoundingBox
  *
  * @param savedHikesRepo The repository to work with saved hikes.
  * @param osmHikesRepo The repository to work with hikes from OpenStreetMap.
- * @param elevationService The service to retrieve elevation data.
+ * @param elevationRepository The service to retrieve elevation data.
  * @param dispatcher The dispatcher to be used to launch coroutines.
  */
 class HikesViewModel(
     private val savedHikesRepo: SavedHikesRepository,
     private val osmHikesRepo: HikeRoutesRepository,
-    private val elevationService: ElevationService,
+    private val elevationRepository: ElevationRepository,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : ViewModel() {
   companion object {
@@ -57,7 +57,7 @@ class HikesViewModel(
                     SavedHikesRepositoryFirestore(
                         FirebaseFirestore.getInstance(), FirebaseAuth.getInstance()),
                 osmHikesRepo = HikeRoutesRepositoryOverpass(client),
-                elevationService = ElevationServiceRepository(client))
+                elevationRepository = ElevationRepositoryCopernicus(client))
                 as T
           }
         }
@@ -906,7 +906,7 @@ class HikesViewModel(
     }
 
     // Set the hike's planned date to the right one
-    val newSavedHike = SavedHike(id = hike.id, name = hike.name ?: "", date = date)
+    val newSavedHike = SavedHike(id = hike.id, name = hike.name, date = date)
     try {
       savedHikesRepo.addSavedHike(newSavedHike)
     } catch (e: Exception) {
@@ -1190,7 +1190,7 @@ class HikesViewModel(
         // Launch a request for the elevation data of the hike
         val elevation: List<Double>
         try {
-          elevation = getElevationRepoWrapper(waypoints, hikeId)
+          elevation = getElevationRepoWrapper(waypoints)
         } catch (e: Exception) {
           _hikesMutex.withLock {
             val hikeFlow = _hikeFlowsMap[hikeId] ?: return@withLock
@@ -1224,17 +1224,15 @@ class HikesViewModel(
       }
 
   /**
-   * The [ElevationService] interface has been developed without coroutines in mind, hence we need a
-   * wrapper to "convert" the [ElevationService.getElevation] function that uses callback to a
-   * suspend function.
+   * The [ElevationRepository] interface has been developed without coroutines in mind, hence we
+   * need a wrapper to "convert" the [ElevationRepository.getElevation] function that uses callback
+   * to a suspend function.
    */
   private suspend fun getElevationRepoWrapper(
       coordinates: List<LatLong>,
-      hikeId: String
   ): List<Double> = suspendCoroutine { continuation ->
-    elevationService.getElevation(
+    elevationRepository.getElevation(
         coordinates = coordinates,
-        hikeID = hikeId,
         onSuccess = { elevation -> continuation.resume(elevation) },
         onFailure = { exception -> continuation.resumeWithException(exception) })
   }

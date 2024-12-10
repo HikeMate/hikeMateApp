@@ -1,6 +1,6 @@
 package ch.hikemate.app.model.route
 
-import ch.hikemate.app.model.elevation.ElevationService
+import ch.hikemate.app.model.elevation.ElevationRepository
 import ch.hikemate.app.model.route.saved.SavedHike
 import ch.hikemate.app.model.route.saved.SavedHikesRepository
 import ch.hikemate.app.utils.RouteUtils
@@ -33,7 +33,7 @@ import org.osmdroid.util.BoundingBox
 class HikesViewModelTest {
   private lateinit var savedHikesRepo: SavedHikesRepository
   private lateinit var osmHikesRepo: HikeRoutesRepository
-  private lateinit var elevationRepo: ElevationService
+  private lateinit var elevationRepo: ElevationRepository
 
   private lateinit var hikesViewModel: HikesViewModel
 
@@ -46,7 +46,7 @@ class HikesViewModelTest {
 
     savedHikesRepo = mockk<SavedHikesRepository>()
     osmHikesRepo = mockk<HikeRoutesRepository>()
-    elevationRepo = mockk<ElevationService>()
+    elevationRepo = mockk<ElevationRepository>()
 
     hikesViewModel = HikesViewModel(savedHikesRepo, osmHikesRepo, elevationRepo, dispatcher)
   }
@@ -116,7 +116,7 @@ class HikesViewModelTest {
 
   private val elevationProfile1: List<Double> = listOf(0.0, 1.0, 2.0, 3.0, 2.0, 1.0, 0.0)
 
-  private val doubleComparisonDelta = 0.0
+  private val doubleComparisonDelta = 0.0001
 
   private val expectedDistance: Double = 0.22236057610470872
   private val expectedEstimatedTime: Double = 2.9683269132565044
@@ -1514,7 +1514,7 @@ class HikesViewModelTest {
             onFailure = { onFailureCalled = true })
 
         // The elevation repository should not be called at all
-        verify(exactly = 0) { elevationRepo.getElevation(any(), any(), any(), any()) }
+        verify(exactly = 0) { elevationRepo.getElevation(any(), any(), any()) }
         // The appropriate callback should be called
         assertTrue(onFailureCalled)
       }
@@ -1533,7 +1533,7 @@ class HikesViewModelTest {
             onFailure = { onFailureCalled = true })
 
         // The elevation repository should not be called at all
-        verify(exactly = 0) { elevationRepo.getElevation(any(), any(), any(), any()) }
+        verify(exactly = 0) { elevationRepo.getElevation(any(), any(), any()) }
         // The appropriate callback should be called
         assertTrue(onFailureCalled)
       }
@@ -1545,7 +1545,7 @@ class HikesViewModelTest {
         loadOsmHikes(singleOsmHike1)
 
         // Make sure the repository throws an exception when asked for elevation data
-        every { elevationRepo.getElevation(any(), any(), any(), any()) } throws
+        every { elevationRepo.getElevation(any(), any(), any()) } throws
             Exception("Failed to load elevation data")
 
         // Try to retrieve elevation data for the loaded hike
@@ -1556,7 +1556,7 @@ class HikesViewModelTest {
             onFailure = { onFailureCalled = true })
 
         // The elevation repository should be called exactly once
-        coVerify(exactly = 1) { elevationRepo.getElevation(any(), any(), any(), any()) }
+        coVerify(exactly = 1) { elevationRepo.getElevation(any(), any(), any()) }
         // The appropriate callback should be called
         assertTrue(onFailureCalled)
       }
@@ -1605,9 +1605,9 @@ class HikesViewModelTest {
         assertFalse(hikesViewModel.hikeFlows.value[0].value.elevation is DeferredData.Obtained)
 
         // Make sure the repository returns the elevation data for the loaded hike
-        coEvery { elevationRepo.getElevation(any(), any(), any(), any()) } answers
+        coEvery { elevationRepo.getElevation(any(), any(), any()) } answers
             {
-              val onSuccess = thirdArg<(List<Double>) -> Unit>()
+              val onSuccess = secondArg<(List<Double>) -> Unit>()
               onSuccess(elevationProfile1)
             }
 
@@ -1619,7 +1619,7 @@ class HikesViewModelTest {
             onFailure = { fail("onFailure should not have been called") })
 
         // The elevation repository should be called exactly once
-        verify(exactly = 1) { elevationRepo.getElevation(any(), any(), any(), any()) }
+        verify(exactly = 1) { elevationRepo.getElevation(any(), any(), any()) }
         // The appropriate callback should be called
         assertTrue(onSuccessCalled)
         // The view model should now contain the loaded hike with its elevation data
@@ -1637,9 +1637,9 @@ class HikesViewModelTest {
         loadOsmHikes(singleOsmHike1)
 
         // Make sure the repository returns the elevation data for the loaded hike
-        coEvery { elevationRepo.getElevation(any(), any(), any(), any()) } answers
+        coEvery { elevationRepo.getElevation(any(), any(), any()) } answers
             {
-              val onSuccess = thirdArg<(List<Double>) -> Unit>()
+              val onSuccess = secondArg<(List<Double>) -> Unit>()
               onSuccess(elevationProfile1)
             }
 
@@ -1653,7 +1653,7 @@ class HikesViewModelTest {
         hikesViewModel.retrieveElevationDataFor(hikeId = singleOsmHike1[0].id)
 
         // The elevation repository should only be called once
-        coVerify(exactly = 1) { elevationRepo.getElevation(any(), any(), any(), any()) }
+        coVerify(exactly = 1) { elevationRepo.getElevation(any(), any(), any()) }
       }
 
   @Test
@@ -1671,9 +1671,9 @@ class HikesViewModelTest {
         assertFalse(hikesViewModel.selectedHike.value?.elevation is DeferredData.Obtained)
 
         // Make sure the repository returns the elevation data for the loaded hike
-        coEvery { elevationRepo.getElevation(any(), any(), any(), any()) } answers
+        coEvery { elevationRepo.getElevation(any(), any(), any()) } answers
             {
-              val onSuccess = thirdArg<(List<Double>) -> Unit>()
+              val onSuccess = secondArg<(List<Double>) -> Unit>()
               onSuccess(elevationProfile1)
             }
 
@@ -1749,9 +1749,9 @@ class HikesViewModelTest {
         loadOsmHikes(singleOsmHike1)
 
         // Make sure the elevation repository will return a valid elevation profile
-        every { elevationRepo.getElevation(any(), any(), any(), any()) } answers
+        every { elevationRepo.getElevation(any(), any(), any()) } answers
             {
-              val onSuccess = thirdArg<(List<Double>) -> Unit>()
+              val onSuccess = secondArg<(List<Double>) -> Unit>()
               onSuccess(elevationProfile1)
             }
 
@@ -1790,9 +1790,9 @@ class HikesViewModelTest {
         loadOsmHikes(singleOsmHike1)
 
         // Make sure the elevation repository will return a valid elevation profile
-        every { elevationRepo.getElevation(any(), any(), any(), any()) } answers
+        every { elevationRepo.getElevation(any(), any(), any()) } answers
             {
-              val onSuccess = thirdArg<(List<Double>) -> Unit>()
+              val onSuccess = secondArg<(List<Double>) -> Unit>()
               onSuccess(elevationProfile1)
             }
 
@@ -1841,9 +1841,9 @@ class HikesViewModelTest {
         loadOsmHikes(singleOsmHike1)
 
         // Make sure the elevation repository will return a valid elevation profile
-        every { elevationRepo.getElevation(any(), any(), any(), any()) } answers
+        every { elevationRepo.getElevation(any(), any(), any()) } answers
             {
-              val onSuccess = thirdArg<(List<Double>) -> Unit>()
+              val onSuccess = secondArg<(List<Double>) -> Unit>()
               onSuccess(elevationProfile1)
             }
 

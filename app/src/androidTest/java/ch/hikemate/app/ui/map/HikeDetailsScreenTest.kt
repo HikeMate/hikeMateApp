@@ -7,7 +7,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.hikemate.app.model.authentication.AuthRepository
 import ch.hikemate.app.model.authentication.AuthViewModel
-import ch.hikemate.app.model.elevation.ElevationService
+import ch.hikemate.app.model.elevation.ElevationRepository
 import ch.hikemate.app.model.profile.HikingLevel
 import ch.hikemate.app.model.profile.Profile
 import ch.hikemate.app.model.profile.ProfileRepository
@@ -66,7 +66,7 @@ class HikeDetailScreenTest {
   private lateinit var profileViewModel: ProfileViewModel
   private lateinit var mockSavedHikesRepository: SavedHikesRepository
   private lateinit var hikesRepository: HikeRoutesRepository
-  private lateinit var elevationService: ElevationService
+  private lateinit var elevationRepository: ElevationRepository
   private lateinit var hikesViewModel: HikesViewModel
 
   private val hikeId = "1"
@@ -134,15 +134,18 @@ class HikeDetailScreenTest {
     }
 
     // Make sure the appropriate elevation profile is obtained when requested
-    `when`(elevationService.getElevation(any(), any(), any(), any())).thenAnswer {
-      val onSuccess = it.getArgument<(List<Double>) -> Unit>(2)
+    `when`(elevationRepository.getElevation(any(), any(), any())).thenAnswer {
+      val onSuccess = it.getArgument<(List<Double>) -> Unit>(1)
       onSuccess(hike.elevation)
     }
 
     // Reset the view model
     hikesViewModel =
         HikesViewModel(
-            mockSavedHikesRepository, hikesRepository, elevationService, UnconfinedTestDispatcher())
+            mockSavedHikesRepository,
+            hikesRepository,
+            elevationRepository,
+            UnconfinedTestDispatcher())
 
     // Load the hike from OSM, as if the user had searched it on the map
     hikesViewModel.loadHikesInBounds(detailedHike.bounds.toBoundingBox())
@@ -173,7 +176,7 @@ class HikeDetailScreenTest {
     authRepository = mock(AuthRepository::class.java)
     authViewModel = AuthViewModel(authRepository, profileRepository)
     hikesRepository = mock(HikeRoutesRepository::class.java)
-    elevationService = mock(ElevationService::class.java)
+    elevationRepository = mock(ElevationRepository::class.java)
     mockSavedHikesRepository = mock(SavedHikesRepository::class.java)
 
     `when`(profileRepository.getProfileById(eq(profile.id), any(), any())).thenAnswer {
