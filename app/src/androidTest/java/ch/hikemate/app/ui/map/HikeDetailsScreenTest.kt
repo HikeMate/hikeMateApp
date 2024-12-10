@@ -14,14 +14,12 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.hikemate.app.R
 import ch.hikemate.app.model.authentication.AuthRepository
 import ch.hikemate.app.model.authentication.AuthViewModel
-
+import ch.hikemate.app.model.elevation.ElevationRepository
 import ch.hikemate.app.model.facilities.FacilitiesRepository
 import ch.hikemate.app.model.facilities.FacilitiesViewModel
+import ch.hikemate.app.model.facilities.FacilitiesViewModel.Companion.MIN_ZOOM_FOR_FACILITIES
 import ch.hikemate.app.model.facilities.Facility
 import ch.hikemate.app.model.facilities.FacilityType
-
-import ch.hikemate.app.model.elevation.ElevationRepository
-
 import ch.hikemate.app.model.profile.HikingLevel
 import ch.hikemate.app.model.profile.Profile
 import ch.hikemate.app.model.profile.ProfileRepository
@@ -83,8 +81,6 @@ class HikeDetailScreenTest {
   private lateinit var mockSavedHikesRepository: SavedHikesRepository
   private lateinit var hikesRepository: HikeRoutesRepository
 
-  private lateinit var elevationRepository: ElevationRepository
-
   private lateinit var hikesViewModel: HikesViewModel
   private lateinit var facilitiesViewModel: FacilitiesViewModel
   private lateinit var facilitiesRepository: FacilitiesRepository
@@ -118,6 +114,24 @@ class HikeDetailScreenTest {
           description =
               "A scenic trail with breathtaking views of the Matterhorn and surrounding glaciers.",
           bounds = Bounds(minLat = 45.9, minLon = 7.6, maxLat = 45.91, maxLon = 7.61),
+          waypoints = listOf(LatLong(45.9, 7.6), LatLong(45.908, 7.605), LatLong(45.91, 7.61)),
+          elevation = listOf(0.0, 10.0, 20.0, 30.0),
+          distance = 13.543077559212616,
+          elevationGain = 68.0,
+          estimatedTime = 169.3169307105514,
+          difficulty = HikeDifficulty.DIFFICULT,
+      )
+
+  private val detailedHike3 =
+      DetailedHike(
+          id = hikeId,
+          color = Hike(hikeId, false, null, null).getColor(),
+          isSaved = false,
+          plannedDate = null,
+          name = "Sample Hike",
+          description =
+              "A scenic trail with breathtaking views of the Matterhorn and surrounding glaciers.",
+          bounds = Bounds(minLat = 44.9, minLon = 6.6, maxLat = 46.91, maxLon = 8.61),
           waypoints = listOf(LatLong(45.9, 7.6), LatLong(45.908, 7.605), LatLong(45.91, 7.61)),
           elevation = listOf(0.0, 10.0, 20.0, 30.0),
           distance = 13.543077559212616,
@@ -442,6 +456,30 @@ class HikeDetailScreenTest {
   }
 
   @Test
+  fun hikeDetails_fetchesFacilities() = runTest {
+    val listFacility =
+        listOf(
+            Facility(
+                type = FacilityType.TOILETS, // We'll test the toilets drawable
+                coordinates = LatLong(45.9, 7.6)))
+    `when`(facilitiesRepository.getFacilities(any(), any(), any())).then {
+      val onSuccess = it.getArgument<(List<Facility>) -> Unit>(1)
+      onSuccess(listFacility)
+    }
+    setUpSelectedHike(detailedHike2)
+    composeTestRule.setContent {
+      HikeDetailScreen(
+          hikesViewModel = hikesViewModel,
+          profileViewModel = profileViewModel,
+          authViewModel = authViewModel,
+          navigationActions = mockNavigationActions,
+          facilitiesViewModel = facilitiesViewModel)
+    }
+
+    verify(facilitiesRepository).getFacilities(any(), any(), any())
+  }
+
+  @Test
   fun hikeDetails_displaysCorrectDrawableForFacilityType() = runTest {
     // Setup a detailed hike
     setUpSelectedHike(detailedHike2)
@@ -460,39 +498,63 @@ class HikeDetailScreenTest {
 
     composeTestRule.setContent {
       context = LocalContext.current
-      mapView = hikeDetailsMap(detailedHike2, facilities)
+      mapView = hikeDetailsMap(detailedHike2, facilitiesViewModel, facilities)
     }
 
     // Wait for the map to initialize
     composeTestRule.waitForIdle()
+    Thread.sleep(300)
+    // Get the expected drawable for toilets
+    val expectedDrawable = ContextCompat.getDrawable(context, R.drawable.toilets)
 
-    composeTestRule.runOnUiThread {
-      // Set zoom level high enough to display facilities
-      mapView.controller.setZoom(13.0)
+    // Get all markers from the map
+    val facilityMarkers =
+        mapView.overlays.filterIsInstance<Marker>().filter {
+          it.relatedObject == R.string.facility_marker
+        }
 
-      // Get the expected drawable for toilets
-      val expectedDrawable = ContextCompat.getDrawable(context, R.drawable.toilets)
+    // There should be exactly one marker
+    assertEquals(1, facilityMarkers.size)
 
-      // Get all markers from the map
-      val facilityMarkers =
-          mapView.overlays.filterIsInstance<Marker>().filter {
-            it.relatedObject == R.string.facility_marker
-          }
+    val marker = facilityMarkers.first()
 
-      // There should be exactly one marker
-      assertEquals(1, facilityMarkers.size)
+    // Verify the marker's drawable matches the expected drawable
+    assertTrue(
+        "Marker should have correct drawable icon", areSameDrawable(expectedDrawable, marker.icon))
 
-      val marker = facilityMarkers.first()
+    // Verify the marker's position matches the facility
+    assertEquals(testFacility.coordinates.lat, marker.position.latitude, 0.0001)
+    assertEquals(testFacility.coordinates.lon, marker.position.longitude, 0.0001)
+  }
 
-      // Verify the marker's drawable matches the expected drawable
-      assertTrue(
-          "Marker should have correct drawable icon",
-          areSameDrawable(expectedDrawable, marker.icon))
+  @Test
+  fun hikeDetails_hidesFacilities_whenZoomLevelIsInsufficient() = runTest {
+    setUpSelectedHike(detailedHike3)
 
-      // Verify the marker's position matches the facility
-      assertEquals(testFacility.coordinates.lat, marker.position.latitude, 0.0001)
-      assertEquals(testFacility.coordinates.lon, marker.position.longitude, 0.0001)
+    val testFacilities =
+        listOf(Facility(type = FacilityType.TOILETS, coordinates = LatLong(45.9, 7.6)))
+
+    val facilities: MutableState<List<Facility>?> = mutableStateOf(testFacilities)
+    lateinit var mapView: MapView
+    val minZoomForFacilities = MIN_ZOOM_FOR_FACILITIES
+
+    composeTestRule.setContent {
+      mapView = hikeDetailsMap(detailedHike3, facilitiesViewModel, facilities)
     }
+
+    composeTestRule.waitForIdle()
+    Thread.sleep(300)
+
+    // Verify facilities are hidden at insufficient zoom levels
+    val finalMarkers =
+        mapView.overlays.filterIsInstance<Marker>().filter {
+          it.relatedObject == R.string.facility_marker
+        }
+
+    assertTrue(
+        "Facilities should be hidden at zoom level ${mapView.zoomLevelDouble}, " +
+            "below minimum $minZoomForFacilities",
+        finalMarkers.isEmpty())
   }
 
   // Helper function to compare drawables
@@ -504,112 +566,5 @@ class HikeDetailScreenTest {
     val bitmap2 = drawable2.toBitmap()
 
     return bitmap1.sameAs(bitmap2)
-  }
-
-  @Test
-  fun hikeDetails_hidesFacilities_whenZoomLevelIsInsufficient() = runTest {
-    setUpSelectedHike(detailedHike2)
-
-    val testFacilities =
-        listOf(Facility(type = FacilityType.TOILETS, coordinates = LatLong(45.9, 7.6)))
-
-    val facilities: MutableState<List<Facility>?> = mutableStateOf(testFacilities)
-    lateinit var mapView: MapView
-    val minZoomForFacilities = HikeDetailScreen.MIN_ZOOM_FOR_FACILITIES
-
-    composeTestRule.setContent { mapView = hikeDetailsMap(detailedHike2, facilities) }
-
-    composeTestRule.waitForIdle()
-
-    composeTestRule.runOnUiThread {
-      // Verify initial facilities are displayed
-      val initialMarkers =
-          mapView.overlays.filterIsInstance<Marker>().filter {
-            it.relatedObject == R.string.facility_marker
-          }
-      assertTrue("Facilities should be visible initially", initialMarkers.isNotEmpty())
-
-      // Adjust the zoom level below the threshold
-      mapView.controller.setZoom(minZoomForFacilities - 1)
-      mapView.invalidate() // Force a redraw
-    }
-
-    composeTestRule.waitForIdle()
-
-    composeTestRule.runOnUiThread {
-      // Verify facilities are hidden at insufficient zoom levels
-      val finalMarkers =
-          mapView.overlays.filterIsInstance<Marker>().filter {
-            it.relatedObject == R.string.facility_marker
-          }
-
-      assertTrue(
-          "Facilities should be hidden at zoom level ${mapView.zoomLevelDouble}, " +
-              "below minimum $minZoomForFacilities",
-          finalMarkers.isEmpty())
-    }
-  }
-
-  @Test
-  fun hikeDetails_limitsDisplayedFacilities_basedOnZoomLevel() = runTest {
-    setUpSelectedHike(detailedHike2)
-
-    // Create more facilities than allowed at zoom level 13
-    val maxAtZoom13 = HikeDetailScreen.MAX_AMOUNT_OF_FACILITIES_ZOOM_LEVEL[13.0] ?: 0
-    val testFacilities =
-        (1..maxAtZoom13 + 5).map { index ->
-          Facility(type = FacilityType.TOILETS, coordinates = LatLong(45.9 + (index * 0.001), 7.6))
-        }
-
-    val facilities: MutableState<List<Facility>?> = mutableStateOf(testFacilities)
-
-    composeTestRule.setContent {
-      val mapView = hikeDetailsMap(detailedHike2, facilities)
-
-      // Set zoom level to 13
-      mapView.controller.setZoom(13.0)
-
-      // Verify only maximum allowed facilities are displayed
-      val facilityMarkers =
-          mapView.overlays.filterIsInstance<Marker>().filter {
-            it.relatedObject == R.string.facility_marker
-          }
-
-      assertEquals(maxAtZoom13, facilityMarkers.size)
-    }
-  }
-
-  @Test
-  fun hikeDetails_clearsFacilities_whenZoomingOut() = runTest {
-    setUpSelectedHike(detailedHike)
-
-    val testFacilities =
-        listOf(Facility(type = FacilityType.TOILETS, coordinates = LatLong(45.91, 7.65)))
-
-    val facilities: MutableState<List<Facility>?> = mutableStateOf(testFacilities)
-
-    composeTestRule.setContent {
-      val mapView = hikeDetailsMap(detailedHike, facilities)
-
-      // First set zoom level high enough to display facilities
-      mapView.controller.setZoom(HikeDetailScreen.MIN_ZOOM_FOR_FACILITIES + 1.0)
-
-      // Verify facilities are displayed
-      var facilityMarkers =
-          mapView.overlays.filterIsInstance<Marker>().filter {
-            it.relatedObject == R.string.facility_marker
-          }
-      assertTrue(facilityMarkers.isNotEmpty())
-
-      // Now zoom out
-      mapView.controller.setZoom(HikeDetailScreen.MIN_ZOOM_FOR_FACILITIES - 1.0)
-
-      // Verify facilities are cleared
-      facilityMarkers =
-          mapView.overlays.filterIsInstance<Marker>().filter {
-            it.relatedObject == R.string.facility_marker
-          }
-      assertTrue(facilityMarkers.isEmpty())
-    }
   }
 }

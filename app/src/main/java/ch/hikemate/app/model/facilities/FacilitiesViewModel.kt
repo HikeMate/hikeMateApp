@@ -32,106 +32,108 @@ class FacilitiesViewModel(
   }
 
   private val _cache = mutableMapOf<Bounds, List<Facility>>()
-    /**
-     * Filters facilities for display based on the current map view state and zoom level.
-     * The function performs several checks to determine which facilities should be displayed:
-     * 1. Verifies if the zoom level is sufficient for showing facilities
-     * 2. Checks if the center of the view is close enough to the hike route
-     * 3. Limits the number of displayed facilities based on the current zoom level
-     *
-     * The function uses lazy evaluation through sequences to efficiently process facilities,
-     * stopping as soon as the maximum number of facilities for the current zoom level is reached.
-     *
-     * @param facilities List of all available facilities to filter
-     * @param bounds The current visible bounds of the map view
-     * @param zoomLevel The current zoom level of the map
-     * @param hikeRoute The detailed hike route being displayed
-     * @param onSuccess Callback invoked with the filtered list of facilities when processing succeeds
-     * @param onNoFacilitiesForState Callback invoked when no facilities should be displayed for the current state
-     */
-    fun filterFacilitiesForDisplay(
-        facilities: List<Facility>,
-        bounds: BoundingBox,
-        zoomLevel: Double,
-        hikeRoute: DetailedHike,
-        onSuccess: (List<Facility>) -> Unit,
-        onNoFacilitiesForState: () -> Unit
-    ) {
-        viewModelScope.launch(dispatcher) {
-            // 1. Early returns for invalid states
-            if (!isValidZoomAndBounds(zoomLevel, bounds, hikeRoute)) {
-                onNoFacilitiesForState()
-                return@launch
-            }
+  /**
+   * Filters facilities for display based on the current map view state and zoom level. The function
+   * performs several checks to determine which facilities should be displayed:
+   * 1. Verifies if the zoom level is sufficient for showing facilities
+   * 2. Checks if the center of the view is close enough to the hike route
+   * 3. Limits the number of displayed facilities based on the current zoom level
+   *
+   * The function uses lazy evaluation through sequences to efficiently process facilities, stopping
+   * as soon as the maximum number of facilities for the current zoom level is reached.
+   *
+   * @param facilities List of all available facilities to filter
+   * @param bounds The current visible bounds of the map view
+   * @param zoomLevel The current zoom level of the map
+   * @param hikeRoute The detailed hike route being displayed
+   * @param onSuccess Callback invoked with the filtered list of facilities when processing succeeds
+   * @param onNoFacilitiesForState Callback invoked when no facilities should be displayed for the
+   *   current state
+   */
+  fun filterFacilitiesForDisplay(
+      facilities: List<Facility>,
+      bounds: BoundingBox,
+      zoomLevel: Double,
+      hikeRoute: DetailedHike,
+      onSuccess: (List<Facility>) -> Unit,
+      onNoFacilitiesForState: () -> Unit
+  ) {
+    viewModelScope.launch(dispatcher) {
+      // 1. Early returns for invalid states
+      if (!isValidZoomAndBounds(zoomLevel, bounds, hikeRoute)) {
+        onNoFacilitiesForState()
+        return@launch
+      }
 
-            // 2. Calculate max facilities once
-            val maxFacilities = getMaxFacilitiesForZoom(zoomLevel)
-            if (maxFacilities == 0) {
-                onNoFacilitiesForState()
-                return@launch
-            }
+      // 2. Calculate max facilities once
+      val maxFacilities = getMaxFacilitiesForZoom(zoomLevel)
+      if (maxFacilities == 0) {
+        onNoFacilitiesForState()
+        return@launch
+      }
 
-            // 3. Use sequence for lazy evaluation and take() for early termination
-            val filteredFacilities = facilities.asSequence()
-                .filter { facility ->
-                    bounds.contains(GeoPoint(facility.coordinates.lat, facility.coordinates.lon))
-                }
-                .take(maxFacilities)
-                .toList()
+      // 3. Use sequence for lazy evaluation and take() for early termination
+      val filteredFacilities =
+          facilities
+              .asSequence()
+              .filter { facility ->
+                bounds.contains(GeoPoint(facility.coordinates.lat, facility.coordinates.lon))
+              }
+              .take(maxFacilities)
+              .toList()
 
-            // 4. Handle empty result
-            if (filteredFacilities.isEmpty()) {
-                onNoFacilitiesForState()
-                return@launch
-            }
+      // 4. Handle empty result
+      if (filteredFacilities.isEmpty()) {
+        onNoFacilitiesForState()
+        return@launch
+      }
 
-            onSuccess(filteredFacilities)
-        }
+      onSuccess(filteredFacilities)
+    }
+  }
+
+  /**
+   * Validates whether facilities should be displayed for the current zoom level and map bounds.
+   * This function performs two main checks:
+   * 1. Verifies if the zoom level meets the minimum threshold for displaying facilities
+   * 2. Ensures the center point of the view is within the maximum allowed distance from the route
+   *
+   * @param zoomLevel Current zoom level of the map
+   * @param bounds Current visible bounds of the map
+   * @param hikeRoute The detailed hike route being displayed
+   * @return true if facilities should be displayed for the current state, false otherwise
+   */
+  private fun isValidZoomAndBounds(
+      zoomLevel: Double,
+      bounds: BoundingBox,
+      hikeRoute: DetailedHike
+  ): Boolean {
+    // This might seem redundant but the reason this is used is so that if the zoom level
+    // is not according to the minimum we just return without doing the distance computation
+    if (zoomLevel < MIN_ZOOM_FOR_FACILITIES) {
+      return false
     }
 
-    /**
-     * Validates whether facilities should be displayed for the current zoom level and map bounds.
-     * This function performs two main checks:
-     * 1. Verifies if the zoom level meets the minimum threshold for displaying facilities
-     * 2. Ensures the center point of the view is within the maximum allowed distance from the route
-     *
-     * @param zoomLevel Current zoom level of the map
-     * @param bounds Current visible bounds of the map
-     * @param hikeRoute The detailed hike route being displayed
-     * @return true if facilities should be displayed for the current state, false otherwise
-     */
-    private fun isValidZoomAndBounds(
-        zoomLevel: Double,
-        bounds: BoundingBox,
-        hikeRoute: DetailedHike
-    ): Boolean {
-        // This might seem redundant but the reason this is used is so that if the zoom level
-        // is not according to the minimum we just return without doing the distance computation
-        if (zoomLevel < MIN_ZOOM_FOR_FACILITIES) {
-            return false
-        }
+    val centerPoint = LatLong(bounds.centerLatitude, bounds.centerLongitude)
+    val distanceFromRoute =
+        LocationUtils.projectLocationOnHike(centerPoint, hikeRoute)?.distanceFromRoute
+            ?: return false
 
-        val centerPoint = LatLong(bounds.centerLatitude, bounds.centerLongitude)
-        val distanceFromRoute = LocationUtils.projectLocationOnHike(centerPoint, hikeRoute)
-            ?.distanceFromRoute ?: return false
+    return distanceFromRoute <= MAX_DISTANCE_FROM_CENTER_BOUNDS_TO_ROUTE
+  }
 
-        return distanceFromRoute <= MAX_DISTANCE_FROM_CENTER_BOUNDS_TO_ROUTE
-    }
-
-    /**
-     * Determines the maximum number of facilities that should be displayed for the current zoom level.
-     * The function uses a predefined mapping of zoom ranges to facility counts to prevent
-     * overcrowding the map at lower zoom levels while allowing more detail at higher zooms.
-     *
-     * @param zoomLevel Current zoom level of the map
-     * @return The maximum number of facilities that should be displayed, or 0 if no facilities should be shown
-     */
-    private fun getMaxFacilitiesForZoom(zoomLevel: Double): Int {
-        return MAX_FACILITIES_PER_ZOOM
-            .filterKeys { zoomLevel in it }
-            .values
-            .firstOrNull() ?: 0
-    }
+  /**
+   * Determines the maximum number of facilities that should be displayed for the current zoom
+   * level. The function uses a predefined mapping of zoom ranges to facility counts to prevent
+   * overcrowding the map at lower zoom levels while allowing more detail at higher zooms.
+   *
+   * @param zoomLevel Current zoom level of the map
+   * @return The maximum number of facilities that should be displayed, or 0 if no facilities should
+   *   be shown
+   */
+  private fun getMaxFacilitiesForZoom(zoomLevel: Double): Int {
+    return MAX_FACILITIES_PER_ZOOM.filterKeys { zoomLevel in it }.values.firstOrNull() ?: 0
+  }
 
   /**
    * Asynchronously fetches facilities within specified bounds, utilizing cache when possible. If

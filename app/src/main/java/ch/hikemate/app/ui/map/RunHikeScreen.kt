@@ -173,7 +173,7 @@ private fun RunHikeContent(
 }
 
 @Composable
-private fun runHikeMap(
+fun runHikeMap(
     hike: DetailedHike,
     facilitiesViewModel: FacilitiesViewModel,
     facilities: MutableState<List<Facility>?>

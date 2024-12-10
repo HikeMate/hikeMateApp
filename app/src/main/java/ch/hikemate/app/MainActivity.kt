@@ -176,7 +176,10 @@ fun HikeMateApp() {
       }
 
       composable(Screen.RUN_HIKE) {
-        RunHikeScreen(hikesViewModel = hikesViewModel, navigationActions = navigationActions,facilitiesViewModel=facilitiesViewModel)
+        RunHikeScreen(
+            hikesViewModel = hikesViewModel,
+            navigationActions = navigationActions,
+            facilitiesViewModel = facilitiesViewModel)
       }
     }
 
