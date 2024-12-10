@@ -4,8 +4,10 @@ import android.content.Context
 import android.graphics.drawable.Drawable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -50,6 +52,7 @@ import com.google.firebase.Timestamp
 import java.util.Locale
 import kotlin.math.roundToInt
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
@@ -475,6 +478,59 @@ class HikeDetailScreenTest {
     }
 
     verify(facilitiesRepository).getFacilities(any(), any(), any())
+  }
+
+  @Test
+  fun hikeDetails_displaysCorrectDrawableForFacilityType() = runTest {
+    // Setup a detailed hike
+    setUpSelectedHike(detailedHike2)
+
+    val bounds = detailedHike2.bounds.toBoundingBox()
+    val center = LatLong(bounds.centerLatitude, bounds.centerLongitude)
+    val testFacility = Facility(type = FacilityType.TOILETS, coordinates = center)
+
+    val facilities: MutableState<List<Facility>?> = mutableStateOf(listOf(testFacility))
+
+    lateinit var mapView: MapView
+    lateinit var context: Context
+
+    composeTestRule.setContent {
+      context = LocalContext.current
+      mapView = hikeDetailsMap(detailedHike2, facilitiesViewModel, facilities)
+    }
+
+    // Create a custom waiter that checks for the marker presence
+    var attempts = 0
+    val maxAttempts = 50 // Adjust as needed
+    val delayMs = 100L // Small delay between checks
+
+    // Wait for the marker to appear using polling
+    while (attempts < maxAttempts) {
+      val facilityMarkers =
+          mapView.overlays.filterIsInstance<Marker>().filter {
+            it.relatedObject == R.string.facility_marker
+          }
+
+      if (facilityMarkers.isNotEmpty()) {
+        // Marker found, proceed with assertions
+        val marker = facilityMarkers.first()
+        val expectedDrawable = ContextCompat.getDrawable(context, R.drawable.toilets)
+
+        assertEquals(1, facilityMarkers.size)
+        assertTrue(
+            "Marker should have correct drawable icon",
+            areSameDrawable(expectedDrawable, marker.icon))
+        assertEquals(testFacility.coordinates.lat, marker.position.latitude, 0.0001)
+        assertEquals(testFacility.coordinates.lon, marker.position.longitude, 0.0001)
+        return@runTest // Exit successfully
+      }
+
+      delay(delayMs) // Use coroutine delay instead of Thread.sleep
+      attempts++
+    }
+
+    // If we get here, the marker never appeared
+    fail("Marker was not added to map after ${maxAttempts * delayMs}ms")
   }
 
   @Test
