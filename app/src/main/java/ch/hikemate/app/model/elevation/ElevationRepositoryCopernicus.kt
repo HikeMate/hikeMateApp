@@ -107,6 +107,9 @@ class ElevationRepositoryCopernicus(
   // The job performing the cache update
   private var cacheUpdateJob: Job? = null
 
+  // The number of chunks pending
+  private var chunksPending: Int = 0
+
   /**
    * Get the size of the cache
    *
@@ -130,7 +133,7 @@ class ElevationRepositoryCopernicus(
       mutex.withLock {
         requests.add(ElevationRequest(coordinates, onSuccess, onFailure))
 
-        if (cacheUpdateJob == null || cacheUpdateJob?.isCompleted == true) {
+        if ((cacheUpdateJob == null || cacheUpdateJob?.isCompleted == true) && chunksPending == 0) {
           launchUpdateOfCache()
         }
       }
@@ -170,8 +173,8 @@ class ElevationRepositoryCopernicus(
               numberOfCoordinates = newParsingResult.first
               chunks = newParsingResult.second
             }
+            chunksPending += chunks.size
             for (chunk in chunks) {
-              // Create the JSON body for the request
               sendChunkRequest(chunk)
             }
           }
@@ -179,7 +182,7 @@ class ElevationRepositoryCopernicus(
   }
 
   /**
-   * Clear the requests using the cache If all the coordinates are in the cache, we can return the
+   * Clear the requests using the cache. If all the coordinates are in the cache, we can return the
    * data directly
    *
    * Warning: This function is not locking the mutex!
@@ -195,12 +198,7 @@ class ElevationRepositoryCopernicus(
           req.onSuccess(
               req.coordinates.map {
                 val value = cache[it]
-                if (value == null) {
-                  Log.e(LOG_TAG, "Coordinate is missing in cache")
-                  return@map 0.0
-                } else {
-                  value.elevation
-                }
+                value?.elevation ?: return@map 0.0
               })
         }
         clearedRequests.add(req)
@@ -242,6 +240,7 @@ class ElevationRepositoryCopernicus(
    * @param failedRequests The number of failed requests for this chunk
    */
   private fun sendChunkRequest(chunkRequest: ElevationRequestChunk, failedRequests: Int = 0) {
+    // Create the JSON body for the request
     val jsonString = buildJsonArray {
       chunkRequest.coordinates.forEach { coordinate ->
         add(
@@ -259,9 +258,16 @@ class ElevationRepositoryCopernicus(
 
     val onFailure: (Exception) -> Unit = { e ->
       CoroutineScope(repoDispatcher).launch {
-        chunkRequest.associatedRequests.forEach { request ->
-          requests.remove(request)
-          request.onFailure(e)
+        mutex.withLock {
+          chunksPending--
+          chunkRequest.associatedRequests.forEach { request ->
+            val removed = requests.remove(request)
+            // We ensure onFailure is called only once per request
+            if (removed) {
+              request.onFailure(e)
+            }
+          }
+          launchNewRequestIfNeeded()
         }
       }
     }
@@ -270,6 +276,13 @@ class ElevationRepositoryCopernicus(
         .newCall(request)
         .enqueue(
             ElevationServiceCallback(onSuccessWithCache, onFailure, failedRequests, chunkRequest))
+  }
+
+  /** Launch a new request if requests are waiting for the previous one to finish */
+  private fun launchNewRequestIfNeeded() {
+    if (chunksPending == 0 && requests.isNotEmpty()) {
+      launchUpdateOfCache()
+    }
   }
 
   /**
@@ -285,6 +298,7 @@ class ElevationRepositoryCopernicus(
 
       // Update the cache with the new data
       mutex.withLock {
+        chunksPending--
         chunkRequest.coordinates.forEachIndexed { index, it ->
           cache[it] = ElevationCacheEntry(Date(), listOfElevation[index] ?: 0.0)
         }
@@ -303,6 +317,7 @@ class ElevationRepositoryCopernicus(
             CoroutineScope(repoDispatcher).launch { request.onSuccess(notNullElevations) }
           }
         }
+        launchNewRequestIfNeeded()
       }
 
       // If the cache is too big, we need to clean it up

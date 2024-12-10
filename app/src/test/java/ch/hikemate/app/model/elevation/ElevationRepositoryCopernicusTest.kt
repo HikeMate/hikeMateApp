@@ -172,7 +172,7 @@ class ElevationRepositoryCopernicusTest {
               assertEquals(chunkSizedList.map { it.lat }, list)
               onSuccessLatch.countDown()
             }) {
-              fail("Failed to fetch routes from Overpass API")
+              fail("Failed to fetch routes")
             }
 
         elevationRepositoryCopernicus.getElevation(
@@ -181,7 +181,7 @@ class ElevationRepositoryCopernicusTest {
               assertEquals(simpleList, list)
               onSuccessLatch.countDown()
             }) {
-              fail("Failed to fetch routes from Overpass API")
+              fail("Failed to fetch routes")
             }
 
         // Wait for the coroutine to finish
@@ -213,7 +213,7 @@ class ElevationRepositoryCopernicusTest {
               assertEquals(twiceChunkSizedList.map { it.lat }, list)
               onSuccessLatch.countDown()
             }) {
-              fail("Failed to fetch routes from Overpass API")
+              fail("Failed to fetch routes")
             }
 
         // Wait for the coroutine to finish
@@ -245,7 +245,7 @@ class ElevationRepositoryCopernicusTest {
               assertEquals(twiceChunkSizedList.map { it.lat }, list)
               onSuccessLatch.countDown()
             }) {
-              fail("Failed to fetch routes from Overpass API")
+              fail("Failed to fetch routes")
             }
 
         elevationRepositoryCopernicus.getElevation(
@@ -254,7 +254,7 @@ class ElevationRepositoryCopernicusTest {
               assertEquals(twiceChunkSizedList.map { it.lat }, list)
               onSuccessLatch.countDown()
             }) {
-              fail("Failed to fetch routes from Overpass API")
+              fail("Failed to fetch routes")
             }
 
         // Wait for the coroutine to finish
@@ -286,7 +286,7 @@ class ElevationRepositoryCopernicusTest {
               assertEquals(twiceChunkSizedList.map { it.lat }, list)
               onSuccessLatch.countDown()
             }) {
-              fail("Failed to fetch routes from Overpass API")
+              fail("Failed to fetch routes")
             }
 
         // Wait for the coroutine to finish
@@ -300,7 +300,7 @@ class ElevationRepositoryCopernicusTest {
               assertEquals(twiceChunkSizedList.map { it.lat }, list)
               onSuccessLatch.countDown()
             }) {
-              fail("Failed to fetch routes from Overpass API")
+              fail("Failed to fetch routes")
             }
 
         // Wait for the coroutine to finish

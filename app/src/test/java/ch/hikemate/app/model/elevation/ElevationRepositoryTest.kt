@@ -373,7 +373,7 @@ class ElevationRepositoryTest {
               assertEquals(simpleList, list)
               onSuccessLatch.countDown()
             }) {
-              fail("Failed to fetch routes from Overpass API")
+              fail("Failed to fetch routes")
             }
 
         elevationRepository.getElevation(
@@ -382,7 +382,7 @@ class ElevationRepositoryTest {
               assertEquals(simpleList, list)
               onSuccessLatch.countDown()
             }) {
-              fail("Failed to fetch routes from Overpass API")
+              fail("Failed to fetch routes")
             }
 
         // Wait for the coroutine to finish
