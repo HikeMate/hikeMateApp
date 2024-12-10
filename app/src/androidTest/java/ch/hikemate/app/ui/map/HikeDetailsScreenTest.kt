@@ -54,7 +54,6 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
-import okhttp3.internal.wait
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Rule
