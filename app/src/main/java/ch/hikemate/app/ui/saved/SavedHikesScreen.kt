@@ -32,6 +32,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import ch.hikemate.app.R
+import ch.hikemate.app.model.route.DeferredData
 import ch.hikemate.app.model.route.Hike
 import ch.hikemate.app.model.route.HikesViewModel
 import ch.hikemate.app.ui.components.CenteredErrorAction
@@ -212,15 +213,23 @@ private fun SavedHikes(savedHikes: List<StateFlow<Hike>>?, hikesViewModel: Hikes
 
 @Composable
 private fun SavedHikeCardFor(hike: Hike, hikesViewModel: HikesViewModel) {
-  // Ask for elevation if not already available
-  if (!hike.elevation.obtained()) {
+  val elevation: List<Double>?
+  if (hike.elevation is DeferredData.Error) {
+    // Display an empty elevation graph if the data is not available because of an error
+    elevation = emptyList()
+  } else if (!hike.elevation.obtained()) {
+    // Ask for elevation if not already available
     hikesViewModel.retrieveElevationDataFor(hike.id)
+    elevation = null
+  } else {
+    // If the elevation data is available, display it
+    elevation = hike.elevation.getOrNull()
   }
 
   // Display the hike card
   HikeCard(
       title = hike.name ?: stringResource(R.string.map_screen_hike_title_default),
-      elevationData = hike.elevation.getOrNull(),
+      elevationData = elevation,
       onClick = { hikesViewModel.selectHike(hike.id) },
       modifier = Modifier.testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_HIKE_CARD),
       styleProperties = HikeCardStyleProperties(graphColor = Color(hike.getColor())))
