@@ -1,8 +1,12 @@
 package ch.hikemate.app.ui.map
 
+import android.content.Context
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -23,8 +27,10 @@ import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.HikeRoutesRepository
 import ch.hikemate.app.model.route.HikesViewModel
 import ch.hikemate.app.model.route.saved.SavedHikesRepository
+import ch.hikemate.app.ui.components.CenteredErrorAction
 import ch.hikemate.app.ui.components.HikeCard
 import ch.hikemate.app.ui.navigation.NavigationActions
+import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.TEST_TAG_BOTTOM_BAR
 import ch.hikemate.app.utils.LocationUtils
 import ch.hikemate.app.utils.MapUtils
@@ -58,6 +64,7 @@ class MapScreenTest : TestCase() {
   private lateinit var authRepository: AuthRepository
   private lateinit var authViewModel: AuthViewModel
   private lateinit var profileRepository: ProfileRepository
+  private lateinit var context: Context
   private lateinit var profileViewModel: ProfileViewModel
 
   @get:Rule val composeTestRule = createComposeRule()
@@ -76,6 +83,7 @@ class MapScreenTest : TestCase() {
       hikesViewModel: HikesViewModel = this.hikesViewModel,
   ) {
     composeTestRule.setContent {
+      context = LocalContext.current
       MapScreen(
           hikesViewModel = hikesViewModel,
           navigationActions = navigationActions,
@@ -151,33 +159,50 @@ class MapScreenTest : TestCase() {
   }
 
   @Test
-  fun searchButtonDisappearsWhenClicked() {
+  fun searchButtonIsNotEnabledWhenClicked() {
     setUpMap()
-    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).assertIsEnabled()
     composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).performClick()
-    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).assertIsNotDisplayed()
+    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).assertIsNotEnabled()
   }
 
   @Test
-  fun searchButtonReappearsWhenSearchSucceeded() {
+  fun searchButtonIsEnabledWhenSearchSucceeded() {
     setUpMap()
     `when`(hikesRepository.getRoutes(any(), any(), any())).thenAnswer {
       val onSuccess = it.getArgument<(List<HikeRoute>) -> Unit>(1)
       onSuccess(listOf())
     }
     composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).performClick()
-    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).assertIsEnabled()
   }
 
   @Test
-  fun searchButtonReappearsWhenSearchFailed() {
+  fun searchButtonIsEnabledWhenSearchFailed() {
     setUpMap()
     `when`(hikesRepository.getRoutes(any(), any(), any())).thenAnswer {
       val onFailure = it.getArgument<(Exception) -> Unit>(2)
       onFailure(Exception("Test exception"))
     }
     composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).performClick()
-    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).assertIsEnabled()
+  }
+
+  @Test
+  fun errorMessageDisplayedWhenSearchFails() {
+    setUpMap()
+
+    // Ensure a search will fail
+    `when`(hikesRepository.getRoutes(any(), any(), any())).thenAnswer {
+      val onFailure = it.getArgument<(Exception) -> Unit>(2)
+      onFailure(Exception("Test exception"))
+    }
+
+    // Perform a search
+    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).performClick()
+
+    // Check that the error message is displayed
+    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_LOADING_ERROR_MESSAGE).assertIsDisplayed()
   }
 
   @Test
@@ -291,6 +316,16 @@ class MapScreenTest : TestCase() {
   }
 
   @Test
+  fun zoomingOutMakesTheSearchButtonDisabled() {
+    setUpMap()
+    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).assertIsEnabled()
+    composeTestRule.onNodeWithTag(ZoomMapButton.ZOOM_OUT_BUTTON).performClick()
+    composeTestRule.onNodeWithTag(ZoomMapButton.ZOOM_OUT_BUTTON).performClick()
+    composeTestRule.onNodeWithTag(ZoomMapButton.ZOOM_OUT_BUTTON).performClick()
+    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).assertIsNotEnabled()
+  }
+
+  @Test
   fun searchingHikesTakesAMinimalTime() = runTest {
     setUpMap()
     `when`(hikesRepository.getRoutes(any(), any(), any())).thenAnswer {
@@ -352,6 +387,32 @@ class MapScreenTest : TestCase() {
     composeTestRule
         .onNodeWithTag(MapScreen.TEST_TAG_LOCATION_PERMISSION_ALERT)
         .assertIsNotDisplayed()
+  }
+
+  @Test
+  fun testSignOutAndNavigateToAuthFromMapScreen() {
+    `when`(profileRepository.getProfileById(any(), any(), any())).thenAnswer {
+      val onError = it.getArgument<(Exception) -> Unit>(2)
+      onError(Exception("No profile found"))
+    }
+    `when`(authRepository.signOut(any())).thenAnswer {
+      val onSuccess = it.getArgument<() -> Unit>(0)
+      onSuccess()
+    }
+
+    profileViewModel.getProfileById(profile.id)
+
+    setUpMap()
+
+    composeTestRule
+        .onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_MESSAGE)
+        .assertIsDisplayed()
+        .assertTextEquals(context.getString(R.string.an_error_occurred_while_fetching_the_profile))
+    composeTestRule.onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_BUTTON).performClick()
+
+    verify(authRepository).signOut(any())
+    verify(navigationActions).navigateTo(Route.AUTH)
+    assertNull(authViewModel.currentUser.value)
   }
 
   @Test

@@ -1,10 +1,12 @@
 package ch.hikemate.app.ui.map
 
 import android.content.Context
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import ch.hikemate.app.R
 import ch.hikemate.app.model.authentication.AuthRepository
 import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.model.elevation.ElevationRepository
@@ -24,6 +26,7 @@ import ch.hikemate.app.model.route.saved.SavedHike
 import ch.hikemate.app.model.route.saved.SavedHikesRepository
 import ch.hikemate.app.model.route.toBoundingBox
 import ch.hikemate.app.ui.components.BackButton.BACK_BUTTON_TEST_TAG
+import ch.hikemate.app.ui.components.CenteredErrorAction
 import ch.hikemate.app.ui.components.DetailRow
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_ADD_DATE_BUTTON
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_BOOKMARK_ICON
@@ -36,6 +39,7 @@ import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_MAP
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_PLANNED_DATE_TEXT_BOX
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_RUN_HIKE_BUTTON
 import ch.hikemate.app.ui.navigation.NavigationActions
+import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.utils.MapUtils
 import com.google.firebase.Timestamp
 import java.util.Locale
@@ -53,6 +57,7 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -69,13 +74,14 @@ class HikeDetailScreenTest {
   private lateinit var hikesRepository: HikeRoutesRepository
   private lateinit var elevationRepository: ElevationRepository
   private lateinit var hikesViewModel: HikesViewModel
+  private lateinit var context: Context
 
   private val hikeId = "1"
   private val detailedHike =
       DetailedHike(
           id = hikeId,
           color = Hike(hikeId, false, null, null).getColor(),
-          isSaved = false,
+          isSaved = true,
           plannedDate = null,
           name = "Sample Hike",
           description =
@@ -91,6 +97,7 @@ class HikeDetailScreenTest {
 
   private fun setUpCompleteScreen() {
     composeTestRule.setContent {
+      context = LocalContext.current
       HikeDetailScreen(
           hikesViewModel = hikesViewModel,
           profileViewModel = profileViewModel,
@@ -112,7 +119,12 @@ class HikeDetailScreenTest {
     }
   }
 
-  private suspend fun setUpSelectedHike(hike: DetailedHike) {
+  private suspend fun setUpSelectedHike(
+      hike: DetailedHike,
+      waypointsRetrievalSucceeds: Boolean = true,
+      elevationRetrievalSucceeds: Boolean = true,
+      alreadyLoadData: Boolean = true
+  ) {
     val asSavedHike = SavedHike(hike.id, hike.name ?: "", hike.plannedDate)
 
     val hikeAsOsm =
@@ -128,16 +140,48 @@ class HikeDetailScreenTest {
     `when`(mockSavedHikesRepository.loadSavedHikes())
         .thenReturn(if (hike.isSaved) listOf(asSavedHike) else emptyList())
 
-    // Make sure that the hike is loaded from bounds when the view model gets it
-    `when`(hikesRepository.getRoutes(any(), any(), any())).thenAnswer {
-      val onSuccess = it.getArgument<(List<HikeRoute>) -> Unit>(1)
-      onSuccess(listOf(hikeAsOsm))
+    if (waypointsRetrievalSucceeds) {
+      if (hike.isSaved) {
+        // Make sure that the hike's OSM data can be loaded
+        `when`(hikesRepository.getRoutesByIds(any(), any(), any())).thenAnswer {
+          val onSuccess = it.getArgument<(List<HikeRoute>) -> Unit>(1)
+          onSuccess(listOf(hikeAsOsm))
+        }
+      } else {
+        // Make sure that the hike can be loaded from bounds
+        `when`(hikesRepository.getRoutes(any(), any(), any())).thenAnswer {
+          val onSuccess = it.getArgument<(List<HikeRoute>) -> Unit>(1)
+          onSuccess(listOf(hikeAsOsm))
+        }
+      }
+    } else {
+      if (hike.isSaved) {
+        // Make sure the hike's OSM data can't be loaded
+        `when`(hikesRepository.getRoutesByIds(any(), any(), any())).thenAnswer {
+          val onFailure = it.getArgument<(Exception) -> Unit>(2)
+          onFailure(Exception("Failed to load hike bounds"))
+        }
+      } else {
+        // Make sure the hike cannot be loaded from bounds
+        `when`(hikesRepository.getRoutes(any(), any(), any())).thenAnswer {
+          val onFailure = it.getArgument<(Exception) -> Unit>(2)
+          onFailure(Exception("Failed to load hikes from bounds"))
+        }
+      }
     }
 
-    // Make sure the appropriate elevation profile is obtained when requested
-    `when`(elevationRepository.getElevation(any(), any(), any())).thenAnswer {
-      val onSuccess = it.getArgument<(List<Double>) -> Unit>(1)
-      onSuccess(hike.elevation)
+    if (waypointsRetrievalSucceeds && elevationRetrievalSucceeds) {
+      // Make sure the appropriate elevation profile is obtained when requested
+      `when`(elevationRepository.getElevation(any(), any(), any())).thenAnswer {
+        val onSuccess = it.getArgument<(List<Double>) -> Unit>(1)
+        onSuccess(hike.elevation)
+      }
+    } else {
+      // Make sure the elevation profile can't be obtained when requested
+      `when`(elevationRepository.getElevation(any(), any(), any())).thenAnswer {
+        val onFailure = it.getArgument<(Exception) -> Unit>(2)
+        onFailure(Exception("Failed to load elevation data"))
+      }
     }
 
     // Reset the view model
@@ -148,14 +192,26 @@ class HikeDetailScreenTest {
             elevationRepository,
             UnconfinedTestDispatcher())
 
-    // Load the hike from OSM, as if the user had searched it on the map
-    hikesViewModel.loadHikesInBounds(detailedHike.bounds.toBoundingBox())
+    if (hike.isSaved) {
+      // Load the hike from the saved hikes repository
+      hikesViewModel.loadSavedHikes()
+    } else {
+      // Load the hike from OSM, as if the user had searched it on the map
+      hikesViewModel.loadHikesInBounds(hike.bounds.toBoundingBox())
+    }
 
-    // Retrieve the hike's elevation data from the repository
-    hikesViewModel.retrieveElevationDataFor(hikeId)
+    if (alreadyLoadData) {
+      // Load the hike's waypoints, but only if the hike was loaded from saved hikes
+      if (hike.isSaved) {
+        hikesViewModel.retrieveLoadedHikesOsmData()
+      }
 
-    // Compute the hike's details
-    hikesViewModel.computeDetailsFor(hikeId)
+      // Retrieve the hike's elevation data from the repository
+      hikesViewModel.retrieveElevationDataFor(hikeId)
+
+      // Compute the hike's details
+      hikesViewModel.computeDetailsFor(hikeId)
+    }
 
     // Mark the hike as selected, to make sure it is the one displayed on the details screen
     hikesViewModel.selectHike(hikeId)
@@ -188,11 +244,64 @@ class HikeDetailScreenTest {
   }
 
   @Test
+  fun hikeDetailsScreen_displaysError_whenWaypointsRetrievalFails() = runTest {
+    setUpSelectedHike(detailedHike, waypointsRetrievalSucceeds = false)
+    setUpCompleteScreen()
+
+    // So far, the waypoints retrieval should have happened once
+    verify(hikesRepository, times(1)).getRoutesByIds(any(), any(), any())
+
+    // An error message should be displayed to the user, along with a go back action
+    composeTestRule.onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_MESSAGE)
+    composeTestRule
+        .onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_BUTTON)
+        .assertIsDisplayed()
+        .assertHasClickAction()
+        .performClick()
+
+    // Clicking the button should trigger unselecting the hike
+    assertNull(hikesViewModel.selectedHike.value)
+  }
+
+  @Test
+  fun hikeDetailsScreen_displaysError_whenElevationRetrievalFails() = runTest {
+    setUpSelectedHike(detailedHike, elevationRetrievalSucceeds = false)
+    setUpCompleteScreen()
+
+    // So far, the elevation retrieval should have happened once
+    verify(elevationRepository, times(1)).getElevation(any(), any(), any())
+
+    // An error message should be displayed to the user, along with a retry action
+    composeTestRule.onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_MESSAGE)
+    composeTestRule
+        .onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_BUTTON)
+        .assertIsDisplayed()
+        .assertHasClickAction()
+        .performClick()
+
+    // Clicking the button should trigger a retry of the elevation retrieval
+    verify(elevationRepository, times(2)).getElevation(any(), any(), any())
+  }
+
+  @OptIn(ExperimentalTestApi::class)
+  @Test
+  fun hikeDetailsScreen_loadsMissingData() = runTest {
+    setUpSelectedHike(detailedHike, alreadyLoadData = false)
+    setUpCompleteScreen()
+
+    composeTestRule.waitUntilExactlyOneExists(
+        hasTestTag(HikeDetailScreen.TEST_TAG_MAP), timeoutMillis = 10000)
+
+    verify(hikesRepository).getRoutesByIds(any(), any(), any())
+    verify(elevationRepository).getElevation(any(), any(), any())
+  }
+
+  @Test
   fun hikeDetailScreen_displaysMap() = runTest {
     setUpSelectedHike(detailedHike)
     setUpCompleteScreen()
 
-    composeTestRule.onNodeWithTag(TEST_TAG_MAP).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(HikeDetailScreen.TEST_TAG_MAP).assertIsDisplayed()
   }
 
   @Test
@@ -200,8 +309,10 @@ class HikeDetailScreenTest {
     setUpSelectedHike(detailedHike)
     setUpBottomSheetScaffold()
 
-    composeTestRule.onNodeWithTag(TEST_TAG_HIKE_NAME).assertTextEquals(detailedHike.name!!)
-    composeTestRule.onNodeWithTag(TEST_TAG_BOOKMARK_ICON).assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(HikeDetailScreen.TEST_TAG_HIKE_NAME)
+        .assertTextEquals(detailedHike.name!!)
+    composeTestRule.onNodeWithTag(HikeDetailScreen.TEST_TAG_BOOKMARK_ICON).assertIsDisplayed()
   }
 
   @Test
@@ -209,7 +320,7 @@ class HikeDetailScreenTest {
     setUpSelectedHike(detailedHike)
     setUpBottomSheetScaffold()
 
-    composeTestRule.onNodeWithTag(TEST_TAG_ELEVATION_GRAPH).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(HikeDetailScreen.TEST_TAG_ELEVATION_GRAPH).assertIsDisplayed()
   }
 
   @Test
@@ -221,7 +332,9 @@ class HikeDetailScreenTest {
     // Display only the bottom part without the map
     setUpBottomSheetScaffold(hike)
 
-    composeTestRule.onNodeWithTag(TEST_TAG_PLANNED_DATE_TEXT_BOX).assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(HikeDetailScreen.TEST_TAG_PLANNED_DATE_TEXT_BOX)
+        .assertIsDisplayed()
   }
 
   @Test
@@ -246,7 +359,7 @@ class HikeDetailScreenTest {
 
     composeTestRule.onAllNodesWithTag(DetailRow.TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(6)
     composeTestRule.onAllNodesWithTag(DetailRow.TEST_TAG_DETAIL_ROW_VALUE).assertCountEquals(5)
-    composeTestRule.onNodeWithTag(TEST_TAG_ADD_DATE_BUTTON).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(HikeDetailScreen.TEST_TAG_ADD_DATE_BUTTON).assertIsDisplayed()
   }
 
   @Test
@@ -260,7 +373,9 @@ class HikeDetailScreenTest {
 
     composeTestRule.onAllNodesWithTag(DetailRow.TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(6)
     composeTestRule.onAllNodesWithTag(DetailRow.TEST_TAG_DETAIL_ROW_VALUE).assertCountEquals(5)
-    composeTestRule.onNodeWithTag(TEST_TAG_PLANNED_DATE_TEXT_BOX).assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(HikeDetailScreen.TEST_TAG_PLANNED_DATE_TEXT_BOX)
+        .assertIsDisplayed()
   }
 
   @Test
@@ -293,11 +408,11 @@ class HikeDetailScreenTest {
     setUpBottomSheetScaffold(hike)
 
     composeTestRule
-        .onNodeWithTag(TEST_TAG_ADD_DATE_BUTTON)
+        .onNodeWithTag(HikeDetailScreen.TEST_TAG_ADD_DATE_BUTTON)
         .assertIsDisplayed()
         .assertHasClickAction()
         .performClick()
-    composeTestRule.onNodeWithTag(TEST_TAG_DATE_PICKER).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(HikeDetailScreen.TEST_TAG_DATE_PICKER).assertIsDisplayed()
   }
 
   @Test
@@ -309,15 +424,17 @@ class HikeDetailScreenTest {
     setUpBottomSheetScaffold(hike)
 
     composeTestRule
-        .onNodeWithTag(TEST_TAG_ADD_DATE_BUTTON)
+        .onNodeWithTag(HikeDetailScreen.TEST_TAG_ADD_DATE_BUTTON)
         .assertIsDisplayed()
         .assertHasClickAction()
         .performClick()
-    composeTestRule.onNodeWithTag(TEST_TAG_DATE_PICKER).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(HikeDetailScreen.TEST_TAG_DATE_PICKER).assertIsDisplayed()
 
-    composeTestRule.onNodeWithTag(TEST_TAG_DATE_PICKER_CANCEL_BUTTON).performClick()
+    composeTestRule
+        .onNodeWithTag(HikeDetailScreen.TEST_TAG_DATE_PICKER_CANCEL_BUTTON)
+        .performClick()
 
-    composeTestRule.onNodeWithTag(TEST_TAG_DATE_PICKER).assertIsNotDisplayed()
+    composeTestRule.onNodeWithTag(HikeDetailScreen.TEST_TAG_DATE_PICKER).assertIsNotDisplayed()
   }
 
   @Test
@@ -328,12 +445,17 @@ class HikeDetailScreenTest {
     // Display only the bottom part without the map
     setUpBottomSheetScaffold(hike)
 
-    composeTestRule.onNodeWithTag(TEST_TAG_ADD_DATE_BUTTON).assertHasClickAction().performClick()
-    composeTestRule.onNodeWithTag(TEST_TAG_DATE_PICKER).assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(HikeDetailScreen.TEST_TAG_ADD_DATE_BUTTON)
+        .assertHasClickAction()
+        .performClick()
+    composeTestRule.onNodeWithTag(HikeDetailScreen.TEST_TAG_DATE_PICKER).assertIsDisplayed()
 
-    composeTestRule.onNodeWithTag(TEST_TAG_DATE_PICKER_CONFIRM_BUTTON).performClick()
+    composeTestRule
+        .onNodeWithTag(HikeDetailScreen.TEST_TAG_DATE_PICKER_CONFIRM_BUTTON)
+        .performClick()
 
-    composeTestRule.onNodeWithTag(TEST_TAG_DATE_PICKER).assertIsNotDisplayed()
+    composeTestRule.onNodeWithTag(HikeDetailScreen.TEST_TAG_DATE_PICKER).assertIsNotDisplayed()
   }
 
   @Test
@@ -386,17 +508,47 @@ class HikeDetailScreenTest {
   @Test
   fun hikeDetails_showsRunThisHikeButton_andTriggersOnRunThisHike() = runTest {
     val onRunThisHike = mock<() -> Unit>()
-    setUpSelectedHike(detailedHike)
+    // It is important that the hike be unsaved, otherwise there will be an additional "date" field
+    // in the details bottom scaffold, which will render the button just below the screen limit,
+    // making it undisplayed.
+    val hike = detailedHike.copy(isSaved = false, plannedDate = null)
+    setUpSelectedHike(hike)
 
-    setUpBottomSheetScaffold(onRunThisHike = onRunThisHike)
+    setUpBottomSheetScaffold(hike = hike, onRunThisHike = onRunThisHike)
 
     composeTestRule
-        .onNodeWithTag(TEST_TAG_RUN_HIKE_BUTTON)
+        .onNodeWithTag(HikeDetailScreen.TEST_TAG_RUN_HIKE_BUTTON)
         .assertIsDisplayed()
         .assertHasClickAction()
         .performClick()
 
     verify(onRunThisHike).invoke()
+  }
+
+  @Test
+  fun testSignOutAndNavigateToAuthFromMapScreen() = runTest {
+    `when`(profileRepository.getProfileById(any(), any(), any())).thenAnswer {
+      val onError = it.getArgument<(Exception) -> Unit>(2)
+      onError(Exception("No profile found"))
+    }
+    `when`(authRepository.signOut(any())).thenAnswer {
+      val onSuccess = it.getArgument<() -> Unit>(0)
+      onSuccess()
+    }
+
+    profileViewModel.getProfileById(profile.id)
+
+    setUpSelectedHike(detailedHike)
+    setUpCompleteScreen()
+    composeTestRule
+        .onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_MESSAGE)
+        .assertIsDisplayed()
+        .assertTextEquals(context.getString(R.string.an_error_occurred_while_fetching_the_profile))
+    composeTestRule.onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_BUTTON).performClick()
+
+    verify(authRepository).signOut(any())
+    verify(mockNavigationActions).navigateTo(Route.AUTH)
+    assertNull(authViewModel.currentUser.value)
   }
 
   @Test
