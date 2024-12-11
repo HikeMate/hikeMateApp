@@ -36,7 +36,6 @@ import ch.hikemate.app.model.route.LatLong
 import ch.hikemate.app.model.route.saved.SavedHike
 import ch.hikemate.app.model.route.saved.SavedHikesRepository
 import ch.hikemate.app.model.route.toBoundingBox
-import ch.hikemate.app.ui.components.CenteredLoadingAnimation
 import ch.hikemate.app.ui.components.CenteredErrorAction
 import ch.hikemate.app.ui.components.DetailRow
 import ch.hikemate.app.ui.navigation.NavigationActions
