@@ -609,6 +609,7 @@ class HikeDetailScreenTest {
       context = LocalContext.current
       mapView = hikeDetailsMap(detailedHike2, facilitiesViewModel, facilities)
     }
+    composeTestRule.waitForIdle()
 
     // Create a custom waiter that checks for the marker presence
     var attempts = 0

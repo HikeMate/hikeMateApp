@@ -393,6 +393,7 @@ class RunHikeScreenTest {
       context = LocalContext.current
       mapView = runHikeMap(detailedHike2, facilitiesViewModel, facilities)
     }
+    composeTestRule.waitForIdle()
 
     // Create a custom waiter that checks for the marker presence
     var attempts = 0
@@ -444,7 +445,6 @@ class RunHikeScreenTest {
     }
 
     composeTestRule.waitForIdle()
-    Thread.sleep(300)
 
     // Verify facilities are hidden at insufficient zoom levels
     val finalMarkers =
