@@ -53,6 +53,14 @@ class EditProfileScreenTest : TestCase() {
           email = "john-doe@gmail.com",
           hikingLevel = HikingLevel.INTERMEDIATE,
           joinedDate = Timestamp.now())
+    private fun setUpScreen(){
+        composeTestRule.setContent {
+            EditProfileScreen(
+                profileViewModel = profileViewModel,
+                navigationActions = navigationActions,
+                authViewModel = authViewModel)
+        }
+    }
 
   @Before
   fun setUp() {
@@ -72,12 +80,7 @@ class EditProfileScreenTest : TestCase() {
 
   @Test
   fun isEverythingDisplayed() {
-    composeTestRule.setContent {
-      EditProfileScreen(
-          profileViewModel = profileViewModel,
-          navigationActions = navigationActions,
-          authViewModel = authViewModel)
-    }
+      setUpScreen()
     composeTestRule.onNodeWithTag(BackButton.BACK_BUTTON_TEST_TAG).assertIsDisplayed()
     composeTestRule.onNodeWithTag(EditProfileScreen.TEST_TAG_TITLE).assertIsDisplayed()
     composeTestRule.onNodeWithTag(EditProfileScreen.TEST_TAG_NAME_INPUT).assertIsDisplayed()
@@ -99,12 +102,7 @@ class EditProfileScreenTest : TestCase() {
 
   @Test
   fun checkCorrectProfileInfo() {
-    composeTestRule.setContent {
-      EditProfileScreen(
-          profileViewModel = profileViewModel,
-          navigationActions = navigationActions,
-          authViewModel = authViewModel)
-    }
+      setUpScreen()
     `when`(profileRepository.getProfileById(any(), any(), any())).thenAnswer {
       val onSuccess = it.getArgument<(Profile) -> Unit>(1)
       onSuccess(profile)
@@ -131,12 +129,7 @@ class EditProfileScreenTest : TestCase() {
 
   @Test
   fun checkCanGoBack() {
-    composeTestRule.setContent {
-      EditProfileScreen(
-          profileViewModel = profileViewModel,
-          navigationActions = navigationActions,
-          authViewModel = authViewModel)
-    }
+      setUpScreen()
     composeTestRule.onNodeWithTag(BackButton.BACK_BUTTON_TEST_TAG).performClick()
     composeTestRule
         .onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_MESSAGE)
@@ -146,12 +139,7 @@ class EditProfileScreenTest : TestCase() {
 
   @Test
   fun checkInputsAreEditable() {
-    composeTestRule.setContent {
-      EditProfileScreen(
-          profileViewModel = profileViewModel,
-          navigationActions = navigationActions,
-          authViewModel = authViewModel)
-    }
+      setUpScreen()
     composeTestRule.onNodeWithTag(EditProfileScreen.TEST_TAG_NAME_INPUT).performClick()
     composeTestRule.onNodeWithTag(EditProfileScreen.TEST_TAG_NAME_INPUT).performTextClearance()
     composeTestRule
@@ -217,12 +205,7 @@ class EditProfileScreenTest : TestCase() {
 
     profileViewModel.getProfileById(profile.id)
 
-    composeTestRule.setContent {
-      EditProfileScreen(
-          profileViewModel = profileViewModel,
-          navigationActions = navigationActions,
-          authViewModel = authViewModel)
-    }
+      setUpScreen()
 
     composeTestRule
         .onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_MESSAGE)
