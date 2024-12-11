@@ -44,6 +44,7 @@ import java.util.Locale
 import kotlin.math.roundToInt
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
@@ -592,7 +593,7 @@ class HikeDetailScreenTest {
   }
 
   @Test
-  fun hikeDetails_displaysCorrectDrawableForFacilityType() = runTest {
+  fun hikeDetails_displaysCorrectDrawableForFacilityType() = runBlocking {
     // Setup a detailed hike
     setUpSelectedHike(detailedHike2)
 
@@ -634,7 +635,7 @@ class HikeDetailScreenTest {
             areSameDrawable(expectedDrawable, marker.icon))
         assertEquals(testFacility.coordinates.lat, marker.position.latitude, 0.0001)
         assertEquals(testFacility.coordinates.lon, marker.position.longitude, 0.0001)
-        return@runTest // Exit successfully
+        return@runBlocking // Exit successfully
       }
 
       delay(delayMs) // Use coroutine delay instead of Thread.sleep

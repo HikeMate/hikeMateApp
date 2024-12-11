@@ -41,6 +41,7 @@ import ch.hikemate.app.ui.components.DetailRow
 import ch.hikemate.app.ui.navigation.NavigationActions
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -376,7 +377,7 @@ class RunHikeScreenTest {
   }
 
   @Test
-  fun runHike_displaysCorrectDrawableForFacilityType() = runTest {
+  fun runHike_displaysCorrectDrawableForFacilityType() = runBlocking {
     // Setup a detailed hike
     setUpSelectedHike(detailedHike2)
 
@@ -418,7 +419,7 @@ class RunHikeScreenTest {
             areSameDrawable(expectedDrawable, marker.icon))
         assertEquals(testFacility.coordinates.lat, marker.position.latitude, 0.0001)
         assertEquals(testFacility.coordinates.lon, marker.position.longitude, 0.0001)
-        return@runTest // Exit successfully
+        return@runBlocking // Exit successfully
       }
 
       delay(delayMs) // Use coroutine delay instead of Thread.sleep
