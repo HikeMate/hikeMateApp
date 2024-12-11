@@ -52,13 +52,13 @@ import ch.hikemate.app.ui.components.WithDetailedHike
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.utils.MapUtils
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.launchIn
 import org.osmdroid.events.MapListener
 import org.osmdroid.events.ScrollEvent
 import org.osmdroid.events.ZoomEvent
@@ -211,56 +211,70 @@ fun runHikeMap(
       object : MapListener {
         override fun onScroll(event: ScrollEvent?): Boolean {
           // On a Scroll event the boundingBox will change
-          event?.let { boundingBoxState.value = mapView.boundingBox }
+          event?.let {
+            val newBoundingBox = mapView.boundingBox
+            if (newBoundingBox != boundingBoxState.value) {
+              boundingBoxState.value = newBoundingBox
+            }
+          }
           return true
         }
 
         override fun onZoom(event: ZoomEvent?): Boolean {
-          event?.let { zoomLevelState.value = mapView.zoomLevelDouble }
+          event?.let {
+            val newZoomLevel = mapView.zoomLevelDouble
+            if (newZoomLevel != zoomLevelState.value) {
+              zoomLevelState.value = newZoomLevel
+            }
+          }
           return true
         }
       })
 
   LaunchedEffect(Unit) {
-    combine(
-            // We use debounce to call this with a delay.
+
+    // Create our combined flow
+    val combinedFlow =
+        combine(
             boundingBoxState.debounce(HikeDetailScreen.DEBOUNCE_DURATION),
             zoomLevelState.debounce(HikeDetailScreen.DEBOUNCE_DURATION)) { boundingBox, zoomLevel ->
-              // We need to ensure the MapView is still valid when we try to update facilities
-              try {
-                // Only proceed if mapView is still valid
-                if (mapView.repository != null) {
-                  facilitiesViewModel.filterFacilitiesForDisplay(
-                      facilities.value ?: emptyList(),
-                      bounds = boundingBox,
-                      zoomLevel = zoomLevel,
-                      hikeRoute = hike,
-                      onSuccess = { newFacilities ->
-                        // Double check mapView is still valid before updating
-                        if (mapView.repository != null) {
-                          MapUtils.clearFacilities(mapView)
-                          if (newFacilities.isNotEmpty()) {
-                            MapUtils.displayFacilities(newFacilities, mapView, context)
-                          }
-                        }
-                      },
-                      onNoFacilitiesForState = {
-                        // Double check mapView is still valid before updating
-                        if (mapView.repository != null) {
-                          MapUtils.clearFacilities(mapView)
-                        }
-                      })
-                }
-                // The compiler needs this else statement.
-                else {
-                  Log.d(HikeDetailScreen.LOG_TAG, "MapView is no longer valid")
-                }
-              } catch (e: Exception) {
-                // Log the error but don't crash
-                Log.e(HikeDetailScreen.LOG_TAG, "Error updating facilities", e)
-              }
+              // Return a pair of our values
+              boundingBox to zoomLevel
             }
-        .launchIn(this)
+
+    // Collect the flow with proper error handling
+    try {
+      combinedFlow.collect { (boundingBox, zoomLevel) ->
+        // Only proceed if the map is still valid
+        if (mapView.repository != null) {
+          facilitiesViewModel.filterFacilitiesForDisplay(
+              facilities.value ?: emptyList(),
+              bounds = boundingBox,
+              zoomLevel = zoomLevel,
+              hikeRoute = hike,
+              onSuccess = { newFacilities ->
+                // Double check map validity before updates
+                if (mapView.repository != null) {
+                  MapUtils.clearFacilities(mapView)
+                  if (newFacilities.isNotEmpty()) {
+                    MapUtils.displayFacilities(newFacilities, mapView, context)
+                  }
+                }
+              },
+              onNoFacilitiesForState = {
+                if (mapView.repository != null) {
+                  MapUtils.clearFacilities(mapView)
+                }
+              })
+        }
+      }
+    } catch (e: CancellationException) {
+      // Rethrow cancellation exceptions to allow proper coroutine cancellation
+      throw e
+    } catch (e: Exception) {
+      // Log other exceptions but don't crash
+      Log.e(HikeDetailScreen.LOG_TAG, "Error in facility updates flow", e)
+    }
   }
 
   // When the map is ready, it will have computed its bounding box

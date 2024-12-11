@@ -265,7 +265,6 @@ fun hikeDetailsMap(
     facilities: MutableState<List<Facility>?>
 ): MapView {
   val context = LocalContext.current
-
   val hikeZoomLevel = MapUtils.calculateBestZoomLevel(hike.bounds).toDouble()
   val hikeCenter = MapUtils.getGeographicalCenter(hike.bounds)
 
