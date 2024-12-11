@@ -173,8 +173,10 @@ fun HikeDetailScreen(
         }
       },
       whenError = {
+        val loadingErrorMessageId by hikesViewModel.loadingErrorMessageId.collectAsState()
+
         CenteredErrorAction(
-            errorMessageId = R.string.loading_hike_error,
+            errorMessageId = loadingErrorMessageId ?: R.string.loading_hike_error,
             actionIcon = Icons.AutoMirrored.Filled.ArrowBack,
             actionContentDescriptionStringId = R.string.go_back,
             onAction = { hikesViewModel.unselectHike() })
