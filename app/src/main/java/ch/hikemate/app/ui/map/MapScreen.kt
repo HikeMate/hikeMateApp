@@ -179,6 +179,7 @@ object MapScreen {
   const val TEST_TAG_SEARCH_BUTTON = "MapScreenSearchButton"
   const val TEST_TAG_HIKES_LIST = "MapScreenHikesList"
   const val TEST_TAG_HIKE_ITEM = "MapScreenHikeItem"
+  const val TEST_TAG_LOADING_ERROR_MESSAGE = "MapScreenLoadingErrorMessage"
   const val TEST_TAG_EMPTY_HIKES_LIST_MESSAGE = "MapScreenEmptyHikesListMessage"
   const val TEST_TAG_SEARCHING_MESSAGE = "MapScreenSearchingMessage"
   const val TEST_TAG_SEARCH_LOADING_ANIMATION = "MapScreenSearchLoadingAnimation"
@@ -621,6 +622,7 @@ fun CollapsibleHikesList(
   val scaffoldState = rememberBottomSheetScaffoldState()
   val hikes by hikesViewModel.hikeFlows.collectAsState()
   val hikesType by hikesViewModel.loadedHikesType.collectAsState()
+  val loadingErrorMessageId by hikesViewModel.loadingErrorMessageId.collectAsState()
   val context = LocalContext.current
 
   // BottomSheetScaffold adds a layout at the bottom of the screen that the user can expand to view
@@ -630,56 +632,91 @@ fun CollapsibleHikesList(
       sheetContainerColor = MaterialTheme.colorScheme.surface,
       sheetContent = {
         Column(modifier = Modifier.fillMaxSize().testTag(MapScreen.TEST_TAG_HIKES_LIST)) {
-          if (isSearching) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.fillMaxWidth()) {
-                  Text(
-                      text = stringResource(R.string.map_search_for_hikes),
-                      style = MaterialTheme.typography.bodyLarge,
-                      textAlign = TextAlign.Center,
-                      modifier =
-                          Modifier.padding(bottom = 16.dp)
-                              .testTag(MapScreen.TEST_TAG_SEARCHING_MESSAGE))
-                  CircularProgressIndicator(
-                      modifier = Modifier.testTag(MapScreen.TEST_TAG_SEARCH_LOADING_ANIMATION))
-                }
-          } else if (hikes.isEmpty() || hikesType != HikesViewModel.LoadedHikes.FromBounds) {
-            // Use a box to center the Text composable of the empty list message
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-              Text(
-                  text = context.getString(R.string.map_screen_empty_hikes_list_message),
-                  style = MaterialTheme.typography.bodyLarge,
-                  // Align the text within the Text composable to the center
-                  textAlign = TextAlign.Center,
-                  modifier = Modifier.testTag(MapScreen.TEST_TAG_EMPTY_HIKES_LIST_MESSAGE))
+          when {
+            // A search for hikes on the map is ongoing, display a loading animation
+            isSearching -> {
+              Column(
+                  horizontalAlignment = Alignment.CenterHorizontally,
+                  modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = stringResource(R.string.map_search_for_hikes),
+                        style = MaterialTheme.typography.bodyLarge,
+                        textAlign = TextAlign.Center,
+                        modifier =
+                            Modifier.padding(bottom = 16.dp)
+                                .testTag(MapScreen.TEST_TAG_SEARCHING_MESSAGE))
+                    CircularProgressIndicator(
+                        modifier = Modifier.testTag(MapScreen.TEST_TAG_SEARCH_LOADING_ANIMATION))
+                  }
             }
-          } else {
-            LazyColumn(modifier = Modifier.fillMaxSize()) {
-              items(hikes.size, key = { hikes[it].value.id }) { index: Int ->
-                val hike by hikes[index].collectAsState()
-                val elevation: List<Double>?
-                val suitable: Boolean
-                if (!hike.elevation.obtained()) {
-                  hikesViewModel.retrieveElevationDataFor(hike.id)
-                  elevation = null
-                  suitable = false
-                } else if (!hikesViewModel.areDetailsComputedFor(hike)) {
-                  hikesViewModel.computeDetailsFor(hike.id)
-                  elevation = hike.elevation.getOrThrow()
-                  suitable = false
-                } else {
-                  // The hike has elevation data and details computed
-                  val detailed = hike.withDetailsOrThrow()
-                  elevation = detailed.elevation
-                  suitable = detailed.difficulty.ordinal <= userHikingLevel.ordinal
+
+            // An error occurred while loading the hikes, display an error message
+            loadingErrorMessageId != null -> {
+              Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                Text(
+                    text = stringResource(loadingErrorMessageId!!),
+                    style = MaterialTheme.typography.bodyLarge,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.testTag(MapScreen.TEST_TAG_LOADING_ERROR_MESSAGE))
+              }
+            }
+
+            // No hikes were loaded or the loaded hikes are not from the displayed area, display an
+            // empty list message
+            hikes.isEmpty() || hikesType != HikesViewModel.LoadedHikes.FromBounds -> {
+              // Use a box to center the Text composable of the empty list message
+              Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                Text(
+                    text = context.getString(R.string.map_screen_empty_hikes_list_message),
+                    style = MaterialTheme.typography.bodyLarge,
+                    // Align the text within the Text composable to the center
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.testTag(MapScreen.TEST_TAG_EMPTY_HIKES_LIST_MESSAGE))
+              }
+            }
+
+            // Hikes were loaded and are from the displayed area, display the list of hikes
+            else -> {
+              LazyColumn(modifier = Modifier.fillMaxSize()) {
+                items(hikes.size, key = { hikes[it].value.id }) { index: Int ->
+                  val hike by hikes[index].collectAsState()
+                  val elevation: List<Double>?
+                  val suitable: Boolean
+                  when {
+                    // The hike's elevation data was retrieved, but an error occurred
+                    hike.elevation is DeferredData.Error -> {
+                      elevation = emptyList()
+                      suitable = false
+                    }
+
+                    // The hike has no elevation data and it wasn't requested yet
+                    !hike.elevation.obtained() -> {
+                      hikesViewModel.retrieveElevationDataFor(hike.id)
+                      elevation = null
+                      suitable = false
+                    }
+
+                    // The hike has elevation data but no details computed
+                    !hikesViewModel.areDetailsComputedFor(hike) -> {
+                      hikesViewModel.computeDetailsFor(hike.id)
+                      elevation = hike.elevation.getOrThrow()
+                      suitable = false
+                    }
+
+                    // The hike has elevation data and details computed
+                    else -> {
+                      val detailed = hike.withDetailsOrThrow()
+                      elevation = detailed.elevation
+                      suitable = detailed.difficulty.ordinal <= userHikingLevel.ordinal
+                    }
+                  }
+                  HikeCardFor(
+                      name = hike.name,
+                      isSuitable = suitable,
+                      color = hike.getColor(),
+                      elevationData = elevation,
+                      onClick = { hikesViewModel.selectHike(hike.id) })
                 }
-                HikeCardFor(
-                    name = hike.name,
-                    isSuitable = suitable,
-                    color = hike.getColor(),
-                    elevationData = elevation,
-                    onClick = { hikesViewModel.selectHike(hike.id) })
               }
             }
           }

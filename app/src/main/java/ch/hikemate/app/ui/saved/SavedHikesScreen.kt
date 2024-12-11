@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Tab
@@ -30,8 +32,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import ch.hikemate.app.R
+import ch.hikemate.app.model.route.DeferredData
 import ch.hikemate.app.model.route.Hike
 import ch.hikemate.app.model.route.HikesViewModel
+import ch.hikemate.app.ui.components.CenteredErrorAction
 import ch.hikemate.app.ui.components.CenteredLoadingAnimation
 import ch.hikemate.app.ui.components.HikeCard
 import ch.hikemate.app.ui.components.HikeCardStyleProperties
@@ -71,6 +75,7 @@ fun SavedHikesScreen(hikesViewModel: HikesViewModel, navigationActions: Navigati
     val savedHikes by hikesViewModel.hikeFlows.collectAsState()
     val selectedHike by hikesViewModel.selectedHike.collectAsState()
     val osmDataAvailable by hikesViewModel.allOsmDataLoaded.collectAsState()
+    val loadingErrorMessageId by hikesViewModel.loadingErrorMessageId.collectAsState()
 
     val pagerState = rememberPagerState { SavedHikesSection.values().size }
 
@@ -102,6 +107,16 @@ fun SavedHikesScreen(hikesViewModel: HikesViewModel, navigationActions: Navigati
             loading ->
                 CenteredLoadingAnimation(
                     stringResource(R.string.saved_hikes_screen_loading_message))
+
+            // An error occurred while loading the saved hikes, or their OSM data, display an error
+            // message and a retry button
+            loadingErrorMessageId != null ->
+                CenteredErrorAction(
+                    errorMessageId = loadingErrorMessageId!!,
+                    actionIcon = Icons.Default.Refresh,
+                    actionContentDescriptionStringId =
+                        R.string.saved_hikes_screen_refresh_button_action,
+                    onAction = { hikesViewModel.loadSavedHikes() })
 
             // There is no loading operation ongoing, but the saved hikes are not the ones
             // currently displayed, reload the saved hikes
@@ -209,15 +224,27 @@ private fun SavedHikes(savedHikes: List<StateFlow<Hike>>?, hikesViewModel: Hikes
 
 @Composable
 private fun SavedHikeCardFor(hike: Hike, hikesViewModel: HikesViewModel) {
-  // Ask for elevation if not already available
-  if (!hike.elevation.obtained()) {
+  // This variable contains the current state of the hike's elevation data. It can be:
+  // - null: the elevation data is not available yet
+  // - emptyList(): the elevation data is not available because of an error
+  // - List<Double>: the elevation data is available
+  val elevation: List<Double>?
+  if (hike.elevation is DeferredData.Error) {
+    // Display an empty elevation graph if the data is not available because of an error
+    elevation = emptyList()
+  } else if (!hike.elevation.obtained()) {
+    // Ask for elevation if not already available
     hikesViewModel.retrieveElevationDataFor(hike.id)
+    elevation = null
+  } else {
+    // If the elevation data is available, display it
+    elevation = hike.elevation.getOrNull()
   }
 
   // Display the hike card
   HikeCard(
       title = hike.name ?: stringResource(R.string.map_screen_hike_title_default),
-      elevationData = hike.elevation.getOrNull(),
+      elevationData = elevation,
       onClick = { hikesViewModel.selectHike(hike.id) },
       modifier = Modifier.testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_HIKE_CARD),
       styleProperties = HikeCardStyleProperties(graphColor = Color(hike.getColor())))

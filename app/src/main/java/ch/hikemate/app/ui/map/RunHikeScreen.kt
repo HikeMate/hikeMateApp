@@ -103,8 +103,10 @@ fun RunHikeScreen(
       hikesViewModel = hikesViewModel,
       withDetailedHike = { RunHikeContent(it, navigationActions, facilitiesViewModel) },
       whenError = {
+        val loadingErrorMessageId by hikesViewModel.loadingErrorMessageId.collectAsState()
+
         CenteredErrorAction(
-            errorMessageId = R.string.loading_hike_error,
+            errorMessageId = loadingErrorMessageId ?: R.string.loading_hike_error,
             actionIcon = Icons.AutoMirrored.Filled.ArrowBack,
             actionContentDescriptionStringId = R.string.go_back,
             onAction = { navigationActions.goBack() })
