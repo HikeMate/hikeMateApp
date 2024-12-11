@@ -427,8 +427,9 @@ class HikesViewModel(
    *
    * @param value The new value of the loading state, whether loading (true) or not (false).
    * @param errorMessageId The ID of the string resource to display to the user if the loading
-   *   operation has failed. This parameter is only considered if [value] is false. This value will
-   *   be set even if other loading operations are still ongoing.
+   *   operation has failed. Pass `null` if the loading operation that got completed was successful.
+   *   This parameter is only considered if [value] is false. This value will be set even if other
+   *   loading operations are still ongoing.
    */
   private suspend fun setLoading(value: Boolean, errorMessageId: Int?) =
       _loadingMutex.withLock {
