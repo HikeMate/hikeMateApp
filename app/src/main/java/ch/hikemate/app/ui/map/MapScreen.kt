@@ -474,16 +474,16 @@ fun MapScreen(
                             .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
                             .testTag(MapScreen.TEST_TAG_CENTER_MAP_BUTTON))
                 // Search button to request OSM for hikes in the displayed area
-                if (!isSearching.value) {
-                  MapSearchButton(
-                      onClick = {
-                        MapScreen.launchSearch(isSearching, hikesViewModel, mapView, context)
-                      },
-                      enabled = zoomLevel >= MapScreen.DISABLED_SEARCH_BUTTON_MAX_ZOOM_LEVEL,
-                      modifier =
-                          Modifier.align(Alignment.BottomCenter)
-                              .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
-                }
+                MapSearchButton(
+                    onClick = {
+                      MapScreen.launchSearch(isSearching, hikesViewModel, mapView, context)
+                    },
+                    enabled =
+                        zoomLevel >= MapScreen.DISABLED_SEARCH_BUTTON_MAX_ZOOM_LEVEL &&
+                            !isSearching.value,
+                    modifier =
+                        Modifier.align(Alignment.BottomCenter)
+                            .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
                 // The zoom buttons are displayed on the bottom left of the screen
                 ZoomMapButton(
                     onZoomIn = {
@@ -578,12 +578,14 @@ fun MapSearchButton(onClick: () -> Unit, modifier: Modifier = Modifier, enabled:
       colors =
           ButtonDefaults.buttonColors(
               containerColor = MaterialTheme.colorScheme.surface,
-              disabledContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+              disabledContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
           ),
       enabled = enabled) {
         Text(
             text = LocalContext.current.getString(R.string.map_screen_search_button_text),
-            color = MaterialTheme.colorScheme.onSurface)
+            color =
+                if (enabled) MaterialTheme.colorScheme.onSurface
+                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
       }
 }
 
