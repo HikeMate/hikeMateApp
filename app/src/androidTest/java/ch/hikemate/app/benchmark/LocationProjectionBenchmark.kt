@@ -1,10 +1,12 @@
 package ch.hikemate.app.benchmark
 
 import androidx.benchmark.junit4.BenchmarkRule
+import androidx.benchmark.junit4.measureRepeated
 import ch.hikemate.app.model.route.Bounds
 import ch.hikemate.app.model.route.DetailedHike
 import ch.hikemate.app.model.route.HikeDifficulty
 import ch.hikemate.app.model.route.LatLong
+import ch.hikemate.app.utils.LocationUtils.projectLocationOnHike
 import com.google.firebase.Timestamp
 import kotlin.random.Random
 import org.junit.Rule
@@ -51,21 +53,21 @@ class LocationProjectionBenchmark {
         LatLong(longRoute.waypoints[midIndex].lat + 1.0, longRoute.waypoints[midIndex].lon + 1.0)
   }
 
-  //  // @Test
-  //  fun benchmark_projectStart() =
-  //      benchmarkRule.measureRepeated { projectLocationOnHike(startPoint, longRoute) }
-  //
-  //  // @Test
-  //  fun benchmark_projectMiddle() =
-  //      benchmarkRule.measureRepeated { projectLocationOnHike(midPoint, longRoute) }
-  //
-  //  // @Test
-  //  fun benchmark_projectEnd() =
-  //      benchmarkRule.measureRepeated { projectLocationOnHike(endPoint, longRoute) }
-  //
-  //  // @Test
-  //  fun benchmark_projectFar() =
-  //      benchmarkRule.measureRepeated { projectLocationOnHike(farPoint, longRoute) }
+  // @Test
+  fun benchmark_projectStart() =
+      benchmarkRule.measureRepeated { projectLocationOnHike(startPoint, longRoute) }
+
+  // @Test
+  fun benchmark_projectMiddle() =
+      benchmarkRule.measureRepeated { projectLocationOnHike(midPoint, longRoute) }
+
+  // @Test
+  fun benchmark_projectEnd() =
+      benchmarkRule.measureRepeated { projectLocationOnHike(endPoint, longRoute) }
+
+  // @Test
+  fun benchmark_projectFar() =
+      benchmarkRule.measureRepeated { projectLocationOnHike(farPoint, longRoute) }
 
   private fun generateRealisticWaypoints(count: Int): List<LatLong> {
     val waypoints = mutableListOf<LatLong>()
