@@ -169,7 +169,8 @@ class HikeTest {
   @Test
   fun segmentsWorksAsExpected() {
     // Case 1: Empty waypoints list
-    val emptyHike =
+
+    val baseHike =
         createHike(
                 description = "description",
                 bounds = Bounds(0.0, 0.0, 0.0, 0.0),
@@ -180,8 +181,7 @@ class HikeTest {
                 elevationGain = 0.0,
                 difficulty = HikeDifficulty.EASY)
             .withDetailsOrThrow()
-
-
+    val emptyHike = baseHike
 
     assertTrue(emptyHike.segments.isEmpty())
 
@@ -206,7 +206,6 @@ class HikeTest {
 
     val twoPointHike = baseHike.copy(waypoints = listOf(p1, p2))
 
-
     assertEquals(1, twoPointHike.segments.size)
     assertEquals(p1, twoPointHike.segments[0].start)
     assertEquals(p2, twoPointHike.segments[0].end)
@@ -216,7 +215,6 @@ class HikeTest {
     val points = listOf(LatLong(0.0, 0.0), LatLong(1.0, 1.0), LatLong(2.0, 2.0), LatLong(3.0, 3.0))
 
     val multiPointHike = baseHike.copy(waypoints = points)
-
 
     assertEquals(3, multiPointHike.segments.size)
 
@@ -236,7 +234,6 @@ class HikeTest {
             )
 
     val knownDistanceHike = baseHike.copy(waypoints = knownPoints)
-
 
     assertEquals(2, knownDistanceHike.segments.size)
     assertTrue(knownDistanceHike.segments[0].length > 0)

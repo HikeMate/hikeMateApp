@@ -5,10 +5,7 @@ import ch.hikemate.app.model.route.Bounds
 import ch.hikemate.app.model.route.DetailedHike
 import ch.hikemate.app.model.route.HikeDifficulty
 import ch.hikemate.app.model.route.LatLong
-
-import ch.hikemate.app.utils.LocationUtils.projectLocationOnHike
 import com.google.firebase.Timestamp
-
 import kotlin.random.Random
 import org.junit.Rule
 
