@@ -1,10 +1,12 @@
 package ch.hikemate.app.ui.map
 
 import android.content.Context
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import ch.hikemate.app.R
 import ch.hikemate.app.model.authentication.AuthRepository
 import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.model.elevation.ElevationRepository
@@ -27,6 +29,7 @@ import ch.hikemate.app.ui.components.BackButton.BACK_BUTTON_TEST_TAG
 import ch.hikemate.app.ui.components.CenteredErrorAction
 import ch.hikemate.app.ui.components.DetailRow
 import ch.hikemate.app.ui.navigation.NavigationActions
+import ch.hikemate.app.ui.navigation.Route
 import com.google.firebase.Timestamp
 import java.util.Locale
 import kotlin.math.roundToInt
@@ -60,6 +63,7 @@ class HikeDetailScreenTest {
   private lateinit var hikesRepository: HikeRoutesRepository
   private lateinit var elevationRepository: ElevationRepository
   private lateinit var hikesViewModel: HikesViewModel
+  private lateinit var context: Context
 
   private val hikeId = "1"
   private val detailedHike =
@@ -82,6 +86,7 @@ class HikeDetailScreenTest {
 
   private fun setUpCompleteScreen() {
     composeTestRule.setContent {
+      context = LocalContext.current
       HikeDetailScreen(
           hikesViewModel = hikesViewModel,
           profileViewModel = profileViewModel,
@@ -507,5 +512,31 @@ class HikeDetailScreenTest {
         .performClick()
 
     verify(onRunThisHike).invoke()
+  }
+
+  @Test
+  fun testSignOutAndNavigateToAuthFromMapScreen() = runTest {
+    `when`(profileRepository.getProfileById(any(), any(), any())).thenAnswer {
+      val onError = it.getArgument<(Exception) -> Unit>(2)
+      onError(Exception("No profile found"))
+    }
+    `when`(authRepository.signOut(any())).thenAnswer {
+      val onSuccess = it.getArgument<() -> Unit>(0)
+      onSuccess()
+    }
+
+    profileViewModel.getProfileById(profile.id)
+
+    setUpSelectedHike(detailedHike)
+    setUpCompleteScreen()
+    composeTestRule
+        .onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_MESSAGE)
+        .assertIsDisplayed()
+        .assertTextEquals(context.getString(R.string.an_error_occurred_while_fetching_the_profile))
+    composeTestRule.onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_BUTTON).performClick()
+
+    verify(authRepository).signOut(any())
+    verify(mockNavigationActions).navigateTo(Route.AUTH)
+    assertNull(authViewModel.currentUser.value)
   }
 }

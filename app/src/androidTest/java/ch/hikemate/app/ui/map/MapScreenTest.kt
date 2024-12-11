@@ -1,5 +1,7 @@
 package ch.hikemate.app.ui.map
 
+import android.content.Context
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
@@ -25,8 +27,10 @@ import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.HikeRoutesRepository
 import ch.hikemate.app.model.route.HikesViewModel
 import ch.hikemate.app.model.route.saved.SavedHikesRepository
+import ch.hikemate.app.ui.components.CenteredErrorAction
 import ch.hikemate.app.ui.components.HikeCard
 import ch.hikemate.app.ui.navigation.NavigationActions
+import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.TEST_TAG_BOTTOM_BAR
 import ch.hikemate.app.utils.LocationUtils
 import ch.hikemate.app.utils.MapUtils
@@ -59,6 +63,7 @@ class MapScreenTest : TestCase() {
   private lateinit var authRepository: AuthRepository
   private lateinit var authViewModel: AuthViewModel
   private lateinit var profileRepository: ProfileRepository
+  private lateinit var context: Context
   private lateinit var profileViewModel: ProfileViewModel
 
   @get:Rule val composeTestRule = createComposeRule()
@@ -76,6 +81,7 @@ class MapScreenTest : TestCase() {
       mapInitialZoomLevel: Double = MapScreen.MAP_INITIAL_ZOOM
   ) {
     composeTestRule.setContent {
+      context = LocalContext.current
       MapScreen(
           hikesViewModel = hikesViewModel,
           navigationActions = navigationActions,
@@ -379,5 +385,31 @@ class MapScreenTest : TestCase() {
     composeTestRule
         .onNodeWithTag(MapScreen.TEST_TAG_LOCATION_PERMISSION_ALERT)
         .assertIsNotDisplayed()
+  }
+
+  @Test
+  fun testSignOutAndNavigateToAuthFromMapScreen() {
+    `when`(profileRepository.getProfileById(any(), any(), any())).thenAnswer {
+      val onError = it.getArgument<(Exception) -> Unit>(2)
+      onError(Exception("No profile found"))
+    }
+    `when`(authRepository.signOut(any())).thenAnswer {
+      val onSuccess = it.getArgument<() -> Unit>(0)
+      onSuccess()
+    }
+
+    profileViewModel.getProfileById(profile.id)
+
+    setUpMap()
+
+    composeTestRule
+        .onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_MESSAGE)
+        .assertIsDisplayed()
+        .assertTextEquals(context.getString(R.string.an_error_occurred_while_fetching_the_profile))
+    composeTestRule.onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_BUTTON).performClick()
+
+    verify(authRepository).signOut(any())
+    verify(navigationActions).navigateTo(Route.AUTH)
+    assertNull(authViewModel.currentUser.value)
   }
 }
