@@ -1,6 +1,7 @@
 package ch.hikemate.app.endtoend
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
@@ -216,12 +217,15 @@ class EndToEndTest3 : TestCase() {
 
     // Check that there are at least 5 hikes elevation data loaded
     composeTestRule.waitUntil(
-        timeoutMillis = 60000,
+        timeoutMillis = 10004,
     ) {
-      composeTestRule
-          .onAllNodesWithTag(HikeCard.TEST_TAG_IS_SUITABLE_TEXT, useUnmergedTree = true)
-          .fetchSemanticsNodes()
-          .size >= 5
+      val nodes =
+          composeTestRule
+              .onAllNodesWithTag(HikeCard.TEST_TAG_IS_SUITABLE_TEXT, useUnmergedTree = true)
+              .fetchSemanticsNodes()
+
+      Log.d("END2END3", "Nodes found: ${nodes.size}")
+      nodes.size >= 5
     }
 
     // Make the bottom sheet expand
