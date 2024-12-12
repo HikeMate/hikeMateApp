@@ -621,8 +621,9 @@ class HikeDetailScreenTest {
 
         facilitiesViewModel.fetchFacilitiesForHike(detailedHike3)
         // Simulate ViewModel and map updates
-        composeTestRule.waitForIdle()
-        Thread.sleep(3000)
+
+        // The reason for await is I found out the test only works with it I don't know why.
+        composeTestRule.awaitIdle()
 
         // Assert marker presence and validity
         val facilityMarkers =
@@ -661,7 +662,9 @@ class HikeDetailScreenTest {
 
         composeTestRule.setContent { mapView = hikeDetailsMap(detailedHike3, facilitiesViewModel) }
 
-        composeTestRule.waitForIdle()
+        facilitiesViewModel.fetchFacilitiesForHike(detailedHike3)
+        // The reason for await is I found out the test only works with it I don't know why.
+        composeTestRule.awaitIdle()
 
         // Verify facilities are hidden at insufficient zoom levels
         val finalMarkers =
