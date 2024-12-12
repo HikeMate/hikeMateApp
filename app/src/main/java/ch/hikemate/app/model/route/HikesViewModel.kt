@@ -265,6 +265,8 @@ class HikesViewModel(
    *
    * Setting a null date on an unsaved hike will have no effect.
    *
+   * Setting a null date on a saved hike will removed the planned date but keep the hike saved.
+   *
    * @param hikeId The ID of the hike to set the planned date of.
    * @param date The planned date for the hike. If null, the hike's planned date will be removed
    *   (meaning the hike is still saved but without a specific planned date).
