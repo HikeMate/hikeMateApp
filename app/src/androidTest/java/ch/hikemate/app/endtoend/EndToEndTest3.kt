@@ -121,7 +121,7 @@ class EndToEndTest3 : TestCase() {
     composeTestRule.onNodeWithTag(SignInScreen.TEST_TAG_SIGN_IN_WITH_EMAIL).performClick()
 
     composeTestRule.waitUntilExactlyOneExists(
-        hasTestTag(Screen.SIGN_IN_WITH_EMAIL), timeoutMillis = 10000)
+        hasTestTag(Screen.SIGN_IN_WITH_EMAIL), timeoutMillis = 10001)
 
     composeTestRule
         .onNodeWithTag(SignInWithEmailScreen.TEST_TAG_GO_TO_SIGN_UP_BUTTON)
@@ -166,7 +166,7 @@ class EndToEndTest3 : TestCase() {
 
     // Wait for the sign-in to be performed and the map to load
     composeTestRule.waitUntilExactlyOneExists(
-        hasTestTag(MapScreen.TEST_TAG_MAP), timeoutMillis = 10000)
+        hasTestTag(MapScreen.TEST_TAG_MAP), timeoutMillis = 10002)
 
     // ==========================================
     // MAP SCREEN
@@ -212,11 +212,11 @@ class EndToEndTest3 : TestCase() {
 
     // Wait for the hikes to load
     composeTestRule.waitUntilAtLeastOneExists(
-        hasTestTag(MapScreen.TEST_TAG_HIKE_ITEM), timeoutMillis = 10000)
+        hasTestTag(MapScreen.TEST_TAG_HIKE_ITEM), timeoutMillis = 10003)
 
     // Check that there are at least 5 hikes elevation data loaded
     composeTestRule.waitUntil(
-        timeoutMillis = 10000,
+        timeoutMillis = 10004,
     ) {
       composeTestRule
           .onAllNodesWithTag(HikeCard.TEST_TAG_IS_SUITABLE_TEXT, useUnmergedTree = true)
@@ -248,7 +248,7 @@ class EndToEndTest3 : TestCase() {
 
     // Wait for the transition to complete
     composeTestRule.waitUntilExactlyOneExists(
-        hasTestTag(HikeDetailScreen.TEST_TAG_MAP), timeoutMillis = 10000)
+        hasTestTag(HikeDetailScreen.TEST_TAG_MAP), timeoutMillis = 10005)
 
     // ==========================================
     // DETAILS SCREENS
@@ -273,7 +273,7 @@ class EndToEndTest3 : TestCase() {
 
     // Wait for the transition to complete
     composeTestRule.waitUntilExactlyOneExists(
-        hasTestTag(MapScreen.TEST_TAG_MAP), timeoutMillis = 10000)
+        hasTestTag(MapScreen.TEST_TAG_MAP), timeoutMillis = 10006)
 
     // ==========================================
     // Change the profile
@@ -285,7 +285,7 @@ class EndToEndTest3 : TestCase() {
         .performClick()
 
     // Wait for the transition to complete
-    composeTestRule.waitUntilExactlyOneExists(hasTestTag(Screen.PROFILE), timeoutMillis = 10000)
+    composeTestRule.waitUntilExactlyOneExists(hasTestTag(Screen.PROFILE), timeoutMillis = 10007)
 
     // Check that the profile screen is displayed
     composeTestRule.onNodeWithTag(Screen.PROFILE).assertIsDisplayed()
@@ -295,7 +295,7 @@ class EndToEndTest3 : TestCase() {
 
     // Wait for the transition to complete
     composeTestRule.waitUntilExactlyOneExists(
-        hasTestTag(Screen.EDIT_PROFILE), timeoutMillis = 10000)
+        hasTestTag(Screen.EDIT_PROFILE), timeoutMillis = 10008)
 
     // Check that the edit profile screen is displayed
     composeTestRule.onNodeWithTag(Screen.EDIT_PROFILE).assertIsDisplayed()
@@ -311,7 +311,7 @@ class EndToEndTest3 : TestCase() {
     composeTestRule.onNodeWithTag(EditProfileScreen.TEST_TAG_SAVE_BUTTON).performClick()
 
     // Wait for the transition to complete
-    composeTestRule.waitUntilExactlyOneExists(hasTestTag(Screen.PROFILE), timeoutMillis = 10000)
+    composeTestRule.waitUntilExactlyOneExists(hasTestTag(Screen.PROFILE), timeoutMillis = 10009)
 
     // Check that the profile screen is displayed
     composeTestRule.onNodeWithTag(Screen.PROFILE).assertIsDisplayed()
@@ -333,7 +333,7 @@ class EndToEndTest3 : TestCase() {
 
     // Wait for the transition to complete
     composeTestRule.waitUntilExactlyOneExists(
-        hasTestTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_SECTION_CONTAINER), timeoutMillis = 10000)
+        hasTestTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_SECTION_CONTAINER), timeoutMillis = 10010)
 
     // Check that we are on the saved hikes screen
     composeTestRule
@@ -347,7 +347,7 @@ class EndToEndTest3 : TestCase() {
 
     // Check that the saved hikes section has one item
     composeTestRule.waitUntilExactlyOneExists(
-        hasTestTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_HIKE_CARD), timeoutMillis = 10000)
+        hasTestTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_HIKE_CARD), timeoutMillis = 10011)
 
     // Check that the saved hike is now suitable
     composeTestRule
@@ -357,7 +357,7 @@ class EndToEndTest3 : TestCase() {
 
     // Wait for the transition to complete
     composeTestRule.waitUntilExactlyOneExists(
-        hasTestTag(HikeDetailScreen.TEST_TAG_MAP), timeoutMillis = 10000)
+        hasTestTag(HikeDetailScreen.TEST_TAG_MAP), timeoutMillis = 10012)
 
     // Check that the hike is a good challenge for the user
     composeTestRule
