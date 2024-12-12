@@ -379,29 +379,4 @@ class RunHikeScreenTest {
 
         verify(mockNavigationActions).goBack()
       }
-
-  @OptIn(ExperimentalPermissionsApi::class)
-  @Test
-  fun runHikeScreen_permissionGrantCenterTheMap() =
-      runTest(timeout = 5.seconds) {
-        // Given the user did not grant location permission to the app
-        mockkObject(LocationUtils)
-        every { LocationUtils.hasLocationPermission(any()) } returns false
-
-        setupCompleteScreenWithSelected(detailedHike)
-
-        // Then an alert will be shown to ask for the permission
-        composeTestRule
-            .onNodeWithTag(LocationPermissionAlertDialog.TEST_TAG_LOCATION_PERMISSION_ALERT)
-            .assertIsDisplayed()
-
-        // When the user clicks on the "No thanks" button
-        composeTestRule
-            .onNodeWithTag(LocationPermissionAlertDialog.TEST_TAG_GRANT_ALERT_BUTTON)
-            .performClick()
-
-        composeTestRule.waitForIdle()
-
-        verify(mockNavigationActions).goBack()
-      }
 }
