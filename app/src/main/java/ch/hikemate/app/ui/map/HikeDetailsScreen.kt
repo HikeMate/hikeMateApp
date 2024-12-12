@@ -475,7 +475,7 @@ fun DateDetailRow(
                   Text(
                       text =
                           stringResource(
-                              R.string.hike_detail_screen_date_picker_unselect_hike_button))
+                              R.string.hike_detail_screen_date_picker_unplan_hike_button))
                 }
               }
         },
