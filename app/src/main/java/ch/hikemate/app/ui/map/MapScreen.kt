@@ -94,7 +94,7 @@ object MapScreen {
    * (Config) Height of the bottom sheet when it is collapsed. The height is defined empirically to
    * show a few items of the list of hikes and allow the user to expand it to see more.
    */
-  val BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT = 300.dp
+  val BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT = 400.dp
 
   /**
    * (Config) Initial zoom level of the map. The zoom level is defined empirically to show a
