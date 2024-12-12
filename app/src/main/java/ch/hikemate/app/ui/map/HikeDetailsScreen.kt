@@ -101,6 +101,7 @@ object HikeDetailScreen {
   const val MAP_MIN_LONGITUDE = -180.0
   const val MAP_BOUNDS_MARGIN: Int = 100
   val BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT = 300.dp
+  val MAP_BOTTOM_PADDING_ADJUSTMENT = 20.dp
 
   const val LOG_TAG = "HikeDetailScreen"
 
@@ -281,7 +282,10 @@ fun hikeDetailsMap(hike: DetailedHike): MapView {
           Modifier.fillMaxWidth()
               // Reserve space for the scaffold at the bottom, -20.dp to avoid the map being to
               // small under the bottomSheet
-              .padding(bottom = HikeDetailScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT - 20.dp)
+              .padding(
+                  bottom =
+                      HikeDetailScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT -
+                          HikeDetailScreen.MAP_BOTTOM_PADDING_ADJUSTMENT)
               .testTag(TEST_TAG_MAP))
   return mapView
 }

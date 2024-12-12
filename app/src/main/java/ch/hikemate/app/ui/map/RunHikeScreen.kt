@@ -55,6 +55,7 @@ import org.osmdroid.views.MapView
 
 object RunHikeScreen {
   val BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT = 300.dp
+  val MAP_BOTTOM_PADDING_ADJUSTMENT = 20.dp
 
   const val TEST_TAG_MAP = "runHikeScreenMap"
   const val TEST_TAG_BACK_BUTTON = "runHikeScreenBackButton"
@@ -190,7 +191,10 @@ private fun runHikeMap(hike: DetailedHike): MapView {
           Modifier.fillMaxWidth()
               // Reserve space for the scaffold at the bottom, -20.dp to avoid the map being to
               // small under the bottomSheet
-              .padding(bottom = RunHikeScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT - 20.dp)
+              .padding(
+                  bottom =
+                      RunHikeScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT -
+                          RunHikeScreen.MAP_BOTTOM_PADDING_ADJUSTMENT)
               .testTag(RunHikeScreen.TEST_TAG_MAP))
 
   return mapView
