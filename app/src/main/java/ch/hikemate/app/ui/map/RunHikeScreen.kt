@@ -54,6 +54,8 @@ import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 
 object RunHikeScreen {
+  val BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT = 300.dp
+
   const val TEST_TAG_MAP = "runHikeScreenMap"
   const val TEST_TAG_BACK_BUTTON = "runHikeScreenBackButton"
   const val TEST_TAG_ZOOM_BUTTONS = "runHikeScreenZoomInButton"
@@ -127,7 +129,7 @@ private fun RunHikeContent(hike: DetailedHike, navigationActions: NavigationActi
         onZoomOut = { mapView.controller.zoomOut() },
         modifier =
             Modifier.align(Alignment.BottomEnd)
-                .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
+                .padding(bottom = RunHikeScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
                 .testTag(RunHikeScreen.TEST_TAG_ZOOM_BUTTONS))
 
     // Display the bottom sheet with the hike details
@@ -184,11 +186,9 @@ private fun runHikeMap(hike: DetailedHike): MapView {
       factory = { mapView },
       modifier =
           Modifier.fillMaxWidth()
-              .padding(
-                  bottom =
-                      300.dp -
-                          20.dp) // Reserve space for the scaffold at the bottom, -20.dp to avoid
-              // the map being to small under the bottomSheet
+              // Reserve space for the scaffold at the bottom, -20.dp to avoid the map being to
+              // small under the bottomSheet
+              .padding(bottom = RunHikeScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT - 20.dp)
               .testTag(RunHikeScreen.TEST_TAG_MAP))
 
   return mapView
@@ -205,7 +205,7 @@ private fun RunHikeBottomSheet(
   BottomSheetScaffold(
       scaffoldState = scaffoldState,
       sheetContainerColor = MaterialTheme.colorScheme.surface,
-      sheetPeekHeight = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT,
+      sheetPeekHeight = RunHikeScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT,
       modifier = Modifier.testTag(RunHikeScreen.TEST_TAG_BOTTOM_SHEET),
       sheetContent = {
         Column(

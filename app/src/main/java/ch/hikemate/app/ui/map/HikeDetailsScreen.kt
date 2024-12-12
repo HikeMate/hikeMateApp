@@ -100,6 +100,7 @@ object HikeDetailScreen {
   const val MAP_MAX_LONGITUDE = 180.0
   const val MAP_MIN_LONGITUDE = -180.0
   const val MAP_BOUNDS_MARGIN: Int = 100
+  val BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT = 300.dp
 
   const val LOG_TAG = "HikeDetailScreen"
 
@@ -272,13 +273,10 @@ fun hikeDetailsMap(hike: DetailedHike): MapView {
       factory = { mapView },
       modifier =
           Modifier.fillMaxWidth()
-              .padding(
-                  bottom =
-                      300.dp -
-                          20.dp) // Reserve space for the scaffold at the bottom, -20.dp to avoid
-              // the map being to small under the bottomSheet
+              // Reserve space for the scaffold at the bottom, -20.dp to avoid the map being to
+              // small under the bottomSheet
+              .padding(bottom = HikeDetailScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT - 20.dp)
               .testTag(TEST_TAG_MAP))
-
   return mapView
 }
 
@@ -308,6 +306,7 @@ fun HikesDetailsBottomScaffold(
   BottomSheetScaffold(
       scaffoldState = scaffoldState,
       sheetContainerColor = MaterialTheme.colorScheme.surface,
+      sheetPeekHeight = HikeDetailScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT,
       sheetContent = {
         Column(
             modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -398,7 +397,7 @@ fun HikesDetailsBottomScaffold(
                   Modifier.padding(top = 16.dp).fillMaxWidth().testTag(TEST_TAG_RUN_HIKE_BUTTON))
         }
       },
-      sheetPeekHeight = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT) {}
+  ) {}
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
