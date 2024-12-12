@@ -115,6 +115,7 @@ object HikeDetailScreen {
   const val TEST_TAG_DATE_PICKER_CANCEL_BUTTON = "HikeDetailDatePickerCancelButton"
   const val TEST_TAG_DATE_PICKER_CONFIRM_BUTTON = "HikeDetailDatePickerConfirmButton"
   const val TEST_TAG_RUN_HIKE_BUTTON = "HikeDetailRunHikeButton"
+  const val TEST_TAG_APPROPRIATENESS_MESSAGE = "HikeDetailAppropriatenessMessage"
 }
 
 @Composable
@@ -575,6 +576,7 @@ fun AppropriatenessMessage(isSuitable: Boolean) {
         modifier = Modifier.size(16.dp))
     Spacer(modifier = Modifier.width(4.dp))
     Text(
+        modifier = Modifier.testTag(HikeDetailScreen.TEST_TAG_APPROPRIATENESS_MESSAGE),
         text = suitableLabelText,
         style = MaterialTheme.typography.bodySmall,
         color = suitableLabelColor)
