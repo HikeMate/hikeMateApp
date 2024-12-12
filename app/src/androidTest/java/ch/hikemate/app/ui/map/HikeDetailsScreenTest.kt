@@ -45,8 +45,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Rule
@@ -286,8 +284,8 @@ class HikeDetailScreenTest {
       onSuccess(profile)
     }
     profileViewModel.getProfileById(profile.id)
-    Dispatchers.setMain(dispatcher)
-    facilitiesViewModel = FacilitiesViewModel(facilitiesRepository, dispatcher)
+    //    Dispatchers.setMain(dispatcher)
+    //    facilitiesViewModel = FacilitiesViewModel(facilitiesRepository, dispatcher)
   }
 
   @Test
@@ -678,7 +676,7 @@ class HikeDetailScreenTest {
             finalMarkers.isEmpty())
       }
 
-  @After
+  // @After
   fun tearDown() {
     Dispatchers.resetMain()
   }
