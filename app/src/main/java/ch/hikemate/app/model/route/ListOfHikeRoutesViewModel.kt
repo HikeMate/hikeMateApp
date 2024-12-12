@@ -4,8 +4,8 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import ch.hikemate.app.model.elevation.ElevationService
-import ch.hikemate.app.model.elevation.ElevationServiceRepository
+import ch.hikemate.app.model.elevation.ElevationRepository
+import ch.hikemate.app.model.elevation.ElevationRepositoryCopernicus
 import ch.hikemate.app.model.extensions.crossesDateLine
 import ch.hikemate.app.model.extensions.splitByDateLine
 import ch.hikemate.app.model.extensions.toBounds
@@ -22,7 +22,7 @@ import org.osmdroid.util.BoundingBox
 /** ViewModel for the list of hike routes */
 open class ListOfHikeRoutesViewModel(
     private val hikeRoutesRepository: HikeRoutesRepository,
-    private val elevationService: ElevationService,
+    private val elevationRepository: ElevationRepository,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : ViewModel() {
   // List of all routes in the database
@@ -43,7 +43,7 @@ open class ListOfHikeRoutesViewModel(
           override fun <T : ViewModel> create(modelClass: Class<T>): T {
             return ListOfHikeRoutesViewModel(
                 HikeRoutesRepositoryOverpass(OkHttpClient()),
-                ElevationServiceRepository(OkHttpClient()))
+                ElevationRepositoryCopernicus(OkHttpClient()))
                 as T
           }
         }
@@ -127,9 +127,8 @@ open class ListOfHikeRoutesViewModel(
       onFailure: () -> Unit = {}
   ) {
     withContext(dispatcher) {
-      elevationService.getElevation(
+      elevationRepository.getElevation(
           coordinates = route.ways,
-          hikeID = route.id,
           onSuccess = { elevationData -> onSuccess(elevationData) },
           onFailure = { exception ->
             Log.d(LOG_TAG, "[getRoutesElevationAsync] Failed to get elevation data: $exception")

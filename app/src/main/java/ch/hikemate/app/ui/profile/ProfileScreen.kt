@@ -16,6 +16,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -89,7 +90,9 @@ fun ProfileScreen(
   AsyncStateHandler(
       errorMessageIdState = errorMessageIdState,
       actionContentDescriptionStringId = R.string.go_back,
-      actionOnErrorAction = { navigationActions.navigateTo(Route.MAP) },
+      // Whenever there's an error the user needs to re-authenticate
+      // thus forcing him to sign out and navigate to the Auth screen
+      actionOnErrorAction = { authViewModel.signOut { navigationActions.navigateTo(Route.AUTH) } },
       valueState = profileState,
   ) { profile ->
     BottomBarNavigation(
@@ -154,7 +157,7 @@ fun ProfileScreen(
                             .testTag(ProfileScreen.TEST_TAG_DELETE_ACCOUNT_BUTTON),
                     onClick = { navigationActions.navigateTo(Screen.DELETE_ACCOUNT) }) {
                       Text(
-                          "Delete Account",
+                          stringResource(R.string.delete_account_button_label),
                           style =
                               TextStyle(
                                   textAlign = TextAlign.Center,

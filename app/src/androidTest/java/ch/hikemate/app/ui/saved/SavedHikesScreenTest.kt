@@ -1,13 +1,14 @@
 package ch.hikemate.app.ui.saved
 
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
-import ch.hikemate.app.model.elevation.ElevationService
+import ch.hikemate.app.model.elevation.ElevationRepository
 import ch.hikemate.app.model.route.Bounds
 import ch.hikemate.app.model.route.DetailedHike
 import ch.hikemate.app.model.route.Hike
@@ -18,6 +19,7 @@ import ch.hikemate.app.model.route.HikesViewModel
 import ch.hikemate.app.model.route.LatLong
 import ch.hikemate.app.model.route.saved.SavedHike
 import ch.hikemate.app.model.route.saved.SavedHikesRepository
+import ch.hikemate.app.ui.components.CenteredErrorAction
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.TEST_TAG_BOTTOM_BAR
 import com.google.firebase.Timestamp
@@ -32,11 +34,13 @@ import org.junit.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
 
 class SavedHikesScreenTest : TestCase() {
   private lateinit var savedHikesRepository: SavedHikesRepository
   private lateinit var osmHikesRepository: HikeRoutesRepository
-  private lateinit var elevationService: ElevationService
+  private lateinit var elevationRepository: ElevationRepository
   private lateinit var hikesViewModel: HikesViewModel
   private lateinit var navigationActions: NavigationActions
 
@@ -48,10 +52,13 @@ class SavedHikesScreenTest : TestCase() {
     navigationActions = mock(NavigationActions::class.java)
     savedHikesRepository = mock(SavedHikesRepository::class.java)
     osmHikesRepository = mock(HikeRoutesRepository::class.java)
-    elevationService = mock(ElevationService::class.java)
+    elevationRepository = mock(ElevationRepository::class.java)
     hikesViewModel =
         HikesViewModel(
-            savedHikesRepository, osmHikesRepository, elevationService, UnconfinedTestDispatcher())
+            savedHikesRepository,
+            osmHikesRepository,
+            elevationRepository,
+            UnconfinedTestDispatcher())
   }
 
   private val hikeId = "1"
@@ -91,12 +98,73 @@ class SavedHikesScreenTest : TestCase() {
                     detailed.description)
               })
     }
-    `when`(elevationService.getElevation(any(), any(), any(), any())).thenAnswer {
+    `when`(elevationRepository.getElevation(any(), any(), any())).thenAnswer {
       val waypoints = it.getArgument<List<LatLong>>(0)
-      val id = it.getArgument<String>(1)
-      val onSuccess = it.getArgument<(List<Double>) -> Unit>(3)
-      onSuccess(hikes.find { hike -> hike.id == id }?.elevation ?: waypoints.map { 0.0 })
+      val onSuccess = it.getArgument<(List<Double>) -> Unit>(1)
+      onSuccess(waypoints.map { 0.0 })
     }
+  }
+
+  @Test
+  fun displaysErrorIfLoadingSavedHikesFails() = runTest {
+    // Ensure the loading of saved hikes fails
+    `when`(savedHikesRepository.loadSavedHikes())
+        .thenThrow(RuntimeException("Failed to load saved hikes"))
+
+    // Set up the screen
+    composeTestRule.setContent { SavedHikesScreen(hikesViewModel, navigationActions) }
+
+    // Check that the repository was called once
+    verify(savedHikesRepository, times(1)).loadSavedHikes()
+
+    // Verify that the error message is displayed
+    composeTestRule
+        .onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_MESSAGE)
+        .assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_BUTTON)
+        .assertIsDisplayed()
+        .assertHasClickAction()
+        .performClick()
+
+    // Check that the repository was called again, because the button is a retry action
+    verify(savedHikesRepository, times(2)).loadSavedHikes()
+  }
+
+  @Test
+  fun displaysErrorIfLoadingOsmDataFails() = runTest {
+    // Ensure loading the saved hikes from the saved hikes repo will succeed
+    val hikes =
+        listOf(
+            detailedHike.copy(
+                id = "1", name = "Hike 1", plannedDate = Timestamp.now(), isSaved = true),
+            detailedHike.copy(
+                id = "2", name = "Hike 2", plannedDate = Timestamp.now(), isSaved = true),
+            detailedHike.copy(id = "3", name = "Hike 3", plannedDate = null, isSaved = true))
+    setupSavedHikes(hikes)
+
+    // Ensure loading the OSM data fails
+    `when`(osmHikesRepository.getRoutesByIds(any(), any(), any()))
+        .thenThrow(RuntimeException("Failed to load OSM data"))
+
+    // Set up the screen
+    composeTestRule.setContent { SavedHikesScreen(hikesViewModel, navigationActions) }
+
+    // Check that the repository was called once
+    verify(savedHikesRepository, times(1)).loadSavedHikes()
+
+    // Verify that the error message is displayed
+    composeTestRule
+        .onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_MESSAGE)
+        .assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_BUTTON)
+        .assertIsDisplayed()
+        .assertHasClickAction()
+        .performClick()
+
+    // Check that the repository was called again, because the button is a retry action
+    verify(savedHikesRepository, times(2)).loadSavedHikes()
   }
 
   @Test

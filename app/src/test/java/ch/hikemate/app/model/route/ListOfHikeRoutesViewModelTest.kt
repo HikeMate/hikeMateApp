@@ -1,6 +1,6 @@
 package ch.hikemate.app.model.route
 
-import ch.hikemate.app.model.elevation.ElevationService
+import ch.hikemate.app.model.elevation.ElevationRepository
 import ch.hikemate.app.model.extensions.toBounds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -20,7 +20,7 @@ import org.osmdroid.util.BoundingBox
 /** Testing the ListOfRoutesViewModel class */
 class ListOfHikeRoutesViewModelTest {
   private lateinit var hikesRepository: HikeRoutesRepository
-  private lateinit var elevationService: ElevationService
+  private lateinit var elevationRepository: ElevationRepository
   private lateinit var listOfHikeRoutesViewModel: ListOfHikeRoutesViewModel
 
   @OptIn(ExperimentalCoroutinesApi::class)
@@ -29,9 +29,9 @@ class ListOfHikeRoutesViewModelTest {
     Dispatchers.setMain(UnconfinedTestDispatcher())
 
     hikesRepository = mock(HikeRoutesRepository::class.java)
-    elevationService = mock(ElevationService::class.java)
+    elevationRepository = mock(ElevationRepository::class.java)
     listOfHikeRoutesViewModel =
-        ListOfHikeRoutesViewModel(hikesRepository, elevationService, UnconfinedTestDispatcher())
+        ListOfHikeRoutesViewModel(hikesRepository, elevationRepository, UnconfinedTestDispatcher())
   }
 
   @Test
@@ -82,17 +82,17 @@ class ListOfHikeRoutesViewModelTest {
   }
 
   @Test
-  fun getRouteElevationCallsElevationService() {
+  fun getRouteElevationCallsElevationRepository() {
     val route = HikeRoute("Route 1", Bounds(0.0, 0.0, 0.0, 0.0), emptyList())
     listOfHikeRoutesViewModel.getRoutesElevation(route)
-    verify(elevationService, times(1)).getElevation(any(), any(), any(), any())
+    verify(elevationRepository, times(1)).getElevation(any(), any(), any())
   }
 
   @Test
   fun getRouteElevationReturnsCorrectElevation() {
     val route = HikeRoute("Route 1", Bounds(0.0, 0.0, 0.0, 0.0), emptyList())
-    `when`(elevationService.getElevation(any(), any(), any(), any())).thenAnswer {
-      val onSuccess = it.getArgument<(List<Double>) -> Unit>(2)
+    `when`(elevationRepository.getElevation(any(), any(), any())).thenAnswer {
+      val onSuccess = it.getArgument<(List<Double>) -> Unit>(1)
       onSuccess(listOf(1.0, 2.0, 3.0))
     }
 
@@ -111,8 +111,8 @@ class ListOfHikeRoutesViewModelTest {
   @Test
   fun getRouteElevationCallsOnFailure() {
     val route = HikeRoute("Route 1", Bounds(0.0, 0.0, 0.0, 0.0), emptyList())
-    `when`(elevationService.getElevation(any(), any(), any(), any())).thenAnswer {
-      val onFailure = it.getArgument<(Exception) -> Unit>(3)
+    `when`(elevationRepository.getElevation(any(), any(), any())).thenAnswer {
+      val onFailure = it.getArgument<(Exception) -> Unit>(2)
       onFailure(Exception("Test exception"))
     }
 
@@ -123,7 +123,7 @@ class ListOfHikeRoutesViewModelTest {
         })
 
     // Verify that the onFailure function was called
-    verify(elevationService, times(1)).getElevation(any(), any(), any(), any())
+    verify(elevationRepository, times(1)).getElevation(any(), any(), any())
   }
 
   @Test

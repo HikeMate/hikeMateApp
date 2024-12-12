@@ -48,7 +48,7 @@ data class Hike(
     val difficulty: DeferredData<HikeDifficulty> = DeferredData.NotRequested
 ) {
   /** Helper to convert this [Hike] to a [SavedHike] object. */
-  fun toSavedHike() = SavedHike(id, name ?: "", plannedDate)
+  fun toSavedHike() = SavedHike(id, name, plannedDate)
 
   /**
    * Get the color of the route from its id. The color should be the same for the same route id.
@@ -143,4 +143,9 @@ data class DetailedHike(
     val estimatedTime: Double,
     val elevationGain: Double,
     val difficulty: HikeDifficulty
-)
+) {
+  /** The list of segments of the Route */
+  val segments: List<RouteSegment> by lazy {
+    return@lazy this.waypoints.zipWithNext { p1, p2 -> RouteSegment(p1, p2, p1.distanceTo(p2)) }
+  }
+}
