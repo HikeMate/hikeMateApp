@@ -100,7 +100,7 @@ object HikeDetailScreen {
   const val MAP_MAX_LONGITUDE = 180.0
   const val MAP_MIN_LONGITUDE = -180.0
   const val MAP_BOUNDS_MARGIN: Int = 100
-  val BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT = 300.dp
+  val BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT = 400.dp
   val MAP_BOTTOM_PADDING_ADJUSTMENT = 20.dp
 
   const val LOG_TAG = "HikeDetailScreen"

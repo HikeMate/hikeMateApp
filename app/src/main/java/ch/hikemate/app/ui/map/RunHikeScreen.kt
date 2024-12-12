@@ -54,7 +54,7 @@ import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 
 object RunHikeScreen {
-  val BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT = 300.dp
+  val BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT = 400.dp
   val MAP_BOTTOM_PADDING_ADJUSTMENT = 20.dp
 
   const val TEST_TAG_MAP = "runHikeScreenMap"
