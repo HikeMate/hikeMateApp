@@ -216,12 +216,12 @@ class EndToEndTest3 : TestCase() {
 
     // Check that there are at least 5 hikes elevation data loaded
     composeTestRule.waitUntil(
-        timeoutMillis = 10004,
+        timeoutMillis = 60000,
     ) {
       composeTestRule
           .onAllNodesWithTag(HikeCard.TEST_TAG_IS_SUITABLE_TEXT, useUnmergedTree = true)
           .fetchSemanticsNodes()
-          .size >= 2
+          .size >= 5
     }
 
     // Make the bottom sheet expand
