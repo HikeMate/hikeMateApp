@@ -1,6 +1,5 @@
 package ch.hikemate.app.ui.map
 
-import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,14 +25,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 import ch.hikemate.app.R
 import ch.hikemate.app.model.facilities.FacilitiesViewModel
 import ch.hikemate.app.model.route.DetailedHike
@@ -48,16 +45,7 @@ import ch.hikemate.app.ui.components.ElevationGraphStyleProperties
 import ch.hikemate.app.ui.components.WithDetailedHike
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Screen
-import ch.hikemate.app.utils.MapUtils
-import kotlin.coroutines.cancellation.CancellationException
-import kotlin.math.max
-import kotlin.math.min
 import kotlin.math.roundToInt
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.debounce
-import org.osmdroid.views.CustomZoomButtonsController
-import org.osmdroid.views.MapView
 
 object RunHikeScreen {
   const val TEST_TAG_MAP = "runHikeScreenMap"
@@ -127,7 +115,8 @@ private fun RunHikeContent(
 
   Box(modifier = Modifier.fillMaxSize().testTag(Screen.RUN_HIKE)) {
     // Display the map
-    val mapView = runHikeMap(hike, facilitiesViewModel)
+    // We use the exact same map as the HikeDetailsMap
+    val mapView = hikeDetailsMap(hike, facilitiesViewModel)
 
     // Back Button at the top of the screen
     BackButton(
@@ -149,121 +138,6 @@ private fun RunHikeContent(
     // Display the bottom sheet with the hike details
     RunHikeBottomSheet(hike = hike, onStopTheRun = { wantToNavigateBack = true })
   }
-}
-
-@Composable
-fun runHikeMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel): MapView {
-  val context = LocalContext.current
-  val routeZoomLevel = MapUtils.calculateBestZoomLevel(hike.bounds).toDouble()
-  val hikeCenter = MapUtils.getGeographicalCenter(hike.bounds)
-
-  // Avoid re-creating the MapView on every recomposition
-  val mapView = remember {
-    MapView(context).apply {
-      controller.setZoom(routeZoomLevel)
-      controller.setCenter(hikeCenter)
-      // Limit the zoom to avoid the user zooming out or out too much
-      minZoomLevel = routeZoomLevel
-      // Avoid repeating the map when the user reaches the edge or zooms out
-      // We keep the horizontal repetition enabled to allow the user to scroll the map
-      // horizontally without limits (from Asia to America, for example)
-      isHorizontalMapRepetitionEnabled = true
-      isVerticalMapRepetitionEnabled = false
-      // Disable built-in zoom controls since we have our own
-      zoomController.setVisibility(CustomZoomButtonsController.Visibility.NEVER)
-      // Enable touch-controls such as pinch to zoom
-      setMultiTouchControls(true)
-    }
-  }
-
-  // Create state values that we can actually observe in the LaunchedEffect
-  // We keep our StateFlows for debouncing
-  val boundingBoxState = remember { MutableStateFlow(mapView.boundingBox) }
-  val zoomLevelState = remember { MutableStateFlow(mapView.zoomLevelDouble) }
-
-  MapUtils.setMapViewListenerForStates(mapView, boundingBoxState, zoomLevelState)
-
-  LaunchedEffect(Unit) {
-
-    // Create our combined flow
-    val combinedFlow =
-        combine(
-            boundingBoxState.debounce(HikeDetailScreen.DEBOUNCE_DURATION),
-            zoomLevelState.debounce(HikeDetailScreen.DEBOUNCE_DURATION)) { boundingBox, zoomLevel ->
-              // Return a pair of our values
-              boundingBox to zoomLevel
-            }
-
-    // Collect the flow with proper error handling
-    try {
-      combinedFlow.collect { (boundingBox, zoomLevel) ->
-        // Only proceed if the map is still valid
-        if (mapView.repository != null) {
-          facilitiesViewModel.filterFacilitiesForDisplay(
-              bounds = boundingBox,
-              zoomLevel = zoomLevel,
-              hikeRoute = hike,
-              onSuccess = { newFacilities ->
-                // Double check map validity before updates
-                if (mapView.repository != null) {
-                  MapUtils.clearFacilities(mapView)
-                  if (newFacilities.isNotEmpty()) {
-                    MapUtils.displayFacilities(newFacilities, mapView, context)
-                  }
-                }
-              },
-              onNoFacilitiesForState = {
-                if (mapView.repository != null) {
-                  MapUtils.clearFacilities(mapView)
-                }
-              })
-        }
-      }
-    } catch (e: CancellationException) {
-      // Rethrow cancellation exceptions to allow proper coroutine cancellation
-      throw e
-    } catch (e: Exception) {
-      // Log other exceptions but don't crash
-      Log.e(HikeDetailScreen.LOG_TAG, "Error in facility updates flow", e)
-    }
-  }
-
-  // When the map is ready, it will have computed its bounding box
-  mapView.addOnFirstLayoutListener { _, _, _, _, _ ->
-    // Limit the vertical scrollable area to avoid the user scrolling too far from the hike
-    mapView.setScrollableAreaLimitLatitude(
-        min(MapScreen.MAP_MAX_LATITUDE, mapView.boundingBox.latNorth),
-        max(MapScreen.MAP_MIN_LATITUDE, mapView.boundingBox.latSouth),
-        HikeDetailScreen.MAP_BOUNDS_MARGIN)
-    if (hike.bounds.maxLon < HikeDetailScreen.MAP_MAX_LONGITUDE ||
-        hike.bounds.minLon > HikeDetailScreen.MAP_MIN_LONGITUDE) {
-      mapView.setScrollableAreaLimitLongitude(
-          max(HikeDetailScreen.MAP_MIN_LONGITUDE, mapView.boundingBox.lonWest),
-          min(HikeDetailScreen.MAP_MAX_LONGITUDE, mapView.boundingBox.lonEast),
-          HikeDetailScreen.MAP_BOUNDS_MARGIN)
-    }
-    // This is useful for the first composition since there won't be any zoom or scroll events at
-    // first so the hike displays the possible facilities from the get go.
-    facilitiesViewModel.filterFacilitiesForDisplay(
-        bounds = boundingBoxState.value,
-        zoomLevel = zoomLevelState.value,
-        hikeRoute = hike,
-        onSuccess = { MapUtils.displayFacilities(it, mapView, context) },
-        onNoFacilitiesForState = { /*Nothing since nothing is displayed yet*/})
-  }
-
-  MapUtils.showHikeOnMap(
-      mapView = mapView, waypoints = hike.waypoints, color = hike.color, onLineClick = {})
-
-  // Map
-  AndroidView(
-      factory = { mapView },
-      modifier =
-          Modifier.fillMaxWidth()
-              .padding(bottom = 300.dp) // Reserve space for the scaffold at the bottom
-              .testTag(RunHikeScreen.TEST_TAG_MAP))
-
-  return mapView
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

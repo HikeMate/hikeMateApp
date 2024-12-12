@@ -48,6 +48,7 @@ class FacilitiesViewModel(
             (17.0..18.0) to 100)
   }
 
+  private val _isFiltering = MutableStateFlow(false)
   private val _cache = mutableMapOf<Bounds, List<Facility>>()
 
   private val _facilities = MutableStateFlow<List<Facility>?>(null)
@@ -77,35 +78,41 @@ class FacilitiesViewModel(
       onNoFacilitiesForState: () -> Unit
   ) {
     viewModelScope.launch(dispatcher) {
-      if (facilities.value == null) {
-        Log.e(LOG_TAG, "Facilities are null cannot filter them")
-        return@launch
-      }
-      val facilities = facilities.value!!
-      // 1. Early returns for invalid states
-      if (!isValidZoomAndBounds(zoomLevel, bounds, hikeRoute)) {
-        withContext(Dispatchers.Main) { onNoFacilitiesForState() }
-        return@launch
-      }
+      // Prevents the viewModel to do multiple filter operations at once.
+      if (_isFiltering.value) return@launch
+      try {
+        if (facilities.value == null) {
+          Log.e(LOG_TAG, "Facilities are null cannot filter them")
+          return@launch
+        }
+        val facilities = facilities.value!!
+        // 1. Early returns for invalid states
+        if (!isValidZoomAndBounds(zoomLevel, bounds, hikeRoute)) {
+          withContext(Dispatchers.Main) { onNoFacilitiesForState() }
+          return@launch
+        }
 
-      // 2. Calculate max facilities once
-      val maxFacilities = getMaxFacilitiesForZoom(zoomLevel)
-      if (maxFacilities == 0) {
-        withContext(Dispatchers.Main) { onNoFacilitiesForState() }
-        return@launch
+        // 2. Calculate max facilities once
+        val maxFacilities = getMaxFacilitiesForZoom(zoomLevel)
+        if (maxFacilities == 0) {
+          withContext(Dispatchers.Main) { onNoFacilitiesForState() }
+          return@launch
+        }
+
+        // 3. Use sequence for lazy evaluation and take() for early termination
+        val filteredFacilities =
+            facilities
+                .asSequence()
+                .filter { facility ->
+                  bounds.contains(GeoPoint(facility.coordinates.lat, facility.coordinates.lon))
+                }
+                .take(maxFacilities)
+                .toList()
+
+        withContext(Dispatchers.Main) { onSuccess(filteredFacilities) }
+      } finally {
+        _isFiltering.value = false
       }
-
-      // 3. Use sequence for lazy evaluation and take() for early termination
-      val filteredFacilities =
-          facilities
-              .asSequence()
-              .filter { facility ->
-                bounds.contains(GeoPoint(facility.coordinates.lat, facility.coordinates.lon))
-              }
-              .take(maxFacilities)
-              .toList()
-
-      withContext(Dispatchers.Main) { onSuccess(filteredFacilities) }
     }
   }
 

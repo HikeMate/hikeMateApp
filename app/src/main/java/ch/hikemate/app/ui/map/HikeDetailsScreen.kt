@@ -242,6 +242,8 @@ fun hikeDetailsMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel)
   val context = LocalContext.current
   val hikeZoomLevel = MapUtils.calculateBestZoomLevel(hike.bounds).toDouble()
   val hikeCenter = MapUtils.getGeographicalCenter(hike.bounds)
+  val facilities by facilitiesViewModel.facilities.collectAsState()
+  var facilitiesLoaded by remember { mutableStateOf(false) }
 
   // Avoid re-creating the MapView on every recomposition
   val mapView = remember {
@@ -269,51 +271,76 @@ fun hikeDetailsMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel)
   val boundingBoxState = remember { MutableStateFlow(mapView.boundingBox) }
   val zoomLevelState = remember { MutableStateFlow(mapView.zoomLevelDouble) }
 
+  // This is done to catch the bug when the first composition doesn't display the facilities
+  // This forces the facilities to be displayed in the first composition.
+  LaunchedEffect(facilities) {
+    if (facilities != null) {
+      facilitiesLoaded = true
+      facilitiesViewModel.filterFacilitiesForDisplay(
+          bounds = mapView.boundingBox,
+          zoomLevel = mapView.zoomLevelDouble,
+          hikeRoute = hike,
+          onSuccess = {
+            if (mapView.repository != null) {
+              MapUtils.clearFacilities(mapView)
+              MapUtils.displayFacilities(it, mapView, context)
+            }
+          },
+          onNoFacilitiesForState = {
+            if (mapView.repository != null) {
+              MapUtils.clearFacilities(mapView)
+            }
+          })
+    }
+  }
+
   DisposableEffect(Unit) {
+    // This solves the bug of the screen freezing.
     onDispose {
+      mapView.onPause()
       mapView.onDetach()
       mapView.overlayManager.clear()
+      mapView.tileProvider.clearTileCache()
     }
   }
 
   LaunchedEffect(Unit) {
-    MapUtils.setMapViewListenerForStates(mapView, boundingBoxState, zoomLevelState)
-    // Create our combined flow
-    val combinedFlow =
-        combine(
-            boundingBoxState.debounce(HikeDetailScreen.DEBOUNCE_DURATION),
-            zoomLevelState.debounce(HikeDetailScreen.DEBOUNCE_DURATION)) { boundingBox, zoomLevel ->
-              // Return a pair of our values
-              boundingBox to zoomLevel
-            }
+    if (facilitiesLoaded) {
+      MapUtils.setMapViewListenerForStates(mapView, boundingBoxState, zoomLevelState)
+      // Create our combined flow which is limited by a debounce.
+      val combinedFlow =
+          combine(
+              boundingBoxState.debounce(HikeDetailScreen.DEBOUNCE_DURATION),
+              zoomLevelState.debounce(HikeDetailScreen.DEBOUNCE_DURATION)) { boundingBox, zoomLevel
+                ->
+                boundingBox to zoomLevel
+              }
 
-    // Collect the flow with proper error handling
-    try {
-      combinedFlow.collect { (boundingBox, zoomLevel) ->
-        // Only proceed if the map is still valid
-        if (mapView.repository != null) {
-          facilitiesViewModel.filterFacilitiesForDisplay(
-              bounds = boundingBox,
-              zoomLevel = zoomLevel,
-              hikeRoute = hike,
-              onSuccess = { newFacilities ->
-                // Double check map validity before updates
-                if (mapView.repository != null) {
-                  MapUtils.clearFacilities(mapView)
-                  if (newFacilities.isNotEmpty()) {
-                    MapUtils.displayFacilities(newFacilities, mapView, context)
+      try {
+        combinedFlow.collect { (boundingBox, zoomLevel) ->
+          if (mapView.repository != null) {
+            facilitiesViewModel.filterFacilitiesForDisplay(
+                bounds = boundingBox,
+                zoomLevel = zoomLevel,
+                hikeRoute = hike,
+                onSuccess = { newFacilities ->
+                  if (mapView.repository != null) {
+                    MapUtils.clearFacilities(mapView)
+                    if (newFacilities.isNotEmpty()) {
+                      MapUtils.displayFacilities(newFacilities, mapView, context)
+                    }
                   }
-                }
-              },
-              onNoFacilitiesForState = {
-                if (mapView.repository != null) {
-                  MapUtils.clearFacilities(mapView)
-                }
-              })
+                },
+                onNoFacilitiesForState = {
+                  if (mapView.repository != null) {
+                    MapUtils.clearFacilities(mapView)
+                  }
+                })
+          }
         }
+      } catch (e: Exception) {
+        Log.e(HikeDetailScreen.LOG_TAG, "Error in facility updates flow", e)
       }
-    } catch (e: Exception) {
-      Log.e(HikeDetailScreen.LOG_TAG, "Error in facility updates flow", e)
     }
   }
 
@@ -331,14 +358,6 @@ fun hikeDetailsMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel)
           min(HikeDetailScreen.MAP_MAX_LONGITUDE, mapView.boundingBox.lonEast),
           HikeDetailScreen.MAP_BOUNDS_MARGIN)
     }
-    // This is useful for the first composition since there won't be any zoom or scroll events at
-    // first so the hike displays the possible facilities from the get go.
-    facilitiesViewModel.filterFacilitiesForDisplay(
-        bounds = boundingBoxState.value,
-        zoomLevel = zoomLevelState.value,
-        hikeRoute = hike,
-        onSuccess = { MapUtils.displayFacilities(it, mapView, context) },
-        onNoFacilitiesForState = { /*Nothing since nothing is displayed yet*/})
   }
 
   // Show the selected hike on the map
@@ -357,7 +376,6 @@ fun hikeDetailsMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel)
 
   return mapView
 }
-
 /**
  * A composable that displays details about a hike in a bottom sheet.
  *
