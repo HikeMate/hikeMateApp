@@ -4,12 +4,14 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import ch.hikemate.app.R
 import ch.hikemate.app.model.elevation.ElevationRepository
 import ch.hikemate.app.model.elevation.ElevationRepositoryCopernicus
 import ch.hikemate.app.model.extensions.toBounds
 import ch.hikemate.app.model.route.saved.SavedHike
 import ch.hikemate.app.model.route.saved.SavedHikesRepository
 import ch.hikemate.app.model.route.saved.SavedHikesRepositoryFirestore
+import ch.hikemate.app.utils.MapUtils
 import ch.hikemate.app.utils.RouteUtils
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
@@ -28,6 +30,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import org.osmdroid.util.BoundingBox
+import org.osmdroid.util.GeoPoint
 
 /**
  * View model to work with hikes.
@@ -80,9 +83,13 @@ class HikesViewModel(
 
   private val _loading = MutableStateFlow(false)
 
+  private val _loadingErrorMessageId = MutableStateFlow<Int?>(null)
+
   private val _hikeFlowsList = MutableStateFlow<List<StateFlow<Hike>>>(emptyList())
 
   private val _selectedHike = MutableStateFlow<Hike?>(null)
+
+  private val _mapState = MutableStateFlow(MapUtils.MapViewState())
 
   /**
    * Enum used to designate where the hikes loaded in [hikeFlows] come from semantically.
@@ -137,6 +144,18 @@ class HikesViewModel(
    * Note: this value is ALSO set to true when calling [retrieveLoadedHikesOsmData].
    */
   val loading: StateFlow<Boolean> = _loading.asStateFlow()
+
+  /**
+   * The resource ID of the error message to display to the user when a loading operation fails.
+   *
+   * A loading operation can be either [refreshSavedHikesCache], [loadSavedHikes],
+   * [loadHikesInBounds] or [retrieveLoadedHikesOsmData]. If any of those operations fail, this
+   * value will be set to the corresponding error message ID.
+   *
+   * This value is null as long as no loading operation fails. It resets to null when a loading
+   * operation succeeds.
+   */
+  val loadingErrorMessageId: StateFlow<Int?> = _loadingErrorMessageId.asStateFlow()
 
   /**
    * The list of hikes currently loaded in the view model.
@@ -196,17 +215,16 @@ class HikesViewModel(
   fun refreshSavedHikesCache(onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}) =
       viewModelScope.launch {
         // Let the user know a heavy load operation is being performed
-        setLoading(true)
+        setLoading(value = true, errorMessageId = null)
 
         val success = refreshSavedHikesCacheAsync(forceOverwriteHikesList = false)
         if (success) {
+          setLoading(value = false, errorMessageId = null)
           onSuccess()
         } else {
+          setLoading(value = false, errorMessageId = R.string.hikes_vm_error_refreshing_saved_hikes)
           onFailure()
         }
-
-        // The heavy loading operation is done now
-        setLoading(false)
       }
 
   /**
@@ -221,11 +239,7 @@ class HikesViewModel(
    * @param onFailure Will be called if an error is encountered.
    */
   fun loadSavedHikes(onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}) =
-      viewModelScope.launch {
-        setLoading(true)
-        loadSavedHikesAsync(onSuccess, onFailure)
-        setLoading(false)
-      }
+      viewModelScope.launch { loadSavedHikesAsync(onSuccess, onFailure) }
 
   /**
    * Marks a hike as saved by the current user.
@@ -292,16 +306,7 @@ class HikesViewModel(
       bounds: BoundingBox,
       onSuccess: () -> Unit = {},
       onFailure: () -> Unit = {}
-  ) =
-      viewModelScope.launch {
-        // Let the user know a heavy load operation is being performed
-        setLoading(true)
-
-        loadHikesInBoundsAsync(bounds, onSuccess, onFailure)
-
-        // The heavy loading operation is done now
-        setLoading(false)
-      }
+  ) = viewModelScope.launch { loadHikesInBoundsAsync(bounds, onSuccess, onFailure) }
 
   /**
    * Retrieves the bounding box and way points of the currently loaded hikes.
@@ -405,6 +410,31 @@ class HikesViewModel(
       viewModelScope.launch { computeDetailsForAsync(hikeId, onSuccess, onFailure) }
 
   /**
+   * Saves the current state of the map.
+   *
+   * Updates the center and zoom level of the map's. This function enables saving the map's state,
+   * so that the map's center and zoom level can be preserved when navigating between screens.
+   *
+   * @param center The center of the map. Can be fetched by calling .mapCenter on a MapView
+   * @param zoom The zoom level of the map. Can be fetched by calling .zoomLevelDouble on a MapView
+   */
+  fun setMapState(center: GeoPoint, zoom: Double) {
+    _mapState.value = MapUtils.MapViewState(center, zoom)
+  }
+
+  /**
+   * Retrieves the current state of the map.
+   *
+   * Fetches the center and zoom level of the map's. This function enables saving the map's state,
+   * so that the map's center and zoom level can be preserved when navigating between screens.
+   *
+   * @return The current [MapUtils.MapViewState] containing the map's center point and zoom level.
+   */
+  fun getMapState(): MapUtils.MapViewState {
+    return _mapState.value
+  }
+
+  /**
    * Internal helper function.
    *
    * The exposed [loading] state indicates whether a loading operation is ongoing. Simply setting it
@@ -421,8 +451,16 @@ class HikesViewModel(
    *
    * If [_ongoingLoadingOperations] becomes negative, it is clamped at 0. [setLoading] should always
    * be used in pair, one call to set loading to true, and one to set it to false.
+   *
+   * Additionally, updates [_loadingErrorMessageId] with the [errorMessageId] parameter.
+   *
+   * @param value The new value of the loading state, whether loading (true) or not (false).
+   * @param errorMessageId The ID of the string resource to display to the user if the loading
+   *   operation has failed. Pass `null` if the loading operation that got completed was successful.
+   *   This parameter is only considered if [value] is false. This value will be set even if other
+   *   loading operations are still ongoing.
    */
-  private suspend fun setLoading(value: Boolean) =
+  private suspend fun setLoading(value: Boolean, errorMessageId: Int?) =
       _loadingMutex.withLock {
         if (value) {
           // setLoading(true) is called to indicate the start of a new loading operation
@@ -431,6 +469,11 @@ class HikesViewModel(
           // setLoading(false) indicates the end of a loading operation. Ensure the counter does not
           // go below 0.
           _ongoingLoadingOperations -= 1
+        }
+
+        // Update the error message ID
+        if (!value) {
+          _loadingErrorMessageId.value = errorMessageId
         }
 
         // Adapt the _loading state flow accordingly
@@ -675,12 +718,17 @@ class HikesViewModel(
    */
   private suspend fun loadSavedHikesAsync(onSuccess: () -> Unit, onFailure: () -> Unit) =
       withContext(dispatcher) {
+        // Let the user know a heavy load operation is being performed
+        setLoading(value = true, errorMessageId = null)
+
         // Update the local cache of saved hikes and add them to _hikeFlows
         val success = refreshSavedHikesCacheAsync(forceOverwriteHikesList = true)
 
         if (success) {
+          setLoading(value = false, errorMessageId = null)
           onSuccess()
         } else {
+          setLoading(value = false, errorMessageId = R.string.hikes_vm_error_loading_saved_hikes)
           onFailure()
         }
       }
@@ -919,12 +967,17 @@ class HikesViewModel(
       onFailure: () -> Unit
   ) =
       withContext(dispatcher) {
+        // Let the user know a heavy load operation is being performed
+        setLoading(value = true, errorMessageId = null)
+
         // Load the hikes from the repository
         val hikes: List<HikeRoute>
         try {
           hikes = loadHikesInBoundsRepoWrapper(boundingBox.toBounds())
         } catch (e: Exception) {
           Log.e(LOG_TAG, "Error encountered while loading hikes in bounds", e)
+          setLoading(
+              value = false, errorMessageId = R.string.hikes_vm_error_loading_hikes_in_bounds)
           onFailure()
           return@withContext
         }
@@ -990,6 +1043,7 @@ class HikesViewModel(
         }
 
         // Call the success callback once the mutex has been released to avoid locking for too long
+        setLoading(value = false, errorMessageId = null)
         onSuccess()
       }
 
@@ -1048,7 +1102,7 @@ class HikesViewModel(
           }
 
           // If the request is needed, indicate a heavy loading operation is being performed
-          setLoading(true)
+          setLoading(value = true, errorMessageId = null)
 
           // Retrieve the OSM data of the hikes
           val hikeRoutes: List<HikeRoute>
@@ -1086,13 +1140,12 @@ class HikesViewModel(
           success = true
         }
 
-        // Indicate the heavy loading operation has terminated
-        setLoading(false)
-
-        // Call the appropriate callback
+        // Call the appropriate callback and indicate the heavy loading operation has terminated
         if (success) {
+          setLoading(value = false, errorMessageId = null)
           onSuccess()
         } else {
+          setLoading(value = false, errorMessageId = R.string.hikes_vm_error_loading_hikes_osm_data)
           onFailure()
         }
       }
@@ -1130,7 +1183,7 @@ class HikesViewModel(
           val hike = hikeFlow.value
 
           // If the elevation of this hike is already computed or requested, do nothing
-          alreadyComputed = hike.elevation !is DeferredData.NotRequested
+          alreadyComputed = hike.elevation.obtained() || hike.elevation is DeferredData.Requested
           if (alreadyComputed) {
             success = true
             return@withLock
@@ -1169,6 +1222,11 @@ class HikesViewModel(
         try {
           elevation = getElevationRepoWrapper(waypoints)
         } catch (e: Exception) {
+          _hikesMutex.withLock {
+            val hikeFlow = _hikeFlowsMap[hikeId] ?: return@withLock
+            hikeFlow.value = hikeFlow.value.copy(elevation = DeferredData.Error(e))
+            updateSelectedHike()
+          }
           Log.e(LOG_TAG, "Error encountered while retrieving elevation", e)
           onFailure()
           return@withContext
@@ -1246,10 +1304,10 @@ class HikesViewModel(
             val hikeFlow = _hikeFlowsMap[hikeId] ?: return@withLock
             hikeFlow.value =
                 hikeFlow.value.copy(
-                    distance = DeferredData.NotRequested,
-                    elevationGain = DeferredData.NotRequested,
-                    estimatedTime = DeferredData.NotRequested,
-                    difficulty = DeferredData.NotRequested,
+                    distance = DeferredData.Error(e),
+                    elevationGain = DeferredData.Error(e),
+                    estimatedTime = DeferredData.Error(e),
+                    difficulty = DeferredData.Error(e),
                 )
 
             // Update the selected hike if necessary
