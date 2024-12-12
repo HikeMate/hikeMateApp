@@ -440,8 +440,8 @@ fun MapScreen(
         BottomBarNavigation(
             onTabSelect = { navigationActions.navigateTo(it) },
             tabList = LIST_TOP_LEVEL_DESTINATIONS,
-            selectedItem = Route.MAP) { p ->
-              Box(modifier = Modifier.padding(p).fillMaxSize().testTag(Screen.MAP)) {
+            selectedItem = Route.MAP) {
+              Box(modifier = Modifier.fillMaxSize().testTag(Screen.MAP)) {
                 // Jetpack Compose is a relatively recent framework for implementing Android UIs.
                 // OSMDroid
                 // is
