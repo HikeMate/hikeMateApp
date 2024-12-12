@@ -279,6 +279,7 @@ class HikeDetailScreenTest {
     mockSavedHikesRepository = mock(SavedHikesRepository::class.java)
     facilitiesRepository = mock(FacilitiesRepository::class.java)
 
+    facilitiesViewModel = FacilitiesViewModel(facilitiesRepository)
     `when`(profileRepository.getProfileById(eq(profile.id), any(), any())).thenAnswer {
       val onSuccess = it.getArgument<(Profile) -> Unit>(1)
       onSuccess(profile)
