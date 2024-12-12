@@ -35,6 +35,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -90,7 +91,6 @@ import ch.hikemate.app.utils.humanReadableFormat
 import com.google.firebase.Timestamp
 import java.util.Date
 import java.util.Locale
-import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -269,9 +269,15 @@ fun hikeDetailsMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel)
   val boundingBoxState = remember { MutableStateFlow(mapView.boundingBox) }
   val zoomLevelState = remember { MutableStateFlow(mapView.zoomLevelDouble) }
 
-  MapUtils.setMapViewListenerForStates(mapView, boundingBoxState, zoomLevelState)
-  LaunchedEffect(Unit) {
+  DisposableEffect(Unit) {
+    onDispose {
+      mapView.onDetach()
+      mapView.overlayManager.clear()
+    }
+  }
 
+  LaunchedEffect(Unit) {
+    MapUtils.setMapViewListenerForStates(mapView, boundingBoxState, zoomLevelState)
     // Create our combined flow
     val combinedFlow =
         combine(
@@ -307,9 +313,7 @@ fun hikeDetailsMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel)
         }
       }
     } catch (e: Exception) {
-      // Log other exceptions but don't crash
-      if (e !== CancellationException())
-          Log.e(HikeDetailScreen.LOG_TAG, "Error in facility updates flow", e)
+      Log.e(HikeDetailScreen.LOG_TAG, "Error in facility updates flow", e)
     }
   }
 

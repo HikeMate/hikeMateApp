@@ -84,14 +84,14 @@ class FacilitiesViewModel(
       val facilities = facilities.value!!
       // 1. Early returns for invalid states
       if (!isValidZoomAndBounds(zoomLevel, bounds, hikeRoute)) {
-        onNoFacilitiesForState()
+        withContext(Dispatchers.Main) { onNoFacilitiesForState() }
         return@launch
       }
 
       // 2. Calculate max facilities once
       val maxFacilities = getMaxFacilitiesForZoom(zoomLevel)
       if (maxFacilities == 0) {
-        onNoFacilitiesForState()
+        withContext(Dispatchers.Main) { onNoFacilitiesForState() }
         return@launch
       }
 
@@ -105,7 +105,7 @@ class FacilitiesViewModel(
               .take(maxFacilities)
               .toList()
 
-      onSuccess(filteredFacilities)
+      withContext(Dispatchers.Main) { onSuccess(filteredFacilities) }
     }
   }
 

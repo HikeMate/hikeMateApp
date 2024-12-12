@@ -2,8 +2,6 @@ package ch.hikemate.app.ui.map
 
 import android.content.Context
 import android.graphics.drawable.Drawable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -601,8 +599,11 @@ class HikeDetailScreenTest {
     val bounds = detailedHike2.bounds.toBoundingBox()
     val center = LatLong(bounds.centerLatitude, bounds.centerLongitude)
     val testFacility = Facility(type = FacilityType.TOILETS, coordinates = center)
-
-    val facilities: MutableState<List<Facility>?> = mutableStateOf(listOf(testFacility))
+    val listFacility = listOf(testFacility)
+    `when`(facilitiesRepository.getFacilities(any(), any(), any())).then {
+      val onSuccess = it.getArgument<(List<Facility>) -> Unit>(1)
+      onSuccess(listFacility)
+    }
 
     lateinit var mapView: MapView
     lateinit var context: Context
@@ -653,6 +654,15 @@ class HikeDetailScreenTest {
 
     lateinit var mapView: MapView
     val minZoomForFacilities = FacilitiesViewModel.MIN_ZOOM_FOR_FACILITIES
+
+    val bounds = detailedHike2.bounds.toBoundingBox()
+    val center = LatLong(bounds.centerLatitude, bounds.centerLongitude)
+    val testFacility = Facility(type = FacilityType.TOILETS, coordinates = center)
+    val listFacility = listOf(testFacility)
+    `when`(facilitiesRepository.getFacilities(any(), any(), any())).then {
+      val onSuccess = it.getArgument<(List<Facility>) -> Unit>(1)
+      onSuccess(listFacility)
+    }
 
     composeTestRule.setContent { mapView = hikeDetailsMap(detailedHike3, facilitiesViewModel) }
 

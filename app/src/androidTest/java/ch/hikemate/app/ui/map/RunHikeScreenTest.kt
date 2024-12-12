@@ -2,8 +2,6 @@ package ch.hikemate.app.ui.map
 
 import android.content.Context
 import android.graphics.drawable.Drawable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assert
@@ -39,6 +37,7 @@ import ch.hikemate.app.model.route.toBoundingBox
 import ch.hikemate.app.ui.components.CenteredErrorAction
 import ch.hikemate.app.ui.components.DetailRow
 import ch.hikemate.app.ui.navigation.NavigationActions
+import ch.hikemate.app.utils.MapUtils
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -385,14 +384,18 @@ class RunHikeScreenTest {
     val center = LatLong(bounds.centerLatitude, bounds.centerLongitude)
     val testFacility = Facility(type = FacilityType.TOILETS, coordinates = center)
 
-    val facilities: MutableState<List<Facility>?> = mutableStateOf(listOf(testFacility))
+    val listFacility = listOf(testFacility)
+    `when`(facilitiesRepository.getFacilities(any(), any(), any())).then {
+      val onSuccess = it.getArgument<(List<Facility>) -> Unit>(1)
+      onSuccess(listFacility)
+    }
 
     lateinit var mapView: MapView
     lateinit var context: Context
 
     composeTestRule.setContent {
       context = LocalContext.current
-      mapView = runHikeMap(detailedHike2, facilitiesViewModel, facilities)
+      mapView = runHikeMap(detailedHike2, facilitiesViewModel)
     }
     composeTestRule.waitForIdle()
 
@@ -405,7 +408,7 @@ class RunHikeScreenTest {
     while (attempts < maxAttempts) {
       val facilityMarkers =
           mapView.overlays.filterIsInstance<Marker>().filter {
-            it.relatedObject == R.string.facility_marker
+            it.relatedObject == MapUtils.FACILITIES_RELATED_OBJECT_NAME
           }
 
       if (facilityMarkers.isNotEmpty()) {
@@ -434,23 +437,27 @@ class RunHikeScreenTest {
   fun runHike_hidesFacilities_whenZoomLevelIsInsufficient() = runTest {
     setUpSelectedHike(detailedHike3)
 
-    val testFacilities =
-        listOf(Facility(type = FacilityType.TOILETS, coordinates = LatLong(45.9, 7.6)))
+    val bounds = detailedHike2.bounds.toBoundingBox()
+    val center = LatLong(bounds.centerLatitude, bounds.centerLongitude)
+    val testFacility = Facility(type = FacilityType.TOILETS, coordinates = center)
 
-    val facilities: MutableState<List<Facility>?> = mutableStateOf(testFacilities)
+    val listFacility = listOf(testFacility)
+    `when`(facilitiesRepository.getFacilities(any(), any(), any())).then {
+      val onSuccess = it.getArgument<(List<Facility>) -> Unit>(1)
+      onSuccess(listFacility)
+    }
+
     lateinit var mapView: MapView
     val minZoomForFacilities = MIN_ZOOM_FOR_FACILITIES
 
-    composeTestRule.setContent {
-      mapView = runHikeMap(detailedHike3, facilitiesViewModel, facilities)
-    }
+    composeTestRule.setContent { mapView = runHikeMap(detailedHike3, facilitiesViewModel) }
 
     composeTestRule.waitForIdle()
 
     // Verify facilities are hidden at insufficient zoom levels
     val finalMarkers =
         mapView.overlays.filterIsInstance<Marker>().filter {
-          it.relatedObject == R.string.facility_marker
+          it.relatedObject == MapUtils.FACILITIES_RELATED_OBJECT_NAME
         }
 
     assertTrue(
