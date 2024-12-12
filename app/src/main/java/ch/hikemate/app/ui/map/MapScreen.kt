@@ -293,8 +293,8 @@ fun MapScreen(
   val mapView = remember {
     MapView(context).apply {
       // Set map's initial state
-      controller.setZoom(mapInitialValues.mapInitialZoomLevel)
-      controller.setCenter(mapInitialValues.mapInitialCenter)
+      controller.setZoom(hikesViewModel.getMapState().zoom)
+      controller.setCenter(hikesViewModel.getMapState().center)
       // Limit the zoom to avoid the user zooming out or out too much
       minZoomLevel = mapInitialValues.mapMinZoomLevel
       maxZoomLevel = mapInitialValues.mapMaxZoomLevel

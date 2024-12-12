@@ -28,8 +28,19 @@ import ch.hikemate.app.model.route.toBoundingBox
 import ch.hikemate.app.ui.components.BackButton.BACK_BUTTON_TEST_TAG
 import ch.hikemate.app.ui.components.CenteredErrorAction
 import ch.hikemate.app.ui.components.DetailRow
+import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_ADD_DATE_BUTTON
+import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_BOOKMARK_ICON
+import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DATE_PICKER
+import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DATE_PICKER_CANCEL_BUTTON
+import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_DATE_PICKER_CONFIRM_BUTTON
+import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_ELEVATION_GRAPH
+import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_HIKE_NAME
+import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_MAP
+import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_PLANNED_DATE_TEXT_BOX
+import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_RUN_HIKE_BUTTON
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
+import ch.hikemate.app.utils.MapUtils
 import com.google.firebase.Timestamp
 import java.util.Locale
 import kotlin.math.roundToInt
@@ -538,5 +549,20 @@ class HikeDetailScreenTest {
     verify(authRepository).signOut(any())
     verify(mockNavigationActions).navigateTo(Route.AUTH)
     assertNull(authViewModel.currentUser.value)
+  }
+
+  @Test
+  fun hikeDetails_savesMapStateOnGoBack() = runTest {
+    setUpSelectedHike(detailedHike)
+    setUpCompleteScreen()
+
+    composeTestRule.onNodeWithTag(BACK_BUTTON_TEST_TAG).performClick()
+    composeTestRule.waitForIdle()
+
+    val zoomLevel = MapUtils.calculateBestZoomLevel(detailedHike.bounds).toDouble()
+    val center = MapUtils.getGeographicalCenter(detailedHike.bounds)
+    assertEquals(zoomLevel, hikesViewModel.getMapState().zoom, 0.1)
+    assertEquals(center.latitude, hikesViewModel.getMapState().center.latitude, 0.1)
+    assertEquals(center.longitude, hikesViewModel.getMapState().center.longitude, 0.1)
   }
 }

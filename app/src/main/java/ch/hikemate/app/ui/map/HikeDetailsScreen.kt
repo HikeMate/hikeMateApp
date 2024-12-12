@@ -36,6 +36,7 @@ import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -92,6 +93,7 @@ import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
+import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 
@@ -135,9 +137,22 @@ fun HikeDetailScreen(
 
   val selectedHike by hikesViewModel.selectedHike.collectAsState()
 
+  // Gets initialized here so that the LaunchedEffect has access to it. The value is only actually
+  // initialised and used in HikeDetailsContent
+  val mapViewState = remember { mutableStateOf<MapView?>(null) }
+
+  // If the selected hike is null, save the map's state and go back to the map screen
   LaunchedEffect(selectedHike) {
     if (selectedHike == null) {
       Log.e(HikeDetailScreen.LOG_TAG, "No selected hike, going back")
+      if (mapViewState.value != null) {
+        hikesViewModel.setMapState(
+            center =
+                GeoPoint(
+                    mapViewState.value!!.mapCenter.latitude,
+                    mapViewState.value!!.mapCenter.longitude),
+            zoom = mapViewState.value!!.zoomLevelDouble)
+      }
       navigationActions.goBack()
     }
   }
@@ -168,7 +183,8 @@ fun HikeDetailScreen(
         ) { profile ->
           Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {
             // Display the hike's actual information
-            HikeDetailsContent(detailedHike, navigationActions, hikesViewModel, profile.hikingLevel)
+            HikeDetailsContent(
+                detailedHike, mapViewState, navigationActions, hikesViewModel, profile.hikingLevel)
           }
         }
       },
@@ -186,13 +202,14 @@ fun HikeDetailScreen(
 @Composable
 fun HikeDetailsContent(
     hike: DetailedHike,
+    mapViewState: MutableState<MapView?>,
     navigationActions: NavigationActions,
     hikesViewModel: HikesViewModel,
     userHikingLevel: HikingLevel
 ) {
   Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {
     // Display the map and the zoom buttons
-    val mapView = hikeDetailsMap(hike)
+    mapViewState.value = hikeDetailsMap(hike)
 
     // Display the back button on top of the map
     BackButton(
@@ -202,8 +219,8 @@ fun HikeDetailsContent(
 
     // Zoom buttons at the bottom right of the screen
     ZoomMapButton(
-        onZoomIn = { mapView.controller.zoomIn() },
-        onZoomOut = { mapView.controller.zoomOut() },
+        onZoomIn = { mapViewState.value?.controller?.zoomIn() },
+        onZoomOut = { mapViewState.value?.controller?.zoomOut() },
         modifier =
             Modifier.align(Alignment.BottomEnd)
                 .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
