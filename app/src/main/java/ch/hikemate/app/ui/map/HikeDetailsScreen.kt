@@ -115,6 +115,7 @@ object HikeDetailScreen {
   const val TEST_TAG_DATE_PICKER_CANCEL_BUTTON = "HikeDetailDatePickerCancelButton"
   const val TEST_TAG_DATE_PICKER_CONFIRM_BUTTON = "HikeDetailDatePickerConfirmButton"
   const val TEST_TAG_RUN_HIKE_BUTTON = "HikeDetailRunHikeButton"
+  const val TEST_TAG_APPROPRIATENESS_MESSAGE = "HikeDetailAppropriatenessMessage"
 }
 
 @Composable
@@ -214,7 +215,7 @@ fun HikeDetailsContent(
     // Display the back button on top of the map
     BackButton(
         navigationActions = navigationActions,
-        modifier = Modifier.padding(top = 40.dp, start = 16.dp, end = 16.dp).safeDrawingPadding(),
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp).safeDrawingPadding(),
         onClick = { hikesViewModel.unselectHike() })
 
     // Zoom buttons at the bottom right of the screen
@@ -575,6 +576,7 @@ fun AppropriatenessMessage(isSuitable: Boolean) {
         modifier = Modifier.size(16.dp))
     Spacer(modifier = Modifier.width(4.dp))
     Text(
+        modifier = Modifier.testTag(HikeDetailScreen.TEST_TAG_APPROPRIATENESS_MESSAGE),
         text = suitableLabelText,
         style = MaterialTheme.typography.bodySmall,
         color = suitableLabelColor)

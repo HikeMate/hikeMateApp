@@ -1,5 +1,6 @@
 package ch.hikemate.app.ui.map
 
+import android.location.Location
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
@@ -24,7 +25,17 @@ import ch.hikemate.app.model.route.saved.SavedHike
 import ch.hikemate.app.model.route.saved.SavedHikesRepository
 import ch.hikemate.app.ui.components.CenteredErrorAction
 import ch.hikemate.app.ui.components.DetailRow
+import ch.hikemate.app.ui.components.LocationPermissionAlertDialog
 import ch.hikemate.app.ui.navigation.NavigationActions
+import ch.hikemate.app.utils.LocationUtils
+import ch.hikemate.app.utils.MapUtils
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationResult
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.mockkObject
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -38,6 +49,8 @@ import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.overlay.Marker
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class RunHikeScreenTest {
@@ -70,6 +83,7 @@ class RunHikeScreenTest {
       )
 
   /** @param hike The hike to display on the screen. For test purposes, should always be saved. */
+  @OptIn(ExperimentalPermissionsApi::class)
   private suspend fun setupCompleteScreenWithSelected(
       hike: DetailedHike,
       waypointsRetrievalSucceeds: Boolean = true,
@@ -159,145 +173,255 @@ class RunHikeScreenTest {
     }
   }
 
+  @OptIn(ExperimentalPermissionsApi::class)
   @Before
   fun setUp() {
     mockNavigationActions = mock(NavigationActions::class.java)
     savedHikesRepository = mock(SavedHikesRepository::class.java)
     hikesRepository = mock(HikeRoutesRepository::class.java)
     elevationRepository = mock(ElevationRepository::class.java)
+
+    // By default, the user has location permission
+    mockkObject(LocationUtils)
+    every { LocationUtils.hasLocationPermission(any()) } returns true
   }
 
   @Test
-  fun runHikeScreen_displaysError_whenWaypointsRetrievalFails() = runTest {
-    setupCompleteScreenWithSelected(detailedHike, waypointsRetrievalSucceeds = false)
+  fun runHikeScreen_displaysError_whenWaypointsRetrievalFails() =
+      runTest(timeout = 5.seconds) {
+        setupCompleteScreenWithSelected(detailedHike, waypointsRetrievalSucceeds = false)
 
-    // So far, the waypoints retrieval should have happened once
-    verify(hikesRepository, times(1)).getRoutesByIds(any(), any(), any())
+        // So far, the waypoints retrieval should have happened once
+        verify(hikesRepository, times(1)).getRoutesByIds(any(), any(), any())
 
-    // An error message should be displayed to the user, along with a go back action
-    composeTestRule.onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_MESSAGE)
-    composeTestRule
-        .onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_BUTTON)
-        .assertIsDisplayed()
-        .assertHasClickAction()
-        .performClick()
+        // An error message should be displayed to the user, along with a go back action
+        composeTestRule.onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_MESSAGE)
+        composeTestRule
+            .onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_BUTTON)
+            .assertIsDisplayed()
+            .assertHasClickAction()
+            .performClick()
 
-    // Clicking the button should trigger going back with the navigation
-    verify(mockNavigationActions, times(1)).goBack()
-  }
+        // Clicking the button should trigger going back with the navigation
+        verify(mockNavigationActions, times(1)).goBack()
+      }
 
   @Test
-  fun runHikeScreen_displaysError_whenElevationRetrievalFails() = runTest {
-    setupCompleteScreenWithSelected(detailedHike, elevationRetrievalSucceeds = false)
+  fun runHikeScreen_displaysError_whenElevationRetrievalFails() =
+      runTest(timeout = 5.seconds) {
+        setupCompleteScreenWithSelected(detailedHike, elevationRetrievalSucceeds = false)
 
-    // So far, the elevation retrieval should have happened once
-    verify(elevationRepository, times(1)).getElevation(any(), any(), any())
+        // So far, the elevation retrieval should have happened once
+        verify(elevationRepository, times(1)).getElevation(any(), any(), any())
 
-    // An error message should be displayed to the user, along with a retry action
-    composeTestRule.onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_MESSAGE)
-    composeTestRule
-        .onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_BUTTON)
-        .assertIsDisplayed()
-        .assertHasClickAction()
-        .performClick()
+        // An error message should be displayed to the user, along with a retry action
+        composeTestRule.onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_MESSAGE)
+        composeTestRule
+            .onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_BUTTON)
+            .assertIsDisplayed()
+            .assertHasClickAction()
+            .performClick()
 
-    // Clicking the button should trigger a retry of the elevation retrieval
-    verify(elevationRepository, times(2)).getElevation(any(), any(), any())
-  }
+        // Clicking the button should trigger a retry of the elevation retrieval
+        verify(elevationRepository, times(2)).getElevation(any(), any(), any())
+      }
 
   @OptIn(ExperimentalTestApi::class)
   @Test
-  fun runHikeScreen_loadsMissingData() = runTest {
-    setupCompleteScreenWithSelected(detailedHike, alreadyLoadData = false)
+  fun runHikeScreen_loadsMissingData() =
+      runTest(timeout = 5.seconds) {
+        setupCompleteScreenWithSelected(detailedHike, alreadyLoadData = false)
 
-    composeTestRule.waitUntilExactlyOneExists(
-        hasTestTag(RunHikeScreen.TEST_TAG_MAP), timeoutMillis = 10000)
+        composeTestRule.waitUntilExactlyOneExists(
+            hasTestTag(RunHikeScreen.TEST_TAG_MAP), timeoutMillis = 10000)
 
-    verify(hikesRepository).getRoutesByIds(any(), any(), any())
-    verify(elevationRepository).getElevation(any(), any(), any())
-  }
-
-  @Test
-  fun runHikeScreen_displaysMap() = runTest {
-    setupCompleteScreenWithSelected(detailedHike)
-    composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_MAP).assertIsDisplayed()
-  }
+        verify(hikesRepository).getRoutesByIds(any(), any(), any())
+        verify(elevationRepository).getElevation(any(), any(), any())
+      }
 
   @Test
-  fun runHikeScreen_displaysBackButton() = runTest {
-    setupCompleteScreenWithSelected(detailedHike)
-    composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_BACK_BUTTON).assertIsDisplayed()
-  }
+  fun runHikeScreen_displaysMap() =
+      runTest(timeout = 5.seconds) {
+        setupCompleteScreenWithSelected(detailedHike)
+        composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_MAP).assertIsDisplayed()
+      }
 
   @Test
-  fun runHikeScreen_displaysZoomButtons() = runTest {
-    setupCompleteScreenWithSelected(detailedHike)
-    composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_ZOOM_BUTTONS).assertIsDisplayed()
-  }
+  fun runHikeScreen_displaysBackButton() =
+      runTest(timeout = 5.seconds) {
+        setupCompleteScreenWithSelected(detailedHike)
+        composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_BACK_BUTTON).assertIsDisplayed()
+      }
 
   @Test
-  fun runHikeScreen_displaysBottomSheet() = runTest {
-    setupCompleteScreenWithSelected(detailedHike)
-    composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_BOTTOM_SHEET).assertExists()
-  }
+  fun runHikeScreen_displaysZoomButtons() =
+      runTest(timeout = 5.seconds) {
+        setupCompleteScreenWithSelected(detailedHike)
+        composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_ZOOM_BUTTONS).assertIsDisplayed()
+      }
+
+  @Test
+  fun runHikeScreen_displaysBottomSheet() =
+      runTest(timeout = 5.seconds) {
+        setupCompleteScreenWithSelected(detailedHike)
+        composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_BOTTOM_SHEET).assertExists()
+      }
 
   /** Test all details which do not change during the hike run. */
   @Test
-  fun runHikeScreen_displaysStaticDetails() = runTest {
-    setupCompleteScreenWithSelected(detailedHike)
+  fun runHikeScreen_displaysStaticDetails() =
+      runTest(timeout = 5.seconds) {
+        setupCompleteScreenWithSelected(detailedHike)
 
-    composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_HIKE_NAME).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_HIKE_NAME).assertIsDisplayed()
 
-    composeTestRule.onAllNodesWithTag(DetailRow.TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(4)
-    composeTestRule.onAllNodesWithTag(DetailRow.TEST_TAG_DETAIL_ROW_VALUE).assertCountEquals(4)
+        composeTestRule.onAllNodesWithTag(DetailRow.TEST_TAG_DETAIL_ROW_TAG).assertCountEquals(4)
+        composeTestRule.onAllNodesWithTag(DetailRow.TEST_TAG_DETAIL_ROW_VALUE).assertCountEquals(4)
 
-    // TODO: THIS IS NOT LOCALE FRIENDLY
-    composeTestRule
-        .onNodeWithTag(RunHikeScreen.TEST_TAG_TOTAL_DISTANCE_TEXT)
-        .assertIsDisplayed()
-        .assert(hasText("13.54km"))
-  }
-
-  @Test
-  fun runHikeScreen_displaysElevationGraph() = runTest {
-    setupCompleteScreenWithSelected(detailedHike)
-
-    composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_ELEVATION_GRAPH).assertIsDisplayed()
-  }
+        // TODO: THIS IS NOT LOCALE FRIENDLY
+        composeTestRule
+            .onNodeWithTag(RunHikeScreen.TEST_TAG_TOTAL_DISTANCE_TEXT)
+            .assertIsDisplayed()
+            .assert(hasText("13.54km"))
+      }
 
   @Test
-  fun runHikeScreen_displaysStopHikeButton() = runTest {
-    setupCompleteScreenWithSelected(detailedHike)
+  fun runHikeScreen_displaysElevationGraph() =
+      runTest(timeout = 5.seconds) {
+        setupCompleteScreenWithSelected(detailedHike)
 
-    composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_STOP_HIKE_BUTTON).assertIsDisplayed()
-  }
+        composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_ELEVATION_GRAPH).assertIsDisplayed()
+      }
 
   @Test
-  fun runHikeScreen_stopHikeButton_navigatesBack() = runTest {
-    setupCompleteScreenWithSelected(detailedHike)
-    doNothing().`when`(mockNavigationActions).goBack()
+  fun runHikeScreen_displaysStopHikeButton() =
+      runTest(timeout = 5.seconds) {
+        setupCompleteScreenWithSelected(detailedHike)
 
-    composeTestRule
-        .onNodeWithTag(RunHikeScreen.TEST_TAG_STOP_HIKE_BUTTON)
-        .assertIsDisplayed()
-        .performClick()
+        composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_STOP_HIKE_BUTTON).assertIsDisplayed()
+      }
 
-    composeTestRule.waitForIdle()
+  @Test
+  fun runHikeScreen_stopHikeButton_navigatesBack() =
+      runTest(timeout = 5.seconds) {
+        setupCompleteScreenWithSelected(detailedHike)
+        doNothing().`when`(mockNavigationActions).goBack()
 
-    verify(mockNavigationActions).goBack()
-  }
+        composeTestRule
+            .onNodeWithTag(RunHikeScreen.TEST_TAG_STOP_HIKE_BUTTON)
+            .assertIsDisplayed()
+            .performClick()
+
+        composeTestRule.waitForIdle()
+
+        verify(mockNavigationActions).goBack()
+      }
 
   /**
    * TODO This test just tests the static hard-coded value for now, but should be updated as soon as
    * the screen is implemented to display the actual progress indicator.
    */
   @Test
-  fun runHikeScreen_displaysProgressIndicator() = runTest {
-    setupCompleteScreenWithSelected(detailedHike)
+  fun runHikeScreen_displaysProgressIndicator() =
+      runTest(timeout = 5.seconds) {
+        setupCompleteScreenWithSelected(detailedHike)
 
-    composeTestRule
-        .onNodeWithTag(RunHikeScreen.TEST_TAG_PROGRESS_TEXT)
-        .assertIsDisplayed()
-        .assert(hasText("23% complete"))
-  }
+        composeTestRule
+            .onNodeWithTag(RunHikeScreen.TEST_TAG_PROGRESS_TEXT)
+            .assertIsDisplayed()
+            .assert(hasText("23% complete"))
+      }
+
+  @OptIn(ExperimentalPermissionsApi::class)
+  @Test
+  fun runHikeScreen_clickingOnCenterButtonWithPermissionCentersMapOnLocation() =
+      runTest(timeout = 5.seconds) {
+        // Given
+        mockkObject(MapUtils)
+        every { MapUtils.centerMapOnLocation(any(), any(), any()) } returns Unit
+
+        setupCompleteScreenWithSelected(detailedHike)
+
+        // When
+        composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_CENTER_MAP_BUTTON).performClick()
+
+        // Then
+        io.mockk.verify { MapUtils.centerMapOnLocation(any(), any(), any()) }
+      }
+
+  @OptIn(ExperimentalPermissionsApi::class)
+  @Test
+  fun runHikeScreen_permissionIsAskedOnScreenLoad() =
+      runTest(timeout = 5.seconds) {
+        // Given the user did not grant location permission to the app
+        every { LocationUtils.hasLocationPermission(any()) } returns false
+
+        setupCompleteScreenWithSelected(detailedHike)
+
+        // Then an alert will be shown to ask for the permission
+        composeTestRule
+            .onNodeWithTag(LocationPermissionAlertDialog.TEST_TAG_LOCATION_PERMISSION_ALERT)
+            .assertIsDisplayed()
+      }
+
+  @OptIn(ExperimentalPermissionsApi::class)
+  @Test
+  fun runHikeScreen_goesBackToPreviousScreenWhenRefusing() =
+      runTest(timeout = 5.seconds) {
+        // Given the user did not grant location permission to the app
+        every { LocationUtils.hasLocationPermission(any()) } returns false
+
+        setupCompleteScreenWithSelected(detailedHike)
+
+        // Then an alert will be shown to ask for the permission
+        composeTestRule
+            .onNodeWithTag(LocationPermissionAlertDialog.TEST_TAG_LOCATION_PERMISSION_ALERT)
+            .assertIsDisplayed()
+
+        // When the user clicks on the "No thanks" button
+        composeTestRule
+            .onNodeWithTag(LocationPermissionAlertDialog.TEST_TAG_NO_THANKS_ALERT_BUTTON)
+            .performClick()
+
+        composeTestRule.waitForIdle()
+
+        verify(mockNavigationActions).goBack()
+      }
+
+  @OptIn(ExperimentalPermissionsApi::class)
+  @Test
+  fun runHikeScreen_locationIsUpdated() =
+      runTest(timeout = 5.seconds) {
+        val userLocation =
+            Location("").let {
+              it.latitude = 45.9
+              it.longitude = 7.6
+              it
+            }
+
+        val marker = mockk<Marker>()
+        every { marker.position } returns GeoPoint(userLocation.latitude, userLocation.longitude)
+
+        // Given the user did not grant location permission to the app
+        mockkObject(MapUtils)
+        every {
+          LocationUtils.onLocationPermissionsUpdated(any(), any(), any(), any(), any(), any())
+        } answers
+            {
+              val locationCallback = it.invocation.args[3] as LocationCallback
+              locationCallback.onLocationResult(LocationResult.create(listOf(userLocation)))
+            }
+
+        setupCompleteScreenWithSelected(detailedHike)
+
+        io.mockk.verify {
+          MapUtils.centerMapOnLocation(
+              any(),
+              any(),
+              match {
+                it.position.latitude == userLocation.latitude &&
+                    it.position.longitude == userLocation.longitude
+              })
+        }
+      }
 }
