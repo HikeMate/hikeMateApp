@@ -18,7 +18,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -37,8 +36,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import ch.hikemate.app.R
 import ch.hikemate.app.model.facilities.FacilitiesViewModel
-import ch.hikemate.app.model.facilities.Facility
-import ch.hikemate.app.model.route.Bounds
 import ch.hikemate.app.model.route.DetailedHike
 import ch.hikemate.app.model.route.HikesViewModel
 import ch.hikemate.app.ui.components.BackButton
@@ -59,9 +56,6 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
-import org.osmdroid.events.MapListener
-import org.osmdroid.events.ScrollEvent
-import org.osmdroid.events.ZoomEvent
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 
@@ -119,27 +113,10 @@ private fun RunHikeContent(
     navigationActions: NavigationActions,
     facilitiesViewModel: FacilitiesViewModel
 ) {
+
+  LaunchedEffect(Unit) { facilitiesViewModel.fetchFacilitiesForHike(hike) }
+
   // Avoids the app crashing when spamming the back button
-
-  val facilities = remember { mutableStateOf<List<Facility>?>(null) }
-
-  LaunchedEffect(Unit) {
-    // This is calculated so that elements that are near but not contained into the bounds of
-    // a
-    // Hike
-    // are still displayed this is actually a very common occurrence.
-    val boundsWithMargin =
-        Bounds(
-            hike.bounds.minLat - HikeDetailScreen.MARGIN_BOUNDS,
-            hike.bounds.minLon - HikeDetailScreen.MARGIN_BOUNDS,
-            hike.bounds.maxLat + HikeDetailScreen.MARGIN_BOUNDS,
-            hike.bounds.maxLon + HikeDetailScreen.MARGIN_BOUNDS)
-    // Get all the facilities within the bounds.
-    facilitiesViewModel.getFacilities(
-        boundsWithMargin,
-        { facilities.value = it },
-        { Log.e(HikeDetailScreen.LOG_TAG, "Error while getting facilities: $it") })
-  }
   var wantToNavigateBack by remember { mutableStateOf(false) }
   LaunchedEffect(wantToNavigateBack) {
     if (wantToNavigateBack) {
@@ -150,7 +127,7 @@ private fun RunHikeContent(
 
   Box(modifier = Modifier.fillMaxSize().testTag(Screen.RUN_HIKE)) {
     // Display the map
-    val mapView = runHikeMap(hike, facilitiesViewModel, facilities)
+    val mapView = runHikeMap(hike, facilitiesViewModel)
 
     // Back Button at the top of the screen
     BackButton(
@@ -175,11 +152,7 @@ private fun RunHikeContent(
 }
 
 @Composable
-fun runHikeMap(
-    hike: DetailedHike,
-    facilitiesViewModel: FacilitiesViewModel,
-    facilities: MutableState<List<Facility>?>
-): MapView {
+fun runHikeMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel): MapView {
   val context = LocalContext.current
   val routeZoomLevel = MapUtils.calculateBestZoomLevel(hike.bounds).toDouble()
   val hikeCenter = MapUtils.getGeographicalCenter(hike.bounds)
@@ -208,30 +181,7 @@ fun runHikeMap(
   val boundingBoxState = remember { MutableStateFlow(mapView.boundingBox) }
   val zoomLevelState = remember { MutableStateFlow(mapView.zoomLevelDouble) }
 
-  // Update the map listener to just update the StateFlows
-  mapView.addMapListener(
-      object : MapListener {
-        override fun onScroll(event: ScrollEvent?): Boolean {
-          // On a Scroll event the boundingBox will change
-          event?.let {
-            val newBoundingBox = mapView.boundingBox
-            if (newBoundingBox != boundingBoxState.value) {
-              boundingBoxState.value = newBoundingBox
-            }
-          }
-          return true
-        }
-
-        override fun onZoom(event: ZoomEvent?): Boolean {
-          event?.let {
-            val newZoomLevel = mapView.zoomLevelDouble
-            if (newZoomLevel != zoomLevelState.value) {
-              zoomLevelState.value = newZoomLevel
-            }
-          }
-          return true
-        }
-      })
+  MapUtils.setMapViewListenerForStates(mapView, boundingBoxState, zoomLevelState)
 
   LaunchedEffect(Unit) {
 
@@ -250,7 +200,6 @@ fun runHikeMap(
         // Only proceed if the map is still valid
         if (mapView.repository != null) {
           facilitiesViewModel.filterFacilitiesForDisplay(
-              facilities.value ?: emptyList(),
               bounds = boundingBox,
               zoomLevel = zoomLevel,
               hikeRoute = hike,
@@ -296,7 +245,6 @@ fun runHikeMap(
     // This is useful for the first composition since there won't be any zoom or scroll events at
     // first so the hike displays the possible facilities from the get go.
     facilitiesViewModel.filterFacilitiesForDisplay(
-        facilities.value ?: emptyList(),
         bounds = boundingBoxState.value,
         zoomLevel = zoomLevelState.value,
         hikeRoute = hike,

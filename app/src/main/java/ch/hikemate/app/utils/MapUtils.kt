@@ -8,14 +8,19 @@ import android.location.Location
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.content.res.AppCompatResources
-import androidx.core.content.ContextCompat
 import ch.hikemate.app.R
 import ch.hikemate.app.model.facilities.Facility
-import ch.hikemate.app.model.facilities.FacilityType
+import ch.hikemate.app.model.facilities.FacilityType.Companion.mapFacilityTypeToDrawable
 import ch.hikemate.app.model.route.Bounds
 import ch.hikemate.app.model.route.LatLong
 import ch.hikemate.app.ui.map.MapScreen
 import kotlin.math.cos
+import kotlin.math.max
+import kotlinx.coroutines.flow.MutableStateFlow
+import org.osmdroid.events.MapListener
+import org.osmdroid.events.ScrollEvent
+import org.osmdroid.events.ZoomEvent
+import org.osmdroid.util.BoundingBox
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
@@ -24,6 +29,7 @@ import org.osmdroid.views.overlay.Polyline
 object MapUtils {
   private const val LOG_TAG = "MapUtils"
   const val MIN_DISTANCE_BETWEEN_FACILITIES = 15
+  const val FACILITIES_RELATED_OBJECT_NAME = "facility_marker"
 
   /**
    * Shows a hike on the map.
@@ -282,21 +288,7 @@ object MapUtils {
 
     facilities.forEach { facility ->
       // Get the drawable corresponding to the facility type
-      val drawable =
-          when (facility.type) {
-            FacilityType.TOILETS -> ContextCompat.getDrawable(context, R.drawable.toilets)
-            FacilityType.PARKING -> ContextCompat.getDrawable(context, R.drawable.parking)
-            FacilityType.WASTE_BASKET -> ContextCompat.getDrawable(context, R.drawable.waste_basket)
-            FacilityType.SUPERMARKET -> ContextCompat.getDrawable(context, R.drawable.supermarket)
-            FacilityType.DRINKING_WATER ->
-                ContextCompat.getDrawable(context, R.drawable.drinking_water)
-            FacilityType.RANGER_STATION ->
-                ContextCompat.getDrawable(context, R.drawable.ranger_station)
-            FacilityType.BBQ -> ContextCompat.getDrawable(context, R.drawable.bbq)
-            FacilityType.RESTAURANT -> ContextCompat.getDrawable(context, R.drawable.restaurant)
-            FacilityType.BIERGARTEN -> ContextCompat.getDrawable(context, R.drawable.biergarten)
-            FacilityType.BENCH -> ContextCompat.getDrawable(context, R.drawable.bench)
-          }
+      val drawable = facility.type.mapFacilityTypeToDrawable(context)
 
       // Draw the marker in the Map
       drawable?.let {
@@ -315,7 +307,7 @@ object MapUtils {
             setOnMarkerClickListener { _, _ -> true }
             // The relatedObject makes it easier for them to be all removed at once
             // and enables the possibility of not constantly storing them in memory.
-            relatedObject = R.string.facility_marker
+            relatedObject = FACILITIES_RELATED_OBJECT_NAME
             mapView.overlays.add(this)
           }
         }
@@ -333,10 +325,49 @@ object MapUtils {
   fun clearFacilities(mapView: MapView) {
     mapView.overlays.removeAll { overlay ->
       // The relatedObject was defined in displayFacilities for easier removal of the markers.
-      overlay is Marker && overlay.relatedObject == R.string.facility_marker
+      overlay is Marker && overlay.relatedObject == FACILITIES_RELATED_OBJECT_NAME
     }
 
     // Trigger the map to be drawn again
     mapView.invalidate()
+  }
+
+  /**
+   * Utility function designed to set the mapView listener which updates the state of the
+   * BoundingBox and the ZoomLevel
+   *
+   * @param mapView
+   * @param boundingBoxState
+   * @param zoomLevelState
+   */
+  fun setMapViewListenerForStates(
+      mapView: MapView,
+      boundingBoxState: MutableStateFlow<BoundingBox>,
+      zoomLevelState: MutableStateFlow<Double>
+  ) {
+    // Update the map listener to just update the StateFlows
+    mapView.addMapListener(
+        object : MapListener {
+          override fun onScroll(event: ScrollEvent?): Boolean {
+            // On a Scroll event the boundingBox will change
+            event?.let {
+              val newBoundingBox = mapView.boundingBox
+              if (newBoundingBox != boundingBoxState.value) {
+                boundingBoxState.value = newBoundingBox
+              }
+            }
+            return true
+          }
+
+          override fun onZoom(event: ZoomEvent?): Boolean {
+            event?.let {
+              val newZoomLevel = mapView.zoomLevelDouble
+              if (newZoomLevel != zoomLevelState.value) {
+                zoomLevelState.value = newZoomLevel
+              }
+            }
+            return true
+          }
+        })
   }
 }

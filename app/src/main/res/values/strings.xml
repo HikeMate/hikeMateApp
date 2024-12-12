@@ -228,8 +228,6 @@
     <!-- Error handling -->
     <string name="retry">Retry</string>
 
-    <!-- Map Utils -->
-    <string name="facility_marker">facility_marker</string>
 
     <string name="delete_account_button_label">Delete Account</string>
     <string name="google_account_created_confirmation">Connected Google Account to your device successfully. Please wait while we retry the signup.</string>

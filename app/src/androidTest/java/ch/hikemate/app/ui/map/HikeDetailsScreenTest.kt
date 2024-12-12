@@ -39,6 +39,7 @@ import ch.hikemate.app.ui.components.BackButton.BACK_BUTTON_TEST_TAG
 import ch.hikemate.app.ui.components.CenteredErrorAction
 import ch.hikemate.app.ui.components.DetailRow
 import ch.hikemate.app.ui.navigation.NavigationActions
+import ch.hikemate.app.utils.MapUtils
 import com.google.firebase.Timestamp
 import java.util.Locale
 import kotlin.math.roundToInt
@@ -98,6 +99,7 @@ class HikeDetailScreenTest {
           estimatedTime = 169.3169307105514,
           difficulty = HikeDifficulty.DIFFICULT,
       )
+  // Waypoints closer to each other
   private val detailedHike2 =
       DetailedHike(
           id = hikeId,
@@ -116,6 +118,7 @@ class HikeDetailScreenTest {
           difficulty = HikeDifficulty.DIFFICULT,
       )
 
+  // Bigger bounds
   private val detailedHike3 =
       DetailedHike(
           id = hikeId,
@@ -272,9 +275,7 @@ class HikeDetailScreenTest {
     authRepository = mock(AuthRepository::class.java)
     authViewModel = AuthViewModel(authRepository, profileRepository)
     hikesRepository = mock(HikeRoutesRepository::class.java)
-
     elevationRepository = mock(ElevationRepository::class.java)
-
     mockSavedHikesRepository = mock(SavedHikesRepository::class.java)
     facilitiesRepository = mock(FacilitiesRepository::class.java)
     facilitiesViewModel = FacilitiesViewModel(facilitiesRepository)
@@ -608,7 +609,7 @@ class HikeDetailScreenTest {
 
     composeTestRule.setContent {
       context = LocalContext.current
-      mapView = hikeDetailsMap(detailedHike2, facilitiesViewModel, facilities)
+      mapView = hikeDetailsMap(detailedHike2, facilitiesViewModel)
     }
     composeTestRule.waitForIdle()
 
@@ -621,7 +622,7 @@ class HikeDetailScreenTest {
     while (attempts < maxAttempts) {
       val facilityMarkers =
           mapView.overlays.filterIsInstance<Marker>().filter {
-            it.relatedObject == R.string.facility_marker
+            it.relatedObject == MapUtils.FACILITIES_RELATED_OBJECT_NAME
           }
 
       if (facilityMarkers.isNotEmpty()) {
@@ -650,24 +651,17 @@ class HikeDetailScreenTest {
   fun hikeDetails_hidesFacilities_whenZoomLevelIsInsufficient() = runTest {
     setUpSelectedHike(detailedHike3)
 
-    val testFacilities =
-        listOf(Facility(type = FacilityType.TOILETS, coordinates = LatLong(45.9, 7.6)))
-
-    val facilities: MutableState<List<Facility>?> = mutableStateOf(testFacilities)
     lateinit var mapView: MapView
-    val minZoomForFacilities = MIN_ZOOM_FOR_FACILITIES
+    val minZoomForFacilities = FacilitiesViewModel.MIN_ZOOM_FOR_FACILITIES
 
-    composeTestRule.setContent {
-      mapView = hikeDetailsMap(detailedHike3, facilitiesViewModel, facilities)
-    }
+    composeTestRule.setContent { mapView = hikeDetailsMap(detailedHike3, facilitiesViewModel) }
 
     composeTestRule.waitForIdle()
-    Thread.sleep(3000)
 
     // Verify facilities are hidden at insufficient zoom levels
     val finalMarkers =
         mapView.overlays.filterIsInstance<Marker>().filter {
-          it.relatedObject == R.string.facility_marker
+          it.relatedObject == MapUtils.FACILITIES_RELATED_OBJECT_NAME
         }
 
     assertTrue(
@@ -677,7 +671,7 @@ class HikeDetailScreenTest {
   }
 
   // Helper function to compare drawables
-  private fun areSameDrawable(drawable1: Drawable?, drawable2: Drawable?): Boolean {
+  fun areSameDrawable(drawable1: Drawable?, drawable2: Drawable?): Boolean {
     if (drawable1 == null || drawable2 == null) return false
 
     // Convert both drawables to bitmap for comparison

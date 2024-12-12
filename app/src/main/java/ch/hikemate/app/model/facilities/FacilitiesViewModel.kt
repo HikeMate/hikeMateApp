@@ -1,6 +1,8 @@
 package ch.hikemate.app.model.facilities
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import ch.hikemate.app.model.route.Bounds
 import ch.hikemate.app.model.route.DetailedHike
@@ -8,8 +10,11 @@ import ch.hikemate.app.model.route.LatLong
 import ch.hikemate.app.utils.LocationUtils
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
 import org.osmdroid.util.BoundingBox
 import org.osmdroid.util.GeoPoint
 
@@ -19,6 +24,19 @@ class FacilitiesViewModel(
 ) : ViewModel() {
 
   companion object {
+    val Factory: ViewModelProvider.Factory =
+        object : ViewModelProvider.Factory {
+          @Suppress("UNCHECKED_CAST")
+          override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            val facilitiesRepository = FacilitiesRepositoryOverpass(OkHttpClient())
+            return FacilitiesViewModel(
+                facilitiesRepository,
+            )
+                as T
+          }
+        }
+    const val LOG_TAG = "FacilitiesViewModel"
+    const val MARGIN_BOUNDS = 0.001
     const val MIN_ZOOM_FOR_FACILITIES = 13.0
     const val MAX_DISTANCE_FROM_CENTER_BOUNDS_TO_ROUTE = 3000
     val MAX_FACILITIES_PER_ZOOM =
@@ -31,6 +49,9 @@ class FacilitiesViewModel(
   }
 
   private val _cache = mutableMapOf<Bounds, List<Facility>>()
+
+  private val _facilities = MutableStateFlow<List<Facility>?>(null)
+  val facilities = _facilities.asStateFlow()
   /**
    * Filters facilities for display based on the current map view state and zoom level. The function
    * performs several checks to determine which facilities should be displayed:
@@ -41,7 +62,6 @@ class FacilitiesViewModel(
    * The function uses lazy evaluation through sequences to efficiently process facilities, stopping
    * as soon as the maximum number of facilities for the current zoom level is reached.
    *
-   * @param facilities List of all available facilities to filter
    * @param bounds The current visible bounds of the map view
    * @param zoomLevel The current zoom level of the map
    * @param hikeRoute The detailed hike route being displayed
@@ -50,7 +70,6 @@ class FacilitiesViewModel(
    *   current state
    */
   fun filterFacilitiesForDisplay(
-      facilities: List<Facility>,
       bounds: BoundingBox,
       zoomLevel: Double,
       hikeRoute: DetailedHike,
@@ -58,6 +77,11 @@ class FacilitiesViewModel(
       onNoFacilitiesForState: () -> Unit
   ) {
     viewModelScope.launch(dispatcher) {
+      if (facilities.value == null) {
+        Log.e(LOG_TAG, "Facilities are null cannot filter them")
+        return@launch
+      }
+      val facilities = facilities.value!!
       // 1. Early returns for invalid states
       if (!isValidZoomAndBounds(zoomLevel, bounds, hikeRoute)) {
         onNoFacilitiesForState()
@@ -183,5 +207,30 @@ class FacilitiesViewModel(
       onFailure: (Exception) -> Unit
   ) {
     viewModelScope.launch { getFacilitiesAsync(bounds, onSuccess, onFailure) }
+  }
+
+  /**
+   * Get all of the facilities encompassed by a hike.
+   *
+   * @param hike
+   * @param onSuccess
+   * @param onFailure
+   */
+  fun fetchFacilitiesForHike(hike: DetailedHike) {
+    viewModelScope.launch {
+      // This is calculated so that elements that are near but not contained into the bounds of
+      // a Hike are still displayed. This is actually a very common occurrence.
+      val boundsWithMargin =
+          Bounds(
+              hike.bounds.minLat - MARGIN_BOUNDS,
+              hike.bounds.minLon - MARGIN_BOUNDS,
+              hike.bounds.maxLat + MARGIN_BOUNDS,
+              hike.bounds.maxLon + MARGIN_BOUNDS)
+      // Get all the facilities within the bounds.
+      getFacilities(
+          boundsWithMargin,
+          { _facilities.value = it },
+          { Log.e(LOG_TAG, "Error while getting facilities for hike: $it") })
+    }
   }
 }

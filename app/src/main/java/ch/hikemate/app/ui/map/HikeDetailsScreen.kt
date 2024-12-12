@@ -36,7 +36,6 @@ import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -59,10 +58,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.hikemate.app.R
 import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.model.facilities.FacilitiesViewModel
-import ch.hikemate.app.model.facilities.Facility
 import ch.hikemate.app.model.profile.HikingLevel
 import ch.hikemate.app.model.profile.ProfileViewModel
-import ch.hikemate.app.model.route.Bounds
 import ch.hikemate.app.model.route.DetailedHike
 import ch.hikemate.app.model.route.HikesViewModel
 import ch.hikemate.app.ui.components.AsyncStateHandler
@@ -100,9 +97,6 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
-import org.osmdroid.events.MapListener
-import org.osmdroid.events.ScrollEvent
-import org.osmdroid.events.ZoomEvent
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 
@@ -148,7 +142,6 @@ fun HikeDetailScreen(
     hikesViewModel.refreshSavedHikesCache()
   }
   val selectedHike by hikesViewModel.selectedHike.collectAsState()
-  val facilities = remember { mutableStateOf<List<Facility>?>(null) }
 
   LaunchedEffect(selectedHike) {
     if (selectedHike == null) {
@@ -171,23 +164,9 @@ fun HikeDetailScreen(
       withDetailedHike = { detailedHike ->
         val errorMessageIdState = profileViewModel.errorMessageId.collectAsState()
         val profileState = profileViewModel.profile.collectAsState()
-        LaunchedEffect(Unit) {
-          // This is calculated so that elements that are near but not contained into the bounds of
-          // a
-          // Hike
-          // are still displayed this is actually a very common occurrence.
-          val boundsWithMargin =
-              Bounds(
-                  detailedHike.bounds.minLat - HikeDetailScreen.MARGIN_BOUNDS,
-                  detailedHike.bounds.minLon - HikeDetailScreen.MARGIN_BOUNDS,
-                  detailedHike.bounds.maxLat + HikeDetailScreen.MARGIN_BOUNDS,
-                  detailedHike.bounds.maxLon + HikeDetailScreen.MARGIN_BOUNDS)
-          // Get all the facilities within the bounds.
-          facilitiesViewModel.getFacilities(
-              boundsWithMargin,
-              { facilities.value = it },
-              { Log.e(HikeDetailScreen.LOG_TAG, "Error while getting facilities: $it") })
-        }
+
+        LaunchedEffect(Unit) { facilitiesViewModel.fetchFacilitiesForHike(detailedHike) }
+
         AsyncStateHandler(
             errorMessageIdState = errorMessageIdState,
             actionContentDescriptionStringId = R.string.go_back,
@@ -202,8 +181,7 @@ fun HikeDetailScreen(
                 navigationActions,
                 hikesViewModel,
                 profile.hikingLevel,
-                facilitiesViewModel,
-                facilities)
+                facilitiesViewModel)
           }
         }
       },
@@ -224,13 +202,12 @@ fun HikeDetailsContent(
     navigationActions: NavigationActions,
     hikesViewModel: HikesViewModel,
     userHikingLevel: HikingLevel,
-    facilitiesViewModel: FacilitiesViewModel,
-    facilities: MutableState<List<Facility>?>
+    facilitiesViewModel: FacilitiesViewModel
 ) {
 
   Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {
     // Display the map and the zoom buttons
-    val mapView = hikeDetailsMap(hike, facilitiesViewModel, facilities)
+    val mapView = hikeDetailsMap(hike, facilitiesViewModel)
 
     // Display the back button on top of the map
     BackButton(
@@ -261,11 +238,7 @@ fun HikeDetailsContent(
 }
 
 @Composable
-fun hikeDetailsMap(
-    hike: DetailedHike,
-    facilitiesViewModel: FacilitiesViewModel,
-    facilities: MutableState<List<Facility>?>
-): MapView {
+fun hikeDetailsMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel): MapView {
   val context = LocalContext.current
   val hikeZoomLevel = MapUtils.calculateBestZoomLevel(hike.bounds).toDouble()
   val hikeCenter = MapUtils.getGeographicalCenter(hike.bounds)
@@ -296,31 +269,7 @@ fun hikeDetailsMap(
   val boundingBoxState = remember { MutableStateFlow(mapView.boundingBox) }
   val zoomLevelState = remember { MutableStateFlow(mapView.zoomLevelDouble) }
 
-  // Update the map listener to just update the StateFlows
-  mapView.addMapListener(
-      object : MapListener {
-        override fun onScroll(event: ScrollEvent?): Boolean {
-          // On a Scroll event the boundingBox will change
-          event?.let {
-            val newBoundingBox = mapView.boundingBox
-            if (newBoundingBox != boundingBoxState.value) {
-              boundingBoxState.value = newBoundingBox
-            }
-          }
-          return true
-        }
-
-        override fun onZoom(event: ZoomEvent?): Boolean {
-          event?.let {
-            val newZoomLevel = mapView.zoomLevelDouble
-            if (newZoomLevel != zoomLevelState.value) {
-              zoomLevelState.value = newZoomLevel
-            }
-          }
-          return true
-        }
-      })
-
+  MapUtils.setMapViewListenerForStates(mapView, boundingBoxState, zoomLevelState)
   LaunchedEffect(Unit) {
 
     // Create our combined flow
@@ -338,7 +287,6 @@ fun hikeDetailsMap(
         // Only proceed if the map is still valid
         if (mapView.repository != null) {
           facilitiesViewModel.filterFacilitiesForDisplay(
-              facilities.value ?: emptyList(),
               bounds = boundingBox,
               zoomLevel = zoomLevel,
               hikeRoute = hike,
@@ -358,12 +306,10 @@ fun hikeDetailsMap(
               })
         }
       }
-    } catch (e: CancellationException) {
-      // Rethrow cancellation exceptions to allow proper coroutine cancellation
-      throw e
     } catch (e: Exception) {
       // Log other exceptions but don't crash
-      Log.e(HikeDetailScreen.LOG_TAG, "Error in facility updates flow", e)
+      if (e !== CancellationException())
+          Log.e(HikeDetailScreen.LOG_TAG, "Error in facility updates flow", e)
     }
   }
 
@@ -384,7 +330,6 @@ fun hikeDetailsMap(
     // This is useful for the first composition since there won't be any zoom or scroll events at
     // first so the hike displays the possible facilities from the get go.
     facilitiesViewModel.filterFacilitiesForDisplay(
-        facilities.value ?: emptyList(),
         bounds = boundingBoxState.value,
         zoomLevel = zoomLevelState.value,
         hikeRoute = hike,
@@ -676,9 +621,9 @@ fun AppropriatenessMessage(isSuitable: Boolean) {
 
   Row(verticalAlignment = Alignment.CenterVertically) {
     Icon(
-        painter =
-            suitableLabelIcon, // The icon is only decorative, the following message is enough for
+        // The icon is only decorative, the following message is enough for
         // accessibility
+        painter = suitableLabelIcon,
         contentDescription = null,
         tint = suitableLabelColor,
         modifier = Modifier.size(16.dp))
