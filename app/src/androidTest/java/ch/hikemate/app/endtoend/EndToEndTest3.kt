@@ -226,8 +226,11 @@ class EndToEndTest3 : TestCase() {
 
     // Make the bottom sheet expand
     composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_HIKES_LIST).performTouchInput {
-      swipeUp(startY = centerY, endY = 0f, durationMillis = 1)
+      swipeUp(startY = centerY, endY = 0f, durationMillis = 500)
     }
+
+    // Wait for the bottom sheet to expand
+    composeTestRule.waitForIdle()
 
     // Scroll in the bottom sheet list to find a hike that is challenging
     composeTestRule
