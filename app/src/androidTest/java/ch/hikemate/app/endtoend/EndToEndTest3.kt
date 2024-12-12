@@ -1,41 +1,33 @@
 package ch.hikemate.app.endtoend
 
 import android.content.Context
-import android.util.Log
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
-import androidx.compose.ui.test.onAllNodesWithTag
-import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
-import androidx.compose.ui.test.performTouchInput
-import androidx.compose.ui.test.swipeUp
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso
 import ch.hikemate.app.MainActivity
 import ch.hikemate.app.R
+import ch.hikemate.app.model.guide.Guide
 import ch.hikemate.app.ui.auth.CreateAccountScreen
 import ch.hikemate.app.ui.auth.SignInScreen
 import ch.hikemate.app.ui.auth.SignInWithEmailScreen
-import ch.hikemate.app.ui.components.BackButton
-import ch.hikemate.app.ui.components.HikeCard
-import ch.hikemate.app.ui.map.HikeDetailScreen
+import ch.hikemate.app.ui.guide.GuideScreen
 import ch.hikemate.app.ui.map.MapScreen
-import ch.hikemate.app.ui.map.ZoomMapButton
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.navigation.TEST_TAG_MENU_ITEM_PREFIX
 import ch.hikemate.app.ui.navigation.TopLevelDestinations
 import ch.hikemate.app.ui.profile.EditProfileScreen
 import ch.hikemate.app.ui.profile.ProfileScreen
-import ch.hikemate.app.ui.saved.SavedHikesScreen
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
@@ -55,6 +47,7 @@ class EndToEndTest3 {
   private val password = "password"
 
   private val name = "John Doe"
+  private val guideTopic = Guide.APP_GUIDE_TOPICS[2]
 
   @Before
   fun setUpFirebase() {
@@ -166,123 +159,36 @@ class EndToEndTest3 {
         hasTestTag(MapScreen.TEST_TAG_MAP), timeoutMillis = 10002)
 
     // ==========================================
-    // MAP SCREEN
+    // Tutorial
     // ==========================================
-
-    // Check that we are on the map
-    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_MAP).assertIsDisplayed()
-
-    // Check that the zoom out button is displayed
-    composeTestRule.onNodeWithTag(ZoomMapButton.ZOOM_OUT_BUTTON).assertIsDisplayed()
-
-    // Click once on the zoom out button
-    composeTestRule.onNodeWithTag(ZoomMapButton.ZOOM_OUT_BUTTON).performClick()
-
-    // Wait for animation
-    composeTestRule.waitForIdle()
-
-    // Check that the zoom in button is displayed
-    composeTestRule.onNodeWithTag(ZoomMapButton.ZOOM_IN_BUTTON).assertIsDisplayed()
-
-    // Click twice (one here and one below) on the zoom in button, since we need to zoom in twice to
-    // enable
-    // the search hike here button
-    composeTestRule.onNodeWithTag(ZoomMapButton.ZOOM_IN_BUTTON).performClick()
-
-    // Wait for animation
-    composeTestRule.waitForIdle()
-
-    // Click a second time (see above)
-    composeTestRule.onNodeWithTag(ZoomMapButton.ZOOM_IN_BUTTON).performClick()
-
-    // Wait for animation
-    composeTestRule.waitForIdle()
-
-    // Check that the search hike here button is displayed
-    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).assertIsDisplayed()
-
-    // Click on the search hike here button
-    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).performClick()
-
-    // Check that there is a hikes list displayed
-    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_HIKES_LIST).assertIsDisplayed()
-
-    // Wait for the hikes to load
-    composeTestRule.waitUntilAtLeastOneExists(
-        hasTestTag(MapScreen.TEST_TAG_HIKE_ITEM), timeoutMillis = 10003)
-
-    // Check that there are at least 5 hikes elevation data loaded
-    composeTestRule.waitUntil(
-        timeoutMillis = 10004,
-    ) {
-      val nodes =
-          composeTestRule
-              .onAllNodesWithTag(HikeCard.TEST_TAG_IS_SUITABLE_TEXT, useUnmergedTree = true)
-              .fetchSemanticsNodes()
-
-      Log.d("END2END3", "Nodes found: ${nodes.size}")
-      nodes.size >= 5
-    }
-
-    // Make the bottom sheet expand
-    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_HIKES_LIST).performTouchInput {
-      swipeUp(startY = centerY, endY = 0f, durationMillis = 500)
-    }
-
-    // Wait for the bottom sheet to expand
-    composeTestRule.waitForIdle()
-
-    // Scroll in the bottom sheet list to find a hike that is challenging
+    // Go to the tutorial screen
     composeTestRule
-        .onAllNodesWithText(
-            context.getString(R.string.map_screen_challenging_hike_label), useUnmergedTree = true)[
-            0]
-        .performScrollTo()
-
-    // Click on the hike card that is challenging
-    composeTestRule
-        .onAllNodesWithText(
-            context.getString(R.string.map_screen_challenging_hike_label), useUnmergedTree = true)[
-            0]
+        .onNodeWithTag(TEST_TAG_MENU_ITEM_PREFIX + TopLevelDestinations.TUTORIAL.route)
         .performClick()
 
     // Wait for the transition to complete
     composeTestRule.waitUntilExactlyOneExists(
-        hasTestTag(HikeDetailScreen.TEST_TAG_MAP), timeoutMillis = 10005)
+        hasTestTag(GuideScreen.GUIDE_SCREEN), timeoutMillis = 10010)
 
-    // ==========================================
-    // DETAILS SCREENS
-    // ==========================================
-
-    // Check that the hike is a challenge for the user
+    // Open the profile section
     composeTestRule
-        .onNodeWithTag(HikeDetailScreen.TEST_TAG_APPROPRIATENESS_MESSAGE)
-        .assertIsDisplayed()
-    composeTestRule
-        .onNodeWithTag(HikeDetailScreen.TEST_TAG_APPROPRIATENESS_MESSAGE)
-        .assertTextEquals(context.getString(R.string.map_screen_challenging_hike_label))
-
-    // Click on the bookmark icon
-    composeTestRule.onNodeWithTag(HikeDetailScreen.TEST_TAG_BOOKMARK_ICON).performClick()
-
-    // Wait for the bookmark to be saved
-    composeTestRule.waitForIdle()
-
-    // Go back to the map
-    composeTestRule.onNodeWithTag(BackButton.BACK_BUTTON_TEST_TAG).performClick()
+        .onNodeWithTag("${GuideScreen.TOPIC_CARD}_${guideTopic.titleResId}")
+        .performClick()
 
     // Wait for the transition to complete
     composeTestRule.waitUntilExactlyOneExists(
-        hasTestTag(MapScreen.TEST_TAG_MAP), timeoutMillis = 10006)
+        hasTestTag("${GuideScreen.TOPIC_CONTENT}_${guideTopic.titleResId}"), timeoutMillis = 10011)
+
+    // Scroll until the "Go to profile" button is visible
+    // Click on the "Go to profile" button
+    composeTestRule
+        .onNodeWithTag("${GuideScreen.NAVIGATION_BUTTON}_${guideTopic.actionRoute}")
+        .performScrollTo()
+        .performClick()
 
     // ==========================================
     // Change the profile
     // ==========================================
-
-    // Go to the profile screen
-    composeTestRule
-        .onNodeWithTag(TEST_TAG_MENU_ITEM_PREFIX + TopLevelDestinations.PROFILE.route)
-        .performClick()
 
     // Wait for the transition to complete
     composeTestRule.waitUntilExactlyOneExists(hasTestTag(Screen.PROFILE), timeoutMillis = 10007)
@@ -321,50 +227,5 @@ class EndToEndTest3 {
     composeTestRule
         .onNodeWithTag(ProfileScreen.TEST_TAG_HIKING_LEVEL)
         .assertTextEquals(context.getString(R.string.profile_screen_hiking_level_info_expert))
-
-    // ==========================================
-    // SAVED HIKES SCREEN
-    // ==========================================
-
-    // Go to the saved hikes screen
-    composeTestRule
-        .onNodeWithTag(TEST_TAG_MENU_ITEM_PREFIX + TopLevelDestinations.SAVED_HIKES.route)
-        .performClick()
-
-    // Wait for the transition to complete
-    composeTestRule.waitUntilExactlyOneExists(
-        hasTestTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_SECTION_CONTAINER), timeoutMillis = 10010)
-
-    // Check that we are on the saved hikes screen
-    composeTestRule
-        .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_SECTION_CONTAINER)
-        .assertIsDisplayed()
-
-    // Check that the saved hikes section is displayed
-    composeTestRule
-        .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_SECTION_CONTAINER)
-        .assertIsDisplayed()
-
-    // Check that the saved hikes section has one item
-    composeTestRule.waitUntilExactlyOneExists(
-        hasTestTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_HIKE_CARD), timeoutMillis = 10011)
-
-    // Check that the saved hike is now suitable
-    composeTestRule
-        .onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_HIKE_CARD)
-        .assertIsDisplayed()
-    composeTestRule.onNodeWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_HIKE_CARD).performClick()
-
-    // Wait for the transition to complete
-    composeTestRule.waitUntilExactlyOneExists(
-        hasTestTag(HikeDetailScreen.TEST_TAG_MAP), timeoutMillis = 10012)
-
-    // Check that the hike is a good challenge for the user
-    composeTestRule
-        .onNodeWithTag(HikeDetailScreen.TEST_TAG_APPROPRIATENESS_MESSAGE)
-        .assertIsDisplayed()
-    composeTestRule
-        .onNodeWithTag(HikeDetailScreen.TEST_TAG_APPROPRIATENESS_MESSAGE)
-        .assertTextEquals(context.getString(R.string.map_screen_suitable_hike_label))
   }
 }
