@@ -190,20 +190,20 @@ object LocationUtils {
       userLocationMarker: Marker?
   ) {
     Log.d(
-        MapScreen.LOG_TAG,
+        LOG_TAG,
         "Location permission changed (revoked: ${locationPermissionState.revokedPermissions})")
     val hasLocationPermission = hasLocationPermission(locationPermissionState)
 
     // The user just enabled location permission for the app, start location features
     if (hasLocationPermission) {
-      Log.d(MapScreen.LOG_TAG, "Location permission granted, requesting location updates")
+      Log.d(LOG_TAG, "Location permission granted, requesting location updates")
       PermissionUtils.setFirstTimeAskingPermission(
           context, android.Manifest.permission.ACCESS_FINE_LOCATION, true)
       PermissionUtils.setFirstTimeAskingPermission(
           context, android.Manifest.permission.ACCESS_COARSE_LOCATION, true)
       val featuresEnabledSuccessfully = startUserLocationUpdates(context, locationUpdatedCallback)
       if (!featuresEnabledSuccessfully) {
-        Log.e(MapScreen.LOG_TAG, "Failed to enable location features")
+        Log.e(LOG_TAG, "Failed to enable location features")
         Toast.makeText(
                 context,
                 context.getString(R.string.map_screen_location_features_failed),
@@ -211,7 +211,7 @@ object LocationUtils {
             .show()
       }
       if (centerMapOnUserPosition) {
-        MapUtils.centerMapOnUserLocation(context, mapView, userLocationMarker)
+        MapUtils.centerMapOnLocation(context, mapView, userLocationMarker)
       }
     }
 

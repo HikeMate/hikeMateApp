@@ -29,6 +29,7 @@ import ch.hikemate.app.model.route.HikesViewModel
 import ch.hikemate.app.model.route.saved.SavedHikesRepository
 import ch.hikemate.app.ui.components.CenteredErrorAction
 import ch.hikemate.app.ui.components.HikeCard
+import ch.hikemate.app.ui.components.LocationPermissionAlertDialog
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.TEST_TAG_BOTTOM_BAR
@@ -357,13 +358,13 @@ class MapScreenTest : TestCase() {
     mockkObject(LocationUtils)
     every { LocationUtils.hasLocationPermission(any()) } returns true
     mockkObject(MapUtils)
-    every { MapUtils.centerMapOnUserLocation(any(), any(), any()) } returns Unit
+    every { MapUtils.centerMapOnLocation(any(), any(), any()) } returns Unit
 
     // When
     composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_CENTER_MAP_BUTTON).performClick()
 
     // Then
-    io.mockk.verify { MapUtils.centerMapOnUserLocation(any(), any(), any()) }
+    io.mockk.verify { MapUtils.centerMapOnLocation(any(), any(), any()) }
   }
 
   @OptIn(ExperimentalPermissionsApi::class)
@@ -378,14 +379,18 @@ class MapScreenTest : TestCase() {
     composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_CENTER_MAP_BUTTON).performClick()
 
     // Then an alert will be shown to ask for the permission
-    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_LOCATION_PERMISSION_ALERT).assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(LocationPermissionAlertDialog.TEST_TAG_LOCATION_PERMISSION_ALERT)
+        .assertIsDisplayed()
 
     // When the user clicks on the "No thanks" button
-    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_NO_THANKS_ALERT_BUTTON).performClick()
+    composeTestRule
+        .onNodeWithTag(LocationPermissionAlertDialog.TEST_TAG_NO_THANKS_ALERT_BUTTON)
+        .performClick()
 
     // Then the alert disappears
     composeTestRule
-        .onNodeWithTag(MapScreen.TEST_TAG_LOCATION_PERMISSION_ALERT)
+        .onNodeWithTag(LocationPermissionAlertDialog.TEST_TAG_LOCATION_PERMISSION_ALERT)
         .assertIsNotDisplayed()
   }
 
