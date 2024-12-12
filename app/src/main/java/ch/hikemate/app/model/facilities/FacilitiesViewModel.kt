@@ -225,6 +225,7 @@ class FacilitiesViewModel(
    */
   fun fetchFacilitiesForHike(hike: DetailedHike) {
     viewModelScope.launch {
+      Log.d(LOG_TAG, "got")
       // This is calculated so that elements that are near but not contained into the bounds of
       // a Hike are still displayed. This is actually a very common occurrence.
       val boundsWithMargin =

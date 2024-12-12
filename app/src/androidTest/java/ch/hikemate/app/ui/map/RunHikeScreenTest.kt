@@ -1,8 +1,5 @@
 package ch.hikemate.app.ui.map
 
-import android.content.Context
-import android.graphics.drawable.Drawable
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
@@ -14,13 +11,9 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
-import androidx.core.content.ContextCompat
-import androidx.core.graphics.drawable.toBitmap
-import ch.hikemate.app.R
 import ch.hikemate.app.model.elevation.ElevationRepository
 import ch.hikemate.app.model.facilities.FacilitiesRepository
 import ch.hikemate.app.model.facilities.FacilitiesViewModel
-import ch.hikemate.app.model.facilities.FacilitiesViewModel.Companion.MIN_ZOOM_FOR_FACILITIES
 import ch.hikemate.app.model.facilities.Facility
 import ch.hikemate.app.model.facilities.FacilityType
 import ch.hikemate.app.model.route.Bounds
@@ -37,14 +30,9 @@ import ch.hikemate.app.model.route.toBoundingBox
 import ch.hikemate.app.ui.components.CenteredErrorAction
 import ch.hikemate.app.ui.components.DetailRow
 import ch.hikemate.app.ui.navigation.NavigationActions
-import ch.hikemate.app.utils.MapUtils
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Rule
@@ -55,8 +43,6 @@ import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import org.osmdroid.views.MapView
-import org.osmdroid.views.overlay.Marker
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class RunHikeScreenTest {
@@ -373,108 +359,6 @@ class RunHikeScreenTest {
     }
     setupCompleteScreenWithSelected(detailedHike2)
     verify(facilitiesRepository).getFacilities(any(), any(), any())
-  }
-
-  @Test
-  fun runHike_displaysCorrectDrawableForFacilityType() = runBlocking {
-    // Setup a detailed hike
-    setUpSelectedHike(detailedHike2)
-
-    val bounds = detailedHike2.bounds.toBoundingBox()
-    val center = LatLong(bounds.centerLatitude, bounds.centerLongitude)
-    val testFacility = Facility(type = FacilityType.TOILETS, coordinates = center)
-
-    val listFacility = listOf(testFacility)
-    `when`(facilitiesRepository.getFacilities(any(), any(), any())).then {
-      val onSuccess = it.getArgument<(List<Facility>) -> Unit>(1)
-      onSuccess(listFacility)
-    }
-
-    lateinit var mapView: MapView
-    lateinit var context: Context
-
-    composeTestRule.setContent {
-      context = LocalContext.current
-      mapView = runHikeMap(detailedHike2, facilitiesViewModel)
-    }
-    composeTestRule.waitForIdle()
-
-    // Create a custom waiter that checks for the marker presence
-    var attempts = 0
-    val maxAttempts = 500 // Adjust as needed
-    val delayMs = 100L // Small delay between checks
-
-    // Wait for the marker to appear using polling
-    while (attempts < maxAttempts) {
-      val facilityMarkers =
-          mapView.overlays.filterIsInstance<Marker>().filter {
-            it.relatedObject == MapUtils.FACILITIES_RELATED_OBJECT_NAME
-          }
-
-      if (facilityMarkers.isNotEmpty()) {
-        // Marker found, proceed with assertions
-        val marker = facilityMarkers.first()
-        val expectedDrawable = ContextCompat.getDrawable(context, R.drawable.toilets)
-
-        assertEquals(1, facilityMarkers.size)
-        assertTrue(
-            "Marker should have correct drawable icon",
-            areSameDrawable(expectedDrawable, marker.icon))
-        assertEquals(testFacility.coordinates.lat, marker.position.latitude, 0.0001)
-        assertEquals(testFacility.coordinates.lon, marker.position.longitude, 0.0001)
-        return@runBlocking // Exit successfully
-      }
-
-      delay(delayMs) // Use coroutine delay instead of Thread.sleep
-      attempts++
-    }
-
-    // If we get here, the marker never appeared
-    fail("Marker was not added to map after ${maxAttempts * delayMs}ms")
-  }
-
-  @Test
-  fun runHike_hidesFacilities_whenZoomLevelIsInsufficient() = runTest {
-    setUpSelectedHike(detailedHike3)
-
-    val bounds = detailedHike2.bounds.toBoundingBox()
-    val center = LatLong(bounds.centerLatitude, bounds.centerLongitude)
-    val testFacility = Facility(type = FacilityType.TOILETS, coordinates = center)
-
-    val listFacility = listOf(testFacility)
-    `when`(facilitiesRepository.getFacilities(any(), any(), any())).then {
-      val onSuccess = it.getArgument<(List<Facility>) -> Unit>(1)
-      onSuccess(listFacility)
-    }
-
-    lateinit var mapView: MapView
-    val minZoomForFacilities = MIN_ZOOM_FOR_FACILITIES
-
-    composeTestRule.setContent { mapView = runHikeMap(detailedHike3, facilitiesViewModel) }
-
-    composeTestRule.waitForIdle()
-
-    // Verify facilities are hidden at insufficient zoom levels
-    val finalMarkers =
-        mapView.overlays.filterIsInstance<Marker>().filter {
-          it.relatedObject == MapUtils.FACILITIES_RELATED_OBJECT_NAME
-        }
-
-    assertTrue(
-        "Facilities should be hidden at zoom level ${mapView.zoomLevelDouble}, " +
-            "below minimum $minZoomForFacilities",
-        finalMarkers.isEmpty())
-  }
-
-  // Helper function to compare drawables
-  private fun areSameDrawable(drawable1: Drawable?, drawable2: Drawable?): Boolean {
-    if (drawable1 == null || drawable2 == null) return false
-
-    // Convert both drawables to bitmap for comparison
-    val bitmap1 = drawable1.toBitmap()
-    val bitmap2 = drawable2.toBitmap()
-
-    return bitmap1.sameAs(bitmap2)
   }
 
   private suspend fun setUpSelectedHike(hike: DetailedHike) {

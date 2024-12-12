@@ -23,11 +23,16 @@ import io.mockk.slot
 import io.mockk.unmockkAll
 import io.mockk.verify
 import io.mockk.verifySequence
+import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import org.osmdroid.events.MapListener
+import org.osmdroid.events.ScrollEvent
+import org.osmdroid.events.ZoomEvent
+import org.osmdroid.util.BoundingBox
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
@@ -265,7 +270,7 @@ class MapUtilsTest {
     assertEquals(1, overlayList.size)
     val marker = overlayList.first()
     assertEquals(GeoPoint(46.0, 7.0), marker.position)
-    assertEquals(R.string.facility_marker, marker.relatedObject)
+    assertEquals(MapUtils.FACILITIES_RELATED_OBJECT_NAME, marker.relatedObject)
     assertEquals(mockDrawable, marker.icon)
     verify(exactly = 1) { ContextCompat.getDrawable(context, R.drawable.toilets) }
     verify(exactly = 1) { mapView.invalidate() }
@@ -357,6 +362,81 @@ class MapUtilsTest {
     assertEquals(1, overlayList.size)
     assertEquals("something else", overlayList.first().relatedObject)
     verify(exactly = 2) { mapView.invalidate() }
+  }
+
+  @Test
+  fun setMapViewListenerForStates_doesNotUpdateOnSameValues() {
+    // Given
+    val boundingBox = BoundingBox(46.51, 6.62, 46.5, 6.6)
+    val zoom = 15.0
+    val boundingBoxState = MutableStateFlow(boundingBox)
+    val zoomLevelState = MutableStateFlow(zoom)
+
+    val listenerSlot = slot<MapListener>()
+    every { mapView.addMapListener(capture(listenerSlot)) } returns Unit
+    every { mapView.boundingBox } returns boundingBox
+    every { mapView.zoomLevelDouble } returns zoom
+
+    // When
+    MapUtils.setMapViewListenerForStates(mapView, boundingBoxState, zoomLevelState)
+
+    // Simulate events with same values
+    val scrollEvent = mockk<ScrollEvent>()
+    val zoomEvent = mockk<ZoomEvent>()
+
+    listenerSlot.captured.onScroll(scrollEvent)
+    listenerSlot.captured.onZoom(zoomEvent)
+
+    // Then
+    verify(exactly = 1) { mapView.addMapListener(any()) }
+    assertEquals(boundingBox, boundingBoxState.value)
+    assertEquals(zoom, zoomLevelState.value, 0.01)
+  }
+
+  @Test
+  fun setMapViewListenerForStates_handlesNullEvents() {
+    // Given
+    val boundingBox = BoundingBox(46.51, 6.62, 46.5, 6.6)
+    val zoom = 15.0
+    val boundingBoxState = MutableStateFlow(boundingBox)
+    val zoomLevelState = MutableStateFlow(zoom)
+
+    val listenerSlot = slot<MapListener>()
+    every { mapView.addMapListener(capture(listenerSlot)) } returns Unit
+
+    // When
+    MapUtils.setMapViewListenerForStates(mapView, boundingBoxState, zoomLevelState)
+
+    // Send null events
+    listenerSlot.captured.onScroll(null)
+    listenerSlot.captured.onZoom(null)
+
+    // Then
+    verify(exactly = 1) { mapView.addMapListener(any()) }
+    // States should remain unchanged
+    assertEquals(boundingBox, boundingBoxState.value)
+    assertEquals(zoom, zoomLevelState.value, 0.01)
+  }
+
+  @Test
+  fun setMapViewListenerForStates_returnsCorrectBooleanValues() {
+    // Given
+    val boundingBoxState = MutableStateFlow(BoundingBox(46.51, 6.62, 46.5, 6.6))
+    val zoomLevelState = MutableStateFlow(15.0)
+
+    val listenerSlot = slot<MapListener>()
+    every { mapView.addMapListener(capture(listenerSlot)) } returns Unit
+
+    // When
+    MapUtils.setMapViewListenerForStates(mapView, boundingBoxState, zoomLevelState)
+
+    // Then
+    // Both event handlers should return true as specified in the function
+    val scrollEvent = mockk<ScrollEvent>()
+    val zoomEvent = mockk<ZoomEvent>()
+
+    assertTrue(listenerSlot.captured.onScroll(scrollEvent))
+    assertTrue(listenerSlot.captured.onZoom(zoomEvent))
   }
 
   @After

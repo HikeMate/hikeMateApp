@@ -243,7 +243,6 @@ fun hikeDetailsMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel)
   val hikeZoomLevel = MapUtils.calculateBestZoomLevel(hike.bounds).toDouble()
   val hikeCenter = MapUtils.getGeographicalCenter(hike.bounds)
   val facilities by facilitiesViewModel.facilities.collectAsState()
-  var facilitiesLoaded by remember { mutableStateOf(false) }
 
   // Avoid re-creating the MapView on every recomposition
   val mapView = remember {
@@ -271,31 +270,26 @@ fun hikeDetailsMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel)
   val boundingBoxState = remember { MutableStateFlow(mapView.boundingBox) }
   val zoomLevelState = remember { MutableStateFlow(mapView.zoomLevelDouble) }
 
-  // This is done to catch the bug when the first composition doesn't display the facilities
-  // This forces the facilities to be displayed in the first composition.
-  LaunchedEffect(facilities) {
-    if (facilities != null) {
-      facilitiesLoaded = true
+  // This effect handles both initial facility display and subsequent updates
+  // It triggers when facilities are loaded or when the map view changes
+  LaunchedEffect(facilities, mapView.boundingBox, mapView.zoomLevelDouble) {
+    if (facilities != null && mapView.repository != null) {
       facilitiesViewModel.filterFacilitiesForDisplay(
           bounds = mapView.boundingBox,
           zoomLevel = mapView.zoomLevelDouble,
           hikeRoute = hike,
-          onSuccess = {
-            if (mapView.repository != null) {
-              MapUtils.clearFacilities(mapView)
-              MapUtils.displayFacilities(it, mapView, context)
+          onSuccess = { newFacilities ->
+            MapUtils.clearFacilities(mapView)
+            if (newFacilities.isNotEmpty()) {
+              MapUtils.displayFacilities(newFacilities, mapView, context)
             }
           },
-          onNoFacilitiesForState = {
-            if (mapView.repository != null) {
-              MapUtils.clearFacilities(mapView)
-            }
-          })
+          onNoFacilitiesForState = { MapUtils.clearFacilities(mapView) })
     }
   }
 
+  // This solves the bug of the screen freezing by properly cleaning up resources
   DisposableEffect(Unit) {
-    // This solves the bug of the screen freezing.
     onDispose {
       mapView.onPause()
       mapView.onDetach()
@@ -304,43 +298,42 @@ fun hikeDetailsMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel)
     }
   }
 
+  // This LaunchedEffect handles map updates with debouncing to prevent too frequent refreshes
   LaunchedEffect(Unit) {
-    if (facilitiesLoaded) {
-      MapUtils.setMapViewListenerForStates(mapView, boundingBoxState, zoomLevelState)
-      // Create our combined flow which is limited by a debounce.
-      val combinedFlow =
-          combine(
-              boundingBoxState.debounce(HikeDetailScreen.DEBOUNCE_DURATION),
-              zoomLevelState.debounce(HikeDetailScreen.DEBOUNCE_DURATION)) { boundingBox, zoomLevel
-                ->
-                boundingBox to zoomLevel
-              }
+    MapUtils.setMapViewListenerForStates(mapView, boundingBoxState, zoomLevelState)
 
-      try {
-        combinedFlow.collect { (boundingBox, zoomLevel) ->
-          if (mapView.repository != null) {
-            facilitiesViewModel.filterFacilitiesForDisplay(
-                bounds = boundingBox,
-                zoomLevel = zoomLevel,
-                hikeRoute = hike,
-                onSuccess = { newFacilities ->
-                  if (mapView.repository != null) {
-                    MapUtils.clearFacilities(mapView)
-                    if (newFacilities.isNotEmpty()) {
-                      MapUtils.displayFacilities(newFacilities, mapView, context)
-                    }
+    // Create our combined flow which is limited by a debounce
+    val combinedFlow =
+        combine(
+            boundingBoxState.debounce(HikeDetailScreen.DEBOUNCE_DURATION),
+            zoomLevelState.debounce(HikeDetailScreen.DEBOUNCE_DURATION)) { boundingBox, zoomLevel ->
+              boundingBox to zoomLevel
+            }
+
+    try {
+      combinedFlow.collect { (boundingBox, zoomLevel) ->
+        if (mapView.repository != null) {
+          facilitiesViewModel.filterFacilitiesForDisplay(
+              bounds = boundingBox,
+              zoomLevel = zoomLevel,
+              hikeRoute = hike,
+              onSuccess = { newFacilities ->
+                if (mapView.repository != null) {
+                  MapUtils.clearFacilities(mapView)
+                  if (newFacilities.isNotEmpty()) {
+                    MapUtils.displayFacilities(newFacilities, mapView, context)
                   }
-                },
-                onNoFacilitiesForState = {
-                  if (mapView.repository != null) {
-                    MapUtils.clearFacilities(mapView)
-                  }
-                })
-          }
+                }
+              },
+              onNoFacilitiesForState = {
+                if (mapView.repository != null) {
+                  MapUtils.clearFacilities(mapView)
+                }
+              })
         }
-      } catch (e: Exception) {
-        Log.e(HikeDetailScreen.LOG_TAG, "Error in facility updates flow", e)
       }
+    } catch (e: Exception) {
+      Log.e(HikeDetailScreen.LOG_TAG, "Error in facility updates flow", e)
     }
   }
 
