@@ -1,7 +1,9 @@
 package ch.hikemate.app.ui.map
 
+import android.annotation.SuppressLint
 import android.location.Location
 import android.util.Log
+import android.view.MotionEvent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -113,6 +115,7 @@ fun RunHikeScreen(
       })
 }
 
+@SuppressLint("ClickableViewAccessibility")
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 private fun RunHikeContent(hike: DetailedHike, navigationActions: NavigationActions) {
@@ -137,6 +140,13 @@ private fun RunHikeContent(hike: DetailedHike, navigationActions: NavigationActi
 
   // Display the map
   val mapView = runHikeMap(hike)
+
+  mapView.setOnTouchListener { _, event ->
+    if (event.action == MotionEvent.ACTION_DOWN) {
+      centerMapOnUserPosition = false
+    }
+    false
+  }
 
   var userLocationMarker: Marker? by remember { mutableStateOf(null) }
 
@@ -255,39 +265,33 @@ private fun parseLocationUpdate(
     mapView: MapView,
     hike: DetailedHike
 ): Marker? {
-  return if (locationResult.lastLocation == null) {
+  if (locationResult.lastLocation == null) {
     MapUtils.clearUserPosition(userLocationMarker, mapView, invalidate = true)
-    null
-  } else {
-    val routeProjectionResponse =
-        LocationUtils.projectLocationOnHike(
-            locationResult.lastLocation!!.let { LatLong(it.latitude, it.longitude) }, hike)
-    if (routeProjectionResponse != null) {
-      if (routeProjectionResponse.distanceFromRoute > RunHikeScreen.MAX_DISTANCE_TO_CONSIDER_HIKE) {
-        MapUtils.updateUserPosition(
-            userLocationMarker,
-            mapView,
-            locationResult.lastLocation!!.let { location ->
-              Location("").apply {
-                latitude = location.latitude
-                longitude = location.longitude
-              }
-            })
-      } else {
-        MapUtils.updateUserPosition(
-            userLocationMarker,
-            mapView,
-            routeProjectionResponse.projectedLocation.let { location ->
-              Location("").apply {
-                latitude = location.lat
-                longitude = location.lon
-              }
-            })
-      }
-    } else {
-      null
-    }
+    return null
   }
+
+  val loc = locationResult.lastLocation!!
+  val routeProjectionResponse =
+      LocationUtils.projectLocationOnHike(LatLong(loc.latitude, loc.longitude), hike) ?: return null
+
+  val newLocation =
+      if (routeProjectionResponse.distanceFromRoute > RunHikeScreen.MAX_DISTANCE_TO_CONSIDER_HIKE) {
+        locationResult.lastLocation!!.let { location ->
+          Location("").apply {
+            latitude = location.latitude
+            longitude = location.longitude
+          }
+        }
+      } else {
+        routeProjectionResponse.projectedLocation.let { location ->
+          Location("").apply {
+            latitude = location.lat
+            longitude = location.lon
+          }
+        }
+      }
+
+  return MapUtils.updateUserPosition(userLocationMarker, mapView, newLocation)
 }
 
 @Composable

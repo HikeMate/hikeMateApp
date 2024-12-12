@@ -34,8 +34,8 @@ fun LocationPermissionAlertDialog(
     onConfirm: () -> Unit,
     simpleMessage: Boolean,
     locationPermissionState: MultiplePermissionsState,
-    context: Context = LocalContext.current,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    context: Context = LocalContext.current
 ) {
   if (!show) return
 
