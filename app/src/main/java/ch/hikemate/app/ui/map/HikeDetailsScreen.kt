@@ -244,6 +244,9 @@ fun hikeDetailsMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel)
   val hikeCenter = MapUtils.getGeographicalCenter(hike.bounds)
   val facilities by facilitiesViewModel.facilities.collectAsState()
 
+  // Add a state to force re-triggering effects when reentering screen
+  var shouldLoadFacilities by remember { mutableStateOf(true) }
+
   // Avoid re-creating the MapView on every recomposition
   val mapView = remember {
     MapView(context).apply {
@@ -272,7 +275,7 @@ fun hikeDetailsMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel)
 
   // This effect handles both initial facility display and subsequent updates
   // It triggers when facilities are loaded or when the map view changes
-  LaunchedEffect(facilities, mapView.boundingBox, mapView.zoomLevelDouble) {
+  LaunchedEffect(facilities, shouldLoadFacilities) {
     if (facilities != null && mapView.repository != null) {
       facilitiesViewModel.filterFacilitiesForDisplay(
           bounds = mapView.boundingBox,
@@ -285,6 +288,8 @@ fun hikeDetailsMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel)
             }
           },
           onNoFacilitiesForState = { MapUtils.clearFacilities(mapView) })
+      // Reset the flag after loading
+      shouldLoadFacilities = false
     }
   }
 
@@ -295,6 +300,8 @@ fun hikeDetailsMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel)
       mapView.onDetach()
       mapView.overlayManager.clear()
       mapView.tileProvider.clearTileCache()
+      // Set flag to reload facilities when returning to screen
+      shouldLoadFacilities = true
     }
   }
 
