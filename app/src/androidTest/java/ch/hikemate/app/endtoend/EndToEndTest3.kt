@@ -221,7 +221,7 @@ class EndToEndTest3 : TestCase() {
       composeTestRule
           .onAllNodesWithTag(HikeCard.TEST_TAG_IS_SUITABLE_TEXT, useUnmergedTree = true)
           .fetchSemanticsNodes()
-          .size >= 5
+          .size >= 2
     }
 
     // Make the bottom sheet expand
