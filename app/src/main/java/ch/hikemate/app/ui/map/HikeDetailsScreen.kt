@@ -214,7 +214,7 @@ fun HikeDetailsContent(
     // Display the back button on top of the map
     BackButton(
         navigationActions = navigationActions,
-        modifier = Modifier.padding(top = 40.dp, start = 16.dp, end = 16.dp).safeDrawingPadding(),
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp).safeDrawingPadding(),
         onClick = { hikesViewModel.unselectHike() })
 
     // Zoom buttons at the bottom right of the screen

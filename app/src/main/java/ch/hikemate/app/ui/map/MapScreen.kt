@@ -464,7 +464,7 @@ fun MapScreen(
                       // on
                       // the user's location
                       if (hasLocationPermission) {
-                        MapUtils.centerMapOnUserLocation(context, mapView, userLocationMarker)
+                        MapUtils.centerMapOnLocation(context, mapView, userLocationMarker)
                       }
                       // If the user yet needs to grant the permission, show a custom educational
                       // alert

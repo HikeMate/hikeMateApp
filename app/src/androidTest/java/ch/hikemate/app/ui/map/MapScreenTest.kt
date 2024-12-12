@@ -357,13 +357,13 @@ class MapScreenTest : TestCase() {
     mockkObject(LocationUtils)
     every { LocationUtils.hasLocationPermission(any()) } returns true
     mockkObject(MapUtils)
-    every { MapUtils.centerMapOnUserLocation(any(), any(), any()) } returns Unit
+    every { MapUtils.centerMapOnLocation(any(), any(), any()) } returns Unit
 
     // When
     composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_CENTER_MAP_BUTTON).performClick()
 
     // Then
-    io.mockk.verify { MapUtils.centerMapOnUserLocation(any(), any(), any()) }
+    io.mockk.verify { MapUtils.centerMapOnLocation(any(), any(), any()) }
   }
 
   @OptIn(ExperimentalPermissionsApi::class)

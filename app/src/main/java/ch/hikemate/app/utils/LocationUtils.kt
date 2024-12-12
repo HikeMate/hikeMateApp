@@ -211,7 +211,7 @@ object LocationUtils {
             .show()
       }
       if (centerMapOnUserPosition) {
-        MapUtils.centerMapOnUserLocation(context, mapView, userLocationMarker)
+        MapUtils.centerMapOnLocation(context, mapView, userLocationMarker)
       }
     }
 
