@@ -11,7 +11,7 @@ import org.junit.Test
 class ElevationIntegrationTest {
 
   private lateinit var client: OkHttpClient
-  private lateinit var repository: ElevationServiceRepository
+  private lateinit var repository: ElevationRepository
   private val coordinates =
       listOf(LatLong(10.0, 10.0), LatLong(20.0, 20.0), LatLong(41.161758, -8.583933))
   private val longCoordinates =
@@ -52,7 +52,7 @@ class ElevationIntegrationTest {
   @Before
   fun setup() {
     client = OkHttpClient.Builder().build()
-    repository = ElevationServiceRepository(client)
+    repository = ElevationRepositoryCopernicus(client)
   }
 
   @Test
@@ -61,7 +61,6 @@ class ElevationIntegrationTest {
 
     repository.getElevation(
         coordinates,
-        "0",
         onSuccess = {
           result = it
           assertNotNull("Response should not be null", result)
@@ -76,7 +75,6 @@ class ElevationIntegrationTest {
 
     repository.getElevation(
         longCoordinates,
-        "0",
         onSuccess = {
           result = it
           assertNotNull("Response should not be null", result)

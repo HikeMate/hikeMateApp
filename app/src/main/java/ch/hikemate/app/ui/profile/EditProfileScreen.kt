@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.hikemate.app.R
+import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.model.profile.HikingLevel
 import ch.hikemate.app.model.profile.Profile
 import ch.hikemate.app.model.profile.ProfileViewModel
@@ -65,7 +66,8 @@ object EditProfileScreen {
 @Composable
 fun EditProfileScreen(
     navigationActions: NavigationActions,
-    profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory)
+    profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory),
+    authViewModel: AuthViewModel
 ) {
   val context = LocalContext.current
 
@@ -77,7 +79,9 @@ fun EditProfileScreen(
   AsyncStateHandler(
       errorMessageIdState = errorMessageIdState,
       actionContentDescriptionStringId = R.string.go_back,
-      actionOnErrorAction = { navigationActions.navigateTo(Route.MAP) },
+      // Whenever there's an error the user needs to re-authenticate
+      // thus forcing him to sign out and navigate to the Auth screen
+      actionOnErrorAction = { authViewModel.signOut { navigationActions.navigateTo(Route.AUTH) } },
       valueState = profileState,
   ) { profile ->
     var name by remember { mutableStateOf(profile.name) }

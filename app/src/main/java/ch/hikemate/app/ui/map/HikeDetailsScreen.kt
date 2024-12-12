@@ -36,6 +36,7 @@ import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -92,6 +93,7 @@ import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
+import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 
@@ -100,6 +102,8 @@ object HikeDetailScreen {
   const val MAP_MAX_LONGITUDE = 180.0
   const val MAP_MIN_LONGITUDE = -180.0
   const val MAP_BOUNDS_MARGIN: Int = 100
+  val BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT = 400.dp
+  val MAP_BOTTOM_PADDING_ADJUSTMENT = 20.dp
 
   const val LOG_TAG = "HikeDetailScreen"
 
@@ -113,6 +117,7 @@ object HikeDetailScreen {
   const val TEST_TAG_DATE_PICKER_CANCEL_BUTTON = "HikeDetailDatePickerCancelButton"
   const val TEST_TAG_DATE_PICKER_CONFIRM_BUTTON = "HikeDetailDatePickerConfirmButton"
   const val TEST_TAG_RUN_HIKE_BUTTON = "HikeDetailRunHikeButton"
+  const val TEST_TAG_APPROPRIATENESS_MESSAGE = "HikeDetailAppropriatenessMessage"
 }
 
 @Composable
@@ -135,9 +140,22 @@ fun HikeDetailScreen(
 
   val selectedHike by hikesViewModel.selectedHike.collectAsState()
 
+  // Gets initialized here so that the LaunchedEffect has access to it. The value is only actually
+  // initialised and used in HikeDetailsContent
+  val mapViewState = remember { mutableStateOf<MapView?>(null) }
+
+  // If the selected hike is null, save the map's state and go back to the map screen
   LaunchedEffect(selectedHike) {
     if (selectedHike == null) {
       Log.e(HikeDetailScreen.LOG_TAG, "No selected hike, going back")
+      if (mapViewState.value != null) {
+        hikesViewModel.setMapState(
+            center =
+                GeoPoint(
+                    mapViewState.value!!.mapCenter.latitude,
+                    mapViewState.value!!.mapCenter.longitude),
+            zoom = mapViewState.value!!.zoomLevelDouble)
+      }
       navigationActions.goBack()
     }
   }
@@ -159,18 +177,25 @@ fun HikeDetailScreen(
         AsyncStateHandler(
             errorMessageIdState = errorMessageIdState,
             actionContentDescriptionStringId = R.string.go_back,
-            actionOnErrorAction = { navigationActions.navigateTo(Route.MAP) },
+            // Whenever there's an error the user needs to re-authenticate
+            // thus forcing him to sign out and navigate to the Auth screen
+            actionOnErrorAction = {
+              authViewModel.signOut { navigationActions.navigateTo(Route.AUTH) }
+            },
             valueState = profileState,
         ) { profile ->
           Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {
             // Display the hike's actual information
-            HikeDetailsContent(detailedHike, navigationActions, hikesViewModel, profile.hikingLevel)
+            HikeDetailsContent(
+                detailedHike, mapViewState, navigationActions, hikesViewModel, profile.hikingLevel)
           }
         }
       },
       whenError = {
+        val loadingErrorMessageId by hikesViewModel.loadingErrorMessageId.collectAsState()
+
         CenteredErrorAction(
-            errorMessageId = R.string.loading_hike_error,
+            errorMessageId = loadingErrorMessageId ?: R.string.loading_hike_error,
             actionIcon = Icons.AutoMirrored.Filled.ArrowBack,
             actionContentDescriptionStringId = R.string.go_back,
             onAction = { hikesViewModel.unselectHike() })
@@ -180,24 +205,25 @@ fun HikeDetailScreen(
 @Composable
 fun HikeDetailsContent(
     hike: DetailedHike,
+    mapViewState: MutableState<MapView?>,
     navigationActions: NavigationActions,
     hikesViewModel: HikesViewModel,
     userHikingLevel: HikingLevel
 ) {
   Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {
     // Display the map and the zoom buttons
-    val mapView = hikeDetailsMap(hike)
+    mapViewState.value = hikeDetailsMap(hike)
 
     // Display the back button on top of the map
     BackButton(
         navigationActions = navigationActions,
-        modifier = Modifier.padding(top = 40.dp, start = 16.dp, end = 16.dp).safeDrawingPadding(),
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp).safeDrawingPadding(),
         onClick = { hikesViewModel.unselectHike() })
 
     // Zoom buttons at the bottom right of the screen
     ZoomMapButton(
-        onZoomIn = { mapView.controller.zoomIn() },
-        onZoomOut = { mapView.controller.zoomOut() },
+        onZoomIn = { mapViewState.value?.controller?.zoomIn() },
+        onZoomOut = { mapViewState.value?.controller?.zoomOut() },
         modifier =
             Modifier.align(Alignment.BottomEnd)
                 .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
@@ -272,9 +298,13 @@ fun hikeDetailsMap(hike: DetailedHike): MapView {
       factory = { mapView },
       modifier =
           Modifier.fillMaxWidth()
-              .padding(bottom = 300.dp) // Reserve space for the scaffold at the bottom
+              // Reserve space for the scaffold at the bottom, -20.dp to avoid the map being to
+              // small under the bottomSheet
+              .padding(
+                  bottom =
+                      HikeDetailScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT -
+                          HikeDetailScreen.MAP_BOTTOM_PADDING_ADJUSTMENT)
               .testTag(TEST_TAG_MAP))
-
   return mapView
 }
 
@@ -304,6 +334,7 @@ fun HikesDetailsBottomScaffold(
   BottomSheetScaffold(
       scaffoldState = scaffoldState,
       sheetContainerColor = MaterialTheme.colorScheme.surface,
+      sheetPeekHeight = HikeDetailScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT,
       sheetContent = {
         Column(
             modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -411,7 +442,7 @@ fun HikesDetailsBottomScaffold(
                   Modifier.padding(top = 16.dp).fillMaxWidth().testTag(TEST_TAG_RUN_HIKE_BUTTON))
         }
       },
-      sheetPeekHeight = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT) {}
+  ) {}
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -574,6 +605,7 @@ fun AppropriatenessMessage(isSuitable: Boolean) {
         modifier = Modifier.size(16.dp))
     Spacer(modifier = Modifier.width(4.dp))
     Text(
+        modifier = Modifier.testTag(HikeDetailScreen.TEST_TAG_APPROPRIATENESS_MESSAGE),
         text = suitableLabelText,
         style = MaterialTheme.typography.bodySmall,
         color = suitableLabelColor)

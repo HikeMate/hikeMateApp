@@ -7,7 +7,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import ch.hikemate.app.model.authentication.AuthRepository
 import ch.hikemate.app.model.authentication.AuthViewModel
-import ch.hikemate.app.model.elevation.ElevationService
+import ch.hikemate.app.model.elevation.ElevationRepository
 import ch.hikemate.app.model.profile.HikingLevel
 import ch.hikemate.app.model.profile.Profile
 import ch.hikemate.app.model.profile.ProfileRepository
@@ -32,7 +32,7 @@ class ZoomMapButtonTest {
 
   private lateinit var savedHikesRepository: SavedHikesRepository
   private lateinit var hikesRepository: HikeRoutesRepository
-  private lateinit var elevationService: ElevationService
+  private lateinit var elevationRepository: ElevationRepository
   private lateinit var hikesViewModel: HikesViewModel
   private lateinit var navigationActions: NavigationActions
   private lateinit var profileRepository: ProfileRepository
@@ -56,7 +56,7 @@ class ZoomMapButtonTest {
     navigationActions = mock(NavigationActions::class.java)
     savedHikesRepository = mock(SavedHikesRepository::class.java)
     hikesRepository = mock(HikeRoutesRepository::class.java)
-    elevationService = mock(ElevationService::class.java)
+    elevationRepository = mock(ElevationRepository::class.java)
     profileRepository = mock(ProfileRepository::class.java)
     profileViewModel = ProfileViewModel(profileRepository)
     authRepository = mock(AuthRepository::class.java)
@@ -66,7 +66,7 @@ class ZoomMapButtonTest {
         HikesViewModel(
             savedHikesRepo = savedHikesRepository,
             osmHikesRepo = hikesRepository,
-            elevationService = elevationService,
+            elevationRepository = elevationRepository,
             UnconfinedTestDispatcher())
 
     `when`(profileRepository.getProfileById(eq(profile.id), any(), any())).thenAnswer {
