@@ -505,6 +505,7 @@ class HikeDetailScreenTest {
     val datePickerDateTextTag = prepareTextTagForDatePickerDialog()
 
     composeTestRule.setContent {
+      context = LocalContext.current
       DateDetailRow(
           isSaved = true,
           plannedDate = currentPlannedDate,
