@@ -39,6 +39,7 @@ import com.google.firebase.Timestamp
 import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
 import io.mockk.every
 import io.mockk.mockkObject
+import io.mockk.spyk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -78,7 +79,8 @@ class MapScreenTest : TestCase() {
 
   private fun setUpMap(
       mapMinZoomLevel: Double = MapScreen.MAP_MIN_ZOOM,
-      mapInitialZoomLevel: Double = MapScreen.MAP_INITIAL_ZOOM
+      mapInitialZoomLevel: Double = MapScreen.MAP_INITIAL_ZOOM,
+      hikesViewModel: HikesViewModel = this.hikesViewModel,
   ) {
     composeTestRule.setContent {
       context = LocalContext.current
@@ -411,5 +413,16 @@ class MapScreenTest : TestCase() {
     verify(authRepository).signOut(any())
     verify(navigationActions).navigateTo(Route.AUTH)
     assertNull(authViewModel.currentUser.value)
+  }
+
+  @Test
+  fun mapLoadsFromMapState() {
+    // Uses Mockk since Mockito can not mock/spy final classes
+    val spyHikesViewModel = spyk(hikesViewModel)
+    setUpMap(hikesViewModel = spyHikesViewModel)
+
+    composeTestRule.waitForIdle()
+
+    io.mockk.verify { spyHikesViewModel.getMapState() }
   }
 }

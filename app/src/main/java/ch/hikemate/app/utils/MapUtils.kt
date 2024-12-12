@@ -11,6 +11,7 @@ import androidx.appcompat.content.res.AppCompatResources
 import ch.hikemate.app.R
 import ch.hikemate.app.model.route.Bounds
 import ch.hikemate.app.model.route.LatLong
+import ch.hikemate.app.ui.map.MapInitialValues
 import ch.hikemate.app.ui.map.MapScreen
 import kotlin.math.cos
 import org.osmdroid.util.GeoPoint
@@ -264,4 +265,9 @@ object MapUtils {
         mapView.zoomLevelDouble,
         MapScreen.CENTER_MAP_ANIMATION_TIME)
   }
+
+  data class MapViewState(
+      val center: GeoPoint = MapInitialValues().mapInitialCenter,
+      val zoom: Double = MapInitialValues().mapInitialZoomLevel,
+  )
 }
