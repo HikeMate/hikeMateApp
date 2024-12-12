@@ -1,6 +1,7 @@
 package ch.hikemate.app.ui.map
 
 import android.location.Location
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,6 +47,7 @@ import ch.hikemate.app.ui.components.CenteredErrorAction
 import ch.hikemate.app.ui.components.DetailRow
 import ch.hikemate.app.ui.components.ElevationGraph
 import ch.hikemate.app.ui.components.ElevationGraphStyleProperties
+import ch.hikemate.app.ui.components.LocationPermissionAlertDialog
 import ch.hikemate.app.ui.components.WithDetailedHike
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Screen
@@ -168,6 +170,7 @@ private fun RunHikeContent(hike: DetailedHike, navigationActions: NavigationActi
 
   DisposableEffect(Unit) {
     val hasLocationPermission = LocationUtils.hasLocationPermission(locationPermissionState)
+    Log.d("RunHikeScreen", "Has location permission: $hasLocationPermission")
     // If the user has granted at least one of the two permissions, center the map
     // on the user's location
     if (hasLocationPermission) {

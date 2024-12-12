@@ -2,11 +2,8 @@ package ch.hikemate.app.ui.map
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import android.os.Handler
 import android.os.Looper
-import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.layout.Box
@@ -15,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -58,6 +54,7 @@ import ch.hikemate.app.model.route.HikesViewModel
 import ch.hikemate.app.ui.components.AsyncStateHandler
 import ch.hikemate.app.ui.components.HikeCard
 import ch.hikemate.app.ui.components.HikeCardStyleProperties
+import ch.hikemate.app.ui.components.LocationPermissionAlertDialog
 import ch.hikemate.app.ui.navigation.BottomBarNavigation
 import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
 import ch.hikemate.app.ui.navigation.NavigationActions
@@ -67,9 +64,7 @@ import ch.hikemate.app.ui.theme.challengingColor
 import ch.hikemate.app.ui.theme.suitableColor
 import ch.hikemate.app.utils.LocationUtils
 import ch.hikemate.app.utils.MapUtils
-import ch.hikemate.app.utils.PermissionUtils
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.MultiplePermissionsState
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationResult
@@ -184,9 +179,6 @@ object MapScreen {
   const val TEST_TAG_SEARCHING_MESSAGE = "MapScreenSearchingMessage"
   const val TEST_TAG_SEARCH_LOADING_ANIMATION = "MapScreenSearchLoadingAnimation"
   const val TEST_TAG_CENTER_MAP_BUTTON = "MapScreenCenterMapButton"
-  const val TEST_TAG_LOCATION_PERMISSION_ALERT = "MapScreenLocationPermissionAlert"
-  const val TEST_TAG_NO_THANKS_ALERT_BUTTON = "MapScreenNoThanksAlertButton"
-  const val TEST_TAG_GRANT_ALERT_BUTTON = "MapScreenGrantAlertButton"
 
   const val MINIMAL_SEARCH_TIME_IN_MS = 500 // ms
 
@@ -505,72 +497,6 @@ fun MapScreen(
               }
             }
       }
-}
-
-@OptIn(ExperimentalPermissionsApi::class)
-@Composable
-fun LocationPermissionAlertDialog(
-    show: Boolean,
-    onDismiss: () -> Unit,
-    onConfirm: () -> Unit,
-    simpleMessage: Boolean,
-    locationPermissionState: MultiplePermissionsState,
-    context: Context = LocalContext.current
-) {
-  if (!show) return
-
-  AlertDialog(
-      modifier = Modifier.testTag(MapScreen.TEST_TAG_LOCATION_PERMISSION_ALERT),
-      icon = {
-        Icon(painter = painterResource(id = R.drawable.my_location), contentDescription = null)
-      },
-      title = { Text(text = stringResource(R.string.map_screen_location_rationale_title)) },
-      text = {
-        Text(
-            text =
-                stringResource(
-                    if (simpleMessage) R.string.map_screen_location_rationale_simple
-                    else R.string.map_screen_location_rationale))
-      },
-      onDismissRequest = onDismiss,
-      confirmButton = {
-        Button(
-            modifier = Modifier.testTag(MapScreen.TEST_TAG_GRANT_ALERT_BUTTON),
-            onClick = {
-              onConfirm()
-              // If should show rationale is true, it is safe to launch permission requests
-              if (locationPermissionState.shouldShowRationale) {
-                locationPermissionState.launchMultiplePermissionRequest()
-              }
-
-              // If the user is asked for the first time, it is safe to launch permission requests
-              else if (PermissionUtils.firstTimeAskingPermission(
-                  context, android.Manifest.permission.ACCESS_FINE_LOCATION)) {
-                PermissionUtils.setFirstTimeAskingPermission(
-                    context, android.Manifest.permission.ACCESS_FINE_LOCATION, false)
-                PermissionUtils.setFirstTimeAskingPermission(
-                    context, android.Manifest.permission.ACCESS_COARSE_LOCATION, false)
-                locationPermissionState.launchMultiplePermissionRequest()
-              }
-
-              // Otherwise, the user should be brought to the settings page
-              else {
-                context.startActivity(
-                    Intent(
-                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                        Uri.fromParts("package", context.packageName, null)))
-              }
-            }) {
-              Text(text = stringResource(R.string.map_screen_location_rationale_grant_button))
-            }
-      },
-      dismissButton = {
-        Button(
-            modifier = Modifier.testTag(MapScreen.TEST_TAG_NO_THANKS_ALERT_BUTTON),
-            onClick = onDismiss) {
-              Text(text = stringResource(R.string.map_screen_location_rationale_cancel_button))
-            }
-      })
 }
 
 @Composable
