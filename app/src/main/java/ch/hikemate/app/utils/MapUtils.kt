@@ -9,11 +9,19 @@ import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.content.res.AppCompatResources
 import ch.hikemate.app.R
+import ch.hikemate.app.model.facilities.Facility
+import ch.hikemate.app.model.facilities.FacilityType.Companion.mapFacilityTypeToDrawable
 import ch.hikemate.app.model.route.Bounds
 import ch.hikemate.app.model.route.LatLong
 import ch.hikemate.app.ui.map.MapInitialValues
 import ch.hikemate.app.ui.map.MapScreen
 import kotlin.math.cos
+import kotlin.math.max
+import kotlinx.coroutines.flow.MutableStateFlow
+import org.osmdroid.events.MapListener
+import org.osmdroid.events.ScrollEvent
+import org.osmdroid.events.ZoomEvent
+import org.osmdroid.util.BoundingBox
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
@@ -21,6 +29,8 @@ import org.osmdroid.views.overlay.Polyline
 
 object MapUtils {
   private const val LOG_TAG = "MapUtils"
+  const val MIN_DISTANCE_BETWEEN_FACILITIES = 15
+  const val FACILITIES_RELATED_OBJECT_NAME = "facility_marker"
 
   /**
    * Shows a hike on the map.
@@ -264,6 +274,102 @@ object MapUtils {
         GeoPoint(location.latitude, location.longitude),
         mapView.zoomLevelDouble,
         MapScreen.CENTER_MAP_ANIMATION_TIME)
+  }
+
+  /**
+   * Displays a list of facilities into a map, by getting the drawable corresponding to the facility
+   * and then drawing it inside the map.
+   *
+   * @param facilities
+   * @param mapView the map view to display the facilities on
+   * @param context
+   */
+  fun displayFacilities(facilities: List<Facility>, mapView: MapView, context: Context) {
+    val displayedFacilities = mutableSetOf<GeoPoint>()
+
+    facilities.forEach { facility ->
+      // Get the drawable corresponding to the facility type
+      val drawable = facility.type.mapFacilityTypeToDrawable(context)
+
+      // Draw the marker in the Map
+      drawable?.let {
+        val geoPoint = GeoPoint(facility.coordinates.lat, facility.coordinates.lon)
+        if (displayedFacilities.none {
+          it.distanceToAsDouble(geoPoint) < MIN_DISTANCE_BETWEEN_FACILITIES
+        }) {
+          displayedFacilities.add(geoPoint)
+          Marker(mapView).apply {
+            position = geoPoint
+            // The icon is the drawable
+            icon = it
+            setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+            // This disables the click feature since it pops up a text window we haven't
+            // handled yet.
+            setOnMarkerClickListener { _, _ -> true }
+            // The relatedObject makes it easier for them to be all removed at once
+            // and enables the possibility of not constantly storing them in memory.
+            relatedObject = FACILITIES_RELATED_OBJECT_NAME
+            mapView.overlays.add(this)
+          }
+        }
+      }
+    }
+    // Trigger the map to be drawn again
+    mapView.invalidate()
+  }
+  /**
+   * Remove any facility that is being displayed in the map.
+   *
+   * @param mapView the map view to remove the facilities from
+   * @see [displayFacilities]
+   */
+  fun clearFacilities(mapView: MapView) {
+    mapView.overlays.removeAll { overlay ->
+      // The relatedObject was defined in displayFacilities for easier removal of the markers.
+      overlay is Marker && overlay.relatedObject == FACILITIES_RELATED_OBJECT_NAME
+    }
+
+    // Trigger the map to be drawn again
+    mapView.invalidate()
+  }
+
+  /**
+   * Utility function designed to set the mapView listener which updates the state of the
+   * BoundingBox and the ZoomLevel
+   *
+   * @param mapView
+   * @param boundingBoxState
+   * @param zoomLevelState
+   */
+  fun setMapViewListenerForStates(
+      mapView: MapView,
+      boundingBoxState: MutableStateFlow<BoundingBox>,
+      zoomLevelState: MutableStateFlow<Double>
+  ) {
+    // Update the map listener to just update the StateFlows
+    mapView.addMapListener(
+        object : MapListener {
+          override fun onScroll(event: ScrollEvent?): Boolean {
+            // On a Scroll event the boundingBox will change
+            event?.let {
+              val newBoundingBox = mapView.boundingBox
+              if (newBoundingBox != boundingBoxState.value) {
+                boundingBoxState.value = newBoundingBox
+              }
+            }
+            return true
+          }
+
+          override fun onZoom(event: ZoomEvent?): Boolean {
+            event?.let {
+              val newZoomLevel = mapView.zoomLevelDouble
+              if (newZoomLevel != zoomLevelState.value) {
+                zoomLevelState.value = newZoomLevel
+              }
+            }
+            return true
+          }
+        })
   }
 
   /**

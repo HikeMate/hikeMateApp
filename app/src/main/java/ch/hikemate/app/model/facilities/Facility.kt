@@ -1,5 +1,9 @@
 package ch.hikemate.app.model.facilities
 
+import android.content.Context
+import android.graphics.drawable.Drawable
+import androidx.core.content.ContextCompat
+import ch.hikemate.app.R
 import ch.hikemate.app.model.route.LatLong
 
 /**
@@ -60,6 +64,26 @@ enum class FacilityType(val type: String) {
         }
       }
       return null
+    }
+
+    /**
+     * Maps facility type to the corresponding drawable resource.
+     *
+     * @param context
+     */
+    fun FacilityType.mapFacilityTypeToDrawable(context: Context): Drawable? {
+      return when (this) {
+        TOILETS -> ContextCompat.getDrawable(context, R.drawable.toilets)
+        PARKING -> ContextCompat.getDrawable(context, R.drawable.parking)
+        WASTE_BASKET -> ContextCompat.getDrawable(context, R.drawable.waste_basket)
+        SUPERMARKET -> ContextCompat.getDrawable(context, R.drawable.supermarket)
+        DRINKING_WATER -> ContextCompat.getDrawable(context, R.drawable.drinking_water)
+        RANGER_STATION -> ContextCompat.getDrawable(context, R.drawable.ranger_station)
+        BBQ -> ContextCompat.getDrawable(context, R.drawable.bbq)
+        RESTAURANT -> ContextCompat.getDrawable(context, R.drawable.restaurant)
+        BIERGARTEN -> ContextCompat.getDrawable(context, R.drawable.biergarten)
+        BENCH -> ContextCompat.getDrawable(context, R.drawable.bench)
+      }
     }
   }
 }

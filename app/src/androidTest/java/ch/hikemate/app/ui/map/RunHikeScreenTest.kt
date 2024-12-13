@@ -13,6 +13,10 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import ch.hikemate.app.model.elevation.ElevationRepository
+import ch.hikemate.app.model.facilities.FacilitiesRepository
+import ch.hikemate.app.model.facilities.FacilitiesViewModel
+import ch.hikemate.app.model.facilities.Facility
+import ch.hikemate.app.model.facilities.FacilityType
 import ch.hikemate.app.model.route.Bounds
 import ch.hikemate.app.model.route.DetailedHike
 import ch.hikemate.app.model.route.Hike
@@ -23,6 +27,7 @@ import ch.hikemate.app.model.route.HikesViewModel
 import ch.hikemate.app.model.route.LatLong
 import ch.hikemate.app.model.route.saved.SavedHike
 import ch.hikemate.app.model.route.saved.SavedHikesRepository
+import ch.hikemate.app.model.route.toBoundingBox
 import ch.hikemate.app.ui.components.CenteredErrorAction
 import ch.hikemate.app.ui.components.DetailRow
 import ch.hikemate.app.ui.components.LocationPermissionAlertDialog
@@ -62,6 +67,8 @@ class RunHikeScreenTest {
   private lateinit var hikesRepository: HikeRoutesRepository
   private lateinit var elevationRepository: ElevationRepository
   private lateinit var hikesViewModel: HikesViewModel
+  private lateinit var facilitiesViewModel: FacilitiesViewModel
+  private lateinit var facilitiesRepository: FacilitiesRepository
 
   private val hikeId = "1"
   private val detailedHike =
@@ -75,6 +82,42 @@ class RunHikeScreenTest {
               "A scenic trail with breathtaking views of the Matterhorn and surrounding glaciers.",
           bounds = Bounds(minLat = 45.9, minLon = 7.6, maxLat = 46.0, maxLon = 7.7),
           waypoints = listOf(LatLong(45.9, 7.6), LatLong(45.95, 7.65), LatLong(46.0, 7.7)),
+          elevation = listOf(0.0, 10.0, 20.0, 30.0),
+          distance = 13.543077559212616,
+          elevationGain = 68.0,
+          estimatedTime = 169.3169307105514,
+          difficulty = HikeDifficulty.DIFFICULT,
+      )
+
+  private val detailedHike2 =
+      DetailedHike(
+          id = hikeId,
+          color = Hike(hikeId, false, null, null).getColor(),
+          isSaved = true,
+          plannedDate = null,
+          name = "Sample Hike",
+          description =
+              "A scenic trail with breathtaking views of the Matterhorn and surrounding glaciers.",
+          bounds = Bounds(minLat = 45.9, minLon = 7.6, maxLat = 45.91, maxLon = 7.61),
+          waypoints = listOf(LatLong(45.9, 7.6), LatLong(45.908, 7.605), LatLong(45.91, 7.61)),
+          elevation = listOf(0.0, 10.0, 20.0, 30.0),
+          distance = 13.543077559212616,
+          elevationGain = 68.0,
+          estimatedTime = 169.3169307105514,
+          difficulty = HikeDifficulty.DIFFICULT,
+      )
+
+  private val detailedHike3 =
+      DetailedHike(
+          id = hikeId,
+          color = Hike(hikeId, false, null, null).getColor(),
+          isSaved = true,
+          plannedDate = null,
+          name = "Sample Hike",
+          description =
+              "A scenic trail with breathtaking views of the Matterhorn and surrounding glaciers.",
+          bounds = Bounds(minLat = 44.9, minLon = 6.6, maxLat = 46.91, maxLon = 8.61),
+          waypoints = listOf(LatLong(45.9, 7.6), LatLong(45.908, 7.605), LatLong(45.91, 7.61)),
           elevation = listOf(0.0, 10.0, 20.0, 30.0),
           distance = 13.543077559212616,
           elevationGain = 68.0,
@@ -169,7 +212,7 @@ class RunHikeScreenTest {
       RunHikeScreen(
           hikesViewModel = hikesViewModel,
           navigationActions = mockNavigationActions,
-      )
+          facilitiesViewModel = facilitiesViewModel)
     }
   }
 
@@ -180,6 +223,9 @@ class RunHikeScreenTest {
     savedHikesRepository = mock(SavedHikesRepository::class.java)
     hikesRepository = mock(HikeRoutesRepository::class.java)
     elevationRepository = mock(ElevationRepository::class.java)
+
+    facilitiesRepository = mock(FacilitiesRepository::class.java)
+    facilitiesViewModel = FacilitiesViewModel(facilitiesRepository)
 
     // By default, the user has location permission
     mockkObject(LocationUtils)
@@ -331,6 +377,67 @@ class RunHikeScreenTest {
             .assertIsDisplayed()
             .assert(hasText("23% complete"))
       }
+
+  @Test
+  fun runHikeScreen_fetchesFacilities() = runTest {
+    val listFacility =
+        listOf(
+            Facility(
+                type = FacilityType.TOILETS, // We'll test the toilets drawable
+                coordinates = LatLong(45.9, 7.6)))
+    `when`(facilitiesRepository.getFacilities(any(), any(), any())).then {
+      val onSuccess = it.getArgument<(List<Facility>) -> Unit>(1)
+      onSuccess(listFacility)
+    }
+    setupCompleteScreenWithSelected(detailedHike2)
+    verify(facilitiesRepository).getFacilities(any(), any(), any())
+  }
+
+  private suspend fun setUpSelectedHike(hike: DetailedHike) {
+    val asSavedHike = SavedHike(hike.id, hike.name ?: "", hike.plannedDate)
+
+    val hikeAsOsm =
+        HikeRoute(
+            id = hike.id,
+            bounds = hike.bounds,
+            ways = hike.waypoints,
+            name = hike.name,
+            description = hike.description,
+        )
+
+    // Make sure the saved status of the hike is set correctly
+    `when`(savedHikesRepository.loadSavedHikes())
+        .thenReturn(if (hike.isSaved) listOf(asSavedHike) else emptyList())
+
+    // Make sure that the hike is loaded from bounds when the view model gets it
+    `when`(hikesRepository.getRoutes(any(), any(), any())).thenAnswer {
+      val onSuccess = it.getArgument<(List<HikeRoute>) -> Unit>(1)
+      onSuccess(listOf(hikeAsOsm))
+    }
+
+    // Make sure the appropriate elevation profile is obtained when requested
+    `when`(elevationRepository.getElevation(any(), any(), any())).thenAnswer {
+      val onSuccess = it.getArgument<(List<Double>) -> Unit>(1)
+      onSuccess(hike.elevation)
+    }
+
+    // Reset the view model
+    hikesViewModel =
+        HikesViewModel(
+            savedHikesRepository, hikesRepository, elevationRepository, UnconfinedTestDispatcher())
+
+    // Load the hike from OSM, as if the user had searched it on the map
+    hikesViewModel.loadHikesInBounds(detailedHike.bounds.toBoundingBox())
+
+    // Retrieve the hike's elevation data from the repository
+    hikesViewModel.retrieveElevationDataFor(hikeId)
+
+    // Compute the hike's details
+    hikesViewModel.computeDetailsFor(hikeId)
+
+    // Mark the hike as selected, to make sure it is the one displayed on the details screen
+    hikesViewModel.selectHike(hikeId)
+  }
 
   @OptIn(ExperimentalPermissionsApi::class)
   @Test

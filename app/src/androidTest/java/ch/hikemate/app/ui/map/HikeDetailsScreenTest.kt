@@ -1,10 +1,12 @@
 package ch.hikemate.app.ui.map
 
 import android.content.Context
+import android.graphics.drawable.Drawable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.test.*
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertAny
 import androidx.compose.ui.test.assertCountEquals
@@ -19,12 +21,18 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.hikemate.app.R
 import ch.hikemate.app.model.authentication.AuthRepository
 import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.model.elevation.ElevationRepository
+import ch.hikemate.app.model.facilities.FacilitiesRepository
+import ch.hikemate.app.model.facilities.FacilitiesViewModel
+import ch.hikemate.app.model.facilities.Facility
+import ch.hikemate.app.model.facilities.FacilityType
 import ch.hikemate.app.model.profile.HikingLevel
 import ch.hikemate.app.model.profile.Profile
 import ch.hikemate.app.model.profile.ProfileRepository
@@ -51,11 +59,14 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import kotlin.math.roundToInt
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -67,6 +78,8 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Marker
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
@@ -80,8 +93,13 @@ class HikeDetailScreenTest {
   private lateinit var profileViewModel: ProfileViewModel
   private lateinit var mockSavedHikesRepository: SavedHikesRepository
   private lateinit var hikesRepository: HikeRoutesRepository
-  private lateinit var elevationRepository: ElevationRepository
+
   private lateinit var hikesViewModel: HikesViewModel
+
+  private lateinit var facilitiesViewModel: FacilitiesViewModel
+  private lateinit var facilitiesRepository: FacilitiesRepository
+  private lateinit var elevationRepository: ElevationRepository
+
   private lateinit var context: Context
 
   private val hikeId = "1"
@@ -102,6 +120,46 @@ class HikeDetailScreenTest {
           estimatedTime = 169.3169307105514,
           difficulty = HikeDifficulty.DIFFICULT,
       )
+  // Waypoints closer to each other
+  private val detailedHike2 =
+      DetailedHike(
+          id = hikeId,
+          color = Hike(hikeId, false, null, null).getColor(),
+          isSaved = false,
+          plannedDate = null,
+          name = "Sample Hike",
+          description =
+              "A scenic trail with breathtaking views of the Matterhorn and surrounding glaciers.",
+          bounds = Bounds(minLat = 45.9, minLon = 7.6, maxLat = 45.91, maxLon = 7.61),
+          waypoints =
+              listOf(LatLong(45.9, 7.6), LatLong(45.9001, 7.6001), LatLong(45.9002, 7.6002)),
+          elevation = listOf(0.0, 10.0, 20.0, 30.0),
+          distance = 13.543077559212616,
+          elevationGain = 68.0,
+          estimatedTime = 169.3169307105514,
+          difficulty = HikeDifficulty.DIFFICULT,
+      )
+
+  // Bigger bounds
+  private val detailedHike3 =
+      DetailedHike(
+          id = hikeId,
+          color = Hike(hikeId, false, null, null).getColor(),
+          isSaved = false,
+          plannedDate = null,
+          name = "Sample Hike",
+          description =
+              "A scenic trail with breathtaking views of the Matterhorn and surrounding glaciers.",
+          bounds = Bounds(minLat = 44.9, minLon = 6.6, maxLat = 46.91, maxLon = 8.61),
+          waypoints = listOf(LatLong(45.9, 7.6), LatLong(45.908, 7.605), LatLong(45.91, 7.61)),
+          elevation = listOf(0.0, 10.0, 20.0, 30.0),
+          distance = 13.543077559212616,
+          elevationGain = 68.0,
+          estimatedTime = 169.3169307105514,
+          difficulty = HikeDifficulty.DIFFICULT,
+      )
+
+  private val dispatcher = UnconfinedTestDispatcher()
 
   private fun setUpCompleteScreen() {
     composeTestRule.setContent {
@@ -110,7 +168,8 @@ class HikeDetailScreenTest {
           hikesViewModel = hikesViewModel,
           profileViewModel = profileViewModel,
           authViewModel = authViewModel,
-          navigationActions = mockNavigationActions)
+          navigationActions = mockNavigationActions,
+          facilitiesViewModel = facilitiesViewModel)
     }
   }
 
@@ -250,12 +309,16 @@ class HikeDetailScreenTest {
     hikesRepository = mock(HikeRoutesRepository::class.java)
     elevationRepository = mock(ElevationRepository::class.java)
     mockSavedHikesRepository = mock(SavedHikesRepository::class.java)
+    facilitiesRepository = mock(FacilitiesRepository::class.java)
 
+    facilitiesViewModel = FacilitiesViewModel(facilitiesRepository)
     `when`(profileRepository.getProfileById(eq(profile.id), any(), any())).thenAnswer {
       val onSuccess = it.getArgument<(Profile) -> Unit>(1)
       onSuccess(profile)
     }
     profileViewModel.getProfileById(profile.id)
+    //    Dispatchers.setMain(dispatcher)
+    //    facilitiesViewModel = FacilitiesViewModel(facilitiesRepository, dispatcher)
   }
 
   @Test
@@ -603,6 +666,128 @@ class HikeDetailScreenTest {
         .performClick()
 
     verify(onRunThisHike).invoke()
+  }
+
+  @Test
+  fun hikeDetails_fetchesFacilities() = runTest {
+    val listFacility =
+        listOf(
+            Facility(
+                type = FacilityType.TOILETS, // We'll test the toilets drawable
+                coordinates = LatLong(45.9, 7.6)))
+    `when`(facilitiesRepository.getFacilities(any(), any(), any())).then {
+      val onSuccess = it.getArgument<(List<Facility>) -> Unit>(1)
+      onSuccess(listFacility)
+    }
+    setUpSelectedHike(detailedHike2)
+    composeTestRule.setContent {
+      HikeDetailScreen(
+          hikesViewModel = hikesViewModel,
+          profileViewModel = profileViewModel,
+          authViewModel = authViewModel,
+          navigationActions = mockNavigationActions,
+          facilitiesViewModel = facilitiesViewModel)
+    }
+
+    verify(facilitiesRepository).getFacilities(any(), any(), any())
+  }
+
+  // @Test
+  fun hikeDetails_displaysCorrectDrawableForFacilityType() =
+      runTest(dispatcher) {
+        setUpSelectedHike(detailedHike2)
+
+        val bounds = detailedHike2.bounds.toBoundingBox()
+        val center = LatLong(bounds.centerLatitude, bounds.centerLongitude)
+        val testFacility = Facility(type = FacilityType.TOILETS, coordinates = center)
+        val listFacility = listOf(testFacility)
+
+        `when`(facilitiesRepository.getFacilities(any(), any(), any())).then {
+          val onSuccess = it.getArgument<(List<Facility>) -> Unit>(1)
+          onSuccess(listFacility)
+        }
+
+        lateinit var mapView: MapView
+        lateinit var context: Context
+
+        composeTestRule.setContent {
+          context = LocalContext.current
+          mapView = hikeDetailsMap(detailedHike2, facilitiesViewModel)
+        }
+
+        facilitiesViewModel.fetchFacilitiesForHike(detailedHike3)
+        // Simulate ViewModel and map updates
+
+        // The reason for await is I found out the test only works with it I don't know why.
+        composeTestRule.awaitIdle()
+
+        // Assert marker presence and validity
+        val facilityMarkers =
+            mapView.overlays.filterIsInstance<Marker>().filter {
+              it.relatedObject == MapUtils.FACILITIES_RELATED_OBJECT_NAME
+            }
+
+        assertTrue("Marker should be added to the map", facilityMarkers.isNotEmpty())
+
+        val marker = facilityMarkers.first()
+        val expectedDrawable = ContextCompat.getDrawable(context, R.drawable.toilets)
+
+        assertEquals(1, facilityMarkers.size)
+        assertTrue(
+            "Marker should have correct drawable icon",
+            areSameDrawable(expectedDrawable, marker.icon))
+        assertEquals(testFacility.coordinates.lat, marker.position.latitude, 0.0001)
+        assertEquals(testFacility.coordinates.lon, marker.position.longitude, 0.0001)
+      }
+
+  // @Test
+  fun hikeDetails_hidesFacilities_whenZoomLevelIsInsufficient() =
+      runTest(dispatcher) {
+        setUpSelectedHike(detailedHike3)
+
+        lateinit var mapView: MapView
+
+        val bounds = detailedHike3.bounds.toBoundingBox()
+        val center = LatLong(bounds.centerLatitude, bounds.centerLongitude)
+        val testFacility = Facility(type = FacilityType.TOILETS, coordinates = center)
+        val listFacility = listOf(testFacility)
+        `when`(facilitiesRepository.getFacilities(any(), any(), any())).then {
+          val onSuccess = it.getArgument<(List<Facility>) -> Unit>(1)
+          onSuccess(listFacility)
+        }
+
+        composeTestRule.setContent { mapView = hikeDetailsMap(detailedHike3, facilitiesViewModel) }
+
+        facilitiesViewModel.fetchFacilitiesForHike(detailedHike3)
+        // The reason for await is I found out the test only works with it I don't know why.
+        composeTestRule.awaitIdle()
+
+        // Verify facilities are hidden at insufficient zoom levels
+        val finalMarkers =
+            mapView.overlays.filterIsInstance<Marker>().filter {
+              it.relatedObject == MapUtils.FACILITIES_RELATED_OBJECT_NAME
+            }
+
+        assertTrue(
+            "Facilities should be hidden at zoom level ${mapView.zoomLevelDouble}, " +
+                "below minimum",
+            finalMarkers.isEmpty())
+      }
+
+  // @After
+  fun tearDown() {
+    Dispatchers.resetMain()
+  }
+
+  // Helper function to compare drawables
+  fun areSameDrawable(drawable1: Drawable?, drawable2: Drawable?): Boolean {
+    if (drawable1 == null || drawable2 == null) return false
+
+    // Convert both drawables to bitmap for comparison
+    val bitmap1 = drawable1.toBitmap()
+    val bitmap2 = drawable2.toBitmap()
+
+    return bitmap1.sameAs(bitmap2)
   }
 
   @Test

@@ -203,6 +203,7 @@ class HikeTest {
     // Case 3: Two waypoints - should create one segment
     val p1 = LatLong(0.0, 0.0)
     val p2 = LatLong(1.0, 1.0)
+
     val twoPointHike = baseHike.copy(waypoints = listOf(p1, p2))
 
     assertEquals(1, twoPointHike.segments.size)
@@ -212,6 +213,7 @@ class HikeTest {
 
     // Case 4: Multiple waypoints
     val points = listOf(LatLong(0.0, 0.0), LatLong(1.0, 1.0), LatLong(2.0, 2.0), LatLong(3.0, 3.0))
+
     val multiPointHike = baseHike.copy(waypoints = points)
 
     assertEquals(3, multiPointHike.segments.size)
@@ -230,6 +232,7 @@ class HikeTest {
             LatLong(0.0, 1.0), // 1 degree longitude at equator
             LatLong(1.0, 1.0) // 1 degree latitude
             )
+
     val knownDistanceHike = baseHike.copy(waypoints = knownPoints)
 
     assertEquals(2, knownDistanceHike.segments.size)

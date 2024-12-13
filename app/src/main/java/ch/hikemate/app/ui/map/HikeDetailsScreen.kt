@@ -1,6 +1,7 @@
 package ch.hikemate.app.ui.map
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
@@ -36,6 +37,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
@@ -59,6 +61,8 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.hikemate.app.R
 import ch.hikemate.app.model.authentication.AuthViewModel
+import ch.hikemate.app.model.facilities.FacilitiesViewModel
+import ch.hikemate.app.model.facilities.Facility
 import ch.hikemate.app.model.profile.HikingLevel
 import ch.hikemate.app.model.profile.ProfileViewModel
 import ch.hikemate.app.model.route.DetailedHike
@@ -94,6 +98,10 @@ import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
+import org.osmdroid.util.BoundingBox
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
@@ -103,6 +111,9 @@ object HikeDetailScreen {
   const val MAP_MAX_LONGITUDE = 180.0
   const val MAP_MIN_LONGITUDE = -180.0
   const val MAP_BOUNDS_MARGIN: Int = 100
+
+  const val DEBOUNCE_DURATION = 300L
+
   val BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT = 400.dp
   val MAP_BOTTOM_PADDING_ADJUSTMENT = 20.dp
 
@@ -126,7 +137,8 @@ fun HikeDetailScreen(
     hikesViewModel: HikesViewModel,
     profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory),
     authViewModel: AuthViewModel,
-    navigationActions: NavigationActions
+    navigationActions: NavigationActions,
+    facilitiesViewModel: FacilitiesViewModel
 ) {
   // Load the user's profile to get their hiking level
   LaunchedEffect(Unit) {
@@ -138,7 +150,6 @@ fun HikeDetailScreen(
     // Load or reload the saved hikes list to see if the currently selected one is saved
     hikesViewModel.refreshSavedHikesCache()
   }
-
   val selectedHike by hikesViewModel.selectedHike.collectAsState()
 
   // Gets initialized here so that the LaunchedEffect has access to it. The value is only actually
@@ -175,6 +186,9 @@ fun HikeDetailScreen(
       withDetailedHike = { detailedHike ->
         val errorMessageIdState = profileViewModel.errorMessageId.collectAsState()
         val profileState = profileViewModel.profile.collectAsState()
+
+        LaunchedEffect(Unit) { facilitiesViewModel.fetchFacilitiesForHike(detailedHike) }
+
         AsyncStateHandler(
             errorMessageIdState = errorMessageIdState,
             actionContentDescriptionStringId = R.string.go_back,
@@ -186,9 +200,15 @@ fun HikeDetailScreen(
             valueState = profileState,
         ) { profile ->
           Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {
+
             // Display the hike's actual information
             HikeDetailsContent(
-                detailedHike, mapViewState, navigationActions, hikesViewModel, profile.hikingLevel)
+                detailedHike,
+                mapViewState,
+                navigationActions,
+                hikesViewModel,
+                profile.hikingLevel,
+                facilitiesViewModel)
           }
         }
       },
@@ -209,11 +229,14 @@ fun HikeDetailsContent(
     mapViewState: MutableState<MapView?>,
     navigationActions: NavigationActions,
     hikesViewModel: HikesViewModel,
-    userHikingLevel: HikingLevel
+    userHikingLevel: HikingLevel,
+    facilitiesViewModel: FacilitiesViewModel
 ) {
+
   Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {
     // Display the map and the zoom buttons
-    mapViewState.value = hikeDetailsMap(hike)
+
+    mapViewState.value = hikeDetailsMap(hike, facilitiesViewModel)
 
     // Display the back button on top of the map
     BackButton(
@@ -237,7 +260,6 @@ fun HikeDetailsContent(
         wantToRunHike = false
       }
     }
-
     // Display the details of the hike at the bottom of the screen
     HikesDetailsBottomScaffold(
         hike, hikesViewModel, userHikingLevel, onRunThisHike = { wantToRunHike = true })
@@ -245,11 +267,14 @@ fun HikeDetailsContent(
 }
 
 @Composable
-fun hikeDetailsMap(hike: DetailedHike): MapView {
+fun hikeDetailsMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel): MapView {
   val context = LocalContext.current
-
   val hikeZoomLevel = MapUtils.calculateBestZoomLevel(hike.bounds).toDouble()
   val hikeCenter = MapUtils.getGeographicalCenter(hike.bounds)
+  val facilities by facilitiesViewModel.facilities.collectAsState()
+
+  // Add a state to force re-triggering effects when reentering screen
+  var shouldLoadFacilities by remember { mutableStateOf(true) }
 
   // Avoid re-creating the MapView on every recomposition
   val mapView = remember {
@@ -272,25 +297,39 @@ fun hikeDetailsMap(hike: DetailedHike): MapView {
     }
   }
 
-  // When the map is ready, it will have computed its bounding box
-  mapView.addOnFirstLayoutListener { _, _, _, _, _ ->
-    // Limit the vertical scrollable area to avoid the user scrolling too far from the hike
-    mapView.setScrollableAreaLimitLatitude(
-        min(MapScreen.MAP_MAX_LATITUDE, mapView.boundingBox.latNorth),
-        max(MapScreen.MAP_MIN_LATITUDE, mapView.boundingBox.latSouth),
-        HikeDetailScreen.MAP_BOUNDS_MARGIN)
-    if (hike.bounds.maxLon < HikeDetailScreen.MAP_MAX_LONGITUDE ||
-        hike.bounds.minLon > HikeDetailScreen.MAP_MIN_LONGITUDE) {
-      mapView.setScrollableAreaLimitLongitude(
-          max(HikeDetailScreen.MAP_MIN_LONGITUDE, mapView.boundingBox.lonWest),
-          min(HikeDetailScreen.MAP_MAX_LONGITUDE, mapView.boundingBox.lonEast),
-          HikeDetailScreen.MAP_BOUNDS_MARGIN)
+  // Create state values that we can actually observe in the LaunchedEffect
+  // We keep our StateFlows for debouncing
+  val boundingBoxState = remember { MutableStateFlow(mapView.boundingBox) }
+  val zoomLevelState = remember { MutableStateFlow(mapView.zoomLevelDouble) }
+
+  // This effect handles both initial facility display and subsequent updates
+  // It triggers when facilities are loaded or when the map view changes
+  shouldLoadFacilities =
+      launchedEffectLoadingOfFacilities(
+          facilities, shouldLoadFacilities, mapView, facilitiesViewModel, hike, context)
+
+  // This solves the bug of the screen freezing by properly cleaning up resources
+  DisposableEffect(Unit) {
+    onDispose {
+      mapView.onPause()
+      mapView.onDetach()
+      mapView.overlayManager.clear()
+      mapView.tileProvider.clearTileCache()
+      // Set flag to reload facilities when returning to screen
+      shouldLoadFacilities = true
     }
   }
 
+  // This LaunchedEffect handles map updates with debouncing to prevent too frequent refreshes
+  LaunchedEffectFacilitiesDisplay(
+      mapView, boundingBoxState, zoomLevelState, facilitiesViewModel, hike, context)
+
+  // When the map is ready, it will have computed its bounding box
+  LaunchedEffectMapviewListener(mapView, hike)
+
   // Show the selected hike on the map
   // OnLineClick does nothing, the line should not be clickable
-  Log.d("HikeDetailScreen", "Drawing hike on map: ${hike.bounds}")
+  Log.d(HikeDetailScreen.LOG_TAG, "Drawing hike on map: ${hike.bounds}")
   MapUtils.showHikeOnMap(
       mapView = mapView, waypoints = hike.waypoints, color = hike.color, onLineClick = {})
 
@@ -307,6 +346,94 @@ fun hikeDetailsMap(hike: DetailedHike): MapView {
                           HikeDetailScreen.MAP_BOTTOM_PADDING_ADJUSTMENT)
               .testTag(TEST_TAG_MAP))
   return mapView
+}
+
+@Composable
+private fun LaunchedEffectFacilitiesDisplay(
+    mapView: MapView,
+    boundingBoxState: MutableStateFlow<BoundingBox>,
+    zoomLevelState: MutableStateFlow<Double>,
+    facilitiesViewModel: FacilitiesViewModel,
+    hike: DetailedHike,
+    context: Context
+) {
+  LaunchedEffect(Unit) {
+    MapUtils.setMapViewListenerForStates(mapView, boundingBoxState, zoomLevelState)
+
+    // Create our combined flow which is limited by a debounce
+    val combinedFlow =
+        combine(
+            boundingBoxState.debounce(HikeDetailScreen.DEBOUNCE_DURATION),
+            zoomLevelState.debounce(HikeDetailScreen.DEBOUNCE_DURATION)) { boundingBox, zoomLevel ->
+              boundingBox to zoomLevel
+            }
+
+    try {
+      combinedFlow.collect { (boundingBox, zoomLevel) ->
+        facilitiesViewModel.filterFacilitiesForDisplay(
+            bounds = boundingBox,
+            zoomLevel = zoomLevel,
+            hikeRoute = hike,
+            onSuccess = { newFacilities ->
+              MapUtils.clearFacilities(mapView)
+              if (newFacilities.isNotEmpty()) {
+                MapUtils.displayFacilities(newFacilities, mapView, context)
+              }
+            },
+            onNoFacilitiesForState = { MapUtils.clearFacilities(mapView) })
+      }
+    } catch (e: Exception) {
+      Log.e(HikeDetailScreen.LOG_TAG, "Error in facility updates flow", e)
+    }
+  }
+}
+
+@Composable
+private fun LaunchedEffectMapviewListener(mapView: MapView, hike: DetailedHike) {
+  mapView.addOnFirstLayoutListener { _, _, _, _, _ ->
+    // Limit the vertical scrollable area to avoid the user scrolling too far from the hike
+    mapView.setScrollableAreaLimitLatitude(
+        min(MapScreen.MAP_MAX_LATITUDE, mapView.boundingBox.latNorth),
+        max(MapScreen.MAP_MIN_LATITUDE, mapView.boundingBox.latSouth),
+        HikeDetailScreen.MAP_BOUNDS_MARGIN)
+    if (hike.bounds.maxLon < HikeDetailScreen.MAP_MAX_LONGITUDE ||
+        hike.bounds.minLon > HikeDetailScreen.MAP_MIN_LONGITUDE) {
+      mapView.setScrollableAreaLimitLongitude(
+          max(HikeDetailScreen.MAP_MIN_LONGITUDE, mapView.boundingBox.lonWest),
+          min(HikeDetailScreen.MAP_MAX_LONGITUDE, mapView.boundingBox.lonEast),
+          HikeDetailScreen.MAP_BOUNDS_MARGIN)
+    }
+  }
+}
+
+@Composable
+private fun launchedEffectLoadingOfFacilities(
+    facilities: List<Facility>?,
+    shouldLoadFacilities: Boolean,
+    mapView: MapView,
+    facilitiesViewModel: FacilitiesViewModel,
+    hike: DetailedHike,
+    context: Context
+): Boolean {
+  var shouldLoadFacilities1 = shouldLoadFacilities
+  LaunchedEffect(facilities, shouldLoadFacilities1) {
+    if (facilities != null && mapView.repository != null) {
+      facilitiesViewModel.filterFacilitiesForDisplay(
+          bounds = mapView.boundingBox,
+          zoomLevel = mapView.zoomLevelDouble,
+          hikeRoute = hike,
+          onSuccess = { newFacilities ->
+            MapUtils.clearFacilities(mapView)
+            if (newFacilities.isNotEmpty()) {
+              MapUtils.displayFacilities(newFacilities, mapView, context)
+            }
+          },
+          onNoFacilitiesForState = { MapUtils.clearFacilities(mapView) })
+      // Reset the flag after loading
+      shouldLoadFacilities1 = false
+    }
+  }
+  return shouldLoadFacilities1
 }
 
 /**
@@ -621,8 +748,9 @@ fun AppropriatenessMessage(isSuitable: Boolean) {
 
   Row(verticalAlignment = Alignment.CenterVertically) {
     Icon(
+        // The icon is only decorative, the following message is enough for
+        // accessibility
         painter = suitableLabelIcon,
-        // The icon is only decorative, the following message is enough for accessibility
         contentDescription = null,
         tint = suitableLabelColor,
         modifier = Modifier.size(16.dp))
