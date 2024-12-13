@@ -882,13 +882,11 @@ class HikesViewModelTest {
   fun `unsaveHike also unplans hike`() =
       runTest(dispatcher) {
         // Make sure the loaded hike is included in the saved hikes
-        coEvery { savedHikesRepo.loadSavedHikes() } returns
-            listOf(
-                SavedHike(
+        loadSavedHikes(listOf(
+            SavedHike(
                     id = singleOsmHike1[0].id,
                     name = singleOsmHike1[0].name ?: "",
-                    date = firstJanuary2024))
-        hikesViewModel.refreshSavedHikesCache()
+                    date = firstJanuary2024)))
 
         // Load a hike to be unsaved (load hikes from bounds so that the hike won't be removed from
         // the loaded hikes list after being unsaved).
