@@ -138,9 +138,7 @@ class EndToEndTest4 : TestCase() {
         .assertIsDisplayed()
         .performClick()
 
-    // Wait for the sign-in to be performed and the map to load
-    composeTestRule.waitUntilExactlyOneExists(
-        hasTestTag(MapScreen.TEST_TAG_MAP), timeoutMillis = 10000)
+    composeTestRule.waitUntilExactlyOneExists(hasTestTag(Screen.MAP), timeoutMillis = 10000)
 
     // ---- Navigate to a hike's details screen ----
 
@@ -152,7 +150,6 @@ class EndToEndTest4 : TestCase() {
         hasTestTag(MapScreen.TEST_TAG_HIKE_ITEM), timeoutMillis = 10000)
     composeTestRule.onAllNodesWithTag(MapScreen.TEST_TAG_HIKE_ITEM)[0].performClick()
 
-    // Wait for the transition to complete
     composeTestRule.waitUntilExactlyOneExists(
         hasTestTag(HikeDetailScreen.TEST_TAG_MAP), timeoutMillis = 10000)
 
@@ -164,12 +161,18 @@ class EndToEndTest4 : TestCase() {
         .assertIsDisplayed()
         .performClick()
 
-    // Wait for the transition to complete
-    composeTestRule.waitUntilExactlyOneExists(
-        hasTestTag(RunHikeScreen.TEST_TAG_MAP), timeoutMillis = 10000)
+    composeTestRule.waitUntilExactlyOneExists(hasTestTag(Screen.RUN_HIKE), timeoutMillis = 10000)
 
     // ---- RunHike Screen ----
 
-    composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_MAP).assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(RunHikeScreen.TEST_TAG_STOP_HIKE_BUTTON)
+        .assertIsDisplayed()
+        .performClick()
+
+    // ---- Back to HikeDetail Screen by stopping the run----
+
+    composeTestRule.waitUntilExactlyOneExists(
+        hasTestTag(HikeDetailScreen.TEST_TAG_MAP), timeoutMillis = 10000)
   }
 }
