@@ -32,6 +32,7 @@ import ch.hikemate.app.ui.components.DetailRow
 import ch.hikemate.app.ui.navigation.NavigationActions
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.fail
 import org.junit.Before
@@ -262,11 +263,24 @@ class RunHikeScreenTest {
     verify(elevationRepository).getElevation(any(), any(), any())
   }
 
-  @Test
-  fun runHikeScreen_displaysMap() = runTest {
-    setupCompleteScreenWithSelected(detailedHike)
-    composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_MAP).assertIsDisplayed()
-  }
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun runHikeScreen_displaysMap() = runTest {
+        setupCompleteScreenWithSelected(detailedHike)
+
+        // Advance coroutines
+        advanceUntilIdle()
+
+        // Wait for map to be ready
+        composeTestRule.waitUntilExactlyOneExists(
+            hasTestTag(RunHikeScreen.TEST_TAG_MAP),
+            timeoutMillis = 10000
+        )
+
+        composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_MAP)
+            .assertExists()
+            .assertIsDisplayed()
+    }
 
   @Test
   fun runHikeScreen_displaysBackButton() = runTest {
