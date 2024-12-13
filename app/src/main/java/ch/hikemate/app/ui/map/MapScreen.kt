@@ -50,6 +50,7 @@ import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.model.profile.HikingLevel
 import ch.hikemate.app.model.profile.ProfileViewModel
 import ch.hikemate.app.model.route.DeferredData
+import ch.hikemate.app.model.route.Hike
 import ch.hikemate.app.model.route.HikesViewModel
 import ch.hikemate.app.ui.components.AsyncStateHandler
 import ch.hikemate.app.ui.components.HikeCard
@@ -69,6 +70,7 @@ import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationResult
 import kotlin.math.abs
+import kotlinx.coroutines.flow.StateFlow
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
@@ -353,46 +355,8 @@ fun MapScreen(
   val hikesType by hikesViewModel.loadedHikesType.collectAsState()
   val selectedHike by hikesViewModel.selectedHike.collectAsState()
 
-  LaunchedEffect(hikes, isSearching, hikesType) {
-    // Don't update the map if a search is ongoing
-    if (isSearching.value) return@LaunchedEffect
-
-    // Clear all hikes drawn on the map previously
-    clearHikesFromMap(mapView, userLocationMarker)
-
-    // If loaded hikes were not loaded from the displayed area, don't display them on the map
-    if (hikesType != HikesViewModel.LoadedHikes.FromBounds) {
-      return@LaunchedEffect
-    }
-
-    // Draw the hikes on the map, avoid drawing too many of them for performance concerns
-    hikes.take(MapScreen.MAX_HIKES_DRAWN_ON_MAP).forEach {
-      val hike = it.value
-      val waypoints = if (hike.waypoints is DeferredData.Obtained) hike.waypoints.data else null
-      if (waypoints != null) {
-        MapUtils.showHikeOnMap(
-            mapView,
-            waypoints,
-            hike.getColor(),
-            onLineClick = { hikesViewModel.selectHike(hike.id) })
-      } else {
-        Log.e(
-            MapScreen.LOG_TAG,
-            "[CRITICAL] Hike ${hike.id} has no waypoints on the map screen. This is never supposed to happen.")
-      }
-    }
-
-    // If there are too many hikes, show a toast to inform the user
-    if (hikes.size > MapScreen.MAX_HIKES_DRAWN_ON_MAP) {
-      Toast.makeText(
-              context,
-              context.getString(
-                  R.string.map_screen_too_many_hikes_message, MapScreen.MAX_HIKES_DRAWN_ON_MAP),
-              Toast.LENGTH_LONG)
-          .show()
-      Log.d(MapScreen.LOG_TAG, "Too many hikes (${hikes.size}) to display on the map")
-    }
-  }
+  LaunchedEffectForHikeUpdate(
+      hikes, isSearching, hikesType, mapView, userLocationMarker, hikesViewModel, context)
 
   LaunchedEffect(selectedHike) {
     if (selectedHike != null) {
@@ -508,6 +472,58 @@ fun MapScreen(
               }
             }
       }
+}
+
+@Composable
+private fun LaunchedEffectForHikeUpdate(
+    hikes: List<StateFlow<Hike>>,
+    isSearching: MutableState<Boolean>,
+    hikesType: HikesViewModel.LoadedHikes,
+    mapView: MapView,
+    userLocationMarker: Marker?,
+    hikesViewModel: HikesViewModel,
+    context: Context
+) {
+  LaunchedEffect(hikes, isSearching, hikesType) {
+    // Don't update the map if a search is ongoing
+    if (isSearching.value) return@LaunchedEffect
+
+    // Clear all hikes drawn on the map previously
+    clearHikesFromMap(mapView, userLocationMarker)
+
+    // If loaded hikes were not loaded from the displayed area, don't display them on the map
+    if (hikesType != HikesViewModel.LoadedHikes.FromBounds) {
+      return@LaunchedEffect
+    }
+
+    // Draw the hikes on the map, avoid drawing too many of them for performance concerns
+    hikes.take(MapScreen.MAX_HIKES_DRAWN_ON_MAP).forEach {
+      val hike = it.value
+      val waypoints = if (hike.waypoints is DeferredData.Obtained) hike.waypoints.data else null
+      if (waypoints != null) {
+        MapUtils.showHikeOnMap(
+            mapView,
+            waypoints,
+            hike.getColor(),
+            onLineClick = { hikesViewModel.selectHike(hike.id) })
+      } else {
+        Log.e(
+            MapScreen.LOG_TAG,
+            "[CRITICAL] Hike ${hike.id} has no waypoints on the map screen. This is never supposed to happen.")
+      }
+    }
+
+    // If there are too many hikes, show a toast to inform the user
+    if (hikes.size > MapScreen.MAX_HIKES_DRAWN_ON_MAP) {
+      Toast.makeText(
+              context,
+              context.getString(
+                  R.string.map_screen_too_many_hikes_message, MapScreen.MAX_HIKES_DRAWN_ON_MAP),
+              Toast.LENGTH_LONG)
+          .show()
+      Log.d(MapScreen.LOG_TAG, "Too many hikes (${hikes.size}) to display on the map")
+    }
+  }
 }
 
 @Composable

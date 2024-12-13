@@ -28,6 +28,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DatePickerState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -481,18 +482,9 @@ fun DateDetailRow(
           Button(
               modifier = Modifier.testTag(TEST_TAG_DATE_PICKER_CONFIRM_BUTTON),
               onClick = {
-                val selectedDateMillis = datePickerState.selectedDateMillis
-
-                // If the same date is selected twice, unselect it, else save the date
-                if (selectedDateMillis == previouslySelectedDate) {
-                  updatePlannedDate(null)
-                  previouslySelectedDate = null
-                } else {
-                  if (selectedDateMillis != null) {
-                    updatePlannedDate(Timestamp(Date(selectedDateMillis)))
-                    previouslySelectedDate = selectedDateMillis
-                  }
-                }
+                previouslySelectedDate =
+                    confirmDateDetailButton(
+                        datePickerState, previouslySelectedDate, updatePlannedDate)
                 dismissDatePicker()
               }) {
                 val selectedDate = datePickerState.selectedDateMillis
@@ -580,6 +572,28 @@ fun DateDetailRow(
         label = stringResource(R.string.hike_detail_screen_label_status),
         value = stringResource(R.string.hike_detail_screen_value_not_saved),
         valueColor = MaterialTheme.colorScheme.onSurface)
+  }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+private fun confirmDateDetailButton(
+    datePickerState: DatePickerState,
+    previouslySelectedDate: Long?,
+    updatePlannedDate: (Timestamp?) -> Unit
+): Long? {
+  val selectedDateMillis = datePickerState.selectedDateMillis
+
+  // If the same date is selected twice, unselect it, else save the date
+  return if (selectedDateMillis == previouslySelectedDate) {
+    updatePlannedDate(null)
+    null
+  } else {
+    if (selectedDateMillis != null) {
+      updatePlannedDate(Timestamp(Date(selectedDateMillis)))
+      selectedDateMillis
+    } else {
+      null
+    }
   }
 }
 
