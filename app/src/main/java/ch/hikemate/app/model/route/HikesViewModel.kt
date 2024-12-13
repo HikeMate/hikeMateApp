@@ -11,6 +11,7 @@ import ch.hikemate.app.model.extensions.toBounds
 import ch.hikemate.app.model.route.saved.SavedHike
 import ch.hikemate.app.model.route.saved.SavedHikesRepository
 import ch.hikemate.app.model.route.saved.SavedHikesRepositoryFirestore
+import ch.hikemate.app.utils.MapUtils
 import ch.hikemate.app.utils.RouteUtils
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
@@ -29,6 +30,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import org.osmdroid.util.BoundingBox
+import org.osmdroid.util.GeoPoint
 
 /**
  * View model to work with hikes.
@@ -86,6 +88,8 @@ class HikesViewModel(
   private val _hikeFlowsList = MutableStateFlow<List<StateFlow<Hike>>>(emptyList())
 
   private val _selectedHike = MutableStateFlow<Hike?>(null)
+
+  private val _mapState = MutableStateFlow(MapUtils.MapViewState())
 
   /**
    * Enum used to designate where the hikes loaded in [hikeFlows] come from semantically.
@@ -275,9 +279,10 @@ class HikesViewModel(
    *
    * Setting a null date on an unsaved hike will have no effect.
    *
+   * Setting a null date on a saved hike will removed the planned date but keep the hike saved.
+   *
    * @param hikeId The ID of the hike to set the planned date of.
    * @param date The planned date for the hike. If null, the hike's planned date will be removed
-   *   (meaning the hike is still saved but without a specific planned date).
    * @param onSuccess To be called if the hike's date is successfully updated.
    * @param onFailure To be called if a problem prevents the operation's success.
    */
@@ -404,6 +409,31 @@ class HikesViewModel(
    */
   fun computeDetailsFor(hikeId: String, onSuccess: () -> Unit = {}, onFailure: () -> Unit = {}) =
       viewModelScope.launch { computeDetailsForAsync(hikeId, onSuccess, onFailure) }
+
+  /**
+   * Saves the current state of the map.
+   *
+   * Updates the center and zoom level of the map's. This function enables saving the map's state,
+   * so that the map's center and zoom level can be preserved when navigating between screens.
+   *
+   * @param center The center of the map. Can be fetched by calling .mapCenter on a MapView
+   * @param zoom The zoom level of the map. Can be fetched by calling .zoomLevelDouble on a MapView
+   */
+  fun setMapState(center: GeoPoint, zoom: Double) {
+    _mapState.value = MapUtils.MapViewState(center, zoom)
+  }
+
+  /**
+   * Retrieves the current state of the map.
+   *
+   * Fetches the center and zoom level of the map's. This function enables saving the map's state,
+   * so that the map's center and zoom level can be preserved when navigating between screens.
+   *
+   * @return The current [MapUtils.MapViewState] containing the map's center point and zoom level.
+   */
+  fun getMapState(): MapUtils.MapViewState {
+    return _mapState.value
+  }
 
   /**
    * Internal helper function.

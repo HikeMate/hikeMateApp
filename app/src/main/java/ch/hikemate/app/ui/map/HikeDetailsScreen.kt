@@ -37,6 +37,7 @@ import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -94,9 +95,13 @@ import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
+
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
+
+import org.osmdroid.util.GeoPoint
+
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 
@@ -105,9 +110,13 @@ object HikeDetailScreen {
   const val MAP_MAX_LONGITUDE = 180.0
   const val MAP_MIN_LONGITUDE = -180.0
   const val MAP_BOUNDS_MARGIN: Int = 100
+
   const val MARGIN_BOUNDS = 0.001
 
   const val DEBOUNCE_DURATION = 300L
+
+  val BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT = 400.dp
+  val MAP_BOTTOM_PADDING_ADJUSTMENT = 20.dp
 
   const val LOG_TAG = "HikeDetailScreen"
 
@@ -121,6 +130,7 @@ object HikeDetailScreen {
   const val TEST_TAG_DATE_PICKER_CANCEL_BUTTON = "HikeDetailDatePickerCancelButton"
   const val TEST_TAG_DATE_PICKER_CONFIRM_BUTTON = "HikeDetailDatePickerConfirmButton"
   const val TEST_TAG_RUN_HIKE_BUTTON = "HikeDetailRunHikeButton"
+  const val TEST_TAG_APPROPRIATENESS_MESSAGE = "HikeDetailAppropriatenessMessage"
 }
 
 @Composable
@@ -143,9 +153,22 @@ fun HikeDetailScreen(
   }
   val selectedHike by hikesViewModel.selectedHike.collectAsState()
 
+  // Gets initialized here so that the LaunchedEffect has access to it. The value is only actually
+  // initialised and used in HikeDetailsContent
+  val mapViewState = remember { mutableStateOf<MapView?>(null) }
+
+  // If the selected hike is null, save the map's state and go back to the map screen
   LaunchedEffect(selectedHike) {
     if (selectedHike == null) {
       Log.e(HikeDetailScreen.LOG_TAG, "No selected hike, going back")
+      if (mapViewState.value != null) {
+        hikesViewModel.setMapState(
+            center =
+                GeoPoint(
+                    mapViewState.value!!.mapCenter.latitude,
+                    mapViewState.value!!.mapCenter.longitude),
+            zoom = mapViewState.value!!.zoomLevelDouble)
+      }
       navigationActions.goBack()
     }
   }
@@ -170,7 +193,11 @@ fun HikeDetailScreen(
         AsyncStateHandler(
             errorMessageIdState = errorMessageIdState,
             actionContentDescriptionStringId = R.string.go_back,
-            actionOnErrorAction = { navigationActions.navigateTo(Route.MAP) },
+            // Whenever there's an error the user needs to re-authenticate
+            // thus forcing him to sign out and navigate to the Auth screen
+            actionOnErrorAction = {
+              authViewModel.signOut { navigationActions.navigateTo(Route.AUTH) }
+            },
             valueState = profileState,
         ) { profile ->
           Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {
@@ -182,6 +209,7 @@ fun HikeDetailScreen(
                 hikesViewModel,
                 profile.hikingLevel,
                 facilitiesViewModel)
+
           }
         }
       },
@@ -199,6 +227,7 @@ fun HikeDetailScreen(
 @Composable
 fun HikeDetailsContent(
     hike: DetailedHike,
+    mapViewState: MutableState<MapView?>,
     navigationActions: NavigationActions,
     hikesViewModel: HikesViewModel,
     userHikingLevel: HikingLevel,
@@ -207,18 +236,20 @@ fun HikeDetailsContent(
 
   Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {
     // Display the map and the zoom buttons
-    val mapView = hikeDetailsMap(hike, facilitiesViewModel)
+
+    mapViewState.value = hikeDetailsMap(hike)
+
 
     // Display the back button on top of the map
     BackButton(
         navigationActions = navigationActions,
-        modifier = Modifier.padding(top = 40.dp, start = 16.dp, end = 16.dp).safeDrawingPadding(),
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp).safeDrawingPadding(),
         onClick = { hikesViewModel.unselectHike() })
 
     // Zoom buttons at the bottom right of the screen
     ZoomMapButton(
-        onZoomIn = { mapView.controller.zoomIn() },
-        onZoomOut = { mapView.controller.zoomOut() },
+        onZoomIn = { mapViewState.value?.controller?.zoomIn() },
+        onZoomOut = { mapViewState.value?.controller?.zoomOut() },
         modifier =
             Modifier.align(Alignment.BottomEnd)
                 .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
@@ -371,9 +402,13 @@ fun hikeDetailsMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel)
       factory = { mapView },
       modifier =
           Modifier.fillMaxWidth()
-              .padding(bottom = 300.dp) // Reserve space for the scaffold at the bottom
+              // Reserve space for the scaffold at the bottom, -20.dp to avoid the map being to
+              // small under the bottomSheet
+              .padding(
+                  bottom =
+                      HikeDetailScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT -
+                          HikeDetailScreen.MAP_BOTTOM_PADDING_ADJUSTMENT)
               .testTag(TEST_TAG_MAP))
-
   return mapView
 }
 /**
@@ -402,6 +437,7 @@ fun HikesDetailsBottomScaffold(
   BottomSheetScaffold(
       scaffoldState = scaffoldState,
       sheetContainerColor = MaterialTheme.colorScheme.surface,
+      sheetPeekHeight = HikeDetailScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT,
       sheetContent = {
         Column(
             modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -509,7 +545,7 @@ fun HikesDetailsBottomScaffold(
                   Modifier.padding(top = 16.dp).fillMaxWidth().testTag(TEST_TAG_RUN_HIKE_BUTTON))
         }
       },
-      sheetPeekHeight = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT) {}
+  ) {}
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -522,6 +558,8 @@ fun DateDetailRow(
 ) {
   val showingDatePicker = remember { mutableStateOf(false) }
   val datePickerState = rememberDatePickerState()
+
+  var previouslySelectedDate by remember { mutableStateOf<Long?>(plannedDate?.toDate()?.time) }
 
   fun showDatePicker() {
     showingDatePicker.value = true
@@ -546,13 +584,33 @@ fun DateDetailRow(
           Button(
               modifier = Modifier.testTag(TEST_TAG_DATE_PICKER_CONFIRM_BUTTON),
               onClick = {
-                if (datePickerState.selectedDateMillis != null) {
-                  updatePlannedDate(Timestamp(Date(datePickerState.selectedDateMillis!!)))
-                }
+                val selectedDateMillis = datePickerState.selectedDateMillis
 
+                // If the same date is selected twice, unselect it, else save the date
+                if (selectedDateMillis == previouslySelectedDate) {
+                  updatePlannedDate(null)
+                  previouslySelectedDate = null
+                } else {
+                  if (selectedDateMillis != null) {
+                    updatePlannedDate(Timestamp(Date(selectedDateMillis)))
+                    previouslySelectedDate = selectedDateMillis
+                  }
+                }
                 dismissDatePicker()
               }) {
-                Text(text = stringResource(R.string.hike_detail_screen_date_picker_confirm_button))
+                val selectedDate = datePickerState.selectedDateMillis
+
+                // If the date selected is the same date that is already saved in the hike give the
+                // user the option to un-plan the hike
+                if (selectedDate != previouslySelectedDate || selectedDate == null) {
+                  Text(
+                      text = stringResource(R.string.hike_detail_screen_date_picker_confirm_button))
+                } else {
+                  Text(
+                      text =
+                          stringResource(
+                              R.string.hike_detail_screen_date_picker_unplan_hike_button))
+                }
               }
         },
     ) {
@@ -651,6 +709,7 @@ fun AppropriatenessMessage(isSuitable: Boolean) {
         modifier = Modifier.size(16.dp))
     Spacer(modifier = Modifier.width(4.dp))
     Text(
+        modifier = Modifier.testTag(HikeDetailScreen.TEST_TAG_APPROPRIATENESS_MESSAGE),
         text = suitableLabelText,
         style = MaterialTheme.typography.bodySmall,
         color = suitableLabelColor)

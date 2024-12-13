@@ -13,6 +13,7 @@ import ch.hikemate.app.model.facilities.Facility
 import ch.hikemate.app.model.facilities.FacilityType.Companion.mapFacilityTypeToDrawable
 import ch.hikemate.app.model.route.Bounds
 import ch.hikemate.app.model.route.LatLong
+import ch.hikemate.app.ui.map.MapInitialValues
 import ch.hikemate.app.ui.map.MapScreen
 import kotlin.math.cos
 import kotlin.math.max
@@ -237,7 +238,7 @@ object MapUtils {
    * @param userLocationMarker The marker representing the user's location on the map
    * @see [LocationUtils.getUserLocation]
    */
-  fun centerMapOnUserLocation(context: Context, mapView: MapView, userLocationMarker: Marker?) {
+  fun centerMapOnLocation(context: Context, mapView: MapView, userLocationMarker: Marker?) {
     LocationUtils.getUserLocation(
         context = context,
         onLocation = { location ->
@@ -255,20 +256,20 @@ object MapUtils {
                 .show()
           } else {
             // Center the map on the user's location
-            centerMapOnUserLocation(mapView, location)
+            centerMapOnLocation(mapView, location)
           }
         })
   }
 
   /**
-   * Centers the map on the user's location.
+   * Centers the map on a given location.
    *
    * Animates the map so that the transition is smooth and not instant.
    *
    * @param mapView The map view to center
-   * @param location The user's location to center the map on
+   * @param location The location to center the map on
    */
-  fun centerMapOnUserLocation(mapView: MapView, location: Location) {
+  fun centerMapOnLocation(mapView: MapView, location: Location) {
     mapView.controller.animateTo(
         GeoPoint(location.latitude, location.longitude),
         mapView.zoomLevelDouble,
@@ -370,4 +371,22 @@ object MapUtils {
           }
         })
   }
+
+   * Centers the map on a given location.
+   *
+   * Animates the map so that the transition is smooth and not instant.
+   *
+   * @param mapView The map view to center
+   * @param location The location to center the map on
+   */
+  fun centerMapOnLocation(mapView: MapView, location: GeoPoint) {
+    mapView.controller.animateTo(
+        location, mapView.zoomLevelDouble, MapScreen.CENTER_MAP_ANIMATION_TIME)
+  }
+
+  data class MapViewState(
+      val center: GeoPoint = MapInitialValues().mapInitialCenter,
+      val zoom: Double = MapInitialValues().mapInitialZoomLevel,
+  )
+
 }

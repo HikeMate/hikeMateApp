@@ -7,6 +7,24 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertAny
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertHasClickAction
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotDisplayed
+import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.hikemate.app.R
@@ -36,8 +54,11 @@ import ch.hikemate.app.ui.components.BackButton.BACK_BUTTON_TEST_TAG
 import ch.hikemate.app.ui.components.CenteredErrorAction
 import ch.hikemate.app.ui.components.DetailRow
 import ch.hikemate.app.ui.navigation.NavigationActions
+import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.utils.MapUtils
 import com.google.firebase.Timestamp
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
@@ -45,7 +66,8 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -74,9 +96,13 @@ class HikeDetailScreenTest {
   private lateinit var hikesRepository: HikeRoutesRepository
 
   private lateinit var hikesViewModel: HikesViewModel
+
   private lateinit var facilitiesViewModel: FacilitiesViewModel
   private lateinit var facilitiesRepository: FacilitiesRepository
   private lateinit var elevationRepository: ElevationRepository
+
+  private lateinit var context: Context
+
 
   private val hikeId = "1"
   private val detailedHike =
@@ -139,6 +165,7 @@ class HikeDetailScreenTest {
 
   private fun setUpCompleteScreen() {
     composeTestRule.setContent {
+      context = LocalContext.current
       HikeDetailScreen(
           hikesViewModel = hikesViewModel,
           profileViewModel = profileViewModel,
@@ -257,6 +284,13 @@ class HikeDetailScreenTest {
 
     // Mark the hike as selected, to make sure it is the one displayed on the details screen
     hikesViewModel.selectHike(hikeId)
+  }
+
+  // To be able to click on an individual date in the date picker dialog we need the date in
+  // the format "Today, Friday, December 13, 2024"
+  private fun prepareTextTagForDatePickerDialog(): String {
+    val formatter = SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.ENGLISH)
+    return "Today, " + formatter.format(Date())
   }
 
   private val profile =
@@ -505,6 +539,71 @@ class HikeDetailScreenTest {
   }
 
   @Test
+  fun hikeDetails_showsDateTextBox_whenHikeIsPlanned() = runTest {
+    var currentPlannedDate by mutableStateOf<Timestamp?>(null)
+    val datePickerDateTextTag = prepareTextTagForDatePickerDialog()
+
+    composeTestRule.setContent {
+      DateDetailRow(
+          isSaved = true,
+          plannedDate = currentPlannedDate,
+          updatePlannedDate = { currentPlannedDate = it })
+    }
+
+    composeTestRule
+        .onNodeWithTag(HikeDetailScreen.TEST_TAG_ADD_DATE_BUTTON)
+        .assertHasClickAction()
+        .performClick()
+    composeTestRule.onNodeWithText(datePickerDateTextTag).performClick()
+    composeTestRule
+        .onNodeWithTag(HikeDetailScreen.TEST_TAG_DATE_PICKER_CONFIRM_BUTTON)
+        .performClick()
+
+    composeTestRule
+        .onNodeWithTag(HikeDetailScreen.TEST_TAG_PLANNED_DATE_TEXT_BOX)
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun hikeDetails_datePickerUnplansHike_whenPlannedDateIsReselected() = runTest {
+    var currentPlannedDate by mutableStateOf<Timestamp?>(null)
+    val datePickerDateTextTag = prepareTextTagForDatePickerDialog()
+
+    composeTestRule.setContent {
+      context = LocalContext.current
+      DateDetailRow(
+          isSaved = true,
+          plannedDate = currentPlannedDate,
+          updatePlannedDate = { currentPlannedDate = it })
+    }
+
+    // Selects the current date
+    composeTestRule
+        .onNodeWithTag(HikeDetailScreen.TEST_TAG_ADD_DATE_BUTTON)
+        .assertHasClickAction()
+        .performClick()
+    composeTestRule.onNodeWithText(datePickerDateTextTag).performClick()
+    composeTestRule
+        .onNodeWithTag(HikeDetailScreen.TEST_TAG_DATE_PICKER_CONFIRM_BUTTON)
+        .performClick()
+
+    // Selects the current date again, effectively un-planning the hike
+    composeTestRule.onNodeWithTag(HikeDetailScreen.TEST_TAG_PLANNED_DATE_TEXT_BOX).performClick()
+    composeTestRule.onNodeWithText(datePickerDateTextTag).performClick()
+    // Assert than it now says "Unplan this hike"
+    composeTestRule
+        .onNodeWithTag(HikeDetailScreen.TEST_TAG_DATE_PICKER_CONFIRM_BUTTON)
+        .assertTextEquals(
+            context.getString(R.string.hike_detail_screen_date_picker_unplan_hike_button))
+        .performClick()
+
+    // The hike should no longer be planned
+    composeTestRule
+        .onNodeWithTag(HikeDetailScreen.TEST_TAG_PLANNED_DATE_TEXT_BOX)
+        .assertIsNotDisplayed()
+  }
+
+  @Test
   fun hikeDetails_showsCorrectDetailedHikesValues() = runTest {
     setUpSelectedHike(detailedHike)
 
@@ -691,5 +790,45 @@ class HikeDetailScreenTest {
     val bitmap2 = drawable2.toBitmap()
 
     return bitmap1.sameAs(bitmap2)
+
+  fun testSignOutAndNavigateToAuthFromMapScreen() = runTest {
+    `when`(profileRepository.getProfileById(any(), any(), any())).thenAnswer {
+      val onError = it.getArgument<(Exception) -> Unit>(2)
+      onError(Exception("No profile found"))
+    }
+    `when`(authRepository.signOut(any())).thenAnswer {
+      val onSuccess = it.getArgument<() -> Unit>(0)
+      onSuccess()
+    }
+
+    profileViewModel.getProfileById(profile.id)
+
+    setUpSelectedHike(detailedHike)
+    setUpCompleteScreen()
+    composeTestRule
+        .onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_MESSAGE)
+        .assertIsDisplayed()
+        .assertTextEquals(context.getString(R.string.an_error_occurred_while_fetching_the_profile))
+    composeTestRule.onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_BUTTON).performClick()
+
+    verify(authRepository).signOut(any())
+    verify(mockNavigationActions).navigateTo(Route.AUTH)
+    assertNull(authViewModel.currentUser.value)
+  }
+
+  @Test
+  fun hikeDetails_savesMapStateOnGoBack() = runTest {
+    setUpSelectedHike(detailedHike)
+    setUpCompleteScreen()
+
+    composeTestRule.onNodeWithTag(BACK_BUTTON_TEST_TAG).performClick()
+    composeTestRule.waitForIdle()
+
+    val zoomLevel = MapUtils.calculateBestZoomLevel(detailedHike.bounds).toDouble()
+    val center = MapUtils.getGeographicalCenter(detailedHike.bounds)
+    assertEquals(zoomLevel, hikesViewModel.getMapState().zoom, 0.1)
+    assertEquals(center.latitude, hikesViewModel.getMapState().center.latitude, 0.1)
+    assertEquals(center.longitude, hikesViewModel.getMapState().center.longitude, 0.1)
+
   }
 }

@@ -179,7 +179,7 @@ class MapUtilsTest {
   fun centerMapOnUserLocationCentersMapIfLocationIsReceived() {
     // Given
     mockkObject(MapUtils)
-    every { MapUtils.centerMapOnUserLocation(any(), any()) } returns Unit
+    every { MapUtils.centerMapOnLocation(any(), any<Location>()) } returns Unit
     mockkObject(LocationUtils)
     val callbackSlot = slot<(Location?) -> Unit>()
     every { LocationUtils.getUserLocation(any(), capture(callbackSlot), any(), any()) } returns Unit
@@ -190,7 +190,7 @@ class MapUtilsTest {
     every { fakeLocation.longitude } returns 7.0
 
     // When
-    MapUtils.centerMapOnUserLocation(context, map, null)
+    MapUtils.centerMapOnLocation(context, map, null)
 
     // Then
     verify { LocationUtils.getUserLocation(context, any(), any(), any()) }
@@ -199,14 +199,14 @@ class MapUtilsTest {
     callbackSlot.captured(fakeLocation)
 
     // Then
-    verify { MapUtils.centerMapOnUserLocation(map, fakeLocation) }
+    verify { MapUtils.centerMapOnLocation(map, fakeLocation) }
   }
 
   @Test
   fun centerMapOnUserLocationClearsUserPositionIfLocationIsNull() {
     // Given
     mockkObject(MapUtils)
-    every { MapUtils.centerMapOnUserLocation(any(), any()) } returns Unit
+    every { MapUtils.centerMapOnLocation(any(), any<Location>()) } returns Unit
     mockkObject(LocationUtils)
     val callbackSlot = slot<(Location?) -> Unit>()
     every { LocationUtils.getUserLocation(any(), capture(callbackSlot), any(), any()) } returns Unit
@@ -219,7 +219,7 @@ class MapUtilsTest {
     every { fakeToast.show() } returns Unit
 
     // When
-    MapUtils.centerMapOnUserLocation(context, map, null)
+    MapUtils.centerMapOnLocation(context, map, null)
 
     // Then
     verify { LocationUtils.getUserLocation(context, any(), any(), any()) }
@@ -241,7 +241,7 @@ class MapUtilsTest {
     every { location.longitude } returns 7.0
 
     // When
-    MapUtils.centerMapOnUserLocation(map, location)
+    MapUtils.centerMapOnLocation(map, location)
     Thread.sleep(500)
 
     // Then

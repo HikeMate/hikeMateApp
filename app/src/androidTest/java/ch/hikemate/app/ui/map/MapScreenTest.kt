@@ -1,5 +1,7 @@
 package ch.hikemate.app.ui.map
 
+import android.content.Context
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
@@ -25,8 +27,11 @@ import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.HikeRoutesRepository
 import ch.hikemate.app.model.route.HikesViewModel
 import ch.hikemate.app.model.route.saved.SavedHikesRepository
+import ch.hikemate.app.ui.components.CenteredErrorAction
 import ch.hikemate.app.ui.components.HikeCard
+import ch.hikemate.app.ui.components.LocationPermissionAlertDialog
 import ch.hikemate.app.ui.navigation.NavigationActions
+import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.TEST_TAG_BOTTOM_BAR
 import ch.hikemate.app.utils.LocationUtils
 import ch.hikemate.app.utils.MapUtils
@@ -35,6 +40,7 @@ import com.google.firebase.Timestamp
 import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
 import io.mockk.every
 import io.mockk.mockkObject
+import io.mockk.spyk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -59,6 +65,7 @@ class MapScreenTest : TestCase() {
   private lateinit var authRepository: AuthRepository
   private lateinit var authViewModel: AuthViewModel
   private lateinit var profileRepository: ProfileRepository
+  private lateinit var context: Context
   private lateinit var profileViewModel: ProfileViewModel
 
   @get:Rule val composeTestRule = createComposeRule()
@@ -73,9 +80,11 @@ class MapScreenTest : TestCase() {
 
   private fun setUpMap(
       mapMinZoomLevel: Double = MapScreen.MAP_MIN_ZOOM,
-      mapInitialZoomLevel: Double = MapScreen.MAP_INITIAL_ZOOM
+      mapInitialZoomLevel: Double = MapScreen.MAP_INITIAL_ZOOM,
+      hikesViewModel: HikesViewModel = this.hikesViewModel,
   ) {
     composeTestRule.setContent {
+      context = LocalContext.current
       MapScreen(
           hikesViewModel = hikesViewModel,
           navigationActions = navigationActions,
@@ -349,13 +358,13 @@ class MapScreenTest : TestCase() {
     mockkObject(LocationUtils)
     every { LocationUtils.hasLocationPermission(any()) } returns true
     mockkObject(MapUtils)
-    every { MapUtils.centerMapOnUserLocation(any(), any(), any()) } returns Unit
+    every { MapUtils.centerMapOnLocation(any(), any(), any()) } returns Unit
 
     // When
     composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_CENTER_MAP_BUTTON).performClick()
 
     // Then
-    io.mockk.verify { MapUtils.centerMapOnUserLocation(any(), any(), any()) }
+    io.mockk.verify { MapUtils.centerMapOnLocation(any(), any(), any()) }
   }
 
   @OptIn(ExperimentalPermissionsApi::class)
@@ -370,14 +379,55 @@ class MapScreenTest : TestCase() {
     composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_CENTER_MAP_BUTTON).performClick()
 
     // Then an alert will be shown to ask for the permission
-    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_LOCATION_PERMISSION_ALERT).assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(LocationPermissionAlertDialog.TEST_TAG_LOCATION_PERMISSION_ALERT)
+        .assertIsDisplayed()
 
     // When the user clicks on the "No thanks" button
-    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_NO_THANKS_ALERT_BUTTON).performClick()
+    composeTestRule
+        .onNodeWithTag(LocationPermissionAlertDialog.TEST_TAG_NO_THANKS_ALERT_BUTTON)
+        .performClick()
 
     // Then the alert disappears
     composeTestRule
-        .onNodeWithTag(MapScreen.TEST_TAG_LOCATION_PERMISSION_ALERT)
+        .onNodeWithTag(LocationPermissionAlertDialog.TEST_TAG_LOCATION_PERMISSION_ALERT)
         .assertIsNotDisplayed()
+  }
+
+  @Test
+  fun testSignOutAndNavigateToAuthFromMapScreen() {
+    `when`(profileRepository.getProfileById(any(), any(), any())).thenAnswer {
+      val onError = it.getArgument<(Exception) -> Unit>(2)
+      onError(Exception("No profile found"))
+    }
+    `when`(authRepository.signOut(any())).thenAnswer {
+      val onSuccess = it.getArgument<() -> Unit>(0)
+      onSuccess()
+    }
+
+    profileViewModel.getProfileById(profile.id)
+
+    setUpMap()
+
+    composeTestRule
+        .onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_MESSAGE)
+        .assertIsDisplayed()
+        .assertTextEquals(context.getString(R.string.an_error_occurred_while_fetching_the_profile))
+    composeTestRule.onNodeWithTag(CenteredErrorAction.TEST_TAG_CENTERED_ERROR_BUTTON).performClick()
+
+    verify(authRepository).signOut(any())
+    verify(navigationActions).navigateTo(Route.AUTH)
+    assertNull(authViewModel.currentUser.value)
+  }
+
+  @Test
+  fun mapLoadsFromMapState() {
+    // Uses Mockk since Mockito can not mock/spy final classes
+    val spyHikesViewModel = spyk(hikesViewModel)
+    setUpMap(hikesViewModel = spyHikesViewModel)
+
+    composeTestRule.waitForIdle()
+
+    io.mockk.verify { spyHikesViewModel.getMapState() }
   }
 }

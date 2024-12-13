@@ -104,6 +104,7 @@
     <!-- Hike Details Screen - Date Picker -->
     <string name="hike_detail_screen_date_picker_cancel_button">Cancel</string>
     <string name="hike_detail_screen_date_picker_confirm_button">Plan this hike!</string>
+    <string name="hike_detail_screen_date_picker_unplan_hike_button">Un-plan this hike</string>
 
     <!--Run Hike Screen -->
     <string name="run_hike_screen_stop_run_button_label">Stop the run</string>

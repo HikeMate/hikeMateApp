@@ -35,6 +35,7 @@ import ch.hikemate.app.utils.RouteUtils
 
 object HikeCard {
   const val TEST_TAG_HIKE_CARD_TITLE = "HikeCardTitle"
+  const val TEST_TAG_IS_SUITABLE_TEXT = "HikeCardIsSuitableText"
 }
 
 // This fix the Sonar rule kotlin:S107, about too many parameters in a function
@@ -142,6 +143,7 @@ fun HikeCard(
                   modifier = Modifier.size(16.dp))
               Spacer(modifier = Modifier.width(4.dp))
               Text(
+                  modifier = Modifier.testTag(HikeCard.TEST_TAG_IS_SUITABLE_TEXT),
                   text = messageContent!!,
                   style = MaterialTheme.typography.bodySmall,
                   color = styleProperties.messageColor)
