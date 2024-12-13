@@ -205,6 +205,7 @@ fun HikeDetailScreen(
             // Display the hike's actual information
             HikeDetailsContent(
                 detailedHike,
+                mapViewState,
                 navigationActions,
                 hikesViewModel,
                 profile.hikingLevel,
@@ -237,7 +238,7 @@ fun HikeDetailsContent(
   Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {
     // Display the map and the zoom buttons
 
-    mapViewState.value = hikeDetailsMap(hike)
+    mapViewState.value = hikeDetailsMap(hike, facilitiesViewModel)
 
 
     // Display the back button on top of the map
