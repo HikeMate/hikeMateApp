@@ -474,6 +474,19 @@ fun MapScreen(
       }
 }
 
+/**
+ * Launched effect to update the map when the list of hikes changes. This effect is triggered when
+ * the list of hikes, the search state, or the type of loaded hikes changes. It clears the hikes
+ * from the map and draws the new ones.
+ *
+ * @param hikes The list of hikes to display on the map
+ * @param isSearching Whether a search for hikes is ongoing
+ * @param hikesType The type of loaded hikes
+ * @param mapView The map view where the hikes are displayed
+ * @param userLocationMarker The marker representing the user's location on the map
+ * @param hikesViewModel The view model to use to interact with the hikes
+ * @param context The context where the search is launched
+ */
 @Composable
 private fun LaunchedEffectForHikeUpdate(
     hikes: List<StateFlow<Hike>>,

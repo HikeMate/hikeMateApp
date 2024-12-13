@@ -575,6 +575,15 @@ fun DateDetailRow(
   }
 }
 
+/**
+ * This function is called when the user confirms the date selection in the date picker. It updates
+ * the hike's planned date. If the same date is selected twice, the hike is un-planned.
+ *
+ * @param datePickerState The state of the date picker
+ * @param previouslySelectedDate The previously selected date
+ * @param updatePlannedDate The function to update the hike's planned date
+ * @return The selected date in milliseconds if it is different from the previously selected date,
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 private fun confirmDateDetailButton(
     datePickerState: DatePickerState,
