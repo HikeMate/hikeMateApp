@@ -283,7 +283,6 @@ class HikesViewModel(
    *
    * @param hikeId The ID of the hike to set the planned date of.
    * @param date The planned date for the hike. If null, the hike's planned date will be removed
-   *   (meaning the hike is still saved but without a specific planned date).
    * @param onSuccess To be called if the hike's date is successfully updated.
    * @param onFailure To be called if a problem prevents the operation's success.
    */

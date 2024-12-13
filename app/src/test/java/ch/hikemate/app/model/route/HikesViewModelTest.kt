@@ -882,8 +882,9 @@ class HikesViewModelTest {
   fun `unsaveHike also unplans hike`() =
       runTest(dispatcher) {
         // Make sure the loaded hike is included in the saved hikes
-        loadSavedHikes(listOf(
-            SavedHike(
+        loadSavedHikes(
+            listOf(
+                SavedHike(
                     id = singleOsmHike1[0].id,
                     name = singleOsmHike1[0].name ?: "",
                     date = firstJanuary2024)))
@@ -908,7 +909,7 @@ class HikesViewModelTest {
         coVerify(exactly = 1) { savedHikesRepo.removeSavedHike(any()) }
         // The appropriate callback should be called
         assertTrue(onSuccessCalled)
-        // The hike should now be marked as unsaved
+        // The hike should now be marked as unplanned (and unsaved, but that is a previous test)
         assertNull(hikesViewModel.hikeFlows.value[0].value.plannedDate)
       }
 
