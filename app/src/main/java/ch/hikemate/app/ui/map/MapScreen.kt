@@ -145,7 +145,7 @@ object MapScreen {
    * defined empirically to avoid draining the battery too much while still providing a good
    * experience to the user.
    */
-  const val USER_LOCATION_UPDATE_INTERVAL = 5000L
+  const val USER_LOCATION_UPDATE_INTERVAL = 500L
 
   /**
    * (Config) Duration in milliseconds of the animation when centering the map on the user's
