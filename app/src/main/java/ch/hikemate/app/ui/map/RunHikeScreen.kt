@@ -55,14 +55,13 @@ import ch.hikemate.app.ui.components.WithDetailedHike
 import ch.hikemate.app.ui.map.HikeDetailScreen.MAP_MAX_ZOOM
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Screen
-import kotlin.math.roundToInt
-
 import ch.hikemate.app.utils.LocationUtils
 import ch.hikemate.app.utils.MapUtils
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationResult
+import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
@@ -70,11 +69,9 @@ import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 
-
 object RunHikeScreen {
   val BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT = 400.dp
   val MAP_BOTTOM_PADDING_ADJUSTMENT = 20.dp
-
 
   const val TEST_TAG_MAP = "runHikeScreenMap"
   const val TEST_TAG_BACK_BUTTON = "runHikeScreenBackButton"
@@ -130,161 +127,149 @@ fun RunHikeScreen(
 @SuppressLint("ClickableViewAccessibility")
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-
 private fun RunHikeContent(
     hike: DetailedHike,
     navigationActions: NavigationActions,
     facilitiesViewModel: FacilitiesViewModel
 ) {
 
-    LaunchedEffect(Unit) { facilitiesViewModel.fetchFacilitiesForHike(hike) }
+  LaunchedEffect(Unit) { facilitiesViewModel.fetchFacilitiesForHike(hike) }
 
-    val context = LocalContext.current
-    val locationPermissionState =
-        rememberMultiplePermissionsState(
-            permissions =
-            listOf(
-                android.Manifest.permission.ACCESS_FINE_LOCATION,
-                android.Manifest.permission.ACCESS_COARSE_LOCATION
-            )
-        )
-    var showLocationPermissionDialog by remember { mutableStateOf(false) }
-    var centerMapOnUserPosition by remember { mutableStateOf(false) }
+  val context = LocalContext.current
+  val locationPermissionState =
+      rememberMultiplePermissionsState(
+          permissions =
+              listOf(
+                  android.Manifest.permission.ACCESS_FINE_LOCATION,
+                  android.Manifest.permission.ACCESS_COARSE_LOCATION))
+  var showLocationPermissionDialog by remember { mutableStateOf(false) }
+  var centerMapOnUserPosition by remember { mutableStateOf(false) }
 
-
-    // Avoids the app crashing when spamming the back button
-    var wantToNavigateBack by remember { mutableStateOf(false) }
-    LaunchedEffect(wantToNavigateBack) {
-        if (wantToNavigateBack) {
-            navigationActions.goBack()
-            wantToNavigateBack = false
-        }
+  // Avoids the app crashing when spamming the back button
+  var wantToNavigateBack by remember { mutableStateOf(false) }
+  LaunchedEffect(wantToNavigateBack) {
+    if (wantToNavigateBack) {
+      navigationActions.goBack()
+      wantToNavigateBack = false
     }
+  }
+
+  Box(modifier = Modifier.fillMaxSize().testTag(Screen.RUN_HIKE)) {
+    // Display the map
+    // We use the exact same map as the HikeDetailsMap
+    val mapView = runHikeMap(hike, facilitiesViewModel)
+
+    mapView.setOnTouchListener { _, event ->
+      if (event.action == MotionEvent.ACTION_DOWN) {
+        centerMapOnUserPosition = false
+      }
+      false
+    }
+
+    var userLocationMarker: Marker? by remember { mutableStateOf(null) }
+
+    // We need to keep a reference to the instance of location callback, this way we can unregister
+    // it using the same reference, for example when the permission is revoked.
+    val locationUpdatedCallback = remember {
+      object : LocationCallback() {
+        override fun onLocationResult(locationResult: LocationResult) {
+          userLocationMarker =
+              parseLocationUpdate(locationResult, userLocationMarker, mapView, hike)
+          if (centerMapOnUserPosition &&
+              userLocationMarker != null &&
+              userLocationMarker?.position != null)
+              MapUtils.centerMapOnLocation(mapView, userLocationMarker!!.position)
+        }
+      }
+    }
+
+    LaunchedEffect(locationPermissionState.revokedPermissions) {
+      // Update the map and start/stop listening for location updates
+      LocationUtils.onLocationPermissionsUpdated(
+          context,
+          locationPermissionState,
+          mapView,
+          locationUpdatedCallback,
+          centerMapOnUserPosition,
+          userLocationMarker)
+
+      // Once the update has been made, reset the flag to avoid re-centering the map
+      centerMapOnUserPosition = false
+    }
+
+    DisposableEffect(Unit) {
+      val hasLocationPermission = LocationUtils.hasLocationPermission(locationPermissionState)
+      Log.d("RunHikeScreen", "Has location permission: $hasLocationPermission")
+      // If the user has granted at least one of the two permissions, center the map
+      // on the user's location
+      if (hasLocationPermission) {
+        MapUtils.centerMapOnLocation(context, mapView, userLocationMarker)
+      }
+      // If the user yet needs to grant the permission, show a custom educational
+      // alert
+      else {
+        showLocationPermissionDialog = true
+      }
+      onDispose {
+        LocationUtils.stopUserLocationUpdates(context, locationUpdatedCallback)
+        mapView.overlays.clear()
+        mapView.onPause()
+        mapView.onDetach()
+      }
+    }
+
+    // Show a dialog to explain the user why the location permission is needed
+    // Only shows when the user has clicked on the "center map on my position" button
+    LocationPermissionAlertDialog(
+        show = showLocationPermissionDialog,
+        onConfirm = {
+          showLocationPermissionDialog = false
+          centerMapOnUserPosition = true
+        },
+        onDismiss = {
+          showLocationPermissionDialog = false
+          centerMapOnUserPosition = false
+          wantToNavigateBack = true
+        },
+        simpleMessage = !locationPermissionState.shouldShowRationale,
+        locationPermissionState = locationPermissionState,
+        context = context)
 
     Box(modifier = Modifier.fillMaxSize().testTag(Screen.RUN_HIKE)) {
-        // Display the map
-        // We use the exact same map as the HikeDetailsMap
-        val mapView = runHikeMap(hike, facilitiesViewModel)
+      // Back Button at the top of the screen
+      BackButton(
+          navigationActions = navigationActions,
+          modifier =
+              Modifier.padding(top = 40.dp, start = 16.dp, end = 16.dp)
+                  .testTag(RunHikeScreen.TEST_TAG_BACK_BUTTON),
+          onClick = { wantToNavigateBack = true })
 
+      // Button to center the map on the user's location
+      MapMyLocationButton(
+          onClick = {
+            centerMapOnUserPosition = true
+            if (userLocationMarker != null && userLocationMarker?.position != null)
+                MapUtils.centerMapOnLocation(mapView, userLocationMarker!!.position)
+          },
+          modifier =
+              Modifier.align(Alignment.BottomStart)
+                  .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
+                  .testTag(RunHikeScreen.TEST_TAG_CENTER_MAP_BUTTON))
 
-        mapView.setOnTouchListener { _, event ->
-            if (event.action == MotionEvent.ACTION_DOWN) {
-                centerMapOnUserPosition = false
-            }
-            false
-        }
+      // Zoom buttons at the bottom right of the screen
+      ZoomMapButton(
+          onZoomIn = { mapView.controller.zoomIn() },
+          onZoomOut = { mapView.controller.zoomOut() },
+          modifier =
+              Modifier.align(Alignment.BottomEnd)
+                  .padding(bottom = RunHikeScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
+                  .testTag(RunHikeScreen.TEST_TAG_ZOOM_BUTTONS))
 
-        var userLocationMarker: Marker? by remember { mutableStateOf(null) }
-
-        // We need to keep a reference to the instance of location callback, this way we can unregister
-        // it using the same reference, for example when the permission is revoked.
-        val locationUpdatedCallback = remember {
-            object : LocationCallback() {
-                override fun onLocationResult(locationResult: LocationResult) {
-                    userLocationMarker =
-                        parseLocationUpdate(locationResult, userLocationMarker, mapView, hike)
-                    if (centerMapOnUserPosition &&
-                        userLocationMarker != null &&
-                        userLocationMarker?.position != null
-                    )
-                        MapUtils.centerMapOnLocation(mapView, userLocationMarker!!.position)
-                }
-            }
-        }
-
-        LaunchedEffect(locationPermissionState.revokedPermissions) {
-            // Update the map and start/stop listening for location updates
-            LocationUtils.onLocationPermissionsUpdated(
-                context,
-                locationPermissionState,
-                mapView,
-                locationUpdatedCallback,
-                centerMapOnUserPosition,
-                userLocationMarker
-            )
-
-            // Once the update has been made, reset the flag to avoid re-centering the map
-            centerMapOnUserPosition = false
-        }
-
-        DisposableEffect(Unit) {
-            val hasLocationPermission = LocationUtils.hasLocationPermission(locationPermissionState)
-            Log.d("RunHikeScreen", "Has location permission: $hasLocationPermission")
-            // If the user has granted at least one of the two permissions, center the map
-            // on the user's location
-            if (hasLocationPermission) {
-                MapUtils.centerMapOnLocation(context, mapView, userLocationMarker)
-            }
-            // If the user yet needs to grant the permission, show a custom educational
-            // alert
-            else {
-                showLocationPermissionDialog = true
-            }
-            onDispose {
-                LocationUtils.stopUserLocationUpdates(context, locationUpdatedCallback)
-                mapView.overlays.clear()
-                mapView.onPause()
-                mapView.onDetach()
-            }
-        }
-
-
-        // Show a dialog to explain the user why the location permission is needed
-        // Only shows when the user has clicked on the "center map on my position" button
-        LocationPermissionAlertDialog(
-            show = showLocationPermissionDialog,
-            onConfirm = {
-                showLocationPermissionDialog = false
-                centerMapOnUserPosition = true
-            },
-            onDismiss = {
-                showLocationPermissionDialog = false
-                centerMapOnUserPosition = false
-                wantToNavigateBack = true
-            },
-            simpleMessage = !locationPermissionState.shouldShowRationale,
-            locationPermissionState = locationPermissionState,
-            context = context
-        )
-
-        Box(modifier = Modifier.fillMaxSize().testTag(Screen.RUN_HIKE)) {
-            // Back Button at the top of the screen
-            BackButton(
-                navigationActions = navigationActions,
-                modifier =
-                Modifier.padding(top = 40.dp, start = 16.dp, end = 16.dp)
-                    .testTag(RunHikeScreen.TEST_TAG_BACK_BUTTON),
-                onClick = { wantToNavigateBack = true })
-
-            // Button to center the map on the user's location
-            MapMyLocationButton(
-                onClick = {
-                    centerMapOnUserPosition = true
-                    if (userLocationMarker != null && userLocationMarker?.position != null)
-                        MapUtils.centerMapOnLocation(mapView, userLocationMarker!!.position)
-                },
-                modifier =
-                Modifier.align(Alignment.BottomStart)
-                    .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
-                    .testTag(RunHikeScreen.TEST_TAG_CENTER_MAP_BUTTON)
-            )
-
-            // Zoom buttons at the bottom right of the screen
-            ZoomMapButton(
-                onZoomIn = { mapView.controller.zoomIn() },
-                onZoomOut = { mapView.controller.zoomOut() },
-                modifier =
-                Modifier.align(Alignment.BottomEnd)
-                    .padding(bottom = RunHikeScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
-                    .testTag(RunHikeScreen.TEST_TAG_ZOOM_BUTTONS)
-            )
-
-            // Display the bottom sheet with the hike details
-            RunHikeBottomSheet(hike = hike, onStopTheRun = { wantToNavigateBack = true })
-        }
+      // Display the bottom sheet with the hike details
+      RunHikeBottomSheet(hike = hike, onStopTheRun = { wantToNavigateBack = true })
     }
+  }
 }
-
 
 /**
  * Parses a location result and updates the user's position on the map.
@@ -330,7 +315,7 @@ private fun parseLocationUpdate(
 }
 
 @Composable
-fun runHikeMap(hike: DetailedHike,facilitiesViewModel:FacilitiesViewModel): MapView {
+fun runHikeMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel): MapView {
   val context = LocalContext.current
   val hikeZoomLevel = MapUtils.calculateBestZoomLevel(hike.bounds).toDouble()
   val hikeCenter = MapUtils.getGeographicalCenter(hike.bounds)
@@ -442,19 +427,19 @@ fun runHikeMap(hike: DetailedHike,facilitiesViewModel:FacilitiesViewModel): MapV
   MapUtils.showHikeOnMap(
       mapView = mapView, waypoints = hike.waypoints, color = hike.color, onLineClick = {})
 
-    // Map
-    AndroidView(
-        factory = { mapView },
-        modifier =
-        Modifier.fillMaxWidth()
-            // Reserve space for the scaffold at the bottom, -20.dp to avoid the map being to
-            // small under the bottomSheet
-            .padding(
-                bottom =
-                RunHikeScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT -
-                        RunHikeScreen.MAP_BOTTOM_PADDING_ADJUSTMENT)
-            .testTag(RunHikeScreen.TEST_TAG_MAP))
-    return mapView
+  // Map
+  AndroidView(
+      factory = { mapView },
+      modifier =
+          Modifier.fillMaxWidth()
+              // Reserve space for the scaffold at the bottom, -20.dp to avoid the map being to
+              // small under the bottomSheet
+              .padding(
+                  bottom =
+                      RunHikeScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT -
+                          RunHikeScreen.MAP_BOTTOM_PADDING_ADJUSTMENT)
+              .testTag(RunHikeScreen.TEST_TAG_MAP))
+  return mapView
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)

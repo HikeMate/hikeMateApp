@@ -2,15 +2,11 @@ package ch.hikemate.app.ui.map
 
 import android.content.Context
 import android.graphics.drawable.Drawable
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.test.*
-import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.core.content.ContextCompat
-import androidx.core.graphics.drawable.toBitmap
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.test.*
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertAny
 import androidx.compose.ui.test.assertCountEquals
@@ -25,6 +21,8 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.hikemate.app.R
@@ -68,6 +66,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -102,7 +101,6 @@ class HikeDetailScreenTest {
   private lateinit var elevationRepository: ElevationRepository
 
   private lateinit var context: Context
-
 
   private val hikeId = "1"
   private val detailedHike =
@@ -790,7 +788,9 @@ class HikeDetailScreenTest {
     val bitmap2 = drawable2.toBitmap()
 
     return bitmap1.sameAs(bitmap2)
+  }
 
+  @Test
   fun testSignOutAndNavigateToAuthFromMapScreen() = runTest {
     `when`(profileRepository.getProfileById(any(), any(), any())).thenAnswer {
       val onError = it.getArgument<(Exception) -> Unit>(2)
@@ -829,6 +829,5 @@ class HikeDetailScreenTest {
     assertEquals(zoomLevel, hikesViewModel.getMapState().zoom, 0.1)
     assertEquals(center.latitude, hikesViewModel.getMapState().center.latitude, 0.1)
     assertEquals(center.longitude, hikesViewModel.getMapState().center.longitude, 0.1)
-
   }
 }

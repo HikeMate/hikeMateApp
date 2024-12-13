@@ -43,7 +43,6 @@ import io.mockk.mockkObject
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.fail
 import org.junit.Before
@@ -228,11 +227,9 @@ class RunHikeScreenTest {
     facilitiesRepository = mock(FacilitiesRepository::class.java)
     facilitiesViewModel = FacilitiesViewModel(facilitiesRepository)
 
-
     // By default, the user has location permission
     mockkObject(LocationUtils)
     every { LocationUtils.hasLocationPermission(any()) } returns true
-
   }
 
   @Test
@@ -288,32 +285,12 @@ class RunHikeScreenTest {
         verify(elevationRepository).getElevation(any(), any(), any())
       }
 
-    @OptIn(ExperimentalTestApi::class)
-    @Test
-    fun runHikeScreen_displaysMap() = runTest {
-        setupCompleteScreenWithSelected(detailedHike)
-
-        // Advance coroutines
-        advanceUntilIdle()
-
-        // Wait for map to be ready
-        composeTestRule.waitUntilExactlyOneExists(
-            hasTestTag(RunHikeScreen.TEST_TAG_MAP),
-            timeoutMillis = 10000
-        )
-
-        composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_MAP)
-            .assertExists()
-            .assertIsDisplayed()
-    }
-
   @Test
   fun runHikeScreen_displaysMap() =
       runTest(timeout = 5.seconds) {
         setupCompleteScreenWithSelected(detailedHike)
         composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_MAP).assertIsDisplayed()
       }
-
 
   @Test
   fun runHikeScreen_displaysBackButton() =
@@ -400,13 +377,6 @@ class RunHikeScreenTest {
             .assertIsDisplayed()
             .assert(hasText("23% complete"))
       }
-
-
-    composeTestRule
-        .onNodeWithTag(RunHikeScreen.TEST_TAG_PROGRESS_TEXT)
-        .assertIsDisplayed()
-        .assert(hasText("23% complete"))
-  }
 
   @Test
   fun runHikeScreen_fetchesFacilities() = runTest {

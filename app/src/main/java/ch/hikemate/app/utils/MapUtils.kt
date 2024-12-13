@@ -372,7 +372,8 @@ object MapUtils {
         })
   }
 
-   /** Centers the map on a given location.
+  /**
+   * Centers the map on a given location.
    *
    * Animates the map so that the transition is smooth and not instant.
    *
@@ -388,5 +389,4 @@ object MapUtils {
       val center: GeoPoint = MapInitialValues().mapInitialCenter,
       val zoom: Double = MapInitialValues().mapInitialZoomLevel,
   )
-
 }

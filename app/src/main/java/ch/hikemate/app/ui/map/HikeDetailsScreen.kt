@@ -95,13 +95,10 @@ import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
-
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
-
 import org.osmdroid.util.GeoPoint
-
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 
@@ -210,7 +207,6 @@ fun HikeDetailScreen(
                 hikesViewModel,
                 profile.hikingLevel,
                 facilitiesViewModel)
-
           }
         }
       },
@@ -239,7 +235,6 @@ fun HikeDetailsContent(
     // Display the map and the zoom buttons
 
     mapViewState.value = hikeDetailsMap(hike, facilitiesViewModel)
-
 
     // Display the back button on top of the map
     BackButton(
