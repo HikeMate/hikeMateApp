@@ -356,7 +356,7 @@ fun runHikeMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel): Ma
   // This effect handles both initial facility display and subsequent updates
   // It triggers when facilities are loaded or when the map view changes
   shouldLoadFacilities =
-      LaunchedEffectLoadingOfFacilities(
+      launchedEffectLoadingOfFacilities(
           facilities, shouldLoadFacilities, mapView, facilitiesViewModel, hike, context)
 
   // This solves the bug of the screen freezing by properly cleaning up resources
@@ -437,7 +437,7 @@ private fun LaunchedEffectFacilitiesDisplay(
 }
 
 @Composable
-private fun LaunchedEffectLoadingOfFacilities(
+private fun launchedEffectLoadingOfFacilities(
     facilities: List<Facility>?,
     shouldLoadFacilities: Boolean,
     mapView: MapView,
