@@ -878,6 +878,41 @@ class HikesViewModelTest {
         assertNull(hikesViewModel.selectedHike.value)
       }
 
+  @Test
+  fun `unsaveHike also unplans hike`() =
+      runTest(dispatcher) {
+        // Make sure the loaded hike is included in the saved hikes
+        loadSavedHikes(
+            listOf(
+                SavedHike(
+                    id = singleOsmHike1[0].id,
+                    name = singleOsmHike1[0].name ?: "",
+                    date = firstJanuary2024)))
+
+        // Load a hike to be unsaved (load hikes from bounds so that the hike won't be removed from
+        // the loaded hikes list after being unsaved).
+        loadOsmHikes(singleOsmHike1)
+        // Check that the hike was loaded
+        assertEquals(singleOsmHike1.size, hikesViewModel.hikeFlows.value.size)
+
+        // Make sure the saved hikes repository unsaves the hike
+        coEvery { savedHikesRepo.removeSavedHike(any()) } returns Unit
+
+        // Try to unsave the loaded hike
+        var onSuccessCalled = false
+        hikesViewModel.unsaveHike(
+            hikeId = singleOsmHike1[0].id,
+            onSuccess = { onSuccessCalled = true },
+            onFailure = { fail("onFailure should not have been called") })
+
+        // The saved hikes repository should be called exactly once
+        coVerify(exactly = 1) { savedHikesRepo.removeSavedHike(any()) }
+        // The appropriate callback should be called
+        assertTrue(onSuccessCalled)
+        // The hike should now be marked as unplanned (and unsaved, but that is a previous test)
+        assertNull(hikesViewModel.hikeFlows.value[0].value.plannedDate)
+      }
+
   // ==========================================================================
   // HikesViewModel.setPlannedDate
   // ==========================================================================

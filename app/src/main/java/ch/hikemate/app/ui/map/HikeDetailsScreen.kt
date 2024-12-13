@@ -456,6 +456,8 @@ fun DateDetailRow(
   val showingDatePicker = remember { mutableStateOf(false) }
   val datePickerState = rememberDatePickerState()
 
+  var previouslySelectedDate by remember { mutableStateOf<Long?>(plannedDate?.toDate()?.time) }
+
   fun showDatePicker() {
     showingDatePicker.value = true
   }
@@ -479,13 +481,33 @@ fun DateDetailRow(
           Button(
               modifier = Modifier.testTag(TEST_TAG_DATE_PICKER_CONFIRM_BUTTON),
               onClick = {
-                if (datePickerState.selectedDateMillis != null) {
-                  updatePlannedDate(Timestamp(Date(datePickerState.selectedDateMillis!!)))
-                }
+                val selectedDateMillis = datePickerState.selectedDateMillis
 
+                // If the same date is selected twice, unselect it, else save the date
+                if (selectedDateMillis == previouslySelectedDate) {
+                  updatePlannedDate(null)
+                  previouslySelectedDate = null
+                } else {
+                  if (selectedDateMillis != null) {
+                    updatePlannedDate(Timestamp(Date(selectedDateMillis)))
+                    previouslySelectedDate = selectedDateMillis
+                  }
+                }
                 dismissDatePicker()
               }) {
-                Text(text = stringResource(R.string.hike_detail_screen_date_picker_confirm_button))
+                val selectedDate = datePickerState.selectedDateMillis
+
+                // If the date selected is the same date that is already saved in the hike give the
+                // user the option to un-plan the hike
+                if (selectedDate != previouslySelectedDate || selectedDate == null) {
+                  Text(
+                      text = stringResource(R.string.hike_detail_screen_date_picker_confirm_button))
+                } else {
+                  Text(
+                      text =
+                          stringResource(
+                              R.string.hike_detail_screen_date_picker_unplan_hike_button))
+                }
               }
         },
     ) {
