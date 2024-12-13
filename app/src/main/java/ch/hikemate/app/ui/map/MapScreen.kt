@@ -92,6 +92,12 @@ object MapScreen {
   val BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT = 400.dp
 
   /**
+   * (Config) Adjustment to the map's bottom padding to prevent rendering issues. Without this
+   * adjustment, the map sometimes fails to load properly beneath the bottom sheet.
+   */
+  val MAP_BOTTOM_PADDING_ADJUSTMENT = 20.dp
+
+  /**
    * (Config) Initial zoom level of the map. The zoom level is defined empirically to show a
    * reasonable area of the map when the user opens the screen.
    */
@@ -445,7 +451,12 @@ fun MapScreen(
                     modifier =
                         Modifier.fillMaxSize()
                             .testTag(MapScreen.TEST_TAG_MAP)
-                            .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT))
+                            // Reserve space for the scaffold at the bottom, -20.dp to avoid the map
+                            // being too small under the bottomSheet
+                            .padding(
+                                bottom =
+                                    MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT -
+                                        MapScreen.MAP_BOTTOM_PADDING_ADJUSTMENT))
 
                 // Button to center the map on the user's location
                 MapMyLocationButton(
