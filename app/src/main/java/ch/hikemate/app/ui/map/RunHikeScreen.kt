@@ -258,7 +258,7 @@ private fun RunHikeContent(
           },
           modifier =
               Modifier.align(Alignment.BottomStart)
-                  .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
+                  .padding(bottom = RunHikeScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
                   .testTag(RunHikeScreen.TEST_TAG_CENTER_MAP_BUTTON))
 
       // Zoom buttons at the bottom right of the screen
