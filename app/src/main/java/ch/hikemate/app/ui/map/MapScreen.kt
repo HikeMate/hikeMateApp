@@ -35,8 +35,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -91,7 +94,7 @@ object MapScreen {
    * (Config) Height of the bottom sheet when it is collapsed. The height is defined empirically to
    * show a few items of the list of hikes and allow the user to expand it to see more.
    */
-  val BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT = 400.dp
+  val BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT = 250.dp
 
   /**
    * (Config) Adjustment to the map's bottom padding to prevent rendering issues. Without this
@@ -392,6 +395,17 @@ fun MapScreen(
   val errorMessageIdState = profileViewModel.errorMessageId.collectAsState()
   val profileState = profileViewModel.profile.collectAsState()
 
+  var button1Bounds by remember { mutableStateOf<Rect?>(null) }
+  var button2Bounds by remember { mutableStateOf<Rect?>(null) }
+  var shortText by remember { mutableStateOf(false) }
+  LaunchedEffect(button1Bounds, button2Bounds) {
+    if (button1Bounds != null &&
+        button2Bounds != null &&
+        button1Bounds!!.overlaps(button2Bounds!!)) {
+      shortText = true
+    }
+  }
+
   AsyncStateHandler(
       errorMessageIdState = errorMessageIdState,
       actionContentDescriptionStringId = R.string.go_back,
@@ -453,7 +467,12 @@ fun MapScreen(
                             !isSearching.value,
                     modifier =
                         Modifier.align(Alignment.BottomCenter)
-                            .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
+                            .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
+                            .onGloballyPositioned { coordinates ->
+                              button1Bounds = coordinates.boundsInRoot()
+                            },
+                    shortText = shortText,
+                )
                 // The zoom buttons are displayed on the bottom left of the screen
                 ZoomMapButton(
                     onZoomIn = {
@@ -466,7 +485,10 @@ fun MapScreen(
                     },
                     modifier =
                         Modifier.align(Alignment.BottomEnd)
-                            .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
+                            .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
+                            .onGloballyPositioned { coordinates ->
+                              button2Bounds = coordinates.boundsInRoot()
+                            })
                 CollapsibleHikesList(hikesViewModel, profile.hikingLevel, isSearching.value)
                 // Put SideBarNavigation after to make it appear on top of the map and HikeList
               }
@@ -540,7 +562,12 @@ private fun LaunchedEffectForHikeUpdate(
 }
 
 @Composable
-fun MapSearchButton(onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+fun MapSearchButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    shortText: Boolean
+) {
   Button(
       onClick = onClick,
       modifier = modifier.testTag(MapScreen.TEST_TAG_SEARCH_BUTTON),
@@ -551,7 +578,9 @@ fun MapSearchButton(onClick: () -> Unit, modifier: Modifier = Modifier, enabled:
           ),
       enabled = enabled) {
         Text(
-            text = LocalContext.current.getString(R.string.map_screen_search_button_text),
+            text = if (shortText) "Search here" else "Search for hikes",
+            // text = "Search
+            // here",//LocalContext.current.getString(R.string.map_screen_search_button_text),
             color =
                 if (enabled) MaterialTheme.colorScheme.onSurface
                 else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
@@ -598,6 +627,9 @@ fun CollapsibleHikesList(
   BottomSheetScaffold(
       scaffoldState = scaffoldState,
       sheetContainerColor = MaterialTheme.colorScheme.surface,
+      sheetPeekHeight = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT,
+      // Overwrites the device's max sheet width to avoid the bottomSheet not being wide enough
+      sheetMaxWidth = Integer.MAX_VALUE.dp,
       sheetContent = {
         Column(modifier = Modifier.fillMaxSize().testTag(MapScreen.TEST_TAG_HIKES_LIST)) {
           when {
@@ -690,7 +722,7 @@ fun CollapsibleHikesList(
           }
         }
       },
-      sheetPeekHeight = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT) {}
+  ) {}
 }
 
 @Composable

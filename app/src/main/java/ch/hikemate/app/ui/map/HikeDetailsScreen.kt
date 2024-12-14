@@ -250,7 +250,7 @@ fun HikeDetailsContent(
         onZoomOut = { mapViewState.value?.controller?.zoomOut() },
         modifier =
             Modifier.align(Alignment.BottomEnd)
-                .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
+                .padding(bottom = HikeDetailScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
 
     // Prevent the app from crashing when the "run hike" button is spammed
     var wantToRunHike by remember { mutableStateOf(false) }
@@ -454,6 +454,10 @@ fun HikesDetailsBottomScaffold(
 ) {
   val scaffoldState = rememberBottomSheetScaffoldState()
 
+  // Shrinks the bottomSheet to mid height when the screen in launched, to avoid the back button
+  // being hidden
+  LaunchedEffect(Unit) { scaffoldState.bottomSheetState.partialExpand() }
+
   val hikeColor = Color(detailedHike.color)
   val isSuitable = detailedHike.difficulty.ordinal <= userHikingLevel.ordinal
   val bookmarkIconId =
@@ -463,6 +467,9 @@ fun HikesDetailsBottomScaffold(
       scaffoldState = scaffoldState,
       sheetContainerColor = MaterialTheme.colorScheme.surface,
       sheetPeekHeight = HikeDetailScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT,
+      // Overwrites the device's max sheet width to avoid the bottomSheet not being wide enough
+      sheetMaxWidth = Integer.MAX_VALUE.dp,
+      modifier = Modifier.fillMaxWidth(),
       sheetContent = {
         Column(
             modifier = Modifier.fillMaxSize().padding(16.dp),
