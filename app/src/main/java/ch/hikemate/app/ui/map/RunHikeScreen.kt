@@ -170,14 +170,16 @@ private fun RunHikeContent(
     }
 
     var userLocationMarker: Marker? by remember { mutableStateOf(null) }
+    var progressThroughHike: Double? by remember { mutableStateOf(null) }
 
     // We need to keep a reference to the instance of location callback, this way we can unregister
     // it using the same reference, for example when the permission is revoked.
     val locationUpdatedCallback = remember {
       object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult) {
-          userLocationMarker =
-              parseLocationUpdate(locationResult, userLocationMarker, mapView, hike)
+          val parseResult = parseLocationUpdate(locationResult, userLocationMarker, mapView, hike)
+          userLocationMarker = parseResult.first
+          progressThroughHike = parseResult.second
           if (centerMapOnUserPosition &&
               userLocationMarker != null &&
               userLocationMarker?.position != null)
@@ -269,7 +271,8 @@ private fun RunHikeContent(
                   .testTag(RunHikeScreen.TEST_TAG_ZOOM_BUTTONS))
 
       // Display the bottom sheet with the hike details
-      RunHikeBottomSheet(hike = hike, onStopTheRun = { wantToNavigateBack = true })
+      RunHikeBottomSheet(
+          hike = hike, onStopTheRun = { wantToNavigateBack = true }, progressThroughHike)
     }
   }
 }
@@ -287,15 +290,16 @@ private fun parseLocationUpdate(
     userLocationMarker: Marker?,
     mapView: MapView,
     hike: DetailedHike
-): Marker? {
+): Pair<Marker?, Double?> {
   if (locationResult.lastLocation == null) {
     MapUtils.clearUserPosition(userLocationMarker, mapView, invalidate = true)
-    return null
+    return Pair(null, null)
   }
 
   val loc = locationResult.lastLocation!!
   val routeProjectionResponse =
-      LocationUtils.projectLocationOnHike(LatLong(loc.latitude, loc.longitude), hike) ?: return null
+      LocationUtils.projectLocationOnHike(LatLong(loc.latitude, loc.longitude), hike)
+          ?: return Pair(null, null)
 
   val newLocation =
       if (routeProjectionResponse.distanceFromRoute > RunHikeScreen.MAX_DISTANCE_TO_CONSIDER_HIKE) {
@@ -314,7 +318,9 @@ private fun parseLocationUpdate(
         }
       }
 
-  return MapUtils.updateUserPosition(userLocationMarker, mapView, newLocation)
+  return Pair(
+      MapUtils.updateUserPosition(userLocationMarker, mapView, newLocation),
+      routeProjectionResponse.progressDistance)
 }
 
 @Composable
@@ -471,6 +477,7 @@ private fun launchedEffectLoadingOfFacilities(
 private fun RunHikeBottomSheet(
     hike: DetailedHike,
     onStopTheRun: () -> Unit,
+    progressThroughHike: Double?
 ) {
   val scaffoldState = rememberBottomSheetScaffoldState()
 
@@ -492,16 +499,29 @@ private fun RunHikeBottomSheet(
           // Elevation graph and the progress details below the graph
           Column {
             val hikeColor = Color(hike.color)
-            ElevationGraph(
-                elevations = hike.elevation,
-                styleProperties =
-                    ElevationGraphStyleProperties(
-                        strokeColor = hikeColor, fillColor = hikeColor.copy(0.1f)),
-                modifier =
-                    Modifier.fillMaxWidth()
-                        .height(60.dp)
-                        .padding(4.dp)
-                        .testTag(RunHikeScreen.TEST_TAG_ELEVATION_GRAPH))
+            if (progressThroughHike != null)
+                ElevationGraph(
+                    elevations = hike.elevation,
+                    styleProperties =
+                        ElevationGraphStyleProperties(
+                            strokeColor = hikeColor, fillColor = hikeColor.copy(0.1f)),
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .height(60.dp)
+                            .padding(4.dp)
+                            .testTag(RunHikeScreen.TEST_TAG_ELEVATION_GRAPH),
+                    progressThroughHike = (progressThroughHike / hike.distance).toFloat())
+            else
+                ElevationGraph(
+                    elevations = hike.elevation,
+                    styleProperties =
+                        ElevationGraphStyleProperties(
+                            strokeColor = hikeColor, fillColor = hikeColor.copy(0.1f)),
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .height(60.dp)
+                            .padding(4.dp)
+                            .testTag(RunHikeScreen.TEST_TAG_ELEVATION_GRAPH))
 
             // Progress details below the graph
             Row(
