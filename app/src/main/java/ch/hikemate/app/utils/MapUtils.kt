@@ -57,7 +57,9 @@ object MapUtils {
       true
     }
 
-    mapView.overlays.add(line)
+    // The index provides the lowest priority so that the facilities and other overlays
+    // are always displayed on top of it.
+    mapView.overlays.add(0, line)
   }
 
   /**
@@ -343,8 +345,8 @@ object MapUtils {
    */
   fun setMapViewListenerForStates(
       mapView: MapView,
-      boundingBoxState: MutableStateFlow<BoundingBox>,
-      zoomLevelState: MutableStateFlow<Double>
+      boundingBoxState: MutableStateFlow<BoundingBox?>,
+      zoomLevelState: MutableStateFlow<Double?>
   ) {
     // Update the map listener to just update the StateFlows
     mapView.addMapListener(
@@ -353,6 +355,7 @@ object MapUtils {
             // On a Scroll event the boundingBox will change
             event?.let {
               val newBoundingBox = mapView.boundingBox
+              Log.d("Maputils", "Callback called")
               if (newBoundingBox != boundingBoxState.value) {
                 boundingBoxState.value = newBoundingBox
               }

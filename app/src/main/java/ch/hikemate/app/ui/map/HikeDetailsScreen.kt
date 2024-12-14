@@ -99,6 +99,7 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import org.osmdroid.util.BoundingBox
@@ -299,8 +300,8 @@ fun hikeDetailsMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel)
 
   // Create state values that we can actually observe in the LaunchedEffect
   // We keep our StateFlows for debouncing
-  val boundingBoxState = remember { MutableStateFlow(mapView.boundingBox) }
-  val zoomLevelState = remember { MutableStateFlow(mapView.zoomLevelDouble) }
+  val boundingBoxState = remember { MutableStateFlow<BoundingBox?>(null) }
+  val zoomLevelState = remember { MutableStateFlow<Double?>(null) }
 
   // This effect handles both initial facility display and subsequent updates
   // It triggers when facilities are loaded or when the map view changes
@@ -325,7 +326,7 @@ fun hikeDetailsMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel)
       mapView, boundingBoxState, zoomLevelState, facilitiesViewModel, hike, context)
 
   // When the map is ready, it will have computed its bounding box
-  LaunchedEffectMapviewListener(mapView, hike)
+  LaunchedEffectMapviewListener(mapView, hike, boundingBoxState, zoomLevelState)
 
   // Show the selected hike on the map
   // OnLineClick does nothing, the line should not be clickable
@@ -351,8 +352,8 @@ fun hikeDetailsMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel)
 @Composable
 private fun LaunchedEffectFacilitiesDisplay(
     mapView: MapView,
-    boundingBoxState: MutableStateFlow<BoundingBox>,
-    zoomLevelState: MutableStateFlow<Double>,
+    boundingBoxState: MutableStateFlow<BoundingBox?>,
+    zoomLevelState: MutableStateFlow<Double?>,
     facilitiesViewModel: FacilitiesViewModel,
     hike: DetailedHike,
     context: Context
@@ -369,10 +370,14 @@ private fun LaunchedEffectFacilitiesDisplay(
             }
 
     try {
-      combinedFlow.collect { (boundingBox, zoomLevel) ->
+      combinedFlow.collectLatest { (boundingBox, zoomLevel) ->
+        if (boundingBoxState.value == null ||
+            zoomLevelState.value == null ||
+            mapView.repository == null)
+            return@collectLatest
         facilitiesViewModel.filterFacilitiesForDisplay(
-            bounds = boundingBox,
-            zoomLevel = zoomLevel,
+            bounds = boundingBox!!,
+            zoomLevel = zoomLevel!!,
             hikeRoute = hike,
             onSuccess = { newFacilities ->
               MapUtils.clearFacilities(mapView)
@@ -389,7 +394,12 @@ private fun LaunchedEffectFacilitiesDisplay(
 }
 
 @Composable
-private fun LaunchedEffectMapviewListener(mapView: MapView, hike: DetailedHike) {
+private fun LaunchedEffectMapviewListener(
+    mapView: MapView,
+    hike: DetailedHike,
+    boundingBoxState: MutableStateFlow<BoundingBox?>,
+    zoomLevelState: MutableStateFlow<Double?>
+) {
   mapView.addOnFirstLayoutListener { _, _, _, _, _ ->
     // Limit the vertical scrollable area to avoid the user scrolling too far from the hike
     mapView.setScrollableAreaLimitLatitude(
@@ -402,6 +412,8 @@ private fun LaunchedEffectMapviewListener(mapView: MapView, hike: DetailedHike) 
           max(HikeDetailScreen.MAP_MIN_LONGITUDE, mapView.boundingBox.lonWest),
           min(HikeDetailScreen.MAP_MAX_LONGITUDE, mapView.boundingBox.lonEast),
           HikeDetailScreen.MAP_BOUNDS_MARGIN)
+      boundingBoxState.value = mapView.boundingBox
+      zoomLevelState.value = mapView.zoomLevelDouble
     }
   }
 }
