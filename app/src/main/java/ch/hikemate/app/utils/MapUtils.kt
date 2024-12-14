@@ -8,16 +8,24 @@ import android.location.Location
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.content.res.AppCompatResources
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import ch.hikemate.app.R
+import ch.hikemate.app.model.facilities.FacilitiesViewModel
 import ch.hikemate.app.model.facilities.Facility
 import ch.hikemate.app.model.facilities.FacilityType.Companion.mapFacilityTypeToDrawable
 import ch.hikemate.app.model.route.Bounds
+import ch.hikemate.app.model.route.DetailedHike
 import ch.hikemate.app.model.route.LatLong
+import ch.hikemate.app.ui.map.HikeDetailScreen
 import ch.hikemate.app.ui.map.MapInitialValues
 import ch.hikemate.app.ui.map.MapScreen
 import kotlin.math.cos
-import kotlin.math.max
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
 import org.osmdroid.events.MapListener
 import org.osmdroid.events.ScrollEvent
 import org.osmdroid.events.ZoomEvent
@@ -392,4 +400,103 @@ object MapUtils {
       val center: GeoPoint = MapInitialValues().mapInitialCenter,
       val zoom: Double = MapInitialValues().mapInitialZoomLevel,
   )
+
+  /**
+   * This LaunchedEffect is used for the flow that updates the facilities for the current state of
+   * the MapView. It uses a combinedFlow to make debounced updates to the facilities
+   *
+   * @param mapView
+   * @param boundingBoxState
+   * @param zoomLevelState
+   * @param facilitiesViewModel
+   * @param hike
+   * @param context
+   */
+  @OptIn(FlowPreview::class)
+  @Composable
+  fun LaunchedEffectFacilitiesDisplay(
+      mapView: MapView,
+      boundingBoxState: MutableStateFlow<BoundingBox?>,
+      zoomLevelState: MutableStateFlow<Double?>,
+      facilitiesViewModel: FacilitiesViewModel,
+      hike: DetailedHike,
+      context: Context
+  ) {
+    LaunchedEffect(Unit) {
+      setMapViewListenerForStates(mapView, boundingBoxState, zoomLevelState)
+
+      // Create our combined flow which is limited by a debounce
+      val combinedFlow =
+          combine(
+              boundingBoxState.debounce(HikeDetailScreen.DEBOUNCE_DURATION),
+              zoomLevelState.debounce(HikeDetailScreen.DEBOUNCE_DURATION)) { boundingBox, zoomLevel
+                ->
+                boundingBox to zoomLevel
+              }
+
+      try {
+        combinedFlow.collectLatest { (boundingBox, zoomLevel) ->
+          if (boundingBoxState.value == null ||
+              zoomLevelState.value == null ||
+              mapView.repository == null)
+              return@collectLatest
+          facilitiesViewModel.filterFacilitiesForDisplay(
+              bounds = boundingBox!!,
+              zoomLevel = zoomLevel!!,
+              hikeRoute = hike,
+              onSuccess = { newFacilities ->
+                clearFacilities(mapView)
+                if (newFacilities.isNotEmpty()) {
+                  displayFacilities(newFacilities, mapView, context)
+                }
+              },
+              onNoFacilitiesForState = { clearFacilities(mapView) })
+        }
+      } catch (e: Exception) {
+        Log.e(HikeDetailScreen.LOG_TAG, "Error in facility updates flow", e)
+      }
+    }
+  }
+
+  /**
+   * This LaunchedEffect used for the HikeDetails and RunHike screens is the one that sets the first
+   * display of the facilities.
+   *
+   * @param facilities
+   * @param shouldLoadFacilities
+   * @param mapView
+   * @param facilitiesViewModel
+   * @param hike
+   * @param context
+   * @return the value of the shouldLoadFacilities
+   */
+  @Composable
+  fun launchedEffectLoadingOfFacilities(
+      facilities: List<Facility>?,
+      shouldLoadFacilities: Boolean,
+      mapView: MapView,
+      facilitiesViewModel: FacilitiesViewModel,
+      hike: DetailedHike,
+      context: Context
+  ): Boolean {
+    var shouldLoadFacilitiesCopy = shouldLoadFacilities
+    LaunchedEffect(facilities, shouldLoadFacilitiesCopy) {
+      if (facilities != null && mapView.repository != null) {
+        facilitiesViewModel.filterFacilitiesForDisplay(
+            bounds = mapView.boundingBox,
+            zoomLevel = mapView.zoomLevelDouble,
+            hikeRoute = hike,
+            onSuccess = { newFacilities ->
+              clearFacilities(mapView)
+              if (newFacilities.isNotEmpty()) {
+                displayFacilities(newFacilities, mapView, context)
+              }
+            },
+            onNoFacilitiesForState = { clearFacilities(mapView) })
+        // Reset the flag after loading
+        shouldLoadFacilitiesCopy = false
+      }
+    }
+    return shouldLoadFacilitiesCopy
+  }
 }

@@ -1,7 +1,6 @@
 package ch.hikemate.app.ui.map
 
 import android.annotation.SuppressLint
-import android.content.Context
 import android.location.Location
 import android.util.Log
 import android.view.MotionEvent
@@ -41,7 +40,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import ch.hikemate.app.R
 import ch.hikemate.app.model.facilities.FacilitiesViewModel
-import ch.hikemate.app.model.facilities.Facility
 import ch.hikemate.app.model.route.DetailedHike
 import ch.hikemate.app.model.route.HikesViewModel
 import ch.hikemate.app.model.route.LatLong
@@ -65,9 +63,6 @@ import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationResult
 import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.debounce
 import org.osmdroid.util.BoundingBox
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
@@ -357,7 +352,7 @@ fun runHikeMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel): Ma
   // This effect handles both initial facility display and subsequent updates
   // It triggers when facilities are loaded or when the map view changes
   shouldLoadFacilities =
-      launchedEffectLoadingOfFacilities(
+      MapUtils.launchedEffectLoadingOfFacilities(
           facilities, shouldLoadFacilities, mapView, facilitiesViewModel, hike, context)
 
   // This solves the bug of the screen freezing by properly cleaning up resources
@@ -373,7 +368,7 @@ fun runHikeMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel): Ma
   }
 
   // This LaunchedEffect handles map updates with debouncing to prevent too frequent refreshes
-  LaunchedEffectFacilitiesDisplay(
+  MapUtils.LaunchedEffectFacilitiesDisplay(
       mapView, boundingBoxState, zoomLevelState, facilitiesViewModel, hike, context)
   LaunchedEffectMapviewListener(mapView, boundingBoxState, zoomLevelState)
 
@@ -408,80 +403,6 @@ private fun LaunchedEffectMapviewListener(
     boundingBoxState.value = mapView.boundingBox
     zoomLevelState.value = mapView.zoomLevelDouble
   }
-}
-
-@Composable
-private fun LaunchedEffectFacilitiesDisplay(
-    mapView: MapView,
-    boundingBoxState: MutableStateFlow<BoundingBox?>,
-    zoomLevelState: MutableStateFlow<Double?>,
-    facilitiesViewModel: FacilitiesViewModel,
-    hike: DetailedHike,
-    context: Context
-) {
-  LaunchedEffect(Unit) {
-    MapUtils.setMapViewListenerForStates(mapView, boundingBoxState, zoomLevelState)
-
-    // Create our combined flow which is limited by a debounce
-    val combinedFlow =
-        combine(
-            boundingBoxState.debounce(HikeDetailScreen.DEBOUNCE_DURATION),
-            zoomLevelState.debounce(HikeDetailScreen.DEBOUNCE_DURATION)) { boundingBox, zoomLevel ->
-              boundingBox to zoomLevel
-            }
-
-    try {
-      combinedFlow.collectLatest { (boundingBox, zoomLevel) ->
-        if (boundingBoxState.value == null ||
-            zoomLevelState.value == null ||
-            mapView.repository == null)
-            return@collectLatest
-        facilitiesViewModel.filterFacilitiesForDisplay(
-            bounds = boundingBox!!,
-            zoomLevel = zoomLevel!!,
-            hikeRoute = hike,
-            onSuccess = { newFacilities ->
-              MapUtils.clearFacilities(mapView)
-              if (newFacilities.isNotEmpty()) {
-                MapUtils.displayFacilities(newFacilities, mapView, context)
-              }
-            },
-            onNoFacilitiesForState = { MapUtils.clearFacilities(mapView) })
-      }
-    } catch (e: Exception) {
-      Log.e(HikeDetailScreen.LOG_TAG, "Error in facility updates flow", e)
-    }
-  }
-}
-
-@Composable
-private fun launchedEffectLoadingOfFacilities(
-    facilities: List<Facility>?,
-    shouldLoadFacilities: Boolean,
-    mapView: MapView,
-    facilitiesViewModel: FacilitiesViewModel,
-    hike: DetailedHike,
-    context: Context
-): Boolean {
-  var shouldLoadFacilities1 = shouldLoadFacilities
-  LaunchedEffect(facilities, shouldLoadFacilities1) {
-    if (facilities != null && mapView.repository != null) {
-      facilitiesViewModel.filterFacilitiesForDisplay(
-          bounds = mapView.boundingBox,
-          zoomLevel = mapView.zoomLevelDouble,
-          hikeRoute = hike,
-          onSuccess = { newFacilities ->
-            MapUtils.clearFacilities(mapView)
-            if (newFacilities.isNotEmpty()) {
-              MapUtils.displayFacilities(newFacilities, mapView, context)
-            }
-          },
-          onNoFacilitiesForState = { MapUtils.clearFacilities(mapView) })
-      // Reset the flag after loading
-      shouldLoadFacilities1 = false
-    }
-  }
-  return shouldLoadFacilities1
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
