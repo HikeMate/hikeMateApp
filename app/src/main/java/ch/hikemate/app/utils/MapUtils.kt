@@ -16,7 +16,6 @@ import ch.hikemate.app.model.route.LatLong
 import ch.hikemate.app.ui.map.MapInitialValues
 import ch.hikemate.app.ui.map.MapScreen
 import kotlin.math.cos
-import kotlin.math.max
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.osmdroid.events.MapListener
 import org.osmdroid.events.ScrollEvent
