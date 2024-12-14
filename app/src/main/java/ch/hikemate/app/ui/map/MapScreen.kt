@@ -395,14 +395,15 @@ fun MapScreen(
   val errorMessageIdState = profileViewModel.errorMessageId.collectAsState()
   val profileState = profileViewModel.profile.collectAsState()
 
-  var button1Bounds by remember { mutableStateOf<Rect?>(null) }
-  var button2Bounds by remember { mutableStateOf<Rect?>(null) }
-  var shortText by remember { mutableStateOf(false) }
-  LaunchedEffect(button1Bounds, button2Bounds) {
-    if (button1Bounds != null &&
-        button2Bounds != null &&
-        button1Bounds!!.overlaps(button2Bounds!!)) {
-      shortText = true
+  var searchButtonBounds by remember { mutableStateOf<Rect?>(null) }
+  var zoomButtonsBounds by remember { mutableStateOf<Rect?>(null) }
+  // Flag gets set to true if the search button overlaps with the zoom buttons
+  var shortTextFlag by remember { mutableStateOf(false) }
+  LaunchedEffect(searchButtonBounds, zoomButtonsBounds) {
+    if (searchButtonBounds != null &&
+        zoomButtonsBounds != null &&
+        searchButtonBounds!!.overlaps(zoomButtonsBounds!!)) {
+      shortTextFlag = true
     }
   }
 
@@ -469,9 +470,9 @@ fun MapScreen(
                         Modifier.align(Alignment.BottomCenter)
                             .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
                             .onGloballyPositioned { coordinates ->
-                              button1Bounds = coordinates.boundsInRoot()
+                              searchButtonBounds = coordinates.boundsInRoot()
                             },
-                    shortText = shortText,
+                    shortText = shortTextFlag,
                 )
                 // The zoom buttons are displayed on the bottom left of the screen
                 ZoomMapButton(
@@ -487,7 +488,7 @@ fun MapScreen(
                         Modifier.align(Alignment.BottomEnd)
                             .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
                             .onGloballyPositioned { coordinates ->
-                              button2Bounds = coordinates.boundsInRoot()
+                              zoomButtonsBounds = coordinates.boundsInRoot()
                             })
                 CollapsibleHikesList(hikesViewModel, profile.hikingLevel, isSearching.value)
                 // Put SideBarNavigation after to make it appear on top of the map and HikeList
@@ -578,7 +579,10 @@ fun MapSearchButton(
           ),
       enabled = enabled) {
         Text(
-            text = if (shortText) "Search here" else "Search for hikes",
+            text =
+                if (shortText)
+                    LocalContext.current.getString(R.string.map_screen_search_button_text_short)
+                else LocalContext.current.getString(R.string.map_screen_search_button_text),
             // text = "Search
             // here",//LocalContext.current.getString(R.string.map_screen_search_button_text),
             color =

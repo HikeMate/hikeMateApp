@@ -177,6 +177,7 @@ dependencies {
     implementation(libs.accompanist.permissions)
     implementation(libs.play.services.location)
 
+
     // Global test dependencies
     globalTestImplementation(libs.androidx.junit)
     globalTestImplementation(libs.androidx.espresso.core)

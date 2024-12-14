@@ -455,7 +455,7 @@ fun HikesDetailsBottomScaffold(
   val scaffoldState = rememberBottomSheetScaffoldState()
 
   // Shrinks the bottomSheet to mid height when the screen in launched, to avoid the back button
-  // being hidden
+  // being hidden and expose the map
   LaunchedEffect(Unit) { scaffoldState.bottomSheetState.partialExpand() }
 
   val hikeColor = Color(detailedHike.color)
