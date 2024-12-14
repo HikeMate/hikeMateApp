@@ -93,12 +93,12 @@ import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.utils.MapUtils
 import ch.hikemate.app.utils.humanReadableFormat
 import com.google.firebase.Timestamp
-import kotlinx.coroutines.FlowPreview
 import java.util.Date
 import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
