@@ -73,6 +73,7 @@ import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 
 object RunHikeScreen {
+  const val LOG_TAG = "RunHikeScreen"
   val BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT = 400.dp
   val MAP_BOTTOM_PADDING_ADJUSTMENT = 20.dp
 
@@ -292,10 +293,12 @@ private fun parseLocationUpdate(
     hike: DetailedHike
 ): Pair<Marker?, Double?> {
   if (locationResult.lastLocation == null) {
+    Log.d("RunHikeScreen", "Location null")
     MapUtils.clearUserPosition(userLocationMarker, mapView, invalidate = true)
     return Pair(null, null)
   }
 
+  var progressDistance: Double? = null
   val loc = locationResult.lastLocation!!
   val routeProjectionResponse =
       LocationUtils.projectLocationOnHike(LatLong(loc.latitude, loc.longitude), hike)
@@ -310,6 +313,7 @@ private fun parseLocationUpdate(
           }
         }
       } else {
+        progressDistance = routeProjectionResponse.progressDistance
         routeProjectionResponse.projectedLocation.let { location ->
           Location("").apply {
             latitude = location.lat
@@ -319,8 +323,7 @@ private fun parseLocationUpdate(
       }
 
   return Pair(
-      MapUtils.updateUserPosition(userLocationMarker, mapView, newLocation),
-      routeProjectionResponse.progressDistance)
+      MapUtils.updateUserPosition(userLocationMarker, mapView, newLocation), progressDistance)
 }
 
 @Composable
@@ -499,19 +502,23 @@ private fun RunHikeBottomSheet(
           // Elevation graph and the progress details below the graph
           Column {
             val hikeColor = Color(hike.color)
-            if (progressThroughHike != null)
-                ElevationGraph(
-                    elevations = hike.elevation,
-                    styleProperties =
-                        ElevationGraphStyleProperties(
-                            strokeColor = hikeColor, fillColor = hikeColor.copy(0.1f)),
-                    modifier =
-                        Modifier.fillMaxWidth()
-                            .height(60.dp)
-                            .padding(4.dp)
-                            .testTag(RunHikeScreen.TEST_TAG_ELEVATION_GRAPH),
-                    progressThroughHike = (progressThroughHike / hike.distance).toFloat())
-            else
+            if (progressThroughHike != null) {
+
+              val progressPercentage = (progressThroughHike / hike.length)
+              Log.d(RunHikeScreen.LOG_TAG, "Drawing progress: $progressPercentage")
+
+              ElevationGraph(
+                  elevations = hike.elevation,
+                  styleProperties =
+                      ElevationGraphStyleProperties(
+                          strokeColor = hikeColor, fillColor = hikeColor.copy(0.1f)),
+                  modifier =
+                      Modifier.fillMaxWidth()
+                          .height(60.dp)
+                          .padding(4.dp)
+                          .testTag(RunHikeScreen.TEST_TAG_ELEVATION_GRAPH),
+                  progressThroughHike = (progressThroughHike / hike.length).toFloat())
+            } else
                 ElevationGraph(
                     elevations = hike.elevation,
                     styleProperties =
