@@ -261,7 +261,7 @@ fun HikeDetailsContent(
       }
     }
     // Display the details of the hike at the bottom of the screen
-    HikesDetailsBottomScaffold(
+    HikeDetailsBottomScaffold(
         hike, hikesViewModel, userHikingLevel, onRunThisHike = { wantToRunHike = true })
   }
 }
@@ -446,17 +446,13 @@ private fun launchedEffectLoadingOfFacilities(
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HikesDetailsBottomScaffold(
+fun HikeDetailsBottomScaffold(
     detailedHike: DetailedHike,
     hikesViewModel: HikesViewModel,
     userHikingLevel: HikingLevel,
     onRunThisHike: () -> Unit
 ) {
   val scaffoldState = rememberBottomSheetScaffoldState()
-
-  // Shrinks the bottomSheet to mid height when the screen in launched, to avoid the back button
-  // being hidden and expose the map
-  LaunchedEffect(Unit) { scaffoldState.bottomSheetState.partialExpand() }
 
   val hikeColor = Color(detailedHike.color)
   val isSuitable = detailedHike.difficulty.ordinal <= userHikingLevel.ordinal

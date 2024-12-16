@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.BottomSheetScaffold
@@ -418,81 +419,90 @@ fun MapScreen(
             onTabSelect = { navigationActions.navigateTo(it) },
             tabList = LIST_TOP_LEVEL_DESTINATIONS,
             selectedItem = Route.MAP) { p ->
-              Box(modifier = Modifier.fillMaxSize().padding(p).testTag(Screen.MAP)) {
-                // Jetpack Compose is a relatively recent framework for implementing Android UIs.
-                // OSMDroid
-                // is
-                // an older library that uses Activities, the previous way of doing. The composable
-                // AndroidView
-                // allows us to use OSMDroid's legacy MapView in a Jetpack Compose layout.
-                AndroidView(
-                    factory = { mapView },
-                    modifier =
-                        Modifier.fillMaxSize()
-                            .testTag(MapScreen.TEST_TAG_MAP)
-                            // Reserve space for the scaffold at the bottom, -20.dp to avoid the map
-                            // being too small under the bottomSheet
-                            .padding(
-                                bottom =
-                                    MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT -
-                                        MapScreen.MAP_BOTTOM_PADDING_ADJUSTMENT))
+              Box(
+                  modifier =
+                      Modifier.fillMaxSize()
+                          .padding(p)
+                          .testTag(Screen.MAP)
+                          // To avoid a bug where the map is not fully loaded at the top
+                          .offset(y = (-MapScreen.MAP_BOTTOM_PADDING_ADJUSTMENT))) {
+                    // Jetpack Compose is a relatively recent framework for implementing Android
+                    // UIs.
+                    // OSMDroid is
+                    // an older library that uses Activities, the previous way of doing. The
+                    // composable
+                    // AndroidView
+                    // allows us to use OSMDroid's legacy MapView in a Jetpack Compose layout.
+                    AndroidView(
+                        factory = { mapView },
+                        modifier =
+                            Modifier.fillMaxSize()
+                                .testTag(MapScreen.TEST_TAG_MAP)
+                                // Reserve space for the scaffold at the bottom, -20.dp to avoid the
+                                // map
+                                // being too small under the bottomSheet
+                                .padding(
+                                    bottom =
+                                        MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT -
+                                            MapScreen.MAP_BOTTOM_PADDING_ADJUSTMENT))
 
-                // Button to center the map on the user's location
-                MapMyLocationButton(
-                    onClick = {
-                      val hasLocationPermission =
-                          LocationUtils.hasLocationPermission(locationPermissionState)
-                      // If the user has granted at least one of the two permissions, center the map
-                      // on
-                      // the user's location
-                      if (hasLocationPermission) {
-                        MapUtils.centerMapOnLocation(context, mapView, userLocationMarker)
-                      }
-                      // If the user yet needs to grant the permission, show a custom educational
-                      // alert
-                      else {
-                        showLocationPermissionDialog = true
-                      }
-                    },
-                    modifier =
-                        Modifier.align(Alignment.BottomStart)
-                            .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
-                            .testTag(MapScreen.TEST_TAG_CENTER_MAP_BUTTON))
-                // Search button to request OSM for hikes in the displayed area
-                MapSearchButton(
-                    onClick = {
-                      MapScreen.launchSearch(isSearching, hikesViewModel, mapView, context)
-                    },
-                    enabled =
-                        zoomLevel >= MapScreen.DISABLED_SEARCH_BUTTON_MAX_ZOOM_LEVEL &&
-                            !isSearching.value,
-                    modifier =
-                        Modifier.align(Alignment.BottomCenter)
-                            .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
-                            .onGloballyPositioned { coordinates ->
-                              searchButtonBounds = coordinates.boundsInRoot()
-                            },
-                    shortText = shortTextFlag,
-                )
-                // The zoom buttons are displayed on the bottom left of the screen
-                ZoomMapButton(
-                    onZoomIn = {
-                      zoomLevel = mapView.zoomLevelDouble + 1
-                      mapView.controller.zoomIn()
-                    },
-                    onZoomOut = {
-                      zoomLevel = mapView.zoomLevelDouble - 1
-                      mapView.controller.zoomOut()
-                    },
-                    modifier =
-                        Modifier.align(Alignment.BottomEnd)
-                            .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
-                            .onGloballyPositioned { coordinates ->
-                              zoomButtonsBounds = coordinates.boundsInRoot()
-                            })
-                CollapsibleHikesList(hikesViewModel, profile.hikingLevel, isSearching.value)
-                // Put SideBarNavigation after to make it appear on top of the map and HikeList
-              }
+                    // Button to center the map on the user's location
+                    MapMyLocationButton(
+                        onClick = {
+                          val hasLocationPermission =
+                              LocationUtils.hasLocationPermission(locationPermissionState)
+                          // If the user has granted at least one of the two permissions, center the
+                          // map
+                          // on
+                          // the user's location
+                          if (hasLocationPermission) {
+                            MapUtils.centerMapOnLocation(context, mapView, userLocationMarker)
+                          }
+                          // If the user yet needs to grant the permission, show a custom
+                          // educational
+                          // alert
+                          else {
+                            showLocationPermissionDialog = true
+                          }
+                        },
+                        modifier =
+                            Modifier.align(Alignment.BottomStart)
+                                .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
+                                .testTag(MapScreen.TEST_TAG_CENTER_MAP_BUTTON))
+                    // Search button to request OSM for hikes in the displayed area
+                    MapSearchButton(
+                        onClick = {
+                          MapScreen.launchSearch(isSearching, hikesViewModel, mapView, context)
+                        },
+                        enabled =
+                            zoomLevel >= MapScreen.DISABLED_SEARCH_BUTTON_MAX_ZOOM_LEVEL &&
+                                !isSearching.value,
+                        modifier =
+                            Modifier.align(Alignment.BottomCenter)
+                                .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
+                                .onGloballyPositioned { coordinates ->
+                                  searchButtonBounds = coordinates.boundsInRoot()
+                                },
+                        shortText = shortTextFlag,
+                    )
+                    // The zoom buttons are displayed on the bottom left of the screen
+                    ZoomMapButton(
+                        onZoomIn = {
+                          zoomLevel = mapView.zoomLevelDouble + 1
+                          mapView.controller.zoomIn()
+                        },
+                        onZoomOut = {
+                          zoomLevel = mapView.zoomLevelDouble - 1
+                          mapView.controller.zoomOut()
+                        },
+                        modifier =
+                            Modifier.align(Alignment.BottomEnd)
+                                .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
+                                .onGloballyPositioned { coordinates ->
+                                  zoomButtonsBounds = coordinates.boundsInRoot()
+                                })
+                    CollapsibleHikesList(hikesViewModel, profile.hikingLevel, isSearching.value)
+                  }
             }
       }
 }
@@ -635,7 +645,7 @@ fun CollapsibleHikesList(
       // Overwrites the device's max sheet width to avoid the bottomSheet not being wide enough
       sheetMaxWidth = Integer.MAX_VALUE.dp,
       sheetContent = {
-        Column(modifier = Modifier.fillMaxSize().testTag(MapScreen.TEST_TAG_HIKES_LIST)) {
+        Column(modifier = Modifier.testTag(MapScreen.TEST_TAG_HIKES_LIST)) {
           when {
             // A search for hikes on the map is ongoing, display a loading animation
             isSearching -> {
