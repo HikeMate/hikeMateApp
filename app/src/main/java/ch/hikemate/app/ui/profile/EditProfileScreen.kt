@@ -19,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -44,8 +45,12 @@ import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.theme.primaryColor
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 object EditProfileScreen {
+  const val UPDATE_TIMEOUT = 5000L
+
   const val TEST_TAG_TITLE = "editProfileScreenTitle"
   const val TEST_TAG_NAME_INPUT = "editProfileScreenNameInput"
   const val TEST_TAG_HIKING_LEVEL_LABEL = "editProfileScreenHikingLevelLabel"
@@ -93,6 +98,8 @@ fun EditProfileScreen(
 
     var isLoading by remember { mutableStateOf(false) }
 
+    val coroutineScope = rememberCoroutineScope()
+
     if (savedProfile == profile) {
       isLoading = false
       savedProfile = null
@@ -103,6 +110,7 @@ fun EditProfileScreen(
     if (isLoading) {
       // Display a loading animation while the profile is being saved
       CenteredLoadingAnimation()
+      return@AsyncStateHandler
     }
 
     Column(
@@ -182,6 +190,15 @@ fun EditProfileScreen(
                         profile.joinedDate)
                 profileViewModel.updateProfile(profile = savedProfile!!)
                 isLoading = true
+                // Add a timeout in case the user is offline. This would still
+                // update the profile as Firebase Firestore syncs when the user
+                // goes online.
+                coroutineScope.launch {
+                  delay(EditProfileScreen.UPDATE_TIMEOUT)
+                  isLoading = false
+                  savedProfile = null
+                  navigationActions.goBack()
+                }
               })
         }
   }
