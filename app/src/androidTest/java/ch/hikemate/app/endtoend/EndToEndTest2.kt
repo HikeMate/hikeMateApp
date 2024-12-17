@@ -222,7 +222,10 @@ class EndToEndTest2 : TestCase() {
     composeTestRule.waitForIdle()
 
     // Go back to the map
-    composeTestRule.onNodeWithTag(BackButton.BACK_BUTTON_TEST_TAG).performClick()
+    composeTestRule
+        .onNodeWithTag(BackButton.BACK_BUTTON_TEST_TAG)
+        .assertIsDisplayed()
+        .performClick()
 
     // Wait for the transition to complete
     composeTestRule.waitUntilExactlyOneExists(
