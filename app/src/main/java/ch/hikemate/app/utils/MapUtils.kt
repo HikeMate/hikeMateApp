@@ -2,6 +2,8 @@ package ch.hikemate.app.utils
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.location.Location
@@ -57,7 +59,21 @@ object MapUtils {
       true
     }
 
+    val startingMarker =
+        Marker(mapView).apply {
+          // Dynamically create the custom icon
+          icon =
+              createCircularIcon(
+                  context = mapView.context,
+                  fillColor = color,
+              )
+
+          position = GeoPoint(waypoints.first().lat, waypoints.first().lon)
+          setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
+        }
+
     mapView.overlays.add(line)
+    mapView.overlays.add(startingMarker)
   }
 
   /**
@@ -117,7 +133,7 @@ object MapUtils {
     val adjustedLongDiff = longDiff * cos(Math.toRadians(centerLat))
 
     // Calculate the maximum degree difference between lat and adjusted long
-    val maxDegreeDiff = kotlin.math.max(latDiff, adjustedLongDiff)
+    val maxDegreeDiff = max(latDiff, adjustedLongDiff)
 
     // The coverage of each zoom level in degrees. The Index is the OSM Zoom leve, as per the
     // documentation
@@ -186,10 +202,45 @@ object MapUtils {
             MapScreen.USER_LOCATION_MARKER_ICON_SIZE,
             MapScreen.USER_LOCATION_MARKER_ICON_SIZE,
             Bitmap.Config.ARGB_8888)
-    val canvas = android.graphics.Canvas(bitmap)
+    val canvas = Canvas(bitmap)
     originalDrawable?.setBounds(0, 0, canvas.width, canvas.height)
     originalDrawable?.draw(canvas)
 
+    return BitmapDrawable(context.resources, bitmap)
+  }
+
+  /**
+   * Creates a circular icon with a fill color and a stroke color. The icon is used to represent the
+   * starting point of a hike on the map.
+   *
+   * @param context The context where the icon will be used
+   * @param fillColor The color to fill the circle
+   * @return The circular icon with the specified fill and stroke colors
+   */
+  private fun createCircularIcon(context: Context, fillColor: Int): BitmapDrawable {
+    // Create a mutable bitmap
+    val bitmap =
+        Bitmap.createBitmap(
+            MapScreen.HIKE_STARTING_MARKER_ICON_SIZE,
+            MapScreen.USER_LOCATION_MARKER_ICON_SIZE,
+            Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
+
+    // Paint for fill color
+    val fillPaint =
+        Paint().apply {
+          style = Paint.Style.FILL
+          color = fillColor
+          isAntiAlias = true
+        }
+
+    // Calculate center and radius
+    val center = MapScreen.HIKE_STARTING_MARKER_ICON_SIZE / 2f
+
+    // Draw the circle
+    canvas.drawCircle(center, center, center, fillPaint) // Filled circle
+
+    // Convert bitmap to drawable
     return BitmapDrawable(context.resources, bitmap)
   }
 
