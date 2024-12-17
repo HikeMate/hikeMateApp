@@ -57,6 +57,7 @@ fun WithDetailedHike(
 
   if (detailedHike != null) {
     withDetailedHike(detailedHike!!)
+    return
   }
 
   Column(Modifier.fillMaxSize().safeDrawingPadding()) {
