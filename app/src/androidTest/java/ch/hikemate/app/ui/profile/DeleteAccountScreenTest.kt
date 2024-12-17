@@ -68,6 +68,8 @@ class DeleteAccountScreenTest : TestCase() {
     setUpActivityEmailProvider()
     composeTestRule.onNodeWithTag(BackButton.BACK_BUTTON_TEST_TAG).performClick()
 
+    composeTestRule.waitForIdle()
+
     verify { navigationActions.goBack() }
   }
 
