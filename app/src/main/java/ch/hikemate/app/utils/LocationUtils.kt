@@ -246,7 +246,7 @@ object LocationUtils {
           distanceFromRoute = location.distanceTo(projected),
           segment = segment,
           indexToSegment = 0,
-          projectedLocationElevation = route.elevation[0])
+          projectedLocationElevation = route.elevation.getOrNull(0))
     }
 
     // Find closest segment by checking all segment
@@ -279,7 +279,7 @@ object LocationUtils {
         distanceFromRoute = minDistance,
         segment = closestSegment,
         indexToSegment = closestSegmentIndex,
-        projectedLocationElevation = route.elevation[closestSegmentIndex])
+        projectedLocationElevation = route.elevation.getOrNull(closestSegmentIndex))
   }
 
   /**

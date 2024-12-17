@@ -113,6 +113,6 @@ object RouteUtils {
       val distanceFromRoute: Double,
       val segment: RouteSegment,
       val indexToSegment: Int,
-      val projectedLocationElevation: Double
+      val projectedLocationElevation: Double?
   )
 }
