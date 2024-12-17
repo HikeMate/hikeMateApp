@@ -1,5 +1,6 @@
 package ch.hikemate.app.ui.map
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Location
@@ -124,7 +125,9 @@ fun RunHikeScreen(
             actionIcon = Icons.AutoMirrored.Filled.ArrowBack,
             actionContentDescriptionStringId = R.string.go_back,
             onAction = { navigationActions.goBack() })
-      })
+      },
+      navigationActions = navigationActions,
+      onBackAction = { hikesViewModel.unselectHike() })
 }
 
 @SuppressLint("ClickableViewAccessibility")
@@ -143,8 +146,8 @@ private fun RunHikeContent(
       rememberMultiplePermissionsState(
           permissions =
               listOf(
-                  android.Manifest.permission.ACCESS_FINE_LOCATION,
-                  android.Manifest.permission.ACCESS_COARSE_LOCATION))
+                  Manifest.permission.ACCESS_FINE_LOCATION,
+                  Manifest.permission.ACCESS_COARSE_LOCATION))
   var showLocationPermissionDialog by remember { mutableStateOf(false) }
   var centerMapOnUserPosition by remember { mutableStateOf(false) }
 
