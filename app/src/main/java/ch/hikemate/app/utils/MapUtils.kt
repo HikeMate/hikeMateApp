@@ -70,6 +70,10 @@ object MapUtils {
 
           position = GeoPoint(waypoints.first().lat, waypoints.first().lon)
           setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
+          setOnMarkerClickListener({ _, _ ->
+            onLineClick()
+            true
+          })
         }
 
     mapView.overlays.add(line)
