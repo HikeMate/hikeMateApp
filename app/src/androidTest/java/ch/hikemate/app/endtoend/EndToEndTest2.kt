@@ -226,7 +226,7 @@ class EndToEndTest2 : TestCase() {
 
     // Wait for the transition to complete
     composeTestRule.waitUntilExactlyOneExists(
-        hasTestTag(MapScreen.TEST_TAG_MAP), timeoutMillis = 10000)
+        hasTestTag(MapScreen.TEST_TAG_MAP), timeoutMillis = 10001)
 
     // Go to the saved hikes screen
     composeTestRule
