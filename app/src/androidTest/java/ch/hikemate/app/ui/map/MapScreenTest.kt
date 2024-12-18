@@ -26,6 +26,7 @@ import ch.hikemate.app.model.route.Bounds
 import ch.hikemate.app.model.route.HikeRoute
 import ch.hikemate.app.model.route.HikeRoutesRepository
 import ch.hikemate.app.model.route.HikesViewModel
+import ch.hikemate.app.model.route.LatLong
 import ch.hikemate.app.model.route.saved.SavedHikesRepository
 import ch.hikemate.app.ui.components.CenteredErrorAction
 import ch.hikemate.app.ui.components.HikeCard
@@ -223,7 +224,7 @@ class MapScreenTest : TestCase() {
   @Test
   fun clickingOnHikeItemSelectsHikeRoute() {
     setUpMap()
-    val hikeRoute = HikeRoute("Route 1", Bounds(0.0, 0.0, 0.0, 0.0), emptyList())
+    val hikeRoute = HikeRoute("Route 1", Bounds(0.0, 0.0, 0.0, 0.0), listOf(LatLong(1.0, 2.0)))
     `when`(hikesRepository.getRoutes(any(), any(), any())).thenAnswer {
       val onSuccess = it.getArgument<(List<HikeRoute>) -> Unit>(1)
       onSuccess(listOf(hikeRoute))
@@ -256,7 +257,8 @@ class MapScreenTest : TestCase() {
   fun hikesListDisplaysHikeNameIfAvailable() {
     // Given
     val hikeName = "My test hike whatever"
-    val hike = HikeRoute("1", Bounds(-1.0, -1.0, 1.0, 1.0), listOf(), hikeName, null)
+    val hike =
+        HikeRoute("1", Bounds(-1.0, -1.0, 1.0, 1.0), listOf(LatLong(1.0, 2.0)), hikeName, null)
     `when`(hikesRepository.getRoutes(any(), any(), any())).thenAnswer {
       val onSuccess = it.getArgument<(List<HikeRoute>) -> Unit>(1)
       onSuccess(listOf(hike))
@@ -278,7 +280,7 @@ class MapScreenTest : TestCase() {
   @Test
   fun hikesListDisplaysDefaultValueIfNameNotAvailable() {
     // Given
-    val hike = HikeRoute("1", Bounds(-1.0, -1.0, 1.0, 1.0), listOf(), null, null)
+    val hike = HikeRoute("1", Bounds(-1.0, -1.0, 1.0, 1.0), listOf(LatLong(1.0, 2.0)), null, null)
     `when`(hikesRepository.getRoutes(any(), any(), any())).thenAnswer {
       val onSuccess = it.getArgument<(List<HikeRoute>) -> Unit>(1)
       onSuccess(listOf(hike))
