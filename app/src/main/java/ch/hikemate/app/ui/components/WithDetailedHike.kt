@@ -55,16 +55,13 @@ fun WithDetailedHike(
 
   var detailedHike: DetailedHike? by remember { mutableStateOf(null) }
 
-  if (detailedHike != null) {
-    withDetailedHike(detailedHike!!)
-    return
-  }
-
   Column(Modifier.fillMaxSize().safeDrawingPadding()) {
-    BackButton(
-        navigationActions,
-        modifier = Modifier.padding(start = 16.dp, end = 16.dp),
-        onClick = onBackAction)
+    if (detailedHike == null) {
+      BackButton(
+          navigationActions,
+          modifier = Modifier.padding(start = 16.dp, end = 16.dp),
+          onClick = onBackAction)
+    }
 
     when {
       // All the details of the hike have been computed, pass them on to the content callback
@@ -81,6 +78,7 @@ fun WithDetailedHike(
           whenError()
         } else {
           detailedHike = fetchedDetailedHike
+          withDetailedHike(fetchedDetailedHike)
         }
       }
 
