@@ -226,7 +226,7 @@ object MapUtils {
     val bitmap =
         Bitmap.createBitmap(
             MapScreen.HIKE_STARTING_MARKER_ICON_SIZE,
-            MapScreen.USER_LOCATION_MARKER_ICON_SIZE,
+            MapScreen.HIKE_STARTING_MARKER_ICON_SIZE,
             Bitmap.Config.ARGB_8888)
     val canvas = Canvas(bitmap)
 
