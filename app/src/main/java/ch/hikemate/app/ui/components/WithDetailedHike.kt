@@ -10,9 +10,6 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -53,10 +50,8 @@ fun WithDetailedHike(
 ) {
   val loadingErrorMessageId by hikesViewModel.loadingErrorMessageId.collectAsState()
 
-  var detailedHike: DetailedHike? by remember { mutableStateOf(null) }
-
   Column(Modifier.fillMaxSize().safeDrawingPadding()) {
-    if (detailedHike == null && !hike.isFullyLoaded()) {
+    if (!hike.isFullyLoaded()) {
       BackButton(
           navigationActions,
           modifier = Modifier.padding(start = 16.dp, end = 16.dp),
@@ -77,7 +72,6 @@ fun WithDetailedHike(
         if (fetchedDetailedHike == null) {
           whenError()
         } else {
-          detailedHike = fetchedDetailedHike
           withDetailedHike(fetchedDetailedHike)
         }
       }
