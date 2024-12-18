@@ -56,7 +56,7 @@ fun WithDetailedHike(
   var detailedHike: DetailedHike? by remember { mutableStateOf(null) }
 
   Column(Modifier.fillMaxSize().safeDrawingPadding()) {
-    if (detailedHike == null) {
+    if (detailedHike == null && !hike.isFullyLoaded()) {
       BackButton(
           navigationActions,
           modifier = Modifier.padding(start = 16.dp, end = 16.dp),
