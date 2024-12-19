@@ -26,6 +26,7 @@ import io.mockk.verifySequence
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -369,8 +370,8 @@ class MapUtilsTest {
     // Given
     val boundingBox = BoundingBox(46.51, 6.62, 46.5, 6.6)
     val zoom = 15.0
-    val boundingBoxState = MutableStateFlow(boundingBox)
-    val zoomLevelState = MutableStateFlow(zoom)
+    val boundingBoxState = MutableStateFlow<BoundingBox?>(boundingBox)
+    val zoomLevelState = MutableStateFlow<Double?>(zoom)
 
     val listenerSlot = slot<MapListener>()
     every { mapView.addMapListener(capture(listenerSlot)) } returns Unit
@@ -390,7 +391,8 @@ class MapUtilsTest {
     // Then
     verify(exactly = 1) { mapView.addMapListener(any()) }
     assertEquals(boundingBox, boundingBoxState.value)
-    assertEquals(zoom, zoomLevelState.value, 0.01)
+    assertNotNull(zoomLevelState.value)
+    assertEquals(zoom, zoomLevelState.value!!, 0.01)
   }
 
   @Test
@@ -398,8 +400,8 @@ class MapUtilsTest {
     // Given
     val boundingBox = BoundingBox(46.51, 6.62, 46.5, 6.6)
     val zoom = 15.0
-    val boundingBoxState = MutableStateFlow(boundingBox)
-    val zoomLevelState = MutableStateFlow(zoom)
+    val boundingBoxState = MutableStateFlow<BoundingBox?>(boundingBox)
+    val zoomLevelState = MutableStateFlow<Double?>(zoom)
 
     val listenerSlot = slot<MapListener>()
     every { mapView.addMapListener(capture(listenerSlot)) } returns Unit
@@ -415,14 +417,15 @@ class MapUtilsTest {
     verify(exactly = 1) { mapView.addMapListener(any()) }
     // States should remain unchanged
     assertEquals(boundingBox, boundingBoxState.value)
-    assertEquals(zoom, zoomLevelState.value, 0.01)
+    assertNotNull(zoomLevelState.value)
+    assertEquals(zoom, zoomLevelState.value!!, 0.01)
   }
 
   @Test
   fun setMapViewListenerForStates_returnsCorrectBooleanValues() {
     // Given
-    val boundingBoxState = MutableStateFlow(BoundingBox(46.51, 6.62, 46.5, 6.6))
-    val zoomLevelState = MutableStateFlow(15.0)
+    val boundingBoxState = MutableStateFlow<BoundingBox?>(BoundingBox(46.51, 6.62, 46.5, 6.6))
+    val zoomLevelState = MutableStateFlow<Double?>(15.0)
 
     val listenerSlot = slot<MapListener>()
     every { mapView.addMapListener(capture(listenerSlot)) } returns Unit

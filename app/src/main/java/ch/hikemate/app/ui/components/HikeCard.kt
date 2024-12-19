@@ -56,6 +56,10 @@ data class HikeCardStyleProperties(
 /**
  * A card that displays information about a hike.
  *
+ * Can display a message as well. The message is only displayed if all three of [messageContent],
+ * and the icon and color of [styleProperties] are not null. If one of them is null, the message
+ * won't be displayed.
+ *
  * @param title The title of the hike.
  * @param elevationData The elevation data to display in the graph.
  * @param onClick The callback to be called when the card is clicked.
@@ -73,7 +77,11 @@ fun HikeCard(
     styleProperties: HikeCardStyleProperties = HikeCardStyleProperties(),
     showGraph: Boolean = true,
 ) {
-  val displayMessage = !elevationData.isNullOrEmpty() && messageContent != null
+  // The message requires a content, a color and an icon to be displayed, otherwise don't display it
+  val displayMessage =
+      messageContent != null &&
+          styleProperties.messageColor != null &&
+          styleProperties.messageIcon != null
   Log.i(
       "HikeCard",
       "displayMessage: $displayMessage, title: $title, elevationData: $elevationData, messageContent: $messageContent")
