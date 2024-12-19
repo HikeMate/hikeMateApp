@@ -215,6 +215,11 @@ class EndToEndTest4 {
                   longitude = 6.551607112518172
                 })))
 
+    composeTestRule.waitUntilExactlyOneExists(
+        hasTestTag(RunHikeScreen.TEST_TAG_PROGRESS_TEXT), timeoutMillis = 10000)
+    composeTestRule.waitUntilExactlyOneExists(
+        hasTestTag(RunHikeScreen.TEST_TAG_CURRENT_ELEVATION_TEXT), timeoutMillis = 10000)
+
     composeTestRule
         .onNodeWithTag(RunHikeScreen.TEST_TAG_PROGRESS_TEXT)
         .assertIsDisplayed()
