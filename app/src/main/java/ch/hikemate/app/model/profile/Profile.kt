@@ -7,7 +7,7 @@ import com.google.firebase.Timestamp
 /** An enum class representing the hiking level of a user. */
 enum class HikingLevel {
   BEGINNER,
-  INTERMEDIATE,
+  AMATEUR,
   EXPERT;
 
   /**
@@ -18,7 +18,7 @@ enum class HikingLevel {
   fun getDisplayString(context: Context): String {
     return when (this) {
       BEGINNER -> context.getString(R.string.hiking_level_beginner)
-      INTERMEDIATE -> context.getString(R.string.hiking_level_intermediate)
+      AMATEUR -> context.getString(R.string.hiking_level_amateur)
       EXPERT -> context.getString(R.string.hiking_level_expert)
     }
   }
