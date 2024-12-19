@@ -45,7 +45,7 @@ import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
-import ch.hikemate.app.ui.theme.plannedDateMessageColor
+import ch.hikemate.app.ui.theme.primaryColor
 import ch.hikemate.app.utils.humanReadablePlannedLabel
 import kotlinx.coroutines.flow.StateFlow
 
@@ -251,7 +251,7 @@ private fun SavedHikeCardFor(hike: Hike, hikesViewModel: HikesViewModel, display
   if (displayDate) {
     messageContent = hike.plannedDate?.humanReadablePlannedLabel(LocalContext.current)
     messageIcon = painterResource(R.drawable.calendar_today)
-    messageColor = plannedDateMessageColor
+    messageColor = primaryColor
   } else {
     messageContent = null
     messageIcon = null
