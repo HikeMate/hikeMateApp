@@ -60,6 +60,7 @@ import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.utils.LocationUtils
 import ch.hikemate.app.utils.MapUtils
+import ch.hikemate.app.utils.RouteUtils
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.android.gms.location.LocationCallback
@@ -174,10 +175,9 @@ private fun RunHikeContent(
     }
 
     var userLocationMarker: Marker? by remember { mutableStateOf(null) }
-    var progressThroughHike: Double? by remember { mutableStateOf(null) }
+    var completionPercentage: Double? by remember { mutableStateOf(null) }
 
     var userElevation: Double? by remember { mutableStateOf(null) }
-
 
     // We need to keep a reference to the instance of location callback, this way we can unregister
     // it using the same reference, for example when the permission is revoked.
@@ -286,7 +286,8 @@ private fun RunHikeContent(
           hike = hike,
           completionPercentage = completionPercentage,
           userElevation = userElevation,
-          onStopTheRun = { wantToNavigateBack = true })
+          onStopTheRun = { wantToNavigateBack = true },
+      )
     }
   }
 }
@@ -306,7 +307,6 @@ private fun parseLocationUpdate(
     userLocationMarker: Marker?,
     mapView: MapView,
     hike: DetailedHike
-
 ): Triple<Marker?, Double?, Double?> {
   if (locationResult.lastLocation == null) {
     Log.d("RunHikeScreen", "Location null")
@@ -315,11 +315,9 @@ private fun parseLocationUpdate(
     return Triple(null, null, null)
   }
 
-  var progressDistance: Double? = null
   val loc = locationResult.lastLocation!!
   val routeProjectionResponse =
       LocationUtils.projectLocationOnHike(LatLong(loc.latitude, loc.longitude), hike)
-
           ?: return Triple(null, null, null)
 
   val newLocation =
@@ -331,7 +329,6 @@ private fun parseLocationUpdate(
           }
         }
       } else {
-        progressDistance = routeProjectionResponse.progressDistance
         routeProjectionResponse.projectedLocation.let { location ->
           Location("").apply {
             latitude = location.lat
@@ -340,17 +337,19 @@ private fun parseLocationUpdate(
         }
       }
 
-
   val marker = MapUtils.updateUserPosition(userLocationMarker, mapView, newLocation)
   // Progress distance is in meters, hike distance is in kilometers
   val completionPercentage =
       if (routeProjectionResponse.distanceFromRoute > RunHikeScreen.MAX_DISTANCE_TO_CONSIDER_HIKE)
           null
-      else (routeProjectionResponse.progressDistance * 0.01 / hike.distance)
+      else
+          (routeProjectionResponse.progressDistance /
+              (hike.distance * RouteUtils.METERS_PER_KIlOMETER))
   val currentElevation =
       if (routeProjectionResponse.distanceFromRoute > RunHikeScreen.MAX_DISTANCE_TO_CONSIDER_HIKE)
           null
       else routeProjectionResponse.projectedLocationElevation
+  Log.d("RunHikeScreen", "completion:$completionPercentage")
   return Triple(marker, completionPercentage, currentElevation)
 }
 
@@ -507,10 +506,9 @@ private fun launchedEffectLoadingOfFacilities(
 @Composable
 private fun RunHikeBottomSheet(
     hike: DetailedHike,
-    completionPercentage: Int? = null,
+    completionPercentage: Double? = null,
     userElevation: Double? = null,
     onStopTheRun: () -> Unit,
-    progressThroughHike: Double?
 ) {
   val scaffoldState = rememberBottomSheetScaffoldState()
 
@@ -532,10 +530,7 @@ private fun RunHikeBottomSheet(
           // Elevation graph and the progress details below the graph
           Column {
             val hikeColor = Color(hike.color)
-            if (progressThroughHike != null) {
-
-              val progressPercentage = (progressThroughHike / hike.length)
-              Log.d(RunHikeScreen.LOG_TAG, "Drawing progress: $progressPercentage")
+            if (completionPercentage != null) {
 
               ElevationGraph(
                   elevations = hike.elevation,
@@ -547,7 +542,7 @@ private fun RunHikeBottomSheet(
                           .height(60.dp)
                           .padding(4.dp)
                           .testTag(RunHikeScreen.TEST_TAG_ELEVATION_GRAPH),
-                  progressThroughHike = (progressThroughHike / hike.length).toFloat())
+                  progressThroughHike = (completionPercentage).toFloat())
             } else
                 ElevationGraph(
                     elevations = hike.elevation,
@@ -575,10 +570,12 @@ private fun RunHikeBottomSheet(
                       text =
                           if (completionPercentage == null)
                               stringResource(R.string.run_hike_screen_progress_percentage_no_data)
-                          else
-                              stringResource(
-                                  R.string.run_hike_screen_progress_percentage_format,
-                                  completionPercentage),
+                          else {
+
+                            val percentage = (completionPercentage * 100).roundToInt()
+                            stringResource(
+                                R.string.run_hike_screen_progress_percentage_format, percentage)
+                          },
                       style = MaterialTheme.typography.bodyLarge,
                       color = hikeColor,
                       fontWeight = FontWeight.Bold,
