@@ -229,40 +229,6 @@ object MapUtils {
     return BitmapDrawable(context.resources, bitmap)
   }
 
-  /**
-   * Creates a circular icon with a fill color and a stroke color. The icon is used to represent the
-   * starting point of a hike on the map.
-   *
-   * @param context The context where the icon will be used
-   * @param fillColor The color to fill the circle
-   * @return The circular icon with the specified fill and stroke colors
-   */
-  private fun createCircularIcon(context: Context, fillColor: Int): BitmapDrawable {
-    // Create a mutable bitmap
-    val bitmap =
-        Bitmap.createBitmap(
-            MapScreen.HIKE_STARTING_MARKER_ICON_SIZE,
-            MapScreen.HIKE_STARTING_MARKER_ICON_SIZE,
-            Bitmap.Config.ARGB_8888)
-    val canvas = Canvas(bitmap)
-
-    // Paint for fill color
-    val fillPaint =
-        Paint().apply {
-          style = Paint.Style.FILL
-          color = fillColor
-          isAntiAlias = true
-        }
-
-    // Calculate center and radius
-    val center = MapScreen.HIKE_STARTING_MARKER_ICON_SIZE / 2f
-
-    // Draw the circle
-    canvas.drawCircle(center, center, center, fillPaint) // Filled circle
-
-    // Convert bitmap to drawable
-    return BitmapDrawable(context.resources, bitmap)
-  }
 
   /**
    * Draws a new marker on the map representing the user's position. The previous marker is cleared
