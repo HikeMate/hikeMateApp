@@ -23,6 +23,7 @@ import ch.hikemate.app.ui.map.HikeDetailScreen
 import ch.hikemate.app.ui.map.MapInitialValues
 import ch.hikemate.app.ui.map.MapScreen
 import kotlin.math.cos
+import kotlin.math.max
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -41,8 +42,6 @@ object MapUtils {
   private const val LOG_TAG = "MapUtils"
   const val MIN_DISTANCE_BETWEEN_FACILITIES = 15
   const val FACILITIES_RELATED_OBJECT_NAME = "facility_marker"
-  const val LINE_DISPLAY_PRIORITY = 0
-  const val LOCATION_PUCK_DISPLAY_PRIORITY = 2
 
   /**
    * Shows a hike on the map.
