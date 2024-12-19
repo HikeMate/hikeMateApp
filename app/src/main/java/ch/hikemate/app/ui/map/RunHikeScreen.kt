@@ -10,10 +10,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.BottomSheetScaffold
@@ -251,7 +254,10 @@ private fun RunHikeContent(
       BackButton(
           navigationActions = navigationActions,
           modifier =
-              Modifier.padding(top = 40.dp, start = 16.dp, end = 16.dp)
+              Modifier.padding(
+                      top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),
+                      start = 16.dp,
+                      end = 16.dp)
                   .testTag(RunHikeScreen.TEST_TAG_BACK_BUTTON),
           onClick = { wantToNavigateBack = true })
 

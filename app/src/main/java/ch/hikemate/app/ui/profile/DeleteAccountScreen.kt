@@ -3,9 +3,12 @@ package ch.hikemate.app.ui.profile
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -62,7 +65,7 @@ fun DeleteAccountScreen(navigationActions: NavigationActions, authViewModel: Aut
                   // Add padding to the sidebar padding
                   start = 16.dp,
                   end = 16.dp,
-              )
+                  top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding())
               .safeDrawingPadding(),
       verticalArrangement = Arrangement.spacedBy(16.dp)) {
         BackButton(navigationActions)

@@ -4,9 +4,11 @@ import android.icu.text.DateFormat
 import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -98,15 +100,15 @@ fun ProfileScreen(
     BottomBarNavigation(
         onTabSelect = { navigationActions.navigateTo(it) },
         tabList = LIST_TOP_LEVEL_DESTINATIONS,
-        selectedItem = Route.PROFILE) { _ ->
+        selectedItem = Route.PROFILE) { p ->
           Column(
               modifier =
                   Modifier.testTag(Screen.PROFILE)
+                      .padding(p)
                       .padding(
                           start = 16.dp,
                           end = 16.dp,
-                      )
-                      .safeDrawingPadding(),
+                          top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()),
               verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text(
                     context.getString(R.string.profile_screen_title),
