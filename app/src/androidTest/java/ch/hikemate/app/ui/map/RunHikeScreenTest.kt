@@ -453,7 +453,6 @@ class RunHikeScreenTest {
     hikesViewModel.selectHike(hikeId)
   }
 
-  @OptIn(ExperimentalPermissionsApi::class)
   @Test
   fun runHikeScreen_clickingOnCenterButtonWithPermissionCentersMapOnLocation() =
       runTest(timeout = 5.seconds) {

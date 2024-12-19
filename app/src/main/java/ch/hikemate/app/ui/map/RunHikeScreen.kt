@@ -85,6 +85,7 @@ object RunHikeScreen {
   const val TEST_TAG_TOTAL_DISTANCE_TEXT = "runHikeScreenTotalDistanceText"
   const val TEST_TAG_PROGRESS_TEXT = "runHikeScreenProgressText"
   const val TEST_TAG_CENTER_MAP_BUTTON = "runHikeScreenCenterMapButton"
+  const val TEST_TAG_CURRENT_ELEVATION_TEXT = "runHikeScreenCurrentElevationText"
 
   // The maximum distance to be considered on a hike
   const val MAX_DISTANCE_TO_CONSIDER_HIKE = 50.0 // meters
@@ -247,7 +248,7 @@ private fun RunHikeContent(
         locationPermissionState = locationPermissionState,
         context = context)
 
-    Box(modifier = Modifier.fillMaxSize().testTag(Screen.RUN_HIKE)) {
+    Box(modifier = Modifier.fillMaxSize()) {
       // Back Button at the top of the screen
       BackButton(
           navigationActions = navigationActions,
@@ -522,7 +523,9 @@ private fun RunHikeBottomSheet(
                     else
                         stringResource(
                             R.string.run_hike_screen_value_format_current_elevation,
-                            userElevation.roundToInt()))
+                            userElevation.roundToInt()),
+                modifier = Modifier.testTag(RunHikeScreen.TEST_TAG_CURRENT_ELEVATION_TEXT),
+            )
             DetailRow(
                 label = stringResource(R.string.run_hike_screen_label_elevation_gain),
                 value =

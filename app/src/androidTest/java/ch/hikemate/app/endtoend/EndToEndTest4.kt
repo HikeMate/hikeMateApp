@@ -1,20 +1,26 @@
 package ch.hikemate.app.endtoend
 
 import android.content.Context
+import android.location.Location
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onChildAt
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTouchInput
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.hikemate.app.MainActivity
+import ch.hikemate.app.R
 import ch.hikemate.app.ui.auth.CreateAccountScreen
 import ch.hikemate.app.ui.auth.SignInScreen
 import ch.hikemate.app.ui.auth.SignInWithEmailScreen
@@ -22,11 +28,17 @@ import ch.hikemate.app.ui.map.HikeDetailScreen
 import ch.hikemate.app.ui.map.MapScreen
 import ch.hikemate.app.ui.map.RunHikeScreen
 import ch.hikemate.app.ui.navigation.Screen
+import ch.hikemate.app.utils.LocationUtils
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationResult
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.mockkObject
 import java.util.UUID
-import junit.framework.TestCase
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -34,7 +46,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class EndToEndTest4 : TestCase() {
+class EndToEndTest4 {
   @get:Rule val composeTestRule = createEmptyComposeRule()
   private var scenario: ActivityScenario<MainActivity>? = null
   private val auth = FirebaseAuth.getInstance()
@@ -43,6 +55,9 @@ class EndToEndTest4 : TestCase() {
   private val email = "$myUuidAsString@gmail.com"
   private val password = "password"
 
+  private var locationCallback = mockk<LocationCallback>()
+
+  @OptIn(ExperimentalPermissionsApi::class)
   @Before
   fun setupFirebase() {
     val context = ApplicationProvider.getApplicationContext<Context>()
@@ -68,6 +83,17 @@ class EndToEndTest4 : TestCase() {
       throw Exception("Failed to sign out")
     }
 
+    mockkObject(LocationUtils)
+    every { LocationUtils.hasLocationPermission(any()) } returns true
+    every {
+      LocationUtils.onLocationPermissionsUpdated(
+          any(), any(), any(), any<LocationCallback>(), any(), any())
+    } answers
+        {
+          val locCallback = arg<LocationCallback>(3)
+          locationCallback = locCallback
+        }
+
     // Make sure the log out is considered in the MainActivity
     scenario = ActivityScenario.launch(MainActivity::class.java)
   }
@@ -82,13 +108,14 @@ class EndToEndTest4 : TestCase() {
   }
 
   @After
-  public override fun tearDown() {
+  fun tearDown() {
     scenario?.close()
   }
 
-  @OptIn(ExperimentalTestApi::class)
   @Test
+  @OptIn(ExperimentalTestApi::class)
   fun test() {
+    val context = ApplicationProvider.getApplicationContext<Context>()
     // ---- Sign-In ----
 
     // Perform sign in with email and password
@@ -132,28 +159,40 @@ class EndToEndTest4 : TestCase() {
 
     Espresso.closeSoftKeyboard()
 
-    composeTestRule
-        .onNodeWithTag(CreateAccountScreen.TEST_TAG_SIGN_UP_BUTTON)
-        .assertHasClickAction()
-        .assertIsDisplayed()
-        .performClick()
+    with(composeTestRule) {
+      onNodeWithTag(CreateAccountScreen.TEST_TAG_SIGN_UP_BUTTON)
+          .assertHasClickAction()
+          .assertIsDisplayed()
+          .performClick()
 
-    composeTestRule.waitUntilExactlyOneExists(hasTestTag(Screen.MAP), timeoutMillis = 10000)
+      waitUntilExactlyOneExists(hasTestTag(Screen.MAP), timeoutMillis = 10000)
 
-    // ---- Navigate to a hike's details screen ----
+      // ---- Navigate to a hike's details screen ----
 
-    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).assertIsDisplayed()
-    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).performClick()
+      onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).assertIsDisplayed().performClick()
 
-    // Click on the first of the found hikes
-    composeTestRule.waitUntilAtLeastOneExists(
-        hasTestTag(MapScreen.TEST_TAG_HIKE_ITEM), timeoutMillis = 10000)
+      // Click on the first of the found hikes
+      waitUntilAtLeastOneExists(hasTestTag(MapScreen.TEST_TAG_HIKE_ITEM), timeoutMillis = 30000)
+    }
     composeTestRule.onAllNodesWithTag(MapScreen.TEST_TAG_HIKE_ITEM)[0].performClick()
 
     composeTestRule.waitUntilExactlyOneExists(
-        hasTestTag(HikeDetailScreen.TEST_TAG_MAP), timeoutMillis = 10000)
+        hasTestTag(HikeDetailScreen.TEST_TAG_MAP), timeoutMillis = 30000)
 
     // ---- Navigate to RunHike Screen ----
+
+    composeTestRule.waitUntilExactlyOneExists(
+        hasTestTag(HikeDetailScreen.TEST_TAG_BOTTOM_SHEET), timeoutMillis = 30000)
+
+    composeTestRule.waitForIdle()
+
+    composeTestRule.onNodeWithTag(HikeDetailScreen.TEST_TAG_BOTTOM_SHEET).performTouchInput {
+      down(1, position = Offset(centerX, centerY))
+      moveTo(1, position = Offset(centerX, 0f))
+      up(1)
+    }
+
+    composeTestRule.waitForIdle()
 
     composeTestRule
         .onNodeWithTag(HikeDetailScreen.TEST_TAG_RUN_HIKE_BUTTON)
@@ -162,6 +201,80 @@ class EndToEndTest4 : TestCase() {
         .performClick()
 
     composeTestRule.waitUntilExactlyOneExists(hasTestTag(Screen.RUN_HIKE), timeoutMillis = 10000)
+
+    composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_BOTTOM_SHEET).performTouchInput {
+      down(1, position = Offset(centerX, centerY))
+      moveTo(1, position = Offset(centerX, 0f))
+      up(1)
+    }
+
+    composeTestRule.waitForIdle()
+
+    locationCallback.onLocationResult(
+        LocationResult.create(
+            listOf(
+                Location("gps").apply {
+                  latitude = 46.5775927207486
+                  longitude = 6.551607112518172
+                })))
+
+    composeTestRule
+        .onNodeWithTag(RunHikeScreen.TEST_TAG_PROGRESS_TEXT)
+        .assertIsDisplayed()
+        .assertTextEquals(
+            String.format(
+                context.getString(R.string.run_hike_screen_progress_percentage_format), 0))
+    composeTestRule
+        .onNodeWithTag(RunHikeScreen.TEST_TAG_CURRENT_ELEVATION_TEXT)
+        .assertIsDisplayed()
+        .onChildAt(1)
+        .assertTextEquals(
+            String.format(
+                context.getString(R.string.run_hike_screen_value_format_current_elevation), 485))
+
+    locationCallback.onLocationResult(
+        LocationResult.create(
+            listOf(
+                Location("gps").apply {
+                  latitude = 46.57808286327073
+                  longitude = 6.551269708196024
+                })))
+
+    composeTestRule
+        .onNodeWithTag(RunHikeScreen.TEST_TAG_PROGRESS_TEXT)
+        .assertIsDisplayed()
+        .assertTextEquals(
+            String.format(
+                context.getString(R.string.run_hike_screen_progress_percentage_format), 5))
+    composeTestRule
+        .onNodeWithTag(RunHikeScreen.TEST_TAG_CURRENT_ELEVATION_TEXT)
+        .assertIsDisplayed()
+        .onChildAt(1)
+        .assertTextEquals(
+            String.format(
+                context.getString(R.string.run_hike_screen_value_format_current_elevation), 485))
+
+    locationCallback.onLocationResult(
+        LocationResult.create(
+            listOf(
+                Location("gps").apply {
+                  latitude = 46.579277394466864
+                  longitude = 6.543243182558365
+                })))
+
+    composeTestRule
+        .onNodeWithTag(RunHikeScreen.TEST_TAG_PROGRESS_TEXT)
+        .assertIsDisplayed()
+        .assertTextEquals(
+            String.format(
+                context.getString(R.string.run_hike_screen_progress_percentage_format), 62))
+    composeTestRule
+        .onNodeWithTag(RunHikeScreen.TEST_TAG_CURRENT_ELEVATION_TEXT)
+        .assertIsDisplayed()
+        .onChildAt(1)
+        .assertTextEquals(
+            String.format(
+                context.getString(R.string.run_hike_screen_value_format_current_elevation), 476))
 
     // ---- RunHike Screen ----
 
