@@ -127,7 +127,6 @@
     <string name="hike_difficulty_moderate">Moderate</string>
     <string name="hike_difficulty_difficult">Difficult</string>
 
-
     <!-- Saved Hikes Screen -->
     <string name="saved_hikes_saved_label">Saved</string>
     <string name="saved_hikes_planned_label">Planned</string>
@@ -186,6 +185,8 @@
     <string name="background_image_content_description">Nature image, blurred</string>
     <string name="sign_in_with_email">Sign in with Email</string>
     <string name="sign_in_with_google">Sign in with Google</string>
+    <string name="google_account_connection_ended_or_cancelled">Retry Google sign-in</string>
+
 
     <string name="sign_in_with_email_title">Sign in</string>
     <string name="sign_in_with_email_email_label">Email</string>
@@ -227,11 +228,8 @@
     <string name="error_deleting_user_profile_and_saved_hikes">Error deleting user profile and saved hikes</string>
     <string name="error_re_authenticating_the_user">Error re-authenticating the user</string>
     <string name="no_user_is_currently_signed_in">No user is currently signed in</string>
+    <string name="delete_account_button_label">Delete Account</string>
 
     <!-- Error handling -->
     <string name="retry">Retry</string>
-
-
-    <string name="delete_account_button_label">Delete Account</string>
-    <string name="google_account_created_confirmation">Connected Google Account to your device successfully. Please wait while we retry the signup.</string>
 </resources>
