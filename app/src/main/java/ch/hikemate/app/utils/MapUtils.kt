@@ -3,7 +3,6 @@ package ch.hikemate.app.utils
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.graphics.Paint
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.location.Location
@@ -51,12 +50,14 @@ object MapUtils {
    * @param mapView The map view where the hike will be shown.
    * @param waypoints The points that compose the line to show on the map.
    * @param color The color of the hike.
+   * @param withMarker Whether to show a marker at the starting point of the hike.
    * @param onLineClick To be called when the line on the map is clicked.
    */
   fun showHikeOnMap(
       mapView: MapView,
       waypoints: List<LatLong>,
       color: Int,
+      withMarker: Boolean = false,
       onLineClick: () -> Unit,
   ) {
     val line = Polyline()
@@ -70,26 +71,27 @@ object MapUtils {
       true
     }
 
-    val startingMarker =
-        Marker(mapView).apply {
-          // Dynamically create the custom icon
-          icon =
-              createCircularIcon(
-                  context = mapView.context,
-                  fillColor = color,
-              )
-
-          position = GeoPoint(waypoints.first().lat, waypoints.first().lon)
-          setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
-          setOnMarkerClickListener({ _, _ ->
-            onLineClick()
-            true
-          })
-        }
     // The index provides the lowest priority so that the facilities and other overlays
     // are always displayed on top of it.
     mapView.overlays.add(ROUTE_PRIORITY_DISPLAY, line)
-    mapView.overlays.add(startingMarker)
+
+    if (withMarker) {
+      val startingMarker =
+          Marker(mapView).apply {
+            // Dynamically create the custom icon
+            icon =
+                AppCompatResources.getDrawable(mapView.context, R.drawable.location_on)?.apply {
+                  setTint(color)
+                }
+            position = GeoPoint(waypoints.first().lat, waypoints.first().lon)
+            setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+            setOnMarkerClickListener({ _, _ ->
+              onLineClick()
+              true
+            })
+          }
+      mapView.overlays.add(startingMarker)
+    }
     mapView.invalidate()
   }
 
@@ -223,41 +225,6 @@ object MapUtils {
     originalDrawable?.setBounds(0, 0, canvas.width, canvas.height)
     originalDrawable?.draw(canvas)
 
-    return BitmapDrawable(context.resources, bitmap)
-  }
-
-  /**
-   * Creates a circular icon with a fill color and a stroke color. The icon is used to represent the
-   * starting point of a hike on the map.
-   *
-   * @param context The context where the icon will be used
-   * @param fillColor The color to fill the circle
-   * @return The circular icon with the specified fill and stroke colors
-   */
-  private fun createCircularIcon(context: Context, fillColor: Int): BitmapDrawable {
-    // Create a mutable bitmap
-    val bitmap =
-        Bitmap.createBitmap(
-            MapScreen.HIKE_STARTING_MARKER_ICON_SIZE,
-            MapScreen.HIKE_STARTING_MARKER_ICON_SIZE,
-            Bitmap.Config.ARGB_8888)
-    val canvas = Canvas(bitmap)
-
-    // Paint for fill color
-    val fillPaint =
-        Paint().apply {
-          style = Paint.Style.FILL
-          color = fillColor
-          isAntiAlias = true
-        }
-
-    // Calculate center and radius
-    val center = MapScreen.HIKE_STARTING_MARKER_ICON_SIZE / 2f
-
-    // Draw the circle
-    canvas.drawCircle(center, center, center, fillPaint) // Filled circle
-
-    // Convert bitmap to drawable
     return BitmapDrawable(context.resources, bitmap)
   }
 

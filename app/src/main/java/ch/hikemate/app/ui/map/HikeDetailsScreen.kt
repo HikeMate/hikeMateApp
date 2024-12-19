@@ -340,7 +340,11 @@ fun hikeDetailsMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel)
   // OnLineClick does nothing, the line should not be clickable
   Log.d(LOG_TAG, "Drawing hike on map: ${hike.bounds}")
   MapUtils.showHikeOnMap(
-      mapView = mapView, waypoints = hike.waypoints, color = hike.color, onLineClick = {})
+      mapView = mapView,
+      waypoints = hike.waypoints,
+      color = hike.color,
+      onLineClick = {},
+      withMarker = true)
 
   // Display the map as a composable
   AndroidView(
