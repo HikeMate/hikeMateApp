@@ -10,6 +10,8 @@ import android.location.Location
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.content.res.AppCompatResources
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import ch.hikemate.app.R
@@ -73,12 +75,7 @@ object MapUtils {
     val startingMarker =
         Marker(mapView).apply {
           // Dynamically create the custom icon
-          icon =
-              createCircularIcon(
-                  context = mapView.context,
-                  fillColor = color,
-              )
-
+            icon = AppCompatResources.getDrawable(mapView.context, R.drawable.)
           position = GeoPoint(waypoints.first().lat, waypoints.first().lon)
           setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
           setOnMarkerClickListener({ _, _ ->
