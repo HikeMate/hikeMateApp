@@ -175,7 +175,7 @@ private fun RunHikeContent(
     }
 
     var userLocationMarker: Marker? by remember { mutableStateOf(null) }
-    var completionPercentage: Double? by remember { mutableStateOf(null) }
+    var completionRatio: Double? by remember { mutableStateOf(null) }
 
     var userElevation: Double? by remember { mutableStateOf(null) }
 
@@ -188,7 +188,7 @@ private fun RunHikeContent(
           val locationParsed =
               parseLocationUpdate(locationResult, userLocationMarker, mapView, hike)
           userLocationMarker = locationParsed.first
-          completionPercentage = locationParsed.second
+          completionRatio = locationParsed.second
           userElevation = locationParsed.third
 
           if (centerMapOnUserPosition &&
@@ -284,7 +284,7 @@ private fun RunHikeContent(
       // Display the bottom sheet with the hike details
       RunHikeBottomSheet(
           hike = hike,
-          completionPercentage = completionPercentage,
+          completionRatio = completionRatio,
           userElevation = userElevation,
           onStopTheRun = { wantToNavigateBack = true },
       )
@@ -506,7 +506,7 @@ private fun launchedEffectLoadingOfFacilities(
 @Composable
 private fun RunHikeBottomSheet(
     hike: DetailedHike,
-    completionPercentage: Double? = null,
+    completionRatio: Double? = null,
     userElevation: Double? = null,
     onStopTheRun: () -> Unit,
 ) {
@@ -527,11 +527,11 @@ private fun RunHikeBottomSheet(
               textAlign = TextAlign.Left,
               modifier = Modifier.testTag(RunHikeScreen.TEST_TAG_HIKE_NAME))
 
-          // Elevation graph and the progress details below the graph
-          val hikeColor = Color(hike.color)
-          ElevationGraphOnPercentage(completionPercentage, hike, hikeColor)
           Column {
             // Progress details below the graph
+            // Elevation graph and the progress details below the graph
+            val hikeColor = Color(hike.color)
+            ElevationGraphWithLocationPuck(completionRatio, hike, hikeColor)
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 20.dp),
                 horizontalArrangement = Arrangement.SpaceBetween) {
@@ -544,11 +544,11 @@ private fun RunHikeBottomSheet(
                   Text(
                       // Displays the progress percentage below the graph
                       text =
-                          if (completionPercentage == null)
+                          if (completionRatio == null)
                               stringResource(R.string.run_hike_screen_progress_percentage_no_data)
                           else {
 
-                            val percentage = (completionPercentage * 100).roundToInt()
+                            val percentage = (completionRatio * 100).roundToInt()
                             stringResource(
                                 R.string.run_hike_screen_progress_percentage_format, percentage)
                           },
@@ -618,7 +618,7 @@ private fun RunHikeBottomSheet(
 }
 
 @Composable
-private fun ElevationGraphOnPercentage(
+private fun ElevationGraphWithLocationPuck(
     completionPercentage: Double?,
     hike: DetailedHike,
     hikeColor: Color
