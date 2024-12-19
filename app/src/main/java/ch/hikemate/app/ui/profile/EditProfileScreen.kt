@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -22,13 +23,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.hikemate.app.R
 import ch.hikemate.app.model.authentication.AuthViewModel
@@ -44,6 +41,7 @@ import ch.hikemate.app.ui.components.CustomTextField
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
+import ch.hikemate.app.ui.theme.onPrimaryColor
 import ch.hikemate.app.ui.theme.primaryColor
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -55,8 +53,7 @@ object EditProfileScreen {
   const val TEST_TAG_NAME_INPUT = "editProfileScreenNameInput"
   const val TEST_TAG_HIKING_LEVEL_LABEL = "editProfileScreenHikingLevelLabel"
   const val TEST_TAG_HIKING_LEVEL_CHOICE_BEGINNER = "editProfileScreenHikingLevelChoiceBeginner"
-  const val TEST_TAG_HIKING_LEVEL_CHOICE_INTERMEDIATE =
-      "editProfileScreenHikingLevelChoiceIntermediate"
+  const val TEST_TAG_HIKING_LEVEL_CHOICE_AMATEUR = "editProfileScreenHikingLevelChoiceAmateur"
   const val TEST_TAG_HIKING_LEVEL_CHOICE_EXPERT = "editProfileScreenHikingLevelChoiceExpert"
   const val TEST_TAG_SAVE_BUTTON = "editProfileScreenSaveButton"
 }
@@ -127,7 +124,7 @@ fun EditProfileScreen(
           BackButton(navigationActions)
           Text(
               context.getString(R.string.edit_profile_screen_title),
-              style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 32.sp),
+              style = MaterialTheme.typography.headlineLarge,
               modifier = Modifier.testTag(EditProfileScreen.TEST_TAG_TITLE))
 
           CustomTextField(
@@ -143,7 +140,7 @@ fun EditProfileScreen(
           ) {
             Text(
                 context.getString(R.string.profile_screen_hiking_level_label),
-                style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 20.sp),
+                style = MaterialTheme.typography.labelLarge,
                 modifier = Modifier.testTag(EditProfileScreen.TEST_TAG_HIKING_LEVEL_LABEL))
             SingleChoiceSegmentedButtonRow {
               HikingLevel.values().forEachIndexed { index, fitLevel ->
@@ -153,8 +150,8 @@ fun EditProfileScreen(
                             when (fitLevel) {
                               HikingLevel.BEGINNER ->
                                   EditProfileScreen.TEST_TAG_HIKING_LEVEL_CHOICE_BEGINNER
-                              HikingLevel.INTERMEDIATE ->
-                                  EditProfileScreen.TEST_TAG_HIKING_LEVEL_CHOICE_INTERMEDIATE
+                              HikingLevel.AMATEUR ->
+                                  EditProfileScreen.TEST_TAG_HIKING_LEVEL_CHOICE_AMATEUR
                               HikingLevel.EXPERT ->
                                   EditProfileScreen.TEST_TAG_HIKING_LEVEL_CHOICE_EXPERT
                             }),
@@ -165,12 +162,14 @@ fun EditProfileScreen(
                         SegmentedButtonDefaults.colors()
                             .copy(
                                 activeContainerColor = primaryColor,
-                                activeContentColor = Color.White,
+                                activeContentColor = onPrimaryColor,
                             ),
                     onClick = { hikingLevel = index },
                     selected = hikingLevel == index,
                 ) {
-                  Text(fitLevel.getDisplayString(context))
+                  Text(
+                      fitLevel.getDisplayString(context),
+                      style = MaterialTheme.typography.titleMedium)
                 }
               }
             }

@@ -76,7 +76,7 @@ class MapScreenTest : TestCase() {
           id = "1",
           name = "John Doe",
           email = "john-doe@gmail.com",
-          hikingLevel = HikingLevel.INTERMEDIATE,
+          hikingLevel = HikingLevel.AMATEUR,
           joinedDate = Timestamp.now())
 
   private fun setUpMap(

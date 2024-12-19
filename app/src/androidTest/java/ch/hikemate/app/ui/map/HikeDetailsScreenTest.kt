@@ -5,6 +5,7 @@ import android.graphics.drawable.Drawable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertAny
@@ -20,6 +21,7 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import androidx.test.core.app.ApplicationProvider
@@ -172,6 +174,7 @@ class HikeDetailScreenTest {
     }
   }
 
+  @OptIn(ExperimentalTestApi::class)
   private fun setUpBottomSheetScaffold(
       hike: DetailedHike = detailedHike,
       onRunThisHike: () -> Unit = {}
@@ -182,6 +185,16 @@ class HikeDetailScreenTest {
           hikesViewModel = hikesViewModel,
           userHikingLevel = HikingLevel.BEGINNER,
           onRunThisHike = onRunThisHike)
+    }
+
+    // Open the bottom sheet
+    composeTestRule.waitUntilExactlyOneExists(
+        hasTestTag(HikeDetailScreen.TEST_TAG_BOTTOM_SHEET), timeoutMillis = 10000)
+
+    composeTestRule.onNodeWithTag(HikeDetailScreen.TEST_TAG_BOTTOM_SHEET).performTouchInput {
+      down(1, position = Offset(centerX, centerY))
+      moveTo(1, position = Offset(centerX, 100f))
+      up(1)
     }
   }
 
@@ -295,7 +308,7 @@ class HikeDetailScreenTest {
           id = "1",
           name = "John Doe",
           email = "john-doe@gmail.com",
-          hikingLevel = HikingLevel.INTERMEDIATE,
+          hikingLevel = HikingLevel.AMATEUR,
           joinedDate = Timestamp.now())
 
   @Before
