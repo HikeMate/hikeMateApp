@@ -312,8 +312,6 @@ private fun parseLocationUpdate(
     return Triple(null, null, null)
   }
 
-  Log.d(LOG_TAG, "Location: ${locationResult.lastLocation}")
-
   val loc = locationResult.lastLocation!!
   val routeProjectionResponse =
       LocationUtils.projectLocationOnHike(LatLong(loc.latitude, loc.longitude), hike)

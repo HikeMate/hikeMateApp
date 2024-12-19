@@ -26,6 +26,7 @@ import ch.hikemate.app.ui.auth.SignInWithEmailScreen
 import ch.hikemate.app.ui.map.HikeDetailScreen
 import ch.hikemate.app.ui.map.MapScreen
 import ch.hikemate.app.ui.map.RunHikeScreen
+import ch.hikemate.app.ui.map.ZoomMapButton
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.utils.LocationUtils
 import ch.hikemate.app.utils.MapUtils
@@ -84,7 +85,15 @@ class EndToEndTest4 {
     mockkObject(LocationUtils)
     mockkObject(MapUtils)
     every { LocationUtils.hasLocationPermission(any()) } returns true
-    every { MapUtils.centerMapOnLocation(any(), any(), any()) } returns Unit
+    every { LocationUtils.getUserLocation(any(), any(), any(), any()) } answers
+        {
+          val locCallback = arg<(Location?) -> Unit>(1)
+          locCallback(
+              Location("gps").apply {
+                latitude = 46.5775927207486
+                longitude = 6.551607112518172
+              })
+        }
     every {
       LocationUtils.onLocationPermissionsUpdated(
           any(), any(), any(), any<LocationCallback>(), any(), any())
@@ -168,6 +177,22 @@ class EndToEndTest4 {
     composeTestRule.waitUntilExactlyOneExists(hasTestTag(Screen.MAP), timeoutMillis = 30000)
 
     // ---- Navigate to a hike's details screen ----
+
+    composeTestRule.onNodeWithTag(MapScreen.TEST_TAG_CENTER_MAP_BUTTON).performClick()
+
+    composeTestRule.waitForIdle()
+
+    // We want to zoom in to be sure of the selected hike
+    composeTestRule.onNodeWithTag(ZoomMapButton.ZOOM_IN_BUTTON).performClick()
+    Thread.sleep(1000)
+    composeTestRule.onNodeWithTag(ZoomMapButton.ZOOM_IN_BUTTON).performClick()
+    Thread.sleep(1000)
+    composeTestRule.onNodeWithTag(ZoomMapButton.ZOOM_IN_BUTTON).performClick()
+    Thread.sleep(1000)
+    composeTestRule.onNodeWithTag(ZoomMapButton.ZOOM_IN_BUTTON).performClick()
+    Thread.sleep(1000)
+    composeTestRule.onNodeWithTag(ZoomMapButton.ZOOM_IN_BUTTON).performClick()
+    Thread.sleep(1000)
 
     composeTestRule
         .onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON)
