@@ -2,7 +2,6 @@ package ch.hikemate.app.ui.map
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.content.Context
 import android.location.Location
 import android.util.Log
 import android.view.MotionEvent
@@ -43,7 +42,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import ch.hikemate.app.R
 import ch.hikemate.app.model.facilities.FacilitiesViewModel
-import ch.hikemate.app.model.facilities.Facility
 import ch.hikemate.app.model.route.DetailedHike
 import ch.hikemate.app.model.route.HikesViewModel
 import ch.hikemate.app.model.route.LatLong
@@ -61,20 +59,20 @@ import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.utils.LocationUtils
 import ch.hikemate.app.utils.MapUtils
+import ch.hikemate.app.utils.RouteUtils
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationResult
 import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.debounce
 import org.osmdroid.util.BoundingBox
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 
 object RunHikeScreen {
+  const val LOG_TAG = "RunHikeScreen"
   val BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT = 400.dp
   val MAP_BOTTOM_PADDING_ADJUSTMENT = 20.dp
 
@@ -174,7 +172,8 @@ private fun RunHikeContent(
     }
 
     var userLocationMarker: Marker? by remember { mutableStateOf(null) }
-    var completionPercentage: Int? by remember { mutableStateOf(null) }
+    var completionRatio: Double? by remember { mutableStateOf(null) }
+
     var userElevation: Double? by remember { mutableStateOf(null) }
 
     // We need to keep a reference to the instance of location callback, this way we can unregister
@@ -182,11 +181,13 @@ private fun RunHikeContent(
     val locationUpdatedCallback = remember {
       object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult) {
+
           val locationParsed =
               parseLocationUpdate(locationResult, userLocationMarker, mapView, hike)
           userLocationMarker = locationParsed.first
-          completionPercentage = locationParsed.second
+          completionRatio = locationParsed.second
           userElevation = locationParsed.third
+
           if (centerMapOnUserPosition &&
               userLocationMarker != null &&
               userLocationMarker?.position != null)
@@ -281,9 +282,10 @@ private fun RunHikeContent(
       // Display the bottom sheet with the hike details
       RunHikeBottomSheet(
           hike = hike,
-          completionPercentage = completionPercentage,
+          completionRatio = completionRatio,
           userElevation = userElevation,
-          onStopTheRun = { wantToNavigateBack = true })
+          onStopTheRun = { wantToNavigateBack = true },
+      )
     }
   }
 }
@@ -303,9 +305,11 @@ private fun parseLocationUpdate(
     userLocationMarker: Marker?,
     mapView: MapView,
     hike: DetailedHike
-): Triple<Marker?, Int?, Double?> {
+): Triple<Marker?, Double?, Double?> {
   if (locationResult.lastLocation == null) {
+    Log.d("RunHikeScreen", "Location null")
     MapUtils.clearUserPosition(userLocationMarker, mapView, invalidate = true)
+
     return Triple(null, null, null)
   }
 
@@ -336,11 +340,14 @@ private fun parseLocationUpdate(
   val completionPercentage =
       if (routeProjectionResponse.distanceFromRoute > RunHikeScreen.MAX_DISTANCE_TO_CONSIDER_HIKE)
           null
-      else (routeProjectionResponse.progressDistance * 0.1 / hike.distance).toInt()
+      else
+          (routeProjectionResponse.progressDistance /
+              (hike.distance * RouteUtils.METERS_PER_KIlOMETER))
   val currentElevation =
       if (routeProjectionResponse.distanceFromRoute > RunHikeScreen.MAX_DISTANCE_TO_CONSIDER_HIKE)
           null
       else routeProjectionResponse.projectedLocationElevation
+  Log.d("RunHikeScreen", "completion:$completionPercentage")
   return Triple(marker, completionPercentage, currentElevation)
 }
 
@@ -377,13 +384,13 @@ fun runHikeMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel): Ma
 
   // Create state values that we can actually observe in the LaunchedEffect
   // We keep our StateFlows for debouncing
-  val boundingBoxState = remember { MutableStateFlow(mapView.boundingBox) }
-  val zoomLevelState = remember { MutableStateFlow(mapView.zoomLevelDouble) }
+  val boundingBoxState = remember { MutableStateFlow<BoundingBox?>(null) }
+  val zoomLevelState = remember { MutableStateFlow<Double?>(null) }
 
   // This effect handles both initial facility display and subsequent updates
   // It triggers when facilities are loaded or when the map view changes
   shouldLoadFacilities =
-      launchedEffectLoadingOfFacilities(
+      MapUtils.launchedEffectLoadingOfFacilities(
           facilities, shouldLoadFacilities, mapView, facilitiesViewModel, hike, context)
 
   // This solves the bug of the screen freezing by properly cleaning up resources
@@ -399,8 +406,10 @@ fun runHikeMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel): Ma
   }
 
   // This LaunchedEffect handles map updates with debouncing to prevent too frequent refreshes
-  LaunchedEffectFacilitiesDisplay(
+  MapUtils.LaunchedEffectFacilitiesDisplay(
       mapView, boundingBoxState, zoomLevelState, facilitiesViewModel, hike, context)
+
+  MapUtils.LaunchedEffectMapviewListener(mapView, hike, boundingBoxState, zoomLevelState, false)
 
   // Show the selected hike on the map
   // OnLineClick does nothing, the line should not be clickable
@@ -424,80 +433,22 @@ fun runHikeMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel): Ma
 }
 
 @Composable
-private fun LaunchedEffectFacilitiesDisplay(
+private fun LaunchedEffectMapviewListener(
     mapView: MapView,
-    boundingBoxState: MutableStateFlow<BoundingBox>,
-    zoomLevelState: MutableStateFlow<Double>,
-    facilitiesViewModel: FacilitiesViewModel,
-    hike: DetailedHike,
-    context: Context
+    boundingBoxState: MutableStateFlow<BoundingBox?>,
+    zoomLevelState: MutableStateFlow<Double?>
 ) {
-  LaunchedEffect(Unit) {
-    MapUtils.setMapViewListenerForStates(mapView, boundingBoxState, zoomLevelState)
-
-    // Create our combined flow which is limited by a debounce
-    val combinedFlow =
-        combine(
-            boundingBoxState.debounce(HikeDetailScreen.DEBOUNCE_DURATION),
-            zoomLevelState.debounce(HikeDetailScreen.DEBOUNCE_DURATION)) { boundingBox, zoomLevel ->
-              boundingBox to zoomLevel
-            }
-
-    try {
-      combinedFlow.collect { (boundingBox, zoomLevel) ->
-        facilitiesViewModel.filterFacilitiesForDisplay(
-            bounds = boundingBox,
-            zoomLevel = zoomLevel,
-            hikeRoute = hike,
-            onSuccess = { newFacilities ->
-              MapUtils.clearFacilities(mapView)
-              if (newFacilities.isNotEmpty()) {
-                MapUtils.displayFacilities(newFacilities, mapView, context)
-              }
-            },
-            onNoFacilitiesForState = { MapUtils.clearFacilities(mapView) })
-      }
-    } catch (e: Exception) {
-      Log.e(HikeDetailScreen.LOG_TAG, "Error in facility updates flow", e)
-    }
+  mapView.addOnFirstLayoutListener { _, _, _, _, _ ->
+    boundingBoxState.value = mapView.boundingBox
+    zoomLevelState.value = mapView.zoomLevelDouble
   }
-}
-
-@Composable
-private fun launchedEffectLoadingOfFacilities(
-    facilities: List<Facility>?,
-    shouldLoadFacilities: Boolean,
-    mapView: MapView,
-    facilitiesViewModel: FacilitiesViewModel,
-    hike: DetailedHike,
-    context: Context
-): Boolean {
-  var shouldLoadFacilities1 = shouldLoadFacilities
-  LaunchedEffect(facilities, shouldLoadFacilities1) {
-    if (facilities != null && mapView.repository != null) {
-      facilitiesViewModel.filterFacilitiesForDisplay(
-          bounds = mapView.boundingBox,
-          zoomLevel = mapView.zoomLevelDouble,
-          hikeRoute = hike,
-          onSuccess = { newFacilities ->
-            MapUtils.clearFacilities(mapView)
-            if (newFacilities.isNotEmpty()) {
-              MapUtils.displayFacilities(newFacilities, mapView, context)
-            }
-          },
-          onNoFacilitiesForState = { MapUtils.clearFacilities(mapView) })
-      // Reset the flag after loading
-      shouldLoadFacilities1 = false
-    }
-  }
-  return shouldLoadFacilities1
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
 private fun RunHikeBottomSheet(
     hike: DetailedHike,
-    completionPercentage: Int? = null,
+    completionRatio: Double? = null,
     userElevation: Double? = null,
     onStopTheRun: () -> Unit,
 ) {
@@ -520,8 +471,9 @@ private fun RunHikeBottomSheet(
               textAlign = TextAlign.Left,
               modifier = Modifier.testTag(RunHikeScreen.TEST_TAG_HIKE_NAME))
 
-          // Elevation graph and the progress details below the graph
           Column {
+            // Progress details below the graph
+            // Elevation graph and the progress details below the graph
             val hikeColor = Color(hike.color)
             ElevationGraph(
                 elevations = hike.elevation,
@@ -532,9 +484,8 @@ private fun RunHikeBottomSheet(
                     Modifier.fillMaxWidth()
                         .height(60.dp)
                         .padding(4.dp)
-                        .testTag(RunHikeScreen.TEST_TAG_ELEVATION_GRAPH))
-
-            // Progress details below the graph
+                        .testTag(RunHikeScreen.TEST_TAG_ELEVATION_GRAPH),
+                progressThroughHike = (completionRatio)?.toFloat())
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 20.dp),
                 horizontalArrangement = Arrangement.SpaceBetween) {
@@ -547,12 +498,14 @@ private fun RunHikeBottomSheet(
                   Text(
                       // Displays the progress percentage below the graph
                       text =
-                          if (completionPercentage == null)
+                          if (completionRatio == null)
                               stringResource(R.string.run_hike_screen_progress_percentage_no_data)
-                          else
-                              stringResource(
-                                  R.string.run_hike_screen_progress_percentage_format,
-                                  completionPercentage),
+                          else {
+
+                            val percentage = (completionRatio * 100).roundToInt()
+                            stringResource(
+                                R.string.run_hike_screen_progress_percentage_format, percentage)
+                          },
                       style = MaterialTheme.typography.bodyLarge,
                       color = hikeColor,
                       fontWeight = FontWeight.Bold,
