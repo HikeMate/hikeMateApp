@@ -10,7 +10,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 object DetailRow {
@@ -41,7 +40,7 @@ fun DetailRow(
             modifier = Modifier.testTag(DetailRow.TEST_TAG_DETAIL_ROW_TAG))
         Text(
             text = value,
-            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+            style = MaterialTheme.typography.bodyMedium,
             color = valueColor,
             modifier = Modifier.testTag(DetailRow.TEST_TAG_DETAIL_ROW_VALUE))
       }

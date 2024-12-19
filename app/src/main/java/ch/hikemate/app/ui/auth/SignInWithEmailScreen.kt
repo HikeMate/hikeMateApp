@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -25,10 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import ch.hikemate.app.R
 import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.ui.components.BackButton
@@ -82,7 +80,7 @@ fun SignInWithEmailScreen(
         BackButton(navigationActions)
         Text(
             stringResource(R.string.sign_in_with_email_title),
-            style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 32.sp),
+            style = MaterialTheme.typography.headlineLarge,
             modifier = Modifier.testTag(SignInWithEmailScreen.TEST_TAG_TITLE))
 
         CustomTextField(
@@ -134,7 +132,7 @@ fun SignInWithEmailScreen(
               ) {
                 Text(
                     stringResource(R.string.sign_in_with_email_go_to_sign_up),
-                    style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 16.sp),
+                    style = MaterialTheme.typography.labelLarge,
                 )
               }
             }

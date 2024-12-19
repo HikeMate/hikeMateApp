@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
@@ -52,11 +53,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.hikemate.app.R
 import ch.hikemate.app.model.authentication.AuthViewModel
@@ -74,6 +73,7 @@ import ch.hikemate.app.ui.components.DetailRow
 import ch.hikemate.app.ui.components.ElevationGraph
 import ch.hikemate.app.ui.components.ElevationGraphStyleProperties
 import ch.hikemate.app.ui.components.WithDetailedHike
+import ch.hikemate.app.ui.map.HikeDetailScreen.LOG_TAG
 import ch.hikemate.app.ui.map.HikeDetailScreen.MAP_MAX_ZOOM
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_ADD_DATE_BUTTON
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_BOOKMARK_ICON
@@ -88,6 +88,10 @@ import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_RUN_HIKE_BUTTON
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
+import ch.hikemate.app.ui.theme.challengingColor
+import ch.hikemate.app.ui.theme.onPrimaryColor
+import ch.hikemate.app.ui.theme.primaryColor
+import ch.hikemate.app.ui.theme.suitableColor
 import ch.hikemate.app.utils.MapUtils
 import ch.hikemate.app.utils.humanReadableFormat
 import com.google.firebase.Timestamp
@@ -108,7 +112,7 @@ object HikeDetailScreen {
 
   const val DEBOUNCE_DURATION = 500L
 
-  val BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT = 400.dp
+  val BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT = 190.dp
   val MAP_BOTTOM_PADDING_ADJUSTMENT = 20.dp
 
   const val LOG_TAG = "HikeDetailScreen"
@@ -124,6 +128,7 @@ object HikeDetailScreen {
   const val TEST_TAG_DATE_PICKER_CONFIRM_BUTTON = "HikeDetailDatePickerConfirmButton"
   const val TEST_TAG_RUN_HIKE_BUTTON = "HikeDetailRunHikeButton"
   const val TEST_TAG_APPROPRIATENESS_MESSAGE = "HikeDetailAppropriatenessMessage"
+  const val TEST_TAG_BOTTOM_SHEET = "HikeDetailBottomSheet"
 }
 
 @Composable
@@ -137,7 +142,7 @@ fun HikeDetailScreen(
   // Load the user's profile to get their hiking level
   LaunchedEffect(Unit) {
     if (authViewModel.currentUser.value == null) {
-      Log.e("HikeDetailScreen", "User is not signed in")
+      Log.e(LOG_TAG, "User is not signed in")
       return@LaunchedEffect
     }
     profileViewModel.getProfileById(authViewModel.currentUser.value!!.uid)
@@ -153,7 +158,7 @@ fun HikeDetailScreen(
   // If the selected hike is null, save the map's state and go back to the map screen
   LaunchedEffect(selectedHike) {
     if (selectedHike == null) {
-      Log.e(HikeDetailScreen.LOG_TAG, "No selected hike, going back")
+      Log.e(LOG_TAG, "No selected hike, going back")
       if (mapViewState.value != null) {
         hikesViewModel.setMapState(
             center =
@@ -237,7 +242,12 @@ fun HikeDetailsContent(
     // Display the back button on top of the map
     BackButton(
         navigationActions = navigationActions,
-        modifier = Modifier.padding(start = 16.dp, end = 16.dp).safeDrawingPadding(),
+        modifier =
+            Modifier.padding(
+                    start = 16.dp,
+                    end = 16.dp,
+                )
+                .safeDrawingPadding(),
         onClick = { hikesViewModel.unselectHike() })
 
     // Zoom buttons at the bottom right of the screen
@@ -325,7 +335,7 @@ fun hikeDetailsMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel)
 
   // Show the selected hike on the map
   // OnLineClick does nothing, the line should not be clickable
-  Log.d(HikeDetailScreen.LOG_TAG, "Drawing hike on map: ${hike.bounds}")
+  Log.d(LOG_TAG, "Drawing hike on map: ${hike.bounds}")
   MapUtils.showHikeOnMap(
       mapView = mapView, waypoints = hike.waypoints, color = hike.color, onLineClick = {})
 
@@ -334,12 +344,15 @@ fun hikeDetailsMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel)
       factory = { mapView },
       modifier =
           Modifier.fillMaxWidth()
+              // To avoid a bug where the map is not fully loaded at the top
+              .offset(y = (-MapScreen.MAP_BOTTOM_PADDING_ADJUSTMENT))
               // Reserve space for the scaffold at the bottom, -20.dp to avoid the map being to
               // small under the bottomSheet
               .padding(
                   bottom =
-                      HikeDetailScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT -
-                          HikeDetailScreen.MAP_BOTTOM_PADDING_ADJUSTMENT)
+                      (HikeDetailScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT -
+                              HikeDetailScreen.MAP_BOTTOM_PADDING_ADJUSTMENT)
+                          .div(2))
               .testTag(TEST_TAG_MAP))
   return mapView
 }
@@ -375,17 +388,20 @@ fun HikeDetailsBottomScaffold(
       sheetMaxWidth = Integer.MAX_VALUE.dp,
       sheetContent = {
         Column(
-            modifier = Modifier.fillMaxSize().padding(16.dp),
+            modifier =
+                Modifier.testTag(HikeDetailScreen.TEST_TAG_BOTTOM_SHEET)
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, end = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
           Row {
             Column(
-                modifier = Modifier.padding(16.dp).weight(1f),
+                modifier = Modifier.weight(1f),
             ) {
               Text(
                   text =
                       detailedHike.name ?: stringResource(R.string.map_screen_hike_title_default),
-                  style = MaterialTheme.typography.titleLarge,
+                  style = MaterialTheme.typography.headlineLarge,
                   textAlign = TextAlign.Left,
                   modifier = Modifier.testTag(TEST_TAG_HIKE_NAME))
               AppropriatenessMessage(isSuitable)
@@ -409,16 +425,14 @@ fun HikeDetailsBottomScaffold(
             )
           }
 
-          ElevationGraph(
-              elevations = detailedHike.elevation,
-              modifier =
-                  Modifier.fillMaxWidth()
-                      .height(60.dp)
-                      .padding(4.dp)
-                      .testTag(TEST_TAG_ELEVATION_GRAPH),
-              styleProperties =
-                  ElevationGraphStyleProperties(
-                      strokeColor = hikeColor, fillColor = hikeColor.copy(0.1f)))
+          Column(modifier = Modifier.padding(bottom = 24.dp)) {
+            ElevationGraph(
+                elevations = detailedHike.elevation,
+                modifier = Modifier.fillMaxWidth().height(60.dp).testTag(TEST_TAG_ELEVATION_GRAPH),
+                styleProperties =
+                    ElevationGraphStyleProperties(
+                        strokeColor = hikeColor, fillColor = hikeColor.copy(0.5f)))
+          }
 
           val distanceString =
               String.format(
@@ -459,10 +473,7 @@ fun HikeDetailsBottomScaffold(
           DetailRow(
               label = stringResource(R.string.hike_detail_screen_label_difficulty),
               value = stringResource(detailedHike.difficulty.nameResourceId),
-              valueColor =
-                  Color(
-                      ContextCompat.getColor(
-                          LocalContext.current, detailedHike.difficulty.colorResourceId)),
+              valueColor = detailedHike.difficulty.color,
           )
           DateDetailRow(
               isSaved = detailedHike.isSaved,
@@ -477,7 +488,9 @@ fun HikeDetailsBottomScaffold(
               label = stringResource(R.string.hike_detail_screen_run_this_hike_button_label),
               onClick = { onRunThisHike() },
               modifier =
-                  Modifier.padding(top = 16.dp).fillMaxWidth().testTag(TEST_TAG_RUN_HIKE_BUTTON))
+                  Modifier.padding(vertical = 16.dp)
+                      .fillMaxWidth()
+                      .testTag(TEST_TAG_RUN_HIKE_BUTTON))
         }
       },
   ) {}
@@ -533,7 +546,8 @@ fun DateDetailRow(
                       ButtonDefaults.buttonColors(
                           containerColor = MaterialTheme.colorScheme.primary)
                   else
-                      ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                      ButtonDefaults.buttonColors(
+                          containerColor = MaterialTheme.colorScheme.tertiary),
           ) {
             Text(
                 text =
@@ -555,9 +569,9 @@ fun DateDetailRow(
       DetailRow(
           label = stringResource(R.string.hike_detail_screen_label_status),
           value = stringResource(R.string.hike_detail_screen_value_saved),
-          valueColor = Color(0xFF3B9DE8))
+          valueColor = primaryColor)
       Row(
-          modifier = Modifier.fillMaxWidth(),
+          modifier = Modifier.padding(vertical = 4.dp).fillMaxWidth(),
           horizontalArrangement = Arrangement.SpaceBetween,
       ) {
         Text(
@@ -570,14 +584,13 @@ fun DateDetailRow(
             contentPadding = PaddingValues(0.dp),
             colors =
                 ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF4285F4), // Blue color to match the image
-                    contentColor = Color.White),
+                    containerColor = primaryColor, // Blue color to match the image
+                    contentColor = onPrimaryColor),
             onClick = { showDatePicker() },
         ) {
           Text(
               text = stringResource(R.string.hike_detail_screen_add_a_date_button_text),
               style = MaterialTheme.typography.bodySmall,
-              fontWeight = FontWeight.Bold,
           )
         }
       }
@@ -585,9 +598,9 @@ fun DateDetailRow(
       DetailRow(
           label = stringResource(R.string.hike_detail_screen_label_status),
           value = stringResource(R.string.hike_detail_screen_value_planned),
-          valueColor = Color(0xFF3B9DE8))
+          valueColor = primaryColor)
       Row(
-          modifier = Modifier.fillMaxWidth(),
+          modifier = Modifier.padding(vertical = 4.dp).fillMaxWidth(),
           horizontalArrangement = Arrangement.SpaceBetween,
       ) {
         Text(
@@ -653,7 +666,7 @@ private fun confirmDateDetailButton(
 fun AppropriatenessMessage(isSuitable: Boolean) {
   // The text, icon and color of the card's message are chosen based on whether the hike is suitable
   // or not
-  val suitableLabelColor = if (isSuitable) Color(0xFF4CAF50) else Color(0xFFFFC107)
+  val suitableLabelColor = if (isSuitable) suitableColor else challengingColor
 
   val suitableLabelText =
       if (isSuitable) LocalContext.current.getString(R.string.map_screen_suitable_hike_label)
@@ -674,7 +687,7 @@ fun AppropriatenessMessage(isSuitable: Boolean) {
     Text(
         modifier = Modifier.testTag(HikeDetailScreen.TEST_TAG_APPROPRIATENESS_MESSAGE),
         text = suitableLabelText,
-        style = MaterialTheme.typography.bodySmall,
+        style = MaterialTheme.typography.bodyMedium,
         color = suitableLabelColor)
   }
 }
