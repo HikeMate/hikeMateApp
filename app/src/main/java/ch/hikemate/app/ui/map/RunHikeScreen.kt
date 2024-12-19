@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.BottomSheetScaffold
@@ -251,7 +252,8 @@ private fun RunHikeContent(
       BackButton(
           navigationActions = navigationActions,
           modifier =
-              Modifier.padding(top = 40.dp, start = 16.dp, end = 16.dp)
+              Modifier.padding(start = 16.dp, end = 16.dp)
+                  .safeDrawingPadding()
                   .testTag(RunHikeScreen.TEST_TAG_BACK_BUTTON),
           onClick = { wantToNavigateBack = true })
 
@@ -264,7 +266,7 @@ private fun RunHikeContent(
           },
           modifier =
               Modifier.align(Alignment.BottomStart)
-                  .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
+                  .padding(bottom = RunHikeScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
                   .testTag(RunHikeScreen.TEST_TAG_CENTER_MAP_BUTTON))
 
       // Zoom buttons at the bottom right of the screen
@@ -505,6 +507,8 @@ private fun RunHikeBottomSheet(
       scaffoldState = scaffoldState,
       sheetContainerColor = MaterialTheme.colorScheme.surface,
       sheetPeekHeight = RunHikeScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT,
+      // Overwrites the device's max sheet width to avoid the bottomSheet not being wide enough
+      sheetMaxWidth = Integer.MAX_VALUE.dp,
       modifier = Modifier.testTag(RunHikeScreen.TEST_TAG_BOTTOM_SHEET),
       sheetContent = {
         Column(
