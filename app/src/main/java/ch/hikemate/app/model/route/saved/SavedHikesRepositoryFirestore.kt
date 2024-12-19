@@ -5,6 +5,7 @@ import com.google.firebase.firestore.FieldValue.arrayRemove
 import com.google.firebase.firestore.FieldValue.arrayUnion
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withTimeout
 
 class SavedHikesRepositoryFirestore(
     private val db: FirebaseFirestore,
@@ -25,25 +26,29 @@ class SavedHikesRepositoryFirestore(
 
   override suspend fun addSavedHike(hike: SavedHike) {
     checkNotNull(auth.currentUser) { ERROR_MSG_USER_NOT_AUTHENTICATED }
+    withTimeout(TIMEOUT_IN_MILLIS) {
+      val documentReference = db.collection(SAVED_HIKES_COLLECTION).document(auth.currentUser!!.uid)
 
-    val documentReference = db.collection(SAVED_HIKES_COLLECTION).document(auth.currentUser!!.uid)
+      // Check that the document exists before updating it
+      val documentExists = documentReference.get().await().exists()
 
-    // Check that the document exists before updating it
-    val documentExists = documentReference.get().await().exists()
-
-    if (!documentExists) {
-      documentReference.set(UserSavedHikes(listOf(hike)))
-    } else {
-      documentReference.update(UserSavedHikes::savedHikes.name, arrayUnion(hike)).await()
+      if (!documentExists) {
+        documentReference.set(UserSavedHikes(listOf(hike)))
+      } else {
+        documentReference.update(UserSavedHikes::savedHikes.name, arrayUnion(hike)).await()
+      }
     }
   }
 
   override suspend fun removeSavedHike(hike: SavedHike) {
     checkNotNull(auth.currentUser) { ERROR_MSG_USER_NOT_AUTHENTICATED }
-    db.collection(SAVED_HIKES_COLLECTION)
-        .document(auth.currentUser!!.uid)
-        .update(UserSavedHikes::savedHikes.name, arrayRemove(hike))
-        .await()
+
+    withTimeout(TIMEOUT_IN_MILLIS) {
+      db.collection(SAVED_HIKES_COLLECTION)
+          .document(auth.currentUser!!.uid)
+          .update(UserSavedHikes::savedHikes.name, arrayRemove(hike))
+          .await()
+    }
   }
 
   override suspend fun getSavedHike(id: String): SavedHike? {
@@ -59,5 +64,6 @@ class SavedHikesRepositoryFirestore(
   companion object {
     const val SAVED_HIKES_COLLECTION = "savedHikes"
     private const val ERROR_MSG_USER_NOT_AUTHENTICATED = "User is not authenticated"
+    private const val TIMEOUT_IN_MILLIS = 3000L
   }
 }
