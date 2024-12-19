@@ -523,7 +523,7 @@ private fun RunHikeBottomSheet(
                 elevations = hike.elevation,
                 styleProperties =
                     ElevationGraphStyleProperties(
-                        strokeColor = hikeColor, fillColor = hikeColor.copy(0.1f)),
+                        strokeColor = hikeColor, fillColor = hikeColor.copy(0.5f)),
                 modifier =
                     Modifier.fillMaxWidth()
                         .height(60.dp)

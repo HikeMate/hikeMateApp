@@ -512,7 +512,7 @@ fun HikesDetailsBottomScaffold(
                       .testTag(TEST_TAG_ELEVATION_GRAPH),
               styleProperties =
                   ElevationGraphStyleProperties(
-                      strokeColor = hikeColor, fillColor = hikeColor.copy(0.1f)))
+                      strokeColor = hikeColor, fillColor = hikeColor.copy(0.5f)))
 
           val distanceString =
               String.format(

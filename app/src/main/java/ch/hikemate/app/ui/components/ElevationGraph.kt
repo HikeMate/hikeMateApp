@@ -38,7 +38,7 @@ import kotlin.math.ceil
 data class ElevationGraphStyleProperties(
     val strokeColor: Color = Color.Black,
     val fillColor: Color = Color.Black,
-    val strokeWidth: Float = 3f,
+    val strokeWidth: Float = 7f,
     val locationMarkerSize: Float = 24f // Size for the location marker drawable
 )
 

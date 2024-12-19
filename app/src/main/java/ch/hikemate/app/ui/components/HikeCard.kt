@@ -110,7 +110,7 @@ fun HikeCard(
                                 fillColor =
                                     (styleProperties.graphColor
                                             ?: MaterialTheme.colorScheme.primary)
-                                        .copy(0.1f)))
+                                        .copy(0.5f)))
 
                     Spacer(modifier = Modifier.width(8.dp))
 
