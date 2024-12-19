@@ -528,33 +528,9 @@ private fun RunHikeBottomSheet(
               modifier = Modifier.testTag(RunHikeScreen.TEST_TAG_HIKE_NAME))
 
           // Elevation graph and the progress details below the graph
+          val hikeColor = Color(hike.color)
+          ElevationGraphOnPercentage(completionPercentage, hike, hikeColor)
           Column {
-            val hikeColor = Color(hike.color)
-            if (completionPercentage != null) {
-
-              ElevationGraph(
-                  elevations = hike.elevation,
-                  styleProperties =
-                      ElevationGraphStyleProperties(
-                          strokeColor = hikeColor, fillColor = hikeColor.copy(0.1f)),
-                  modifier =
-                      Modifier.fillMaxWidth()
-                          .height(60.dp)
-                          .padding(4.dp)
-                          .testTag(RunHikeScreen.TEST_TAG_ELEVATION_GRAPH),
-                  progressThroughHike = (completionPercentage).toFloat())
-            } else
-                ElevationGraph(
-                    elevations = hike.elevation,
-                    styleProperties =
-                        ElevationGraphStyleProperties(
-                            strokeColor = hikeColor, fillColor = hikeColor.copy(0.1f)),
-                    modifier =
-                        Modifier.fillMaxWidth()
-                            .height(60.dp)
-                            .padding(4.dp)
-                            .testTag(RunHikeScreen.TEST_TAG_ELEVATION_GRAPH))
-
             // Progress details below the graph
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 20.dp),
@@ -639,4 +615,37 @@ private fun RunHikeBottomSheet(
           }
         }
       }) {}
+}
+
+@Composable
+private fun ElevationGraphOnPercentage(
+    completionPercentage: Double?,
+    hike: DetailedHike,
+    hikeColor: Color
+) {
+
+  if (completionPercentage != null) {
+
+    ElevationGraph(
+        elevations = hike.elevation,
+        styleProperties =
+            ElevationGraphStyleProperties(
+                strokeColor = hikeColor, fillColor = hikeColor.copy(0.1f)),
+        modifier =
+            Modifier.fillMaxWidth()
+                .height(60.dp)
+                .padding(4.dp)
+                .testTag(RunHikeScreen.TEST_TAG_ELEVATION_GRAPH),
+        progressThroughHike = (completionPercentage).toFloat())
+  } else
+      ElevationGraph(
+          elevations = hike.elevation,
+          styleProperties =
+              ElevationGraphStyleProperties(
+                  strokeColor = hikeColor, fillColor = hikeColor.copy(0.1f)),
+          modifier =
+              Modifier.fillMaxWidth()
+                  .height(60.dp)
+                  .padding(4.dp)
+                  .testTag(RunHikeScreen.TEST_TAG_ELEVATION_GRAPH))
 }
