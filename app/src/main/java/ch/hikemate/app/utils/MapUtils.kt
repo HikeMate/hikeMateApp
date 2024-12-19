@@ -51,6 +51,7 @@ object MapUtils {
    * @param mapView The map view where the hike will be shown.
    * @param waypoints The points that compose the line to show on the map.
    * @param color The color of the hike.
+   * @param withMarker Whether to show a marker at the starting point of the hike.
    * @param onLineClick To be called when the line on the map is clicked.
    */
   fun showHikeOnMap(
