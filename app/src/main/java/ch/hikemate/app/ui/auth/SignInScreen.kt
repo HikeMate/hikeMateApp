@@ -71,7 +71,7 @@ fun SignInScreen(
           contract = ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
             Toast.makeText(
                     context,
-                    context.getString(R.string.google_account_created_confirmation),
+                    context.getString(R.string.google_account_connection_ended_or_cancelled),
                     Toast.LENGTH_LONG)
                 .show()
             // startAddAccountIntentLauncher is null, since it is only called when the user has no
