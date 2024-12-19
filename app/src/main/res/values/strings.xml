@@ -33,6 +33,7 @@
     <!-- Map Screen -->
     <string name="map_screen_menu_button_content_description">Menu</string>
     <string name="map_screen_search_button_text">Search hikes here</string>
+    <string name="map_screen_search_button_text_short">Search here</string>
     <string name="map_screen_error_while_searching_hikes">Error while searching for hikes</string>
     <string name="map_screen_empty_hikes_list_message">
         No hikes found in the displayed area.\n\nTry zooming out or moving the map to see more hikes.
