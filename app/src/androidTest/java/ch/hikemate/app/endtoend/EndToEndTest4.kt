@@ -188,7 +188,7 @@ class EndToEndTest4 {
 
     composeTestRule.onNodeWithTag(HikeDetailScreen.TEST_TAG_BOTTOM_SHEET).performTouchInput {
       down(1, position = Offset(centerX, centerY))
-      moveTo(1, position = Offset(centerX, 0f))
+      moveTo(1, position = Offset(centerX, 100f))
       up(1)
     }
 
@@ -204,7 +204,7 @@ class EndToEndTest4 {
 
     composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_BOTTOM_SHEET).performTouchInput {
       down(1, position = Offset(centerX, centerY))
-      moveTo(1, position = Offset(centerX, 0f))
+      moveTo(1, position = Offset(centerX, 100f))
       up(1)
     }
 
