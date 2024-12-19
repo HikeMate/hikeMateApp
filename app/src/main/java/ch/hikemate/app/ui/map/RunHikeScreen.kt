@@ -53,6 +53,7 @@ import ch.hikemate.app.ui.components.ElevationGraphStyleProperties
 import ch.hikemate.app.ui.components.LocationPermissionAlertDialog
 import ch.hikemate.app.ui.components.WithDetailedHike
 import ch.hikemate.app.ui.map.HikeDetailScreen.MAP_MAX_ZOOM
+import ch.hikemate.app.ui.map.RunHikeScreen.LOG_TAG
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.utils.LocationUtils
@@ -210,7 +211,7 @@ private fun RunHikeContent(
 
     DisposableEffect(Unit) {
       val hasLocationPermission = LocationUtils.hasLocationPermission(locationPermissionState)
-      Log.d("RunHikeScreen", "Has location permission: $hasLocationPermission")
+      Log.d(LOG_TAG, "Has location permission: $hasLocationPermission")
       // If the user has granted at least one of the two permissions, center the map
       // on the user's location
       if (hasLocationPermission) {
@@ -304,7 +305,7 @@ private fun parseLocationUpdate(
     hike: DetailedHike
 ): Triple<Marker?, Double?, Double?> {
   if (locationResult.lastLocation == null) {
-    Log.d("RunHikeScreen", "Location null")
+    Log.d(LOG_TAG, "Location null")
     MapUtils.clearUserPosition(userLocationMarker, mapView, invalidate = true)
 
     return Triple(null, null, null)
@@ -344,7 +345,7 @@ private fun parseLocationUpdate(
       if (routeProjectionResponse.distanceFromRoute > RunHikeScreen.MAX_DISTANCE_TO_CONSIDER_HIKE)
           null
       else routeProjectionResponse.projectedLocationElevation
-  Log.d("RunHikeScreen", "completion:$completionPercentage")
+  Log.d(LOG_TAG, "completion:$completionPercentage")
   return Triple(marker, completionPercentage, currentElevation)
 }
 
@@ -410,7 +411,7 @@ fun runHikeMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel): Ma
 
   // Show the selected hike on the map
   // OnLineClick does nothing, the line should not be clickable
-  Log.d(HikeDetailScreen.LOG_TAG, "Drawing hike on map: ${hike.bounds}")
+  Log.d(LOG_TAG, "Drawing hike on map: ${hike.bounds}")
   MapUtils.showHikeOnMap(
       mapView = mapView, waypoints = hike.waypoints, color = hike.color, onLineClick = {})
 
@@ -425,8 +426,9 @@ fun runHikeMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel): Ma
               // small under the bottomSheet
               .padding(
                   bottom =
-                      RunHikeScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT -
-                          RunHikeScreen.MAP_BOTTOM_PADDING_ADJUSTMENT)
+                      (RunHikeScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT -
+                              RunHikeScreen.MAP_BOTTOM_PADDING_ADJUSTMENT)
+                          .div(2))
               .testTag(RunHikeScreen.TEST_TAG_MAP))
   return mapView
 }

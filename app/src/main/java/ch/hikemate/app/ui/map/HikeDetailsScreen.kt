@@ -73,6 +73,7 @@ import ch.hikemate.app.ui.components.DetailRow
 import ch.hikemate.app.ui.components.ElevationGraph
 import ch.hikemate.app.ui.components.ElevationGraphStyleProperties
 import ch.hikemate.app.ui.components.WithDetailedHike
+import ch.hikemate.app.ui.map.HikeDetailScreen.LOG_TAG
 import ch.hikemate.app.ui.map.HikeDetailScreen.MAP_MAX_ZOOM
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_ADD_DATE_BUTTON
 import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_BOOKMARK_ICON
@@ -141,7 +142,7 @@ fun HikeDetailScreen(
   // Load the user's profile to get their hiking level
   LaunchedEffect(Unit) {
     if (authViewModel.currentUser.value == null) {
-      Log.e("HikeDetailScreen", "User is not signed in")
+      Log.e(LOG_TAG, "User is not signed in")
       return@LaunchedEffect
     }
     profileViewModel.getProfileById(authViewModel.currentUser.value!!.uid)
@@ -157,7 +158,7 @@ fun HikeDetailScreen(
   // If the selected hike is null, save the map's state and go back to the map screen
   LaunchedEffect(selectedHike) {
     if (selectedHike == null) {
-      Log.e(HikeDetailScreen.LOG_TAG, "No selected hike, going back")
+      Log.e(LOG_TAG, "No selected hike, going back")
       if (mapViewState.value != null) {
         hikesViewModel.setMapState(
             center =
@@ -334,7 +335,7 @@ fun hikeDetailsMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel)
 
   // Show the selected hike on the map
   // OnLineClick does nothing, the line should not be clickable
-  Log.d(HikeDetailScreen.LOG_TAG, "Drawing hike on map: ${hike.bounds}")
+  Log.d(LOG_TAG, "Drawing hike on map: ${hike.bounds}")
   MapUtils.showHikeOnMap(
       mapView = mapView, waypoints = hike.waypoints, color = hike.color, onLineClick = {})
 
@@ -349,8 +350,9 @@ fun hikeDetailsMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel)
               // small under the bottomSheet
               .padding(
                   bottom =
-                      HikeDetailScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT -
-                          HikeDetailScreen.MAP_BOTTOM_PADDING_ADJUSTMENT)
+                      (HikeDetailScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT -
+                              HikeDetailScreen.MAP_BOTTOM_PADDING_ADJUSTMENT)
+                          .div(2))
               .testTag(TEST_TAG_MAP))
   return mapView
 }

@@ -445,8 +445,9 @@ fun MapScreen(
                             // being too small under the bottomSheet
                             .padding(
                                 bottom =
-                                    MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT -
-                                        MapScreen.MAP_BOTTOM_PADDING_ADJUSTMENT))
+                                    (MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT -
+                                            MapScreen.MAP_BOTTOM_PADDING_ADJUSTMENT)
+                                        .div(2)))
 
                 // Button to center the map on the user's location
                 MapMyLocationButton(
