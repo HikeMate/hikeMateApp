@@ -367,8 +367,7 @@ fun runHikeMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel): Ma
       // Set map's initial state
       controller.setZoom(hikeZoomLevel)
       controller.setCenter(hikeCenter)
-      // Limit the zoom to avoid the user zooming out or out too much
-      minZoomLevel = hikeZoomLevel
+      // Limit the zoom to avoid the user zooming out too much
       maxZoomLevel = MAP_MAX_ZOOM
       // Avoid repeating the map when the user reaches the edge or zooms out
       // We keep the horizontal repetition enabled to allow the user to scroll the map
@@ -408,8 +407,6 @@ fun runHikeMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel): Ma
   // This LaunchedEffect handles map updates with debouncing to prevent too frequent refreshes
   MapUtils.LaunchedEffectFacilitiesDisplay(
       mapView, boundingBoxState, zoomLevelState, facilitiesViewModel, hike, context)
-
-  MapUtils.LaunchedEffectMapviewListener(mapView, hike, boundingBoxState, zoomLevelState, false)
 
   // Show the selected hike on the map
   // OnLineClick does nothing, the line should not be clickable
