@@ -23,7 +23,7 @@ class BottomBarNavigationTest {
   @get:Rule val composeTestRule = createComposeRule()
 
   @Test
-  fun clickingOnAItemChangeScreen() {
+  fun clickingOnAnItemChangesScreen() {
     var wantedRoute = Route.MAP
     var countDownLatch = 3
     composeTestRule.setContent {
