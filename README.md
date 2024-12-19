@@ -1,70 +1,104 @@
-# HikeMate
-## Design
-Here is the Figma link [here](https://www.figma.com/design/EOM0DPxmM1FzGwxFeoItsE/Untitled?node-id=0-1&m=dev)
+<h1 align="center">HikeMate</h1>
+<p align="center">
+    <img src="https://raw.githubusercontent.com/HikeMate/hikeMateApp/refs/heads/main/app/src/main/res/drawable/app_icon.png?sanitize=true"
+        height="130">
+</p>
+<p align="center">
+    <a href="https://github.com/HikeMate/hikeMateApp/releases">
+        <img src="https://img.shields.io/github/v/release/HikeMate/hikeMateApp" alt="Last release">
+    </a>
+    <a href="https://discord.gg/HjJCwm5">
+        <img src="https://img.shields.io/github/contributors/HikeMate/hikeMateApp" alt="GitHub contributors">
+    </a>
+</p>
 
-## Pitch
+With nature offering incredible benefits for both mental and physical well-being, more people are looking to start hiking as a way to reconnect with the outdoors. However, for beginners, starting out can be overwhelming.
 
-With nature offering incredible benefits for both mental and physical well-being, more people are looking to start hiking as a way to reconnect with the outdoors. However, for beginners, starting out can be overwhelming. What if there was an app that not only helped you discover the best hiking routes but also guided you through every step of the way, from preparation to safety? 
+With **HikeMate**, we hope to provide beginners with an easy-to-use, intuitive interface to get started with hiking.
 
-Introducing **HikeMate**, the ultimate beginner-friendly hiking companion. Whether you're new to hiking or want to develop your skills, HikeMate provides personalized route suggestions, safety alerts, and learning tools to help you build confidence on the trail.
+<p align="center">
+    <img src="images/guide.png" alt="A set of tutorials for beginner hikers" height="450" />
+</p>
 
-### Requirements
+<p align="center" style="font-style: italic; padding-left: 20%; padding-right: 20%;">
+    Take advantage of our numerous, free tutorials on the art and pleasure of hiking.
+</p>
 
-- **Firebase backend**: The app will leverage Firebase for real-time database management, storing user preferences, routes, and updates.
-- **User authentication**: Users will authenticate via Google for a seamless sign-in process and secure account management. Accounts will store information like preferences, hiking progress, and past activities.
-- **GPS-driven features**: GPS is used for real-time navigation, safety alerts, and tracking user progress.
-- **Offline mode**: Users will be able to download routes and maps for offline use, ensuring a smooth experience even in remote areas without internet access.
+<p align="center">
+    <img src="images/map-screen.png" alt="The map screen of the app with hikes displayed on the map and in a list" height="450" />
+</p>
 
-### Features
+<p align="center" style="font-style: italic; padding-left: 20%; padding-right: 20%;">
+    Search for hikes anywhere in the world and get relevant information at a glance to choose a suitable hike.
+</p>
 
-#### Beginner-Friendly Tutorials
-- Interactive, step-by-step guides for first-time hikers, including tips on gear, safety, and how to choose the right trails.
-- Virtual practice hikes where users make real-time decisions (e.g., dealing with sudden weather changes).
+<p align="center">
+    <img src="images/details-screen.png" alt="The details screen of the map, displaying the detailed information of one particular hike" height="450" />
+</p>
 
-#### Route Customization
-- Recommendations for routes nearby based on user preferences like fitness level, desired difficulty, time available, and environmental conditions.
-- Automatic difficulty prediction for new trails based on terrain analysis, real-time weather data, and user experience.
+<p align="center" style="font-style: italic; padding-left: 20%; padding-right: 20%;">
+    Get more detailed information about a particular hike you are interested in, such as restrooms, trashcans or biergartens on the way.
+</p>
 
-#### Dynamic Packing Checklist
-- A customized packing list that updates based on the user’s route, the season, the weather forecast, and location.
-- Gear recommendations for beginners, outlining which gear is most important and what to watch out for when buying.
+<p align="center">
+    <img src="images/planned-screen.png" alt="The list of hikes the user has saved and planned" height="450" />
+</p>
 
-#### Real-Time Safety Alerts
-- A live "buddy system" that shares your location with emergency contacts or fellow hikers for enhanced safety.
-- One-tap SOS feature that sends GPS coordinates to contacts in case of emergencies.
-- Weather and terrain alerts to notify users of sudden hazards like storms or unstable paths.
-- Provide safety tips and privacy awareness reminders, such as the risks of sharing personal data or exact locations on public platforms.
+<p align="center" style="font-style: italic; padding-left: 20%; padding-right: 20%;">
+    Save hikes you are interested in to easily find them, plan them.
+</p>
 
-#### Offline Mode
-- Even without internet access, users can browse saved hiking routes, maps, and profile information. Syncs automatically when reconnected to the internet.
+<p align="center">
+    <img src="images/run-screen.png" alt="Screen of the app to run the hike, follow your progress in real-time" height="450" />
+</p>
 
-#### Notifications
-- Push notifications to remind users to hike, finish a challenge, or alert them of nearby events, new trails, or weather updates.
+<p align="center" style="font-style: italic; padding-left: 20%; padding-right: 20%;">
+    Follow your progress in real time while you go hiking.
+</p>
 
-### Optional Features
+Want to give it a try? You can find the APK file in the [releases section](https://github.com/HikeMate/hikeMateApp/releases) of the GitHub repository. You can also use a third-party app such as [Obtainium](https://obtainium.imranr.dev/) to download the app on your phone directly from GitHub.
 
-#### Machine Learning for Better Route Recommendations
-- Use machine learning algorithms to fine-tune route suggestions based on user feedback, location history, and preferences.
+## Contributing
 
-#### Integration with Calendar
-- Allow users to add planned hikes to their system calendar and invite friends or mentors directly.
+**HikeMate** is open-source and thus, you can contribute to it by opening PRs and issues.
 
-#### Integration with Wearables
-- Sync with smartwatches and fitness bands for real-time tracking of vitals and activity during hikes.
+If you notice a bug or would like to request a feature, feel free to [open an issue](https://github.com/HikeMate/hikeMateApp/issues/new) on the repo. You can also work on the bug fix/feature yourself and open a PR.
 
-#### User Profiles and Social Features
-- Users create profiles, outlining hiking preferences, skill levels, and goals. Beginners can be matched with mentors or hiking partners.
-- Ability to share hikes, photos, and experiences with other users through a feed-like interface.
-- Build and save a personal list of favorite trails, with the option to share these with friends.
-- Allow users to quickly report hazardous conditions on trails, which will be shared with other app users in real time.
+### Building the app
 
-#### Gamification and Achievements
-- Beginner-friendly challenges, like completing a certain number of hikes, visiting scenic points, or hiking in different terrains.
-- Badges and rewards for completing milestones such as first hike, hiking streaks, or reaching elevation goals.
-- Progress tracking to keep users motivated.
+To build the app for yourself, clone the current repository and open it as an [Android Studio](https://developer.android.com/studio) project. For reference, we used a few patches of Android during the project, the last one being `Android Ladybug 2024.2.1 Patch 3`.
 
-#### Personal Health and Wellness Integration
-- Integrate with fitness apps to track physical metrics like steps, heart rate, and calories burned, tailored to hiking workouts.
-- Guided mindfulness exercises during hikes, focusing on connecting with nature, stress relief, and mental clarity.
+You can build **HikeMate** like any other app you would with Android Studio, no additional setup involved.
 
-By providing a highly personalized and beginner-friendly experience, **HikeMate** will become the go-to app for new hikers who need guidance and confidence to get started on their outdoor journey.
+### Running the tests locally
+
+To run the project tests locally, open the [Run Anything](https://www.jetbrains.com/help/idea/running-anything.html#open_run_anything_popup) dialog of Android Studio, and type
+
+```
+gradle check connectCheck jacocoTestReport
+```
+
+This will run unit tests (`test` folder), integration tests (`androidTest` folder) and generate a Jacoco code coverage report.
+
+Depending on your needs, you might as well remove the `jacocoTestReport` or run only `check`/`connectCheck`.
+
+> [!NOTE]
+> Integration tests (`connectCheck`, in the `androidTest` folder) require you to have an emulator or a connected Android device, as those tests have to be run in an actual Android context.
+
+### Getting familiar with the codebase
+
+If you intend to contribute, you might want to first spend a little time understanding how the app works in its current state.
+
+The first thing you might want to do is read about MVVM (Model-View-ViewModel), as the app follows a similar architecture.
+
+As for the app itself, there are a few resources you can use such as
+
+- Our **architecture diagram** will give you a broad view of the components of the app (screens, view models, repositories) and how they interact. The diagram is available on [Excalidraw](https://excalidraw.com/#json=HWkgLdhejIEzjL0Vuz7Ar,pG7H5PR27iZM6gQDCkj14A) or as an [SVG](images/architecture-diagram-m3.svg).
+
+- Our [Figma mockup and wireframe](https://www.figma.com/design/EOM0DPxmM1FzGwxFeoItsE/Untitled?node-id=0-1&m=dev) will give you an idea of what we envisioned, with a few features that are not implemented yet.
+
+- The code itself contains documentation (docstrings) that can help you particular functions, attributes and state flows.
+
+- Finally, our [wiki](https://github.com/HikeMate/hikeMateApp/wiki) should provide you with guidance about organization (branch naming conventions, the process to follow when working on a PR, ...) plus give you some ideas of features that are not implemented yet you could work on.
+
+Thank you for your interest in this project, feel free to open a PR or an issue if you are interested in contributing!
