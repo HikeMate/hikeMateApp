@@ -42,10 +42,10 @@ class FacilitiesViewModel(
     val MAX_FACILITIES_PER_ZOOM =
         mapOf(
             (13.0..14.0) to 15,
-            (14.0..15.0) to 20,
-            (15.0..16.0) to 30,
-            (16.0..17.0) to 50,
-            (17.0..18.0) to 100)
+            (14.0..15.0) to 15,
+            (15.0..16.0) to 20,
+            (16.0..17.0) to 30,
+            (17.0..18.0) to 50)
   }
 
   private val _isFiltering = MutableStateFlow(false)
@@ -111,6 +111,8 @@ class FacilitiesViewModel(
                 .toList()
 
         onSuccess(filteredFacilities)
+      } catch (e: Exception) {
+        Log.e(LOG_TAG, "Error while filtering facilities: $e")
       } finally {
         _isFiltering.value = false
       }
