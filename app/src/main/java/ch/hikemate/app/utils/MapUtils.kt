@@ -566,7 +566,6 @@ object MapUtils {
     return shouldLoadFacilitiesCopy
   }
 
-
   /**
    * Handles mapview first layout listener.
    *
