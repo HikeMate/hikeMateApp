@@ -3,7 +3,6 @@ package ch.hikemate.app.utils
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.graphics.Paint
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.location.Location
@@ -228,7 +227,6 @@ object MapUtils {
 
     return BitmapDrawable(context.resources, bitmap)
   }
-
 
   /**
    * Draws a new marker on the map representing the user's position. The previous marker is cleared
