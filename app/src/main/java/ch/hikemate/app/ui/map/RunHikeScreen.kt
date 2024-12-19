@@ -552,7 +552,7 @@ private fun RunHikeBottomSheet(
                 modifier =
                     Modifier.padding(vertical = 16.dp)
                         .testTag(RunHikeScreen.TEST_TAG_STOP_HIKE_BUTTON),
-                fillColor = MaterialTheme.colorScheme.error,
+                fillColor = MaterialTheme.colorScheme.tertiary,
             )
           }
         }

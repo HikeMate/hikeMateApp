@@ -157,7 +157,7 @@ fun ProfileScreen(
                           style =
                               MaterialTheme.typography.labelLarge.copy(
                                   textAlign = TextAlign.Center,
-                                  color = MaterialTheme.colorScheme.error),
+                                  color = MaterialTheme.colorScheme.tertiary),
                       )
                     }
               }

@@ -8,6 +8,9 @@ val onPrimaryColor = Color.White
 val secondaryColor = Color.White
 val onSecondaryColor = Color.Black
 
+// For destructive actions like delete
+val tertiary = Color(0xFFEF5350)
+
 val hikeDifficultyEasyColor = Color(0xFF1B9E4D)
 val hikeDifficultyModerateColor = Color(0xFFFCCA03)
 val hikeDifficultyDifficultColor = Color(0xFFF74E05)

@@ -548,7 +548,8 @@ fun DateDetailRow(
                       ButtonDefaults.buttonColors(
                           containerColor = MaterialTheme.colorScheme.primary)
                   else
-                      ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                      ButtonDefaults.buttonColors(
+                          containerColor = MaterialTheme.colorScheme.tertiary),
           ) {
             Text(
                 text =
