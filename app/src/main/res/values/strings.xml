@@ -203,6 +203,7 @@
     <string name="create_account_password_mismatch_error">Passwords do not match</string>
     <string name="create_account_email_format_error">Invalid email format</string>
     <string name="create_account_fields_must_be_filled_error">All fields must be filled</string>
+    <string name="create_account_password_requirements">Password must have at least six characters.</string>
 
     <string name="error_email_and_password_must_not_be_empty">Email and password must not be empty</string>
     <string name="error_occurred_while_creating_account">An error occurred while creating the account</string>
@@ -235,4 +236,5 @@
 
     <string name="delete_account_button_label">Delete Account</string>
     <string name="google_account_created_confirmation">Connected Google Account to your device successfully. Please wait while we retry the signup.</string>
+    <string name="generic_error_message_internet_connection">An error occurred. Check your internet connection. The operation might not be saved.</string>
 </resources>

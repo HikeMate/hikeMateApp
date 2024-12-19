@@ -79,6 +79,10 @@ fun CreateAccountScreen(
       !email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}\$".toRegex()) -> {
         Toast.makeText(context, emailWrongFormatErrorMessage, Toast.LENGTH_SHORT).show()
       }
+      password.length < 6 -> {
+        Toast.makeText(context, R.string.create_account_password_requirements, Toast.LENGTH_SHORT)
+            .show()
+      }
       else -> {
         authViewModel.createAccountWithEmailAndPassword(
             name,

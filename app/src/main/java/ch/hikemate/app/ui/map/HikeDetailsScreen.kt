@@ -1,7 +1,10 @@
 package ch.hikemate.app.ui.map
 
 import android.annotation.SuppressLint
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -378,6 +381,7 @@ fun HikeDetailsBottomScaffold(
     onRunThisHike: () -> Unit
 ) {
   val scaffoldState = rememberBottomSheetScaffoldState()
+  val context = LocalContext.current
 
   val hikeColor = Color(detailedHike.color)
   val isSuitable = detailedHike.difficulty.ordinal <= userHikingLevel.ordinal
@@ -420,9 +424,31 @@ fun HikeDetailsBottomScaffold(
                 modifier =
                     Modifier.size(60.dp, 80.dp).testTag(TEST_TAG_BOOKMARK_ICON).clickable {
                       if (detailedHike.isSaved) {
-                        hikesViewModel.unsaveHike(detailedHike.id)
+                        hikesViewModel.unsaveHike(
+                            detailedHike.id,
+                            onFailure = {
+                              Handler(Looper.getMainLooper()).post {
+                                Toast.makeText(
+                                        context,
+                                        context.getString(
+                                            R.string.generic_error_message_internet_connection),
+                                        Toast.LENGTH_SHORT)
+                                    .show()
+                              }
+                            })
                       } else {
-                        hikesViewModel.saveHike(detailedHike.id)
+                        hikesViewModel.saveHike(
+                            detailedHike.id,
+                            onFailure = {
+                              Handler(Looper.getMainLooper()).post {
+                                Toast.makeText(
+                                        context,
+                                        context.getString(
+                                            R.string.generic_error_message_internet_connection),
+                                        Toast.LENGTH_SHORT)
+                                    .show()
+                              }
+                            })
                       }
                     },
                 contentScale = ContentScale.FillBounds,
@@ -483,7 +509,19 @@ fun HikeDetailsBottomScaffold(
               isSaved = detailedHike.isSaved,
               plannedDate = detailedHike.plannedDate,
               updatePlannedDate = { timestamp: Timestamp? ->
-                hikesViewModel.setPlannedDate(detailedHike.id, timestamp)
+                hikesViewModel.setPlannedDate(
+                    detailedHike.id,
+                    timestamp,
+                    onFailure = {
+                      Handler(Looper.getMainLooper()).post {
+                        Toast.makeText(
+                                context,
+                                context.getString(
+                                    R.string.generic_error_message_internet_connection),
+                                Toast.LENGTH_SHORT)
+                            .show()
+                      }
+                    })
               })
 
           // "Run This Hike" button
