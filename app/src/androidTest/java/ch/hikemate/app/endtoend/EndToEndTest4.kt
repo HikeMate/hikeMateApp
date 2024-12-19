@@ -2,7 +2,6 @@ package ch.hikemate.app.endtoend
 
 import android.content.Context
 import android.location.Location
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
@@ -15,6 +14,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeUp
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso
@@ -156,21 +156,25 @@ class EndToEndTest4 {
 
     Espresso.closeSoftKeyboard()
 
-    with(composeTestRule) {
-      onNodeWithTag(CreateAccountScreen.TEST_TAG_SIGN_UP_BUTTON)
-          .assertHasClickAction()
-          .assertIsDisplayed()
-          .performClick()
+    composeTestRule
+        .onNodeWithTag(CreateAccountScreen.TEST_TAG_SIGN_UP_BUTTON)
+        .assertHasClickAction()
+        .assertIsDisplayed()
+        .performClick()
 
-      waitUntilExactlyOneExists(hasTestTag(Screen.MAP), timeoutMillis = 30000)
+    composeTestRule.waitUntilExactlyOneExists(hasTestTag(Screen.MAP), timeoutMillis = 30000)
 
-      // ---- Navigate to a hike's details screen ----
+    // ---- Navigate to a hike's details screen ----
 
-      onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON).assertIsDisplayed().performClick()
+    composeTestRule
+        .onNodeWithTag(MapScreen.TEST_TAG_SEARCH_BUTTON)
+        .assertIsDisplayed()
+        .performClick()
 
-      // Click on the first of the found hikes
-      waitUntilAtLeastOneExists(hasTestTag(MapScreen.TEST_TAG_HIKE_ITEM), timeoutMillis = 30000)
-    }
+    // Click on the first of the found hikes
+    composeTestRule.waitUntilAtLeastOneExists(
+        hasTestTag(MapScreen.TEST_TAG_HIKE_ITEM), timeoutMillis = 30000)
+
     composeTestRule.onAllNodesWithTag(MapScreen.TEST_TAG_HIKE_ITEM)[0].performClick()
 
     composeTestRule.waitUntilExactlyOneExists(
@@ -184,9 +188,7 @@ class EndToEndTest4 {
     composeTestRule.waitForIdle()
 
     composeTestRule.onNodeWithTag(HikeDetailScreen.TEST_TAG_BOTTOM_SHEET).performTouchInput {
-      down(1, position = Offset(centerX, centerY))
-      moveTo(1, position = Offset(centerX, 100f))
-      up(1)
+      swipeUp()
     }
 
     composeTestRule.waitForIdle()
@@ -200,9 +202,7 @@ class EndToEndTest4 {
     composeTestRule.waitUntilExactlyOneExists(hasTestTag(Screen.RUN_HIKE), timeoutMillis = 10000)
 
     composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_BOTTOM_SHEET).performTouchInput {
-      down(1, position = Offset(centerX, centerY))
-      moveTo(1, position = Offset(centerX, 100f))
-      up(1)
+      swipeUp()
     }
 
     composeTestRule.waitForIdle()
