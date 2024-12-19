@@ -47,8 +47,12 @@ open class ProfileViewModel(private val repository: ProfileRepository) : ViewMod
   fun getProfileById(id: String) {
     repository.getProfileById(
         id,
-        onSuccess = { profile -> profile_.value = profile },
+        onSuccess = { profile ->
+          profile_.value = profile
+          _errorMessageId.value = null
+        },
         onFailure = {
+          profile_.value = null
           Log.e("ProfileViewModel", "Error fetching profile", it)
           _errorMessageId.value = R.string.an_error_occurred_while_fetching_the_profile
         })
@@ -62,7 +66,10 @@ open class ProfileViewModel(private val repository: ProfileRepository) : ViewMod
   fun updateProfile(profile: Profile) {
     repository.updateProfile(
         profile = profile,
-        onSuccess = { profile_.value = profile },
+        onSuccess = {
+          profile_.value = profile
+          _errorMessageId.value = null
+        },
         onFailure = {
           Log.e("ProfileViewModel", "Error updating profile", it)
           _errorMessageId.value = R.string.an_error_occurred_while_updating_the_profile
@@ -77,7 +84,10 @@ open class ProfileViewModel(private val repository: ProfileRepository) : ViewMod
   fun deleteProfileById(id: String) {
     repository.deleteProfileById(
         id = id,
-        onSuccess = { profile_.value = null },
+        onSuccess = {
+          profile_.value = null
+          _errorMessageId.value = null
+        },
         onFailure = {
           Log.e("ProfileViewModel", "Error deleting profile", it)
           _errorMessageId.value = R.string.an_error_occurred_while_deleting_the_profile
