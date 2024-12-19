@@ -491,8 +491,7 @@ private fun RunHikeBottomSheet(
                           else {
                             val percentage = (completionRatio * 100).roundToInt()
                             stringResource(
-                              R.string.run_hike_screen_progress_percentage_format, percentage
-                            )
+                                R.string.run_hike_screen_progress_percentage_format, percentage)
                           },
                       style = MaterialTheme.typography.bodyMedium,
                       color = hikeColor,
