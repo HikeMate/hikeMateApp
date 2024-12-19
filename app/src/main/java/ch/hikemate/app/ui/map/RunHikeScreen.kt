@@ -475,7 +475,17 @@ private fun RunHikeBottomSheet(
             // Progress details below the graph
             // Elevation graph and the progress details below the graph
             val hikeColor = Color(hike.color)
-            ElevationGraphWithLocationPuck(completionRatio, hike, hikeColor)
+            ElevationGraph(
+                elevations = hike.elevation,
+                styleProperties =
+                    ElevationGraphStyleProperties(
+                        strokeColor = hikeColor, fillColor = hikeColor.copy(0.1f)),
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .height(60.dp)
+                        .padding(4.dp)
+                        .testTag(RunHikeScreen.TEST_TAG_ELEVATION_GRAPH),
+                progressThroughHike = (completionRatio)?.toFloat())
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 20.dp),
                 horizontalArrangement = Arrangement.SpaceBetween) {
@@ -559,37 +569,4 @@ private fun RunHikeBottomSheet(
           }
         }
       }) {}
-}
-
-@Composable
-private fun ElevationGraphWithLocationPuck(
-    completionPercentage: Double?,
-    hike: DetailedHike,
-    hikeColor: Color
-) {
-
-  if (completionPercentage != null) {
-
-    ElevationGraph(
-        elevations = hike.elevation,
-        styleProperties =
-            ElevationGraphStyleProperties(
-                strokeColor = hikeColor, fillColor = hikeColor.copy(0.1f)),
-        modifier =
-            Modifier.fillMaxWidth()
-                .height(60.dp)
-                .padding(4.dp)
-                .testTag(RunHikeScreen.TEST_TAG_ELEVATION_GRAPH),
-        progressThroughHike = (completionPercentage).toFloat())
-  } else
-      ElevationGraph(
-          elevations = hike.elevation,
-          styleProperties =
-              ElevationGraphStyleProperties(
-                  strokeColor = hikeColor, fillColor = hikeColor.copy(0.1f)),
-          modifier =
-              Modifier.fillMaxWidth()
-                  .height(60.dp)
-                  .padding(4.dp)
-                  .testTag(RunHikeScreen.TEST_TAG_ELEVATION_GRAPH))
 }
