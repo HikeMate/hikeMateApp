@@ -701,26 +701,26 @@ fun CollapsibleHikesList(
                 items(hikes.size, key = { hikes[it].value.id }) { index: Int ->
                   val hike by hikes[index].collectAsState()
                   val elevation: List<Double>?
-                  val suitable: Boolean
+                  val suitable: Boolean?
                   when {
                     // The hike's elevation data was retrieved, but an error occurred
                     hike.elevation is DeferredData.Error -> {
                       elevation = emptyList()
-                      suitable = false
+                      suitable = null
                     }
 
                     // The hike has no elevation data and it wasn't requested yet
                     !hike.elevation.obtained() -> {
                       hikesViewModel.retrieveElevationDataFor(hike.id)
                       elevation = null
-                      suitable = false
+                      suitable = null
                     }
 
                     // The hike has elevation data but no details computed
                     !hikesViewModel.areDetailsComputedFor(hike) -> {
                       hikesViewModel.computeDetailsFor(hike.id)
                       elevation = hike.elevation.getOrThrow()
-                      suitable = false
+                      suitable = null
                     }
 
                     // The hike has elevation data and details computed

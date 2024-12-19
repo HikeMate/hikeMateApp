@@ -20,6 +20,7 @@ import ch.hikemate.app.model.route.LatLong
 import ch.hikemate.app.model.route.saved.SavedHike
 import ch.hikemate.app.model.route.saved.SavedHikesRepository
 import ch.hikemate.app.ui.components.CenteredErrorAction
+import ch.hikemate.app.ui.components.HikeCard
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.TEST_TAG_BOTTOM_BAR
 import com.google.firebase.Timestamp
@@ -358,6 +359,32 @@ class SavedHikesScreenTest : TestCase() {
             .assertIsDisplayed()
         composeTestRule
             .onAllNodesWithTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_HIKE_CARD)
+            .assertCountEquals(2)
+      }
+
+  @Test
+  fun plannedHikesSectionDisplaysDates() =
+      runTest(timeout = 5.seconds) {
+        val hikes =
+            listOf(
+                detailedHike.copy(
+                    id = "1", name = "Hike 1", plannedDate = Timestamp.now(), isSaved = true),
+                detailedHike.copy(
+                    id = "2", name = "Hike 2", plannedDate = Timestamp.now(), isSaved = true))
+        setupSavedHikes(hikes)
+
+        composeTestRule.setContent { SavedHikesScreen(hikesViewModel, navigationActions) }
+
+        // Select the planned hikes tab
+        composeTestRule
+            .onNodeWithTag(
+                SavedHikesScreen.TEST_TAG_SAVED_HIKES_TABS_MENU_ITEM_PREFIX +
+                    SavedHikesSection.Planned.name)
+            .performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule
+            .onAllNodesWithTag(HikeCard.TEST_TAG_IS_SUITABLE_TEXT, useUnmergedTree = true)
             .assertCountEquals(2)
       }
 }
