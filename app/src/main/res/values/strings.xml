@@ -31,7 +31,6 @@
     <string name="hike_card_no_data_label">No data</string>
 
     <!-- Map Screen -->
-    <string name="map_screen_menu_button_content_description">Menu</string>
     <string name="map_screen_search_button_text">Search hikes here</string>
     <string name="map_screen_search_button_text_short">Search here</string>
     <string name="map_screen_error_while_searching_hikes">Error while searching for hikes</string>
@@ -85,9 +84,6 @@
     <string name="loading_hike_elevation_retrieval_error">An error was encountered while loading the hike\'s elevation.</string>
 
     <!-- Hike Details Screen -->
-    <string name="hike_details_screen_obtaining_osm_data">Loading hike data…</string>
-    <string name="hike_details_screen_obtaining_elevation">Loading hike elevation…</string>
-    <string name="hike_details_screen_computing_details">Last computations…</string>
     <string name="hike_detail_screen_bookmark_hint_on_isSaved_true">Unsave hike</string>
     <string name="hike_detail_screen_bookmark_hint_on_isSaved_false">Save hike</string>
     <string name="hike_detail_screen_label_distance">Distance</string>
