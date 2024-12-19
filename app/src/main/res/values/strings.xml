@@ -112,7 +112,7 @@
     <string name="run_hike_screen_zero_distance_progress_value">0km</string>
     <string name="run_hike_screen_distance_progress_value_format">%.2fkm</string>
     <string name="run_hike_screen_progress_percentage_format">%d%% complete</string>
-    <string name="run_hike_screen_progress_percentage_no_data">-</string>
+    <string name="run_hike_screen_progress_percentage_no_data">You\'re too far from the hike!</string>
     <string name="run_hike_screen_label_current_elevation">Current Elevation</string>
     <string name="run_hike_screen_value_format_current_elevation">%dm</string>
     <string name="run_hike_screen_value_current_elevation_no_data">-</string>
