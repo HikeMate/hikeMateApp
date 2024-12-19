@@ -136,6 +136,7 @@ object HikeDetailScreen {
   const val TEST_TAG_DATE_PICKER_CONFIRM_BUTTON = "HikeDetailDatePickerConfirmButton"
   const val TEST_TAG_RUN_HIKE_BUTTON = "HikeDetailRunHikeButton"
   const val TEST_TAG_APPROPRIATENESS_MESSAGE = "HikeDetailAppropriatenessMessage"
+  const val TEST_TAG_BOTTOM_SHEET = "HikeDetailBottomSheet"
 }
 
 @Composable
@@ -479,7 +480,10 @@ fun HikesDetailsBottomScaffold(
       sheetPeekHeight = HikeDetailScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT,
       sheetContent = {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp),
+            modifier =
+                Modifier.testTag(HikeDetailScreen.TEST_TAG_BOTTOM_SHEET)
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, end = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
           Row {

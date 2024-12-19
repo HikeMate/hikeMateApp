@@ -5,6 +5,7 @@ import android.graphics.drawable.Drawable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -173,6 +174,7 @@ class HikeDetailScreenTest {
     }
   }
 
+  @OptIn(ExperimentalTestApi::class)
   private fun setUpBottomSheetScaffold(
       hike: DetailedHike = detailedHike,
       onRunThisHike: () -> Unit = {}
@@ -183,6 +185,16 @@ class HikeDetailScreenTest {
           hikesViewModel = hikesViewModel,
           userHikingLevel = HikingLevel.BEGINNER,
           onRunThisHike = onRunThisHike)
+    }
+
+    // Open the bottom sheet
+    composeTestRule.waitUntilExactlyOneExists(
+        hasTestTag(HikeDetailScreen.TEST_TAG_BOTTOM_SHEET), timeoutMillis = 10000)
+
+    composeTestRule.onNodeWithTag(HikeDetailScreen.TEST_TAG_BOTTOM_SHEET).performTouchInput {
+      down(1, position = Offset(centerX, centerY))
+      moveTo(1, position = Offset(centerX, 100f))
+      up(1)
     }
   }
 

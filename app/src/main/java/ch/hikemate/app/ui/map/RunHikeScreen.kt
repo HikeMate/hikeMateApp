@@ -509,10 +509,12 @@ private fun RunHikeBottomSheet(
       scaffoldState = scaffoldState,
       sheetContainerColor = MaterialTheme.colorScheme.surface,
       sheetPeekHeight = RunHikeScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT,
-      modifier = Modifier.testTag(RunHikeScreen.TEST_TAG_BOTTOM_SHEET),
       sheetContent = {
         Column(
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp).fillMaxWidth(),
+            modifier =
+                Modifier.testTag(RunHikeScreen.TEST_TAG_BOTTOM_SHEET)
+                    .padding(start = 16.dp, end = 16.dp)
+                    .fillMaxWidth(),
         ) {
           Text(
               text = hike.name ?: stringResource(R.string.map_screen_hike_title_default),
