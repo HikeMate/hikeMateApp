@@ -395,7 +395,8 @@ fun runHikeMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel): Ma
   // This LaunchedEffect handles map updates with debouncing to prevent too frequent refreshes
   MapUtils.LaunchedEffectFacilitiesDisplay(
       mapView, boundingBoxState, zoomLevelState, facilitiesViewModel, hike, context)
-  LaunchedEffectMapviewListener(mapView, boundingBoxState, zoomLevelState)
+
+  MapUtils.LaunchedEffectMapviewListener(mapView, hike, boundingBoxState, zoomLevelState, false)
 
   // Show the selected hike on the map
   // OnLineClick does nothing, the line should not be clickable

@@ -24,6 +24,7 @@ import ch.hikemate.app.ui.map.MapInitialValues
 import ch.hikemate.app.ui.map.MapScreen
 import kotlin.math.cos
 import kotlin.math.max
+import kotlin.math.min
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -563,5 +564,43 @@ object MapUtils {
       }
     }
     return shouldLoadFacilitiesCopy
+  }
+
+
+  /**
+   * Handles mapview first layout listener.
+   *
+   * @param mapView
+   * @param hike
+   * @param boundingBoxState
+   * @param zoomLevelState
+   * @param withBoundLimits whether or not to limit the Bounds of the Hike.
+   */
+  @Composable
+  fun LaunchedEffectMapviewListener(
+      mapView: MapView,
+      hike: DetailedHike,
+      boundingBoxState: MutableStateFlow<BoundingBox?>,
+      zoomLevelState: MutableStateFlow<Double?>,
+      withBoundLimits: Boolean = true
+  ) {
+    mapView.addOnFirstLayoutListener { _, _, _, _, _ ->
+      // Limit the vertical scrollable area to avoid the user scrolling too far from the hike
+      if (withBoundLimits) {
+        mapView.setScrollableAreaLimitLatitude(
+            min(MapScreen.MAP_MAX_LATITUDE, mapView.boundingBox.latNorth),
+            max(MapScreen.MAP_MIN_LATITUDE, mapView.boundingBox.latSouth),
+            HikeDetailScreen.MAP_BOUNDS_MARGIN)
+        if (hike.bounds.maxLon < HikeDetailScreen.MAP_MAX_LONGITUDE ||
+            hike.bounds.minLon > HikeDetailScreen.MAP_MIN_LONGITUDE) {
+          mapView.setScrollableAreaLimitLongitude(
+              max(HikeDetailScreen.MAP_MIN_LONGITUDE, mapView.boundingBox.lonWest),
+              min(HikeDetailScreen.MAP_MAX_LONGITUDE, mapView.boundingBox.lonEast),
+              HikeDetailScreen.MAP_BOUNDS_MARGIN)
+        }
+        boundingBoxState.value = mapView.boundingBox
+        zoomLevelState.value = mapView.zoomLevelDouble
+      }
+    }
   }
 }

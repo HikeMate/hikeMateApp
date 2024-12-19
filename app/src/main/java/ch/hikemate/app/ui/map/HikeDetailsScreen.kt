@@ -93,8 +93,6 @@ import ch.hikemate.app.utils.humanReadableFormat
 import com.google.firebase.Timestamp
 import java.util.Date
 import java.util.Locale
-import kotlin.math.max
-import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.osmdroid.util.BoundingBox
@@ -323,7 +321,7 @@ fun hikeDetailsMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel)
       mapView, boundingBoxState, zoomLevelState, facilitiesViewModel, hike, context)
 
   // When the map is ready, it will have computed its bounding box
-  LaunchedEffectMapviewListener(mapView, hike, boundingBoxState, zoomLevelState)
+  MapUtils.LaunchedEffectMapviewListener(mapView, hike, boundingBoxState, zoomLevelState)
 
   // Show the selected hike on the map
   // OnLineClick does nothing, the line should not be clickable
@@ -344,31 +342,6 @@ fun hikeDetailsMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel)
                           HikeDetailScreen.MAP_BOTTOM_PADDING_ADJUSTMENT)
               .testTag(TEST_TAG_MAP))
   return mapView
-}
-
-@Composable
-private fun LaunchedEffectMapviewListener(
-    mapView: MapView,
-    hike: DetailedHike,
-    boundingBoxState: MutableStateFlow<BoundingBox?>,
-    zoomLevelState: MutableStateFlow<Double?>
-) {
-  mapView.addOnFirstLayoutListener { _, _, _, _, _ ->
-    // Limit the vertical scrollable area to avoid the user scrolling too far from the hike
-    mapView.setScrollableAreaLimitLatitude(
-        min(MapScreen.MAP_MAX_LATITUDE, mapView.boundingBox.latNorth),
-        max(MapScreen.MAP_MIN_LATITUDE, mapView.boundingBox.latSouth),
-        HikeDetailScreen.MAP_BOUNDS_MARGIN)
-    if (hike.bounds.maxLon < HikeDetailScreen.MAP_MAX_LONGITUDE ||
-        hike.bounds.minLon > HikeDetailScreen.MAP_MIN_LONGITUDE) {
-      mapView.setScrollableAreaLimitLongitude(
-          max(HikeDetailScreen.MAP_MIN_LONGITUDE, mapView.boundingBox.lonWest),
-          min(HikeDetailScreen.MAP_MAX_LONGITUDE, mapView.boundingBox.lonEast),
-          HikeDetailScreen.MAP_BOUNDS_MARGIN)
-      boundingBoxState.value = mapView.boundingBox
-      zoomLevelState.value = mapView.zoomLevelDouble
-    }
-  }
 }
 
 /**
