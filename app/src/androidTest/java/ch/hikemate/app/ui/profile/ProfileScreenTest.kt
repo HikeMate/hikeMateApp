@@ -52,7 +52,7 @@ class ProfileScreenTest : TestCase() {
           id = "1",
           name = "John Doe",
           email = "john-doe@gmail.com",
-          hikingLevel = HikingLevel.INTERMEDIATE,
+          hikingLevel = HikingLevel.AMATEUR,
           joinedDate = Timestamp.now())
 
   @Before
@@ -107,7 +107,7 @@ class ProfileScreenTest : TestCase() {
             id = "1",
             name = "John Doe",
             email = "john.doe@gmail.com",
-            hikingLevel = HikingLevel.INTERMEDIATE,
+            hikingLevel = HikingLevel.AMATEUR,
             joinedDate = Timestamp.now())
     `when`(profileRepository.getProfileById(any(), any(), any())).thenAnswer {
       val onSuccess = it.getArgument<(Profile) -> Unit>(1)
@@ -123,8 +123,8 @@ class ProfileScreenTest : TestCase() {
             (when (profile.hikingLevel) {
               HikingLevel.BEGINNER ->
                   context.getString(R.string.profile_screen_hiking_level_info_beginner)
-              HikingLevel.INTERMEDIATE ->
-                  context.getString(R.string.profile_screen_hiking_level_info_intermediate)
+              HikingLevel.AMATEUR ->
+                  context.getString(R.string.profile_screen_hiking_level_info_amateur)
               HikingLevel.EXPERT ->
                   context.getString(R.string.profile_screen_hiking_level_info_expert)
             }))
@@ -172,8 +172,8 @@ class ProfileScreenTest : TestCase() {
             (when (profile.hikingLevel) {
               HikingLevel.BEGINNER ->
                   context.getString(R.string.profile_screen_hiking_level_info_beginner)
-              HikingLevel.INTERMEDIATE ->
-                  context.getString(R.string.profile_screen_hiking_level_info_intermediate)
+              HikingLevel.AMATEUR ->
+                  context.getString(R.string.profile_screen_hiking_level_info_amateur)
               HikingLevel.EXPERT ->
                   context.getString(R.string.profile_screen_hiking_level_info_expert)
             }))
@@ -209,8 +209,8 @@ class ProfileScreenTest : TestCase() {
             (when (profile.hikingLevel) {
               HikingLevel.BEGINNER ->
                   context.getString(R.string.profile_screen_hiking_level_info_beginner)
-              HikingLevel.INTERMEDIATE ->
-                  context.getString(R.string.profile_screen_hiking_level_info_intermediate)
+              HikingLevel.AMATEUR ->
+                  context.getString(R.string.profile_screen_hiking_level_info_amateur)
               HikingLevel.EXPERT ->
                   context.getString(R.string.profile_screen_hiking_level_info_expert)
             }))

@@ -56,8 +56,7 @@ object EditProfileScreen {
   const val TEST_TAG_NAME_INPUT = "editProfileScreenNameInput"
   const val TEST_TAG_HIKING_LEVEL_LABEL = "editProfileScreenHikingLevelLabel"
   const val TEST_TAG_HIKING_LEVEL_CHOICE_BEGINNER = "editProfileScreenHikingLevelChoiceBeginner"
-  const val TEST_TAG_HIKING_LEVEL_CHOICE_INTERMEDIATE =
-      "editProfileScreenHikingLevelChoiceIntermediate"
+  const val TEST_TAG_HIKING_LEVEL_CHOICE_AMATEUR = "editProfileScreenHikingLevelChoiceAmateur"
   const val TEST_TAG_HIKING_LEVEL_CHOICE_EXPERT = "editProfileScreenHikingLevelChoiceExpert"
   const val TEST_TAG_SAVE_BUTTON = "editProfileScreenSaveButton"
 }
@@ -155,8 +154,8 @@ fun EditProfileScreen(
                             when (fitLevel) {
                               HikingLevel.BEGINNER ->
                                   EditProfileScreen.TEST_TAG_HIKING_LEVEL_CHOICE_BEGINNER
-                              HikingLevel.INTERMEDIATE ->
-                                  EditProfileScreen.TEST_TAG_HIKING_LEVEL_CHOICE_INTERMEDIATE
+                              HikingLevel.AMATEUR ->
+                                  EditProfileScreen.TEST_TAG_HIKING_LEVEL_CHOICE_AMATEUR
                               HikingLevel.EXPERT ->
                                   EditProfileScreen.TEST_TAG_HIKING_LEVEL_CHOICE_EXPERT
                             }),

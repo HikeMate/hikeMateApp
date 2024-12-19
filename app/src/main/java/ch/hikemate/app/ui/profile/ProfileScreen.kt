@@ -127,8 +127,8 @@ fun ProfileScreen(
                     (when (profile.hikingLevel) {
                       HikingLevel.BEGINNER ->
                           context.getString(R.string.profile_screen_hiking_level_info_beginner)
-                      HikingLevel.INTERMEDIATE ->
-                          context.getString(R.string.profile_screen_hiking_level_info_intermediate)
+                      HikingLevel.AMATEUR ->
+                          context.getString(R.string.profile_screen_hiking_level_info_amateur)
                       HikingLevel.EXPERT ->
                           context.getString(R.string.profile_screen_hiking_level_info_expert)
                     }),
