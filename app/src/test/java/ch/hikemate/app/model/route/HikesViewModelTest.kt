@@ -455,7 +455,7 @@ class HikesViewModelTest {
       }
 
   @Test
-  fun `refreshSavedHikesCache clears selected hike if it is unloaded`() =
+  fun `refreshSavedHikesCache flags selected hike as unloaded`() =
       runTest(dispatcher) {
         // Load some hikes to be selected
         loadSavedHikes(singleSavedHike1)
@@ -473,8 +473,24 @@ class HikesViewModelTest {
         // Refresh the saved hikes cache
         hikesViewModel.refreshSavedHikesCache()
 
-        // Check that the selected hike is now unselected
+        // The selected hike should still be loaded anyway
+        assertEquals(1, hikesViewModel.hikeFlows.value.size)
+        assertEquals(hikeId, hikesViewModel.hikeFlows.value[0].value.id)
+        assertFalse(hikesViewModel.hikeFlows.value[0].value.isSaved)
+
+        // The selected hike should still be selected, but is not saved anymore
+        assertNotNull(hikesViewModel.selectedHike.value)
+        assertFalse(hikesViewModel.selectedHike.value!!.isSaved)
+        assertNull(hikesViewModel.selectedHike.value!!.plannedDate)
+
+        // Unselect the hike
+        hikesViewModel.unselectHike()
+
+        // The selected hike should now be null
         assertNull(hikesViewModel.selectedHike.value)
+
+        // The selected hike should be unloaded when unselected
+        assertEquals(0, hikesViewModel.hikeFlows.value.size)
       }
 
   // ==========================================================================
@@ -589,7 +605,7 @@ class HikesViewModelTest {
       }
 
   @Test
-  fun `loadSavedHikes clears selected hike if it is unloaded`() =
+  fun `loadSavedHikes flags selected hike as unloaded`() =
       runTest(dispatcher) {
         // Load some hikes to be selected
         loadSavedHikes(singleSavedHike1)
@@ -607,8 +623,24 @@ class HikesViewModelTest {
         // Load the saved hikes
         hikesViewModel.loadSavedHikes()
 
-        // Check that the selected hike is now unselected
+        // The selected hike should still be loaded anyway
+        assertEquals(1, hikesViewModel.hikeFlows.value.size)
+        assertEquals(hikeId, hikesViewModel.hikeFlows.value[0].value.id)
+        assertFalse(hikesViewModel.hikeFlows.value[0].value.isSaved)
+
+        // The selected hike should still be selected, but is not saved anymore
+        assertNotNull(hikesViewModel.selectedHike.value)
+        assertFalse(hikesViewModel.selectedHike.value!!.isSaved)
+        assertNull(hikesViewModel.selectedHike.value!!.plannedDate)
+
+        // Unselect the hike
+        hikesViewModel.unselectHike()
+
+        // The selected hike should now be null
         assertNull(hikesViewModel.selectedHike.value)
+
+        // The selected hike should be unloaded when unselected
+        assertEquals(0, hikesViewModel.hikeFlows.value.size)
       }
 
   // ==========================================================================
@@ -856,7 +888,7 @@ class HikesViewModelTest {
       }
 
   @Test
-  fun `unsaveHike clears selected hike if it is unloaded`() =
+  fun `unsaveHike flags selected hike as unloaded`() =
       runTest(dispatcher) {
         // Load some hikes to be selected
         loadSavedHikes(singleSavedHike1)
@@ -874,8 +906,59 @@ class HikesViewModelTest {
         // Unsave the selected hike
         hikesViewModel.unsaveHike(hikeId)
 
-        // Check that the selected hike is now unselected
+        // The selected hike should still be loaded anyway
+        assertEquals(1, hikesViewModel.hikeFlows.value.size)
+        assertEquals(hikeId, hikesViewModel.hikeFlows.value[0].value.id)
+        assertFalse(hikesViewModel.hikeFlows.value[0].value.isSaved)
+
+        // The selected hike should still be selected, but is not saved anymore
+        assertNotNull(hikesViewModel.selectedHike.value)
+        assertFalse(hikesViewModel.selectedHike.value!!.isSaved)
+        assertNull(hikesViewModel.selectedHike.value!!.plannedDate)
+
+        // Unselect the hike
+        hikesViewModel.unselectHike()
+
+        // The selected hike should now be null
         assertNull(hikesViewModel.selectedHike.value)
+
+        // The selected hike should be unloaded when unselected
+        assertEquals(0, hikesViewModel.hikeFlows.value.size)
+      }
+
+  @Test
+  fun `unsaveHike also unplans hike`() =
+      runTest(dispatcher) {
+        // Make sure the loaded hike is included in the saved hikes
+        loadSavedHikes(
+            listOf(
+                SavedHike(
+                    id = singleOsmHike1[0].id,
+                    name = singleOsmHike1[0].name ?: "",
+                    date = firstJanuary2024)))
+
+        // Load a hike to be unsaved (load hikes from bounds so that the hike won't be removed from
+        // the loaded hikes list after being unsaved).
+        loadOsmHikes(singleOsmHike1)
+        // Check that the hike was loaded
+        assertEquals(singleOsmHike1.size, hikesViewModel.hikeFlows.value.size)
+
+        // Make sure the saved hikes repository unsaves the hike
+        coEvery { savedHikesRepo.removeSavedHike(any()) } returns Unit
+
+        // Try to unsave the loaded hike
+        var onSuccessCalled = false
+        hikesViewModel.unsaveHike(
+            hikeId = singleOsmHike1[0].id,
+            onSuccess = { onSuccessCalled = true },
+            onFailure = { fail("onFailure should not have been called") })
+
+        // The saved hikes repository should be called exactly once
+        coVerify(exactly = 1) { savedHikesRepo.removeSavedHike(any()) }
+        // The appropriate callback should be called
+        assertTrue(onSuccessCalled)
+        // The hike should now be marked as unplanned (and unsaved, but that is a previous test)
+        assertNull(hikesViewModel.hikeFlows.value[0].value.plannedDate)
       }
 
   // ==========================================================================
@@ -1274,13 +1357,14 @@ class HikesViewModelTest {
       }
 
   @Test
-  fun `loadHikesInBounds clears the selected hike if it is unloaded`() =
+  fun `loadHikesInBounds flags the selected hike as unloaded`() =
       runTest(dispatcher) {
         // Load some hikes to be selected
         loadSavedHikes(singleSavedHike1)
 
         // Select the hike to be updated
-        hikesViewModel.selectHike(singleSavedHike1[0].id)
+        val hikeId = singleSavedHike1[0].id
+        hikesViewModel.selectHike(hikeId)
         // Check that the hike is selected
         assertNotNull(hikesViewModel.selectedHike.value)
         assertEquals(singleSavedHike1[0].id, hikesViewModel.selectedHike.value?.id)
@@ -1295,8 +1379,25 @@ class HikesViewModelTest {
         // Load hikes in bounds
         hikesViewModel.loadHikesInBounds(BoundingBox(0.0, 0.0, 0.0, 0.0))
 
-        // Check that the selected hike is now unselected
+        // The selected hike should still be loaded anyway
+        assertEquals(doubleOsmHikes1.size + 1, hikesViewModel.hikeFlows.value.size)
+        assertNotNull(
+            hikesViewModel.hikeFlows.value.find { it.value.id == hikeId && it.value.isSaved })
+
+        // The selected hike should still be selected, but is not saved anymore
+        assertNotNull(hikesViewModel.selectedHike.value)
+        assertTrue(hikesViewModel.selectedHike.value!!.isSaved)
+        assertNull(hikesViewModel.selectedHike.value!!.plannedDate)
+
+        // Unselect the hike
+        hikesViewModel.unselectHike()
+
+        // The selected hike should now be null
         assertNull(hikesViewModel.selectedHike.value)
+
+        // The selected hike should be unloaded when unselected
+        assertEquals(doubleOsmHikes1.size, hikesViewModel.hikeFlows.value.size)
+        assertNull(hikesViewModel.hikeFlows.value.find { it.value.id == hikeId })
       }
 
   // ==========================================================================

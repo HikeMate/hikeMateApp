@@ -1,5 +1,6 @@
 package ch.hikemate.app.ui.map
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.location.Location
 import android.util.Log
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.BottomSheetScaffold
@@ -39,6 +41,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import ch.hikemate.app.R
+import ch.hikemate.app.model.facilities.FacilitiesViewModel
 import ch.hikemate.app.model.route.DetailedHike
 import ch.hikemate.app.model.route.HikesViewModel
 import ch.hikemate.app.model.route.LatLong
@@ -51,6 +54,7 @@ import ch.hikemate.app.ui.components.ElevationGraph
 import ch.hikemate.app.ui.components.ElevationGraphStyleProperties
 import ch.hikemate.app.ui.components.LocationPermissionAlertDialog
 import ch.hikemate.app.ui.components.WithDetailedHike
+import ch.hikemate.app.ui.map.HikeDetailScreen.MAP_MAX_ZOOM
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.utils.LocationUtils
@@ -60,6 +64,8 @@ import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationResult
 import kotlin.math.roundToInt
+import kotlinx.coroutines.flow.MutableStateFlow
+import org.osmdroid.util.BoundingBox
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
@@ -87,6 +93,7 @@ object RunHikeScreen {
 fun RunHikeScreen(
     hikesViewModel: HikesViewModel,
     navigationActions: NavigationActions,
+    facilitiesViewModel: FacilitiesViewModel
 ) {
   val selectedHike by hikesViewModel.selectedHike.collectAsState()
 
@@ -106,7 +113,7 @@ fun RunHikeScreen(
   WithDetailedHike(
       hike = hike,
       hikesViewModel = hikesViewModel,
-      withDetailedHike = { RunHikeContent(it, navigationActions) },
+      withDetailedHike = { RunHikeContent(it, navigationActions, facilitiesViewModel) },
       whenError = {
         val loadingErrorMessageId by hikesViewModel.loadingErrorMessageId.collectAsState()
 
@@ -115,20 +122,29 @@ fun RunHikeScreen(
             actionIcon = Icons.AutoMirrored.Filled.ArrowBack,
             actionContentDescriptionStringId = R.string.go_back,
             onAction = { navigationActions.goBack() })
-      })
+      },
+      navigationActions = navigationActions,
+      onBackAction = { hikesViewModel.unselectHike() })
 }
 
 @SuppressLint("ClickableViewAccessibility")
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-private fun RunHikeContent(hike: DetailedHike, navigationActions: NavigationActions) {
+private fun RunHikeContent(
+    hike: DetailedHike,
+    navigationActions: NavigationActions,
+    facilitiesViewModel: FacilitiesViewModel
+) {
+
+  LaunchedEffect(Unit) { facilitiesViewModel.fetchFacilitiesForHike(hike) }
+
   val context = LocalContext.current
   val locationPermissionState =
       rememberMultiplePermissionsState(
           permissions =
               listOf(
-                  android.Manifest.permission.ACCESS_FINE_LOCATION,
-                  android.Manifest.permission.ACCESS_COARSE_LOCATION))
+                  Manifest.permission.ACCESS_FINE_LOCATION,
+                  Manifest.permission.ACCESS_COARSE_LOCATION))
   var showLocationPermissionDialog by remember { mutableStateOf(false) }
   var centerMapOnUserPosition by remember { mutableStateOf(false) }
 
@@ -141,116 +157,130 @@ private fun RunHikeContent(hike: DetailedHike, navigationActions: NavigationActi
     }
   }
 
-  // Display the map
-  val mapView = runHikeMap(hike)
+  Box(modifier = Modifier.fillMaxSize().testTag(Screen.RUN_HIKE)) {
+    // Display the map
+    // We use the exact same map as the HikeDetailsMap
+    val mapView = runHikeMap(hike, facilitiesViewModel)
 
-  mapView.setOnTouchListener { _, event ->
-    if (event.action == MotionEvent.ACTION_DOWN) {
-      centerMapOnUserPosition = false
+    mapView.setOnTouchListener { _, event ->
+      if (event.action == MotionEvent.ACTION_DOWN) {
+        centerMapOnUserPosition = false
+      }
+      false
     }
-    false
-  }
 
-  var userLocationMarker: Marker? by remember { mutableStateOf(null) }
+    var userLocationMarker: Marker? by remember { mutableStateOf(null) }
+    var completionPercentage: Int? by remember { mutableStateOf(null) }
+    var userElevation: Double? by remember { mutableStateOf(null) }
 
-  // We need to keep a reference to the instance of location callback, this way we can unregister
-  // it using the same reference, for example when the permission is revoked.
-  val locationUpdatedCallback = remember {
-    object : LocationCallback() {
-      override fun onLocationResult(locationResult: LocationResult) {
-        userLocationMarker = parseLocationUpdate(locationResult, userLocationMarker, mapView, hike)
-        if (centerMapOnUserPosition &&
-            userLocationMarker != null &&
-            userLocationMarker?.position != null)
-            MapUtils.centerMapOnLocation(mapView, userLocationMarker!!.position)
+    // We need to keep a reference to the instance of location callback, this way we can unregister
+    // it using the same reference, for example when the permission is revoked.
+    val locationUpdatedCallback = remember {
+      object : LocationCallback() {
+        override fun onLocationResult(locationResult: LocationResult) {
+          val locationParsed =
+              parseLocationUpdate(locationResult, userLocationMarker, mapView, hike)
+          userLocationMarker = locationParsed.first
+          completionPercentage = locationParsed.second
+          userElevation = locationParsed.third
+          if (centerMapOnUserPosition &&
+              userLocationMarker != null &&
+              userLocationMarker?.position != null)
+              MapUtils.centerMapOnLocation(mapView, userLocationMarker!!.position)
+        }
       }
     }
-  }
 
-  LaunchedEffect(locationPermissionState.revokedPermissions) {
-    // Update the map and start/stop listening for location updates
-    LocationUtils.onLocationPermissionsUpdated(
-        context,
-        locationPermissionState,
-        mapView,
-        locationUpdatedCallback,
-        centerMapOnUserPosition,
-        userLocationMarker)
+    LaunchedEffect(locationPermissionState.revokedPermissions) {
+      // Update the map and start/stop listening for location updates
+      LocationUtils.onLocationPermissionsUpdated(
+          context,
+          locationPermissionState,
+          mapView,
+          locationUpdatedCallback,
+          centerMapOnUserPosition,
+          userLocationMarker)
 
-    // Once the update has been made, reset the flag to avoid re-centering the map
-    centerMapOnUserPosition = false
-  }
-
-  DisposableEffect(Unit) {
-    val hasLocationPermission = LocationUtils.hasLocationPermission(locationPermissionState)
-    Log.d("RunHikeScreen", "Has location permission: $hasLocationPermission")
-    // If the user has granted at least one of the two permissions, center the map
-    // on the user's location
-    if (hasLocationPermission) {
-      MapUtils.centerMapOnLocation(context, mapView, userLocationMarker)
+      // Once the update has been made, reset the flag to avoid re-centering the map
+      centerMapOnUserPosition = false
     }
-    // If the user yet needs to grant the permission, show a custom educational
-    // alert
-    else {
-      showLocationPermissionDialog = true
+
+    DisposableEffect(Unit) {
+      val hasLocationPermission = LocationUtils.hasLocationPermission(locationPermissionState)
+      Log.d("RunHikeScreen", "Has location permission: $hasLocationPermission")
+      // If the user has granted at least one of the two permissions, center the map
+      // on the user's location
+      if (hasLocationPermission) {
+        MapUtils.centerMapOnLocation(context, mapView, userLocationMarker)
+      }
+      // If the user yet needs to grant the permission, show a custom educational
+      // alert
+      else {
+        showLocationPermissionDialog = true
+      }
+      onDispose {
+        LocationUtils.stopUserLocationUpdates(context, locationUpdatedCallback)
+        mapView.overlays.clear()
+        mapView.onPause()
+        mapView.onDetach()
+      }
     }
-    onDispose {
-      LocationUtils.stopUserLocationUpdates(context, locationUpdatedCallback)
-      mapView.overlays.clear()
-      mapView.onPause()
-      mapView.onDetach()
-    }
-  }
 
-  // Show a dialog to explain the user why the location permission is needed
-  // Only shows when the user has clicked on the "center map on my position" button
-  LocationPermissionAlertDialog(
-      show = showLocationPermissionDialog,
-      onConfirm = {
-        showLocationPermissionDialog = false
-        centerMapOnUserPosition = true
-      },
-      onDismiss = {
-        showLocationPermissionDialog = false
-        centerMapOnUserPosition = false
-        wantToNavigateBack = true
-      },
-      simpleMessage = !locationPermissionState.shouldShowRationale,
-      locationPermissionState = locationPermissionState,
-      context = context)
-
-  Box(modifier = Modifier.fillMaxSize().testTag(Screen.RUN_HIKE)) {
-    // Back Button at the top of the screen
-    BackButton(
-        navigationActions = navigationActions,
-        modifier =
-            Modifier.padding(top = 40.dp, start = 16.dp, end = 16.dp)
-                .testTag(RunHikeScreen.TEST_TAG_BACK_BUTTON),
-        onClick = { wantToNavigateBack = true })
-
-    // Button to center the map on the user's location
-    MapMyLocationButton(
-        onClick = {
+    // Show a dialog to explain the user why the location permission is needed
+    // Only shows when the user has clicked on the "center map on my position" button
+    LocationPermissionAlertDialog(
+        show = showLocationPermissionDialog,
+        onConfirm = {
+          showLocationPermissionDialog = false
           centerMapOnUserPosition = true
-          if (userLocationMarker != null && userLocationMarker?.position != null)
-              MapUtils.centerMapOnLocation(mapView, userLocationMarker!!.position)
         },
-        modifier =
-            Modifier.align(Alignment.BottomStart)
-                .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
-                .testTag(RunHikeScreen.TEST_TAG_CENTER_MAP_BUTTON))
+        onDismiss = {
+          showLocationPermissionDialog = false
+          centerMapOnUserPosition = false
+          wantToNavigateBack = true
+        },
+        simpleMessage = !locationPermissionState.shouldShowRationale,
+        locationPermissionState = locationPermissionState,
+        context = context)
 
-    // Zoom buttons at the bottom right of the screen
-    ZoomMapButton(
-        onZoomIn = { mapView.controller.zoomIn() },
-        onZoomOut = { mapView.controller.zoomOut() },
-        modifier =
-            Modifier.align(Alignment.BottomEnd)
-                .padding(bottom = RunHikeScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
-                .testTag(RunHikeScreen.TEST_TAG_ZOOM_BUTTONS))
+    Box(modifier = Modifier.fillMaxSize().testTag(Screen.RUN_HIKE)) {
+      // Back Button at the top of the screen
+      BackButton(
+          navigationActions = navigationActions,
+          modifier =
+              Modifier.padding(start = 16.dp, end = 16.dp)
+                  .safeDrawingPadding()
+                  .testTag(RunHikeScreen.TEST_TAG_BACK_BUTTON),
+          onClick = { wantToNavigateBack = true })
 
-    // Display the bottom sheet with the hike details
-    RunHikeBottomSheet(hike = hike, onStopTheRun = { wantToNavigateBack = true })
+      // Button to center the map on the user's location
+      MapMyLocationButton(
+          onClick = {
+            centerMapOnUserPosition = true
+            if (userLocationMarker != null && userLocationMarker?.position != null)
+                MapUtils.centerMapOnLocation(mapView, userLocationMarker!!.position)
+          },
+          modifier =
+              Modifier.align(Alignment.BottomStart)
+                  .padding(bottom = RunHikeScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
+                  .testTag(RunHikeScreen.TEST_TAG_CENTER_MAP_BUTTON))
+
+      // Zoom buttons at the bottom right of the screen
+      ZoomMapButton(
+          onZoomIn = { mapView.controller.zoomIn() },
+          onZoomOut = { mapView.controller.zoomOut() },
+          modifier =
+              Modifier.align(Alignment.BottomEnd)
+                  .padding(bottom = RunHikeScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
+                  .testTag(RunHikeScreen.TEST_TAG_ZOOM_BUTTONS))
+
+      // Display the bottom sheet with the hike details
+      RunHikeBottomSheet(
+          hike = hike,
+          completionPercentage = completionPercentage,
+          userElevation = userElevation,
+          onStopTheRun = { wantToNavigateBack = true })
+    }
   }
 }
 
@@ -261,21 +291,24 @@ private fun RunHikeContent(hike: DetailedHike, navigationActions: NavigationActi
  * @param userLocationMarker The marker representing the previous user's location on the map
  * @param mapView The map view where the user's location is displayed
  * @param hike The hike where the user is running
+ * @return A triple with the updated user's location marker, the completion percentage of the hike
+ *   and the elevation of the user's location.
  */
 private fun parseLocationUpdate(
     locationResult: LocationResult,
     userLocationMarker: Marker?,
     mapView: MapView,
     hike: DetailedHike
-): Marker? {
+): Triple<Marker?, Int?, Double?> {
   if (locationResult.lastLocation == null) {
     MapUtils.clearUserPosition(userLocationMarker, mapView, invalidate = true)
-    return null
+    return Triple(null, null, null)
   }
 
   val loc = locationResult.lastLocation!!
   val routeProjectionResponse =
-      LocationUtils.projectLocationOnHike(LatLong(loc.latitude, loc.longitude), hike) ?: return null
+      LocationUtils.projectLocationOnHike(LatLong(loc.latitude, loc.longitude), hike)
+          ?: return Triple(null, null, null)
 
   val newLocation =
       if (routeProjectionResponse.distanceFromRoute > RunHikeScreen.MAX_DISTANCE_TO_CONSIDER_HIKE) {
@@ -294,22 +327,38 @@ private fun parseLocationUpdate(
         }
       }
 
-  return MapUtils.updateUserPosition(userLocationMarker, mapView, newLocation)
+  val marker = MapUtils.updateUserPosition(userLocationMarker, mapView, newLocation)
+  // Progress distance is in meters, hike distance is in kilometers
+  val completionPercentage =
+      if (routeProjectionResponse.distanceFromRoute > RunHikeScreen.MAX_DISTANCE_TO_CONSIDER_HIKE)
+          null
+      else (routeProjectionResponse.progressDistance * 0.1 / hike.distance).toInt()
+  val currentElevation =
+      if (routeProjectionResponse.distanceFromRoute > RunHikeScreen.MAX_DISTANCE_TO_CONSIDER_HIKE)
+          null
+      else routeProjectionResponse.projectedLocationElevation
+  return Triple(marker, completionPercentage, currentElevation)
 }
 
 @Composable
-private fun runHikeMap(hike: DetailedHike): MapView {
+fun runHikeMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel): MapView {
   val context = LocalContext.current
-  val routeZoomLevel = MapUtils.calculateBestZoomLevel(hike.bounds).toDouble()
+  val hikeZoomLevel = MapUtils.calculateBestZoomLevel(hike.bounds).toDouble()
   val hikeCenter = MapUtils.getGeographicalCenter(hike.bounds)
+  val facilities by facilitiesViewModel.facilities.collectAsState()
+
+  // Add a state to force re-triggering effects when reentering screen
+  var shouldLoadFacilities by remember { mutableStateOf(true) }
 
   // Avoid re-creating the MapView on every recomposition
   val mapView = remember {
     MapView(context).apply {
-      controller.setZoom(routeZoomLevel)
+      // Set map's initial state
+      controller.setZoom(hikeZoomLevel)
       controller.setCenter(hikeCenter)
       // Limit the zoom to avoid the user zooming out or out too much
-      minZoomLevel = routeZoomLevel
+      minZoomLevel = hikeZoomLevel
+      maxZoomLevel = MAP_MAX_ZOOM
       // Avoid repeating the map when the user reaches the edge or zooms out
       // We keep the horizontal repetition enabled to allow the user to scroll the map
       // horizontally without limits (from Asia to America, for example)
@@ -322,6 +371,38 @@ private fun runHikeMap(hike: DetailedHike): MapView {
     }
   }
 
+  // Create state values that we can actually observe in the LaunchedEffect
+  // We keep our StateFlows for debouncing
+  val boundingBoxState = remember { MutableStateFlow<BoundingBox?>(null) }
+  val zoomLevelState = remember { MutableStateFlow<Double?>(null) }
+
+  // This effect handles both initial facility display and subsequent updates
+  // It triggers when facilities are loaded or when the map view changes
+  shouldLoadFacilities =
+      MapUtils.launchedEffectLoadingOfFacilities(
+          facilities, shouldLoadFacilities, mapView, facilitiesViewModel, hike, context)
+
+  // This solves the bug of the screen freezing by properly cleaning up resources
+  DisposableEffect(Unit) {
+    onDispose {
+      mapView.onPause()
+      mapView.onDetach()
+      mapView.overlayManager.clear()
+      mapView.tileProvider.clearTileCache()
+      // Set flag to reload facilities when returning to screen
+      shouldLoadFacilities = true
+    }
+  }
+
+  // This LaunchedEffect handles map updates with debouncing to prevent too frequent refreshes
+  MapUtils.LaunchedEffectFacilitiesDisplay(
+      mapView, boundingBoxState, zoomLevelState, facilitiesViewModel, hike, context)
+
+  MapUtils.LaunchedEffectMapviewListener(mapView, hike, boundingBoxState, zoomLevelState, false)
+
+  // Show the selected hike on the map
+  // OnLineClick does nothing, the line should not be clickable
+  Log.d(HikeDetailScreen.LOG_TAG, "Drawing hike on map: ${hike.bounds}")
   MapUtils.showHikeOnMap(
       mapView = mapView, waypoints = hike.waypoints, color = hike.color, onLineClick = {})
 
@@ -337,14 +418,27 @@ private fun runHikeMap(hike: DetailedHike): MapView {
                       RunHikeScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT -
                           RunHikeScreen.MAP_BOTTOM_PADDING_ADJUSTMENT)
               .testTag(RunHikeScreen.TEST_TAG_MAP))
-
   return mapView
+}
+
+@Composable
+private fun LaunchedEffectMapviewListener(
+    mapView: MapView,
+    boundingBoxState: MutableStateFlow<BoundingBox?>,
+    zoomLevelState: MutableStateFlow<Double?>
+) {
+  mapView.addOnFirstLayoutListener { _, _, _, _, _ ->
+    boundingBoxState.value = mapView.boundingBox
+    zoomLevelState.value = mapView.zoomLevelDouble
+  }
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
 private fun RunHikeBottomSheet(
     hike: DetailedHike,
+    completionPercentage: Int? = null,
+    userElevation: Double? = null,
     onStopTheRun: () -> Unit,
 ) {
   val scaffoldState = rememberBottomSheetScaffoldState()
@@ -353,6 +447,8 @@ private fun RunHikeBottomSheet(
       scaffoldState = scaffoldState,
       sheetContainerColor = MaterialTheme.colorScheme.surface,
       sheetPeekHeight = RunHikeScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT,
+      // Overwrites the device's max sheet width to avoid the bottomSheet not being wide enough
+      sheetMaxWidth = Integer.MAX_VALUE.dp,
       modifier = Modifier.testTag(RunHikeScreen.TEST_TAG_BOTTOM_SHEET),
       sheetContent = {
         Column(
@@ -390,9 +486,13 @@ private fun RunHikeBottomSheet(
                   )
                   Text(
                       // Displays the progress percentage below the graph
-                      // TODO hardcoded as 23% for now
                       text =
-                          stringResource(R.string.run_hike_screen_progress_percentage_format, 23),
+                          if (completionPercentage == null)
+                              stringResource(R.string.run_hike_screen_progress_percentage_no_data)
+                          else
+                              stringResource(
+                                  R.string.run_hike_screen_progress_percentage_format,
+                                  completionPercentage),
                       style = MaterialTheme.typography.bodyLarge,
                       color = hikeColor,
                       fontWeight = FontWeight.Bold,
@@ -416,8 +516,13 @@ private fun RunHikeBottomSheet(
 
             DetailRow(
                 label = stringResource(R.string.run_hike_screen_label_current_elevation),
-                // TODO hardcoded to 50m for now
-                value = stringResource(R.string.run_hike_screen_value_format_current_elevation, 50))
+                value =
+                    if (userElevation == null)
+                        stringResource(R.string.run_hike_screen_value_current_elevation_no_data)
+                    else
+                        stringResource(
+                            R.string.run_hike_screen_value_format_current_elevation,
+                            userElevation.roundToInt()))
             DetailRow(
                 label = stringResource(R.string.run_hike_screen_label_elevation_gain),
                 value =

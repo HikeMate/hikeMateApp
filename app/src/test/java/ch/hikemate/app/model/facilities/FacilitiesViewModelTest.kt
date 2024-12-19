@@ -1,6 +1,9 @@
 package ch.hikemate.app.model.facilities
 
+import ch.hikemate.app.model.facilities.FacilitiesViewModel.Companion.MIN_ZOOM_FOR_FACILITIES
 import ch.hikemate.app.model.route.Bounds
+import ch.hikemate.app.model.route.DetailedHike
+import ch.hikemate.app.model.route.HikeDifficulty
 import ch.hikemate.app.model.route.LatLong
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -11,6 +14,8 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Before
@@ -21,11 +26,15 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.osmdroid.util.BoundingBox
 
 class FacilitiesViewModelTest {
 
   private lateinit var mockFacilitiesRepository: FacilitiesRepositoryOverpass
   private lateinit var testDispatcher: TestDispatcher
+  private lateinit var mockHikeRoute: DetailedHike
+
+  private val testBoundingBox = BoundingBox(46.51, 6.62, 46.5, 6.6) // north, east, south, west
 
   private lateinit var facilitiesViewModel: FacilitiesViewModel // SUT
 
@@ -40,6 +49,9 @@ class FacilitiesViewModelTest {
 
     mockFacilitiesRepository = mock()
     facilitiesViewModel = FacilitiesViewModel(mockFacilitiesRepository, testDispatcher)
+    testDispatcher = StandardTestDispatcher()
+    Dispatchers.setMain(testDispatcher)
+    mockHikeRoute = mock()
   }
 
   @OptIn(ExperimentalCoroutinesApi::class)
@@ -228,5 +240,103 @@ class FacilitiesViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     verify(mockFacilitiesRepository, times(2)).getFacilities(any(), any(), any())
+  }
+
+  @Test
+  fun testFilterFacilities_zoomBelowMinimum() = runTest {
+    var onSuccessCalled = false
+    var onNoFacilitiesCalled = false
+
+    // First load facilities through fetchFacilitiesForHike
+    `when`(mockFacilitiesRepository.getFacilities(any(), any(), any())).then {
+      val onSuccess = it.getArgument<(List<Facility>) -> Unit>(1)
+      onSuccess(testFacilities)
+    }
+
+    // Setup a mock hike with the test bounds
+    val mockHike =
+        DetailedHike(
+            id = "test",
+            bounds = testBounds,
+            waypoints = listOf(LatLong(46.505, 6.61)),
+            elevation = listOf(0.0),
+            distance = 0.0,
+            elevationGain = 0.0,
+            estimatedTime = 0.0,
+            difficulty = HikeDifficulty.EASY,
+            color = 0,
+            isSaved = false,
+            plannedDate = null,
+            name = "",
+            description = "")
+
+    // Load facilities first
+    facilitiesViewModel.fetchFacilitiesForHike(mockHike)
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    facilitiesViewModel.filterFacilitiesForDisplay(
+        bounds = testBoundingBox,
+        zoomLevel = MIN_ZOOM_FOR_FACILITIES - 1,
+        hikeRoute = mockHike,
+        onSuccess = {
+          onSuccessCalled = true
+          fail("onSuccess should not be called")
+        },
+        onNoFacilitiesForState = { onNoFacilitiesCalled = true })
+
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    assertTrue("onNoFacilitiesForState should be called", onNoFacilitiesCalled)
+    assertFalse("onSuccess should not be called", onSuccessCalled)
+  }
+
+  @Test
+  fun testFetchFacilitiesForHike_updatesState() = runTest {
+    val mockHike =
+        DetailedHike(
+            id = "test",
+            bounds = testBounds,
+            waypoints = listOf(LatLong(46.505, 6.61)),
+            elevation = listOf(0.0),
+            distance = 0.0,
+            elevationGain = 0.0,
+            estimatedTime = 0.0,
+            difficulty = HikeDifficulty.EASY,
+            color = 0,
+            isSaved = false,
+            plannedDate = null,
+            name = "",
+            description = "")
+
+    `when`(mockFacilitiesRepository.getFacilities(any(), any(), any())).then {
+      val onSuccess = it.getArgument<(List<Facility>) -> Unit>(1)
+      onSuccess(testFacilities)
+    }
+
+    // Initially facilities should be null
+    assertNull(facilitiesViewModel.facilities.value)
+
+    facilitiesViewModel.fetchFacilitiesForHike(mockHike)
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // After fetching, facilities should be updated
+    assertEquals(testFacilities, facilitiesViewModel.facilities.value)
+  }
+
+  @Test
+  fun testFacilitiesLoadBeforeFiltering() = runTest {
+    var filteringAttempted = false
+
+    facilitiesViewModel.filterFacilitiesForDisplay(
+        bounds = testBoundingBox,
+        zoomLevel = MIN_ZOOM_FOR_FACILITIES + 1,
+        hikeRoute = mockHikeRoute,
+        onSuccess = { filteringAttempted = true },
+        onNoFacilitiesForState = { filteringAttempted = true })
+
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // No callbacks should be executed if facilities aren't loaded
+    assertFalse("Filtering should not proceed without facilities", filteringAttempted)
   }
 }

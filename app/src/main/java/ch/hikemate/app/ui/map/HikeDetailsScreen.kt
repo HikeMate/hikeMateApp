@@ -28,6 +28,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DatePickerState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -35,6 +36,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
@@ -58,6 +60,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.hikemate.app.R
 import ch.hikemate.app.model.authentication.AuthViewModel
+import ch.hikemate.app.model.facilities.FacilitiesViewModel
 import ch.hikemate.app.model.profile.HikingLevel
 import ch.hikemate.app.model.profile.ProfileViewModel
 import ch.hikemate.app.model.route.DetailedHike
@@ -90,9 +93,9 @@ import ch.hikemate.app.utils.humanReadableFormat
 import com.google.firebase.Timestamp
 import java.util.Date
 import java.util.Locale
-import kotlin.math.max
-import kotlin.math.min
 import kotlin.math.roundToInt
+import kotlinx.coroutines.flow.MutableStateFlow
+import org.osmdroid.util.BoundingBox
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
@@ -102,6 +105,9 @@ object HikeDetailScreen {
   const val MAP_MAX_LONGITUDE = 180.0
   const val MAP_MIN_LONGITUDE = -180.0
   const val MAP_BOUNDS_MARGIN: Int = 100
+
+  const val DEBOUNCE_DURATION = 500L
+
   val BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT = 400.dp
   val MAP_BOTTOM_PADDING_ADJUSTMENT = 20.dp
 
@@ -125,7 +131,8 @@ fun HikeDetailScreen(
     hikesViewModel: HikesViewModel,
     profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory),
     authViewModel: AuthViewModel,
-    navigationActions: NavigationActions
+    navigationActions: NavigationActions,
+    facilitiesViewModel: FacilitiesViewModel
 ) {
   // Load the user's profile to get their hiking level
   LaunchedEffect(Unit) {
@@ -137,7 +144,6 @@ fun HikeDetailScreen(
     // Load or reload the saved hikes list to see if the currently selected one is saved
     hikesViewModel.refreshSavedHikesCache()
   }
-
   val selectedHike by hikesViewModel.selectedHike.collectAsState()
 
   // Gets initialized here so that the LaunchedEffect has access to it. The value is only actually
@@ -174,6 +180,9 @@ fun HikeDetailScreen(
       withDetailedHike = { detailedHike ->
         val errorMessageIdState = profileViewModel.errorMessageId.collectAsState()
         val profileState = profileViewModel.profile.collectAsState()
+
+        LaunchedEffect(Unit) { facilitiesViewModel.fetchFacilitiesForHike(detailedHike) }
+
         AsyncStateHandler(
             errorMessageIdState = errorMessageIdState,
             actionContentDescriptionStringId = R.string.go_back,
@@ -185,9 +194,15 @@ fun HikeDetailScreen(
             valueState = profileState,
         ) { profile ->
           Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {
+
             // Display the hike's actual information
             HikeDetailsContent(
-                detailedHike, mapViewState, navigationActions, hikesViewModel, profile.hikingLevel)
+                detailedHike,
+                mapViewState,
+                navigationActions,
+                hikesViewModel,
+                profile.hikingLevel,
+                facilitiesViewModel)
           }
         }
       },
@@ -199,7 +214,9 @@ fun HikeDetailScreen(
             actionIcon = Icons.AutoMirrored.Filled.ArrowBack,
             actionContentDescriptionStringId = R.string.go_back,
             onAction = { hikesViewModel.unselectHike() })
-      })
+      },
+      navigationActions = navigationActions,
+      onBackAction = { hikesViewModel.unselectHike() })
 }
 
 @Composable
@@ -208,11 +225,14 @@ fun HikeDetailsContent(
     mapViewState: MutableState<MapView?>,
     navigationActions: NavigationActions,
     hikesViewModel: HikesViewModel,
-    userHikingLevel: HikingLevel
+    userHikingLevel: HikingLevel,
+    facilitiesViewModel: FacilitiesViewModel
 ) {
+
   Box(modifier = Modifier.fillMaxSize().testTag(Screen.HIKE_DETAILS)) {
     // Display the map and the zoom buttons
-    mapViewState.value = hikeDetailsMap(hike)
+
+    mapViewState.value = hikeDetailsMap(hike, facilitiesViewModel)
 
     // Display the back button on top of the map
     BackButton(
@@ -226,7 +246,7 @@ fun HikeDetailsContent(
         onZoomOut = { mapViewState.value?.controller?.zoomOut() },
         modifier =
             Modifier.align(Alignment.BottomEnd)
-                .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
+                .padding(bottom = HikeDetailScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
 
     // Prevent the app from crashing when the "run hike" button is spammed
     var wantToRunHike by remember { mutableStateOf(false) }
@@ -236,19 +256,21 @@ fun HikeDetailsContent(
         wantToRunHike = false
       }
     }
-
     // Display the details of the hike at the bottom of the screen
-    HikesDetailsBottomScaffold(
+    HikeDetailsBottomScaffold(
         hike, hikesViewModel, userHikingLevel, onRunThisHike = { wantToRunHike = true })
   }
 }
 
 @Composable
-fun hikeDetailsMap(hike: DetailedHike): MapView {
+fun hikeDetailsMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel): MapView {
   val context = LocalContext.current
-
   val hikeZoomLevel = MapUtils.calculateBestZoomLevel(hike.bounds).toDouble()
   val hikeCenter = MapUtils.getGeographicalCenter(hike.bounds)
+  val facilities by facilitiesViewModel.facilities.collectAsState()
+
+  // Add a state to force re-triggering effects when reentering screen
+  var shouldLoadFacilities by remember { mutableStateOf(true) }
 
   // Avoid re-creating the MapView on every recomposition
   val mapView = remember {
@@ -271,25 +293,39 @@ fun hikeDetailsMap(hike: DetailedHike): MapView {
     }
   }
 
-  // When the map is ready, it will have computed its bounding box
-  mapView.addOnFirstLayoutListener { _, _, _, _, _ ->
-    // Limit the vertical scrollable area to avoid the user scrolling too far from the hike
-    mapView.setScrollableAreaLimitLatitude(
-        min(MapScreen.MAP_MAX_LATITUDE, mapView.boundingBox.latNorth),
-        max(MapScreen.MAP_MIN_LATITUDE, mapView.boundingBox.latSouth),
-        HikeDetailScreen.MAP_BOUNDS_MARGIN)
-    if (hike.bounds.maxLon < HikeDetailScreen.MAP_MAX_LONGITUDE ||
-        hike.bounds.minLon > HikeDetailScreen.MAP_MIN_LONGITUDE) {
-      mapView.setScrollableAreaLimitLongitude(
-          max(HikeDetailScreen.MAP_MIN_LONGITUDE, mapView.boundingBox.lonWest),
-          min(HikeDetailScreen.MAP_MAX_LONGITUDE, mapView.boundingBox.lonEast),
-          HikeDetailScreen.MAP_BOUNDS_MARGIN)
+  // Create state values that we can actually observe in the LaunchedEffect
+  // We keep our StateFlows for debouncing
+  val boundingBoxState = remember { MutableStateFlow<BoundingBox?>(null) }
+  val zoomLevelState = remember { MutableStateFlow<Double?>(null) }
+
+  // This effect handles both initial facility display and subsequent updates
+  // It triggers when facilities are loaded or when the map view changes
+  shouldLoadFacilities =
+      MapUtils.launchedEffectLoadingOfFacilities(
+          facilities, shouldLoadFacilities, mapView, facilitiesViewModel, hike, context)
+
+  // This solves the bug of the screen freezing by properly cleaning up resources
+  DisposableEffect(Unit) {
+    onDispose {
+      mapView.onPause()
+      mapView.onDetach()
+      mapView.overlayManager.clear()
+      mapView.tileProvider.clearTileCache()
+      // Set flag to reload facilities when returning to screen
+      shouldLoadFacilities = true
     }
   }
 
+  // This LaunchedEffect handles map updates with debouncing to prevent too frequent refreshes
+  MapUtils.LaunchedEffectFacilitiesDisplay(
+      mapView, boundingBoxState, zoomLevelState, facilitiesViewModel, hike, context)
+
+  // When the map is ready, it will have computed its bounding box
+  MapUtils.LaunchedEffectMapviewListener(mapView, hike, boundingBoxState, zoomLevelState)
+
   // Show the selected hike on the map
   // OnLineClick does nothing, the line should not be clickable
-  Log.d("HikeDetailScreen", "Drawing hike on map: ${hike.bounds}")
+  Log.d(HikeDetailScreen.LOG_TAG, "Drawing hike on map: ${hike.bounds}")
   MapUtils.showHikeOnMap(
       mapView = mapView, waypoints = hike.waypoints, color = hike.color, onLineClick = {})
 
@@ -318,7 +354,7 @@ fun hikeDetailsMap(hike: DetailedHike): MapView {
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HikesDetailsBottomScaffold(
+fun HikeDetailsBottomScaffold(
     detailedHike: DetailedHike,
     hikesViewModel: HikesViewModel,
     userHikingLevel: HikingLevel,
@@ -335,6 +371,8 @@ fun HikesDetailsBottomScaffold(
       scaffoldState = scaffoldState,
       sheetContainerColor = MaterialTheme.colorScheme.surface,
       sheetPeekHeight = HikeDetailScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT,
+      // Overwrites the device's max sheet width to avoid the bottomSheet not being wide enough
+      sheetMaxWidth = Integer.MAX_VALUE.dp,
       sheetContent = {
         Column(
             modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -454,7 +492,12 @@ fun DateDetailRow(
     updatePlannedDate: (Timestamp?) -> Unit
 ) {
   val showingDatePicker = remember { mutableStateOf(false) }
-  val datePickerState = rememberDatePickerState()
+  val datePickerState =
+      rememberDatePickerState(
+          initialSelectedDateMillis = plannedDate?.toDate()?.time ?: System.currentTimeMillis(),
+      )
+
+  var previouslySelectedDate by remember { mutableStateOf<Long?>(plannedDate?.toDate()?.time) }
 
   fun showDatePicker() {
     showingDatePicker.value = true
@@ -476,17 +519,33 @@ fun DateDetailRow(
               }
         },
         confirmButton = {
+          val selectedDate = datePickerState.selectedDateMillis
+          val actionIsToPlan = selectedDate != previouslySelectedDate || selectedDate == null
+
           Button(
               modifier = Modifier.testTag(TEST_TAG_DATE_PICKER_CONFIRM_BUTTON),
               onClick = {
-                if (datePickerState.selectedDateMillis != null) {
-                  updatePlannedDate(Timestamp(Date(datePickerState.selectedDateMillis!!)))
-                }
-
+                previouslySelectedDate =
+                    confirmDateDetailButton(
+                        datePickerState, previouslySelectedDate, updatePlannedDate)
                 dismissDatePicker()
-              }) {
-                Text(text = stringResource(R.string.hike_detail_screen_date_picker_confirm_button))
-              }
+              },
+              colors =
+                  if (actionIsToPlan)
+                      ButtonDefaults.buttonColors(
+                          containerColor = MaterialTheme.colorScheme.primary)
+                  else
+                      ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+          ) {
+            Text(
+                text =
+                    // If the date selected is the same date that is already saved in the hike give
+                    // the
+                    // user the option to un-plan the hike
+                    if (actionIsToPlan)
+                        stringResource(R.string.hike_detail_screen_date_picker_confirm_button)
+                    else stringResource(R.string.hike_detail_screen_date_picker_unplan_hike_button))
+          }
         },
     ) {
       DatePicker(state = datePickerState)
@@ -561,6 +620,37 @@ fun DateDetailRow(
   }
 }
 
+/**
+ * This function is called when the user confirms the date selection in the date picker. It updates
+ * the hike's planned date. If the same date is selected twice, the hike is un-planned.
+ *
+ * @param datePickerState The state of the date picker
+ * @param previouslySelectedDate The previously selected date
+ * @param updatePlannedDate The function to update the hike's planned date
+ * @return The selected date in milliseconds if it is different from the previously selected date,
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+private fun confirmDateDetailButton(
+    datePickerState: DatePickerState,
+    previouslySelectedDate: Long?,
+    updatePlannedDate: (Timestamp?) -> Unit
+): Long? {
+  val selectedDateMillis = datePickerState.selectedDateMillis
+
+  // If the same date is selected twice, unselect it, else save the date
+  return if (selectedDateMillis == previouslySelectedDate) {
+    updatePlannedDate(null)
+    null
+  } else {
+    if (selectedDateMillis != null) {
+      updatePlannedDate(Timestamp(Date(selectedDateMillis)))
+      selectedDateMillis
+    } else {
+      null
+    }
+  }
+}
+
 @Composable
 fun AppropriatenessMessage(isSuitable: Boolean) {
   // The text, icon and color of the card's message are chosen based on whether the hike is suitable
@@ -576,8 +666,9 @@ fun AppropriatenessMessage(isSuitable: Boolean) {
 
   Row(verticalAlignment = Alignment.CenterVertically) {
     Icon(
+        // The icon is only decorative, the following message is enough for
+        // accessibility
         painter = suitableLabelIcon,
-        // The icon is only decorative, the following message is enough for accessibility
         contentDescription = null,
         tint = suitableLabelColor,
         modifier = Modifier.size(16.dp))
