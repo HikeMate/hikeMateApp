@@ -18,6 +18,7 @@ import ch.hikemate.app.model.route.LatLong
 import ch.hikemate.app.ui.map.MapInitialValues
 import ch.hikemate.app.ui.map.MapScreen
 import kotlin.math.cos
+import kotlin.math.max
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.osmdroid.events.MapListener
 import org.osmdroid.events.ScrollEvent
@@ -30,7 +31,7 @@ import org.osmdroid.views.overlay.Polyline
 
 object MapUtils {
   private const val LOG_TAG = "MapUtils"
-  const val MIN_DISTANCE_BETWEEN_FACILITIES = 15
+  private const val MIN_DISTANCE_BETWEEN_FACILITIES = 15
   const val FACILITIES_RELATED_OBJECT_NAME = "facility_marker"
 
   /**
