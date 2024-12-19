@@ -31,8 +31,8 @@
     <string name="hike_card_no_data_label">No data</string>
 
     <!-- Map Screen -->
-    <string name="map_screen_menu_button_content_description">Menu</string>
     <string name="map_screen_search_button_text">Search hikes here</string>
+    <string name="map_screen_search_button_text_short">Search here</string>
     <string name="map_screen_error_while_searching_hikes">Error while searching for hikes</string>
     <string name="map_screen_empty_hikes_list_message">
         No hikes found in the displayed area.\n\nTry zooming out or moving the map to see more hikes.
@@ -84,9 +84,6 @@
     <string name="loading_hike_elevation_retrieval_error">An error was encountered while loading the hike\'s elevation.</string>
 
     <!-- Hike Details Screen -->
-    <string name="hike_details_screen_obtaining_osm_data">Loading hike data…</string>
-    <string name="hike_details_screen_obtaining_elevation">Loading hike elevation…</string>
-    <string name="hike_details_screen_computing_details">Last computations…</string>
     <string name="hike_detail_screen_bookmark_hint_on_isSaved_true">Unsave hike</string>
     <string name="hike_detail_screen_bookmark_hint_on_isSaved_false">Save hike</string>
     <string name="hike_detail_screen_label_distance">Distance</string>
@@ -111,7 +108,7 @@
     <string name="run_hike_screen_zero_distance_progress_value">0km</string>
     <string name="run_hike_screen_distance_progress_value_format">%.2fkm</string>
     <string name="run_hike_screen_progress_percentage_format">%d%% complete</string>
-    <string name="run_hike_screen_progress_percentage_no_data">-</string>
+    <string name="run_hike_screen_progress_percentage_no_data">You\'re too far from the hike!</string>
     <string name="run_hike_screen_label_current_elevation">Current Elevation</string>
     <string name="run_hike_screen_value_format_current_elevation">%dm</string>
     <string name="run_hike_screen_value_current_elevation_no_data">-</string>
@@ -127,16 +124,11 @@
     <string name="hike_difficulty_moderate">Moderate</string>
     <string name="hike_difficulty_difficult">Difficult</string>
 
-
     <!-- Saved Hikes Screen -->
     <string name="saved_hikes_saved_label">Saved</string>
     <string name="saved_hikes_planned_label">Planned</string>
 
     <string name="saved_hikes_screen_loading_message">Loading saved hikes…</string>
-    <string name="saved_hikes_screen_generic_error">
-        An error occurred while loading saved hikes.
-        Please check your Internet connection and try again.
-    </string>
     <string name="saved_hikes_screen_refresh_button_action">Refresh</string>
     <string name="saved_hikes_screen_saved_section_title">Saved hikes</string>
     <string name="saved_hikes_screen_saved_section_empty_message">No saved hikes to display</string>
@@ -159,7 +151,7 @@
 
     <!-- Profile -->
     <string name="hiking_level_beginner">Beginner</string>
-    <string name="hiking_level_intermediate">Intermediate</string>
+    <string name="hiking_level_amateur">Amateur</string>
     <string name="hiking_level_expert">Expert</string>
 
     <!-- Profile Screen -->
@@ -168,7 +160,7 @@
     <string name="profile_screen_email_label">Email address</string>
     <string name="profile_screen_hiking_level_label">Hiking level</string>
     <string name="profile_screen_hiking_level_info_beginner">You are a beginner hiker!</string>
-    <string name="profile_screen_hiking_level_info_intermediate">You are an intermediate hiker!</string>
+    <string name="profile_screen_hiking_level_info_amateur">You are an amateur hiker!</string>
     <string name="profile_screen_hiking_level_info_expert">You are an expert hiker!</string>
     <string name="profile_screen_join_date_label">Joined HikeMate on</string>
     <string name="profile_screen_edit_profile_button_text">Edit profile</string>
@@ -186,6 +178,7 @@
     <string name="background_image_content_description">Nature image, blurred</string>
     <string name="sign_in_with_email">Sign in with Email</string>
     <string name="sign_in_with_google">Sign in with Google</string>
+    <string name="google_account_connection_ended_or_cancelled">Retry Google sign-in</string>
 
     <string name="sign_in_with_email_title">Sign in</string>
     <string name="sign_in_with_email_email_label">Email</string>
@@ -202,6 +195,7 @@
     <string name="create_account_password_mismatch_error">Passwords do not match</string>
     <string name="create_account_email_format_error">Invalid email format</string>
     <string name="create_account_fields_must_be_filled_error">All fields must be filled</string>
+    <string name="create_account_password_requirements">Password must have at least six characters.</string>
 
     <string name="error_email_and_password_must_not_be_empty">Email and password must not be empty</string>
     <string name="error_occurred_while_creating_account">An error occurred while creating the account</string>
@@ -227,11 +221,10 @@
     <string name="error_deleting_user_profile_and_saved_hikes">Error deleting user profile and saved hikes</string>
     <string name="error_re_authenticating_the_user">Error re-authenticating the user</string>
     <string name="no_user_is_currently_signed_in">No user is currently signed in</string>
+    <string name="delete_account_button_label">Delete Account</string>
 
     <!-- Error handling -->
     <string name="retry">Retry</string>
 
-
-    <string name="delete_account_button_label">Delete Account</string>
-    <string name="google_account_created_confirmation">Connected Google Account to your device successfully. Please wait while we retry the signup.</string>
+    <string name="generic_error_message_internet_connection">An error occurred. Check your internet connection. The operation might not be saved.</string>
 </resources>

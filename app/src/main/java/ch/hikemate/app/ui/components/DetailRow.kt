@@ -10,7 +10,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 object DetailRow {
@@ -30,18 +29,19 @@ object DetailRow {
 fun DetailRow(
     label: String,
     value: String,
+    modifier: Modifier = Modifier,
     valueColor: Color = MaterialTheme.colorScheme.onSurface
 ) {
   Row(
       horizontalArrangement = Arrangement.SpaceBetween,
-      modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+      modifier = modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         Text(
             text = label,
             style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier.testTag(DetailRow.TEST_TAG_DETAIL_ROW_TAG))
         Text(
             text = value,
-            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+            style = MaterialTheme.typography.bodyMedium,
             color = valueColor,
             modifier = Modifier.testTag(DetailRow.TEST_TAG_DETAIL_ROW_VALUE))
       }

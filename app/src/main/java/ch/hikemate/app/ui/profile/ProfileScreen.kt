@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -17,11 +16,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.hikemate.app.R
 import ch.hikemate.app.model.authentication.AuthViewModel
@@ -57,8 +53,8 @@ fun DisplayInfo(label: String, value: String, modifier: Modifier = Modifier) {
   Column(
       verticalArrangement = Arrangement.spacedBy(2.dp),
   ) {
-    Text(label, style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 20.sp))
-    Text(value, style = TextStyle(fontSize = 20.sp), modifier = modifier)
+    Text(label, style = MaterialTheme.typography.titleLarge)
+    Text(value, style = MaterialTheme.typography.bodyLarge, modifier = modifier)
   }
 }
 
@@ -98,19 +94,19 @@ fun ProfileScreen(
     BottomBarNavigation(
         onTabSelect = { navigationActions.navigateTo(it) },
         tabList = LIST_TOP_LEVEL_DESTINATIONS,
-        selectedItem = Route.PROFILE) { _ ->
+        selectedItem = Route.PROFILE) { p ->
           Column(
               modifier =
                   Modifier.testTag(Screen.PROFILE)
+                      .padding(p)
                       .padding(
                           start = 16.dp,
                           end = 16.dp,
-                      )
-                      .safeDrawingPadding(),
+                      ),
               verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text(
                     context.getString(R.string.profile_screen_title),
-                    style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 32.sp),
+                    style = MaterialTheme.typography.headlineLarge,
                     modifier = Modifier.testTag(ProfileScreen.TEST_TAG_TITLE))
 
                 DisplayInfo(
@@ -126,8 +122,8 @@ fun ProfileScreen(
                     (when (profile.hikingLevel) {
                       HikingLevel.BEGINNER ->
                           context.getString(R.string.profile_screen_hiking_level_info_beginner)
-                      HikingLevel.INTERMEDIATE ->
-                          context.getString(R.string.profile_screen_hiking_level_info_intermediate)
+                      HikingLevel.AMATEUR ->
+                          context.getString(R.string.profile_screen_hiking_level_info_amateur)
                       HikingLevel.EXPERT ->
                           context.getString(R.string.profile_screen_hiking_level_info_expert)
                     }),
@@ -159,11 +155,9 @@ fun ProfileScreen(
                       Text(
                           stringResource(R.string.delete_account_button_label),
                           style =
-                              TextStyle(
+                              MaterialTheme.typography.labelLarge.copy(
                                   textAlign = TextAlign.Center,
-                                  fontWeight = FontWeight.Bold,
-                                  fontSize = 20.sp,
-                                  color = MaterialTheme.colorScheme.error),
+                                  color = MaterialTheme.colorScheme.tertiary),
                       )
                     }
               }

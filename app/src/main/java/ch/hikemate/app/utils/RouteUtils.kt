@@ -8,6 +8,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
 
 object RouteUtils {
+  const val METERS_PER_KIlOMETER = 1000
   /**
    * Helper function to calculate the elevation gain based on a list of elevations.
    *
@@ -33,7 +34,8 @@ object RouteUtils {
    * @return The total distance of the hike in kilometers as a `Double`.
    */
   fun computeTotalDistance(ways: List<LatLong>): Double {
-    return ways.zipWithNext { point1, point2 -> point1.distanceTo(point2) }.sum() / 1000
+    return ways.zipWithNext { point1, point2 -> point1.distanceTo(point2) }.sum() /
+        METERS_PER_KIlOMETER
   }
 
   /**

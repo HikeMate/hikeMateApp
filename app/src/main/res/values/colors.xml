@@ -3,9 +3,4 @@
     <color name="blue">#FF3B9DE8</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="red">#FFE83B3D</color>
-
-    <color name="hike_difficulty_easy">#1B9E4D</color>
-    <color name="hike_difficulty_moderate">#FCCA03</color>
-    <color name="hike_difficulty_difficult">#F74E05</color>
 </resources>

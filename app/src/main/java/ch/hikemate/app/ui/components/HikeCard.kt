@@ -27,7 +27,6 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import ch.hikemate.app.R
 import ch.hikemate.app.ui.map.MapScreen
@@ -56,6 +55,10 @@ data class HikeCardStyleProperties(
 /**
  * A card that displays information about a hike.
  *
+ * Can display a message as well. The message is only displayed if all three of [messageContent],
+ * and the icon and color of [styleProperties] are not null. If one of them is null, the message
+ * won't be displayed.
+ *
  * @param title The title of the hike.
  * @param elevationData The elevation data to display in the graph.
  * @param onClick The callback to be called when the card is clicked.
@@ -73,7 +76,11 @@ fun HikeCard(
     styleProperties: HikeCardStyleProperties = HikeCardStyleProperties(),
     showGraph: Boolean = true,
 ) {
-  val displayMessage = !elevationData.isNullOrEmpty() && messageContent != null
+  // The message requires a content, a color and an icon to be displayed, otherwise don't display it
+  val displayMessage =
+      messageContent != null &&
+          styleProperties.messageColor != null &&
+          styleProperties.messageIcon != null
   Log.i(
       "HikeCard",
       "displayMessage: $displayMessage, title: $title, elevationData: $elevationData, messageContent: $messageContent")
@@ -92,7 +99,6 @@ fun HikeCard(
           Text(
               text = title,
               style = MaterialTheme.typography.titleLarge,
-              fontWeight = FontWeight.Bold,
               modifier = Modifier.testTag(HikeCard.TEST_TAG_HIKE_CARD_TITLE))
           Spacer(modifier = Modifier.height(8.dp))
 
@@ -110,7 +116,7 @@ fun HikeCard(
                                 fillColor =
                                     (styleProperties.graphColor
                                             ?: MaterialTheme.colorScheme.primary)
-                                        .copy(0.1f)))
+                                        .copy(0.5f)))
 
                     Spacer(modifier = Modifier.width(8.dp))
 
@@ -126,13 +132,13 @@ fun HikeCard(
                                   stringResource(
                                       R.string.hike_card_elevation_gain_value_template,
                                       elevationGain),
-                          style = MaterialTheme.typography.bodyLarge,
-                          fontWeight = FontWeight.Bold)
+                          style = MaterialTheme.typography.bodyMedium,
+                      )
                     }
                   }
 
           if (displayMessage) {
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             Row(verticalAlignment = Alignment.CenterVertically) {
               Icon(
@@ -145,7 +151,7 @@ fun HikeCard(
               Text(
                   modifier = Modifier.testTag(HikeCard.TEST_TAG_IS_SUITABLE_TEXT),
                   text = messageContent!!,
-                  style = MaterialTheme.typography.bodySmall,
+                  style = MaterialTheme.typography.bodyMedium,
                   color = styleProperties.messageColor)
             }
           }

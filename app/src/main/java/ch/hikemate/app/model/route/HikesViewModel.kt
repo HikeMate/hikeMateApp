@@ -87,6 +87,22 @@ class HikesViewModel(
 
   private val _hikeFlowsList = MutableStateFlow<List<StateFlow<Hike>>>(emptyList())
 
+  /**
+   * Indicates whether when unselecting it, the selected hike in [_selectedHike] should also be
+   * removed from [_hikeFlowsMap] (and consequently [_hikeFlowsList]).
+   *
+   * This was introduced to solve a bug where
+   * 1. Opening the details of a hike from the saved hikes screen
+   * 2. Unsaving the hike
+   *
+   * Would result in the hike being removed from the saved hikes list, hence unselected, and hence
+   * the user would be thrown out of the details screen.
+   *
+   * Instead of this behavior, we now keep the selected hike in the list as long as it is selected.
+   * When we unselect it, we check this flag to see if it should be removed from the list.
+   */
+  private var _selectedHikeShouldBeRemoved = false
+
   private val _selectedHike = MutableStateFlow<Hike?>(null)
 
   private val _mapState = MutableStateFlow(MapUtils.MapViewState())
@@ -533,6 +549,10 @@ class HikesViewModel(
   /**
    * Helper function to update the selected hike once (or before) [hikeFlows] has been updated.
    *
+   * In particular, this function will check that the selected hike stays in [_hikeFlowsMap] as long
+   * as it is selected (only [unselectHike] should remove the selected hike from the map if
+   * necessary. Uses the [_selectedHikeShouldBeRemoved] flag.
+   *
    * This function does not acquire the [_hikesMutex]. It is the responsibility of the caller to
    * call this function inside of a [Mutex.withLock] block.
    *
@@ -547,8 +567,16 @@ class HikesViewModel(
     val selectedHikeFlow = _hikeFlowsMap[selectedHike.id]
 
     if (selectedHikeFlow == null) {
-      // The selected hike is not in the map, unselect it.
-      _selectedHike.value = null
+      // Set the flag for removing the hike from the list when it is unselected
+      _selectedHikeShouldBeRemoved = true
+
+      // The selected hike is not in the map, add it back and update its saved status
+      val saved = _savedHikesMap[selectedHike.id]
+      val newValue = selectedHike.copy(isSaved = saved != null, plannedDate = saved?.date)
+      _hikeFlowsMap[selectedHike.id] = MutableStateFlow(newValue)
+      if (selectedHike != newValue) {
+        _selectedHike.value = newValue
+      }
     } else {
       // The selected hike is still in the map, update it.
       val flowValue = selectedHikeFlow.value
@@ -594,10 +622,18 @@ class HikesViewModel(
    */
   private suspend fun unselectHikeAsync() =
       _hikesMutex.withLock {
-        // Only emit null as a value if the selected hike was not already null
-        if (_selectedHike.value != null) {
-          _selectedHike.value = null
+        val selectedHike = _selectedHike.value ?: return@withLock
+
+        // See if the selected hike should be removed from the hike flows map
+        if (_selectedHikeShouldBeRemoved) {
+          _selectedHikeShouldBeRemoved = false
+          _hikeFlowsMap.remove(selectedHike.id)
+          updateHikeFlowsListAndOsmDataStatus()
         }
+
+        // We checked before the selected hike was currently not null, hence no need to check before
+        // emitting a value of null
+        _selectedHike.value = null
       }
 
   /**
@@ -688,7 +724,7 @@ class HikesViewModel(
       }
     }
 
-    // Update the selected hike's saved status, unselect it if it's not loaded anymore
+    // Update the selected hike's saved status, add it back to the hike flows list if it was removed
     updateSelectedHike()
 
     // Update the exposed list of hikes based on the map of hikes
@@ -859,14 +895,17 @@ class HikesViewModel(
           if (_loadedHikesType.value == LoadedHikes.FromSaved) {
             // Only saved hikes may stay in the list, delete the unsaved hike from the list
             _hikeFlowsMap.remove(hikeId)
+            // Update the selected hike if necessary, meaning add it back to the map if needed
+            // This must be done before updating the list from the map
+            updateSelectedHike()
+            // Update the exposed list of loaded hikes from the internal map
             updateHikeFlowsListAndOsmDataStatus()
           } else {
             // The hike can stay even if it is not saved, so update it
             hikeFlow.value = hikeFlow.value.copy(isSaved = false, plannedDate = null)
+            // Update the selected hike if necessary
+            updateSelectedHike()
           }
-
-          // Update the selected hike if necessary
-          updateSelectedHike()
 
           successful = true
         }
@@ -1032,7 +1071,7 @@ class HikesViewModel(
                   }
                   .toMap(mutableMapOf())
 
-          // Update the selected hike if necessary
+          // Update the selected hike or add it back to the hike flows map if necessary
           updateSelectedHike()
 
           // Update the exposed list of hikes based on the map of hikes

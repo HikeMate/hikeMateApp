@@ -127,6 +127,13 @@ jobs:
           name: logcat-output
           path: logcat-output.txt
 
+      - name: Upload build folder
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: build
+          path: ${{ github.workspace }}/app/build/
+
             
       # Generate coverage report
       - name: Generate coverage
