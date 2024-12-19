@@ -504,7 +504,7 @@ fun HikesDetailsBottomScaffold(
                               Handler(Looper.getMainLooper()).post {
                                 Toast.makeText(
                                         context,
-                                        context.getString(R.string.generic_error_message),
+                                        context.getString(R.string.generic_error_message_internet_connection),
                                         Toast.LENGTH_SHORT)
                                     .show()
                               }
@@ -516,7 +516,7 @@ fun HikesDetailsBottomScaffold(
                               Handler(Looper.getMainLooper()).post {
                                 Toast.makeText(
                                         context,
-                                        context.getString(R.string.generic_error_message),
+                                        context.getString(R.string.generic_error_message_internet_connection),
                                         Toast.LENGTH_SHORT)
                                     .show()
                               }
@@ -593,7 +593,7 @@ fun HikesDetailsBottomScaffold(
                       Handler(Looper.getMainLooper()).post {
                         Toast.makeText(
                                 context,
-                                context.getString(R.string.generic_error_message),
+                                context.getString(R.string.generic_error_message_internet_connection),
                                 Toast.LENGTH_SHORT)
                             .show()
                       }

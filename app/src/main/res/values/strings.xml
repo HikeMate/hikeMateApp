@@ -234,5 +234,5 @@
 
     <string name="delete_account_button_label">Delete Account</string>
     <string name="google_account_created_confirmation">Connected Google Account to your device successfully. Please wait while we retry the signup.</string>
-    <string name="generic_error_message">An error occured</string>
+    <string name="generic_error_message_internet_connection">An error occurred. Check your internet connection</string>
 </resources>
