@@ -79,7 +79,6 @@ object MapUtils {
       true
     }
 
-
     val startingMarker =
         Marker(mapView).apply {
           // Dynamically create the custom icon
