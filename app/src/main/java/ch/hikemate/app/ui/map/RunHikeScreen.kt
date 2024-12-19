@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -407,6 +408,8 @@ fun runHikeMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel): Ma
       factory = { mapView },
       modifier =
           Modifier.fillMaxWidth()
+              // To avoid a bug where the map is not fully loaded at the top
+              .offset(y = (-MapScreen.MAP_BOTTOM_PADDING_ADJUSTMENT))
               // Reserve space for the scaffold at the bottom, -20.dp to avoid the map being to
               // small under the bottomSheet
               .padding(
