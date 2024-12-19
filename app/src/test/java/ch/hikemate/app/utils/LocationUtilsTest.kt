@@ -203,7 +203,7 @@ class LocationUtilsTest {
             description = null,
             bounds = Bounds(44.0, 6.0, 46.0, 8.0),
             waypoints = listOf(LatLong(45.0, 7.0), LatLong(45.0, 8.0)),
-            elevation = listOf(0.0, 0.0),
+            elevation = listOf(150.0, 150.0),
             distance = 0.0,
             estimatedTime = 0.0,
             elevationGain = 0.0,
@@ -229,6 +229,8 @@ class LocationUtilsTest {
 
     // Progress should be distance from start to projection
     assertEquals(distanceFromSegmentStart, result.progressDistance, EPSILON)
+    assertNotNull(result.projectedLocationElevation)
+    assertEquals(result.projectedLocationElevation!!, 150.0, EPSILON)
   }
 
   @Test
@@ -249,7 +251,7 @@ class LocationUtilsTest {
                     LatLong(45.5, 7.5), // End of second segment (vertical)
                     LatLong(45.5, 8.0) // End of third segment (horizontal)
                     ),
-            elevation = listOf(0.0, 0.0, 0.0, 0.0),
+            elevation = listOf(10.0, 20.0, 30.0, 40.0),
             distance = 0.0,
             estimatedTime = 0.0,
             elevationGain = 0.0,
@@ -268,6 +270,8 @@ class LocationUtilsTest {
       // Progress should only be distance from start of first segment
       val expectedProgress = result.projectedLocation.distanceTo(route.segments[0].start)
       assertEquals(expectedProgress, result.progressDistance, EPSILON)
+      assertNotNull(result.projectedLocationElevation)
+      assertEquals(result.projectedLocationElevation!!, 10.0, EPSILON)
     }
 
     run {
@@ -283,6 +287,8 @@ class LocationUtilsTest {
       val expectedProgress =
           route.segments[0].length + result.projectedLocation.distanceTo(result.segment.start)
       assertEquals(expectedProgress, result.progressDistance, EPSILON)
+      assertNotNull(result.projectedLocationElevation)
+      assertEquals(result.projectedLocationElevation!!, 20.0, EPSILON)
     }
 
     run {
@@ -300,6 +306,8 @@ class LocationUtilsTest {
               route.segments[1].length +
               result.projectedLocation.distanceTo(result.segment.start)
       assertEquals(expectedProgress, result.progressDistance, EPSILON)
+      assertNotNull(result.projectedLocationElevation)
+      assertEquals(result.projectedLocationElevation!!, 30.0, EPSILON)
     }
   }
 

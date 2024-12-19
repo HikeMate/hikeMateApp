@@ -104,7 +104,7 @@
 
     <!-- Hike Details Screen - Date Picker -->
     <string name="hike_detail_screen_date_picker_cancel_button">Cancel</string>
-    <string name="hike_detail_screen_date_picker_confirm_button">Plan this hike!</string>
+    <string name="hike_detail_screen_date_picker_confirm_button">Plan this hike</string>
     <string name="hike_detail_screen_date_picker_unplan_hike_button">Un-plan this hike</string>
 
     <!--Run Hike Screen -->
@@ -112,8 +112,10 @@
     <string name="run_hike_screen_zero_distance_progress_value">0km</string>
     <string name="run_hike_screen_distance_progress_value_format">%.2fkm</string>
     <string name="run_hike_screen_progress_percentage_format">%d%% complete</string>
+    <string name="run_hike_screen_progress_percentage_no_data">-</string>
     <string name="run_hike_screen_label_current_elevation">Current Elevation</string>
     <string name="run_hike_screen_value_format_current_elevation">%dm</string>
+    <string name="run_hike_screen_value_current_elevation_no_data">-</string>
     <string name="run_hike_screen_label_elevation_gain">Elevation Gain</string>
     <string name="run_hike_screen_value_format_elevation_gain">%dm</string>
     <string name="run_hike_screen_label_estimated_time">Estimated time</string>

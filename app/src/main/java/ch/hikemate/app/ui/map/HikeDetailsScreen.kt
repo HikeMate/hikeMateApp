@@ -98,6 +98,7 @@ import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
@@ -220,7 +221,9 @@ fun HikeDetailScreen(
             actionIcon = Icons.AutoMirrored.Filled.ArrowBack,
             actionContentDescriptionStringId = R.string.go_back,
             onAction = { hikesViewModel.unselectHike() })
-      })
+      },
+      navigationActions = navigationActions,
+      onBackAction = { hikesViewModel.unselectHike() })
 }
 
 @Composable
@@ -348,6 +351,7 @@ fun hikeDetailsMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel)
   return mapView
 }
 
+@OptIn(FlowPreview::class)
 @Composable
 private fun LaunchedEffectFacilitiesDisplay(
     mapView: MapView,
@@ -584,7 +588,10 @@ fun DateDetailRow(
     updatePlannedDate: (Timestamp?) -> Unit
 ) {
   val showingDatePicker = remember { mutableStateOf(false) }
-  val datePickerState = rememberDatePickerState()
+  val datePickerState =
+      rememberDatePickerState(
+          initialSelectedDateMillis = plannedDate?.toDate()?.time ?: System.currentTimeMillis(),
+      )
 
   var previouslySelectedDate by remember { mutableStateOf<Long?>(plannedDate?.toDate()?.time) }
 
@@ -608,6 +615,9 @@ fun DateDetailRow(
               }
         },
         confirmButton = {
+          val selectedDate = datePickerState.selectedDateMillis
+          val actionIsToPlan = selectedDate != previouslySelectedDate || selectedDate == null
+
           Button(
               modifier = Modifier.testTag(TEST_TAG_DATE_PICKER_CONFIRM_BUTTON),
               onClick = {
@@ -615,21 +625,23 @@ fun DateDetailRow(
                     confirmDateDetailButton(
                         datePickerState, previouslySelectedDate, updatePlannedDate)
                 dismissDatePicker()
-              }) {
-                val selectedDate = datePickerState.selectedDateMillis
-
-                // If the date selected is the same date that is already saved in the hike give the
-                // user the option to un-plan the hike
-                if (selectedDate != previouslySelectedDate || selectedDate == null) {
-                  Text(
-                      text = stringResource(R.string.hike_detail_screen_date_picker_confirm_button))
-                } else {
-                  Text(
-                      text =
-                          stringResource(
-                              R.string.hike_detail_screen_date_picker_unplan_hike_button))
-                }
-              }
+              },
+              colors =
+                  if (actionIsToPlan)
+                      ButtonDefaults.buttonColors(
+                          containerColor = MaterialTheme.colorScheme.primary)
+                  else
+                      ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+          ) {
+            Text(
+                text =
+                    // If the date selected is the same date that is already saved in the hike give
+                    // the
+                    // user the option to un-plan the hike
+                    if (actionIsToPlan)
+                        stringResource(R.string.hike_detail_screen_date_picker_confirm_button)
+                    else stringResource(R.string.hike_detail_screen_date_picker_unplan_hike_button))
+          }
         },
     ) {
       DatePicker(state = datePickerState)
