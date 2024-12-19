@@ -3,7 +3,6 @@ package ch.hikemate.app.ui.theme
 import androidx.compose.ui.graphics.Color
 
 val primaryColor = Color(0xFF3B9DE8)
-val plannedDateMessageColor = Color(0xFF3B82F6)
 
 val suitableColor = Color(0xFF4CAF50)
 val challengingColor = Color(0xFFFFC107)
