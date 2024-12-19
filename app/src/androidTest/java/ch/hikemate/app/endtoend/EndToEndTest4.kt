@@ -28,6 +28,7 @@ import ch.hikemate.app.ui.map.MapScreen
 import ch.hikemate.app.ui.map.RunHikeScreen
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.utils.LocationUtils
+import ch.hikemate.app.utils.MapUtils
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationResult
@@ -81,7 +82,9 @@ class EndToEndTest4 {
     }
 
     mockkObject(LocationUtils)
+    mockkObject(MapUtils)
     every { LocationUtils.hasLocationPermission(any()) } returns true
+    every { MapUtils.centerMapOnLocation(any(), any(), any()) } returns Unit
     every {
       LocationUtils.onLocationPermissionsUpdated(
           any(), any(), any(), any<LocationCallback>(), any(), any())
