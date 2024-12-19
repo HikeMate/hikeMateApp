@@ -218,10 +218,7 @@ class EndToEndTest4 {
                   longitude = 6.551607112518172
                 })))
 
-    composeTestRule.waitUntilExactlyOneExists(
-        hasTestTag(RunHikeScreen.TEST_TAG_PROGRESS_TEXT), timeoutMillis = 10000)
-    composeTestRule.waitUntilExactlyOneExists(
-        hasTestTag(RunHikeScreen.TEST_TAG_CURRENT_ELEVATION_TEXT), timeoutMillis = 10000)
+    composeTestRule.waitForIdle()
 
     composeTestRule
         .onNodeWithTag(RunHikeScreen.TEST_TAG_PROGRESS_TEXT)
@@ -245,6 +242,8 @@ class EndToEndTest4 {
                   longitude = 6.551269708196024
                 })))
 
+    composeTestRule.waitForIdle()
+
     composeTestRule
         .onNodeWithTag(RunHikeScreen.TEST_TAG_PROGRESS_TEXT)
         .assertIsDisplayed()
@@ -266,6 +265,8 @@ class EndToEndTest4 {
                   latitude = 46.579277394466864
                   longitude = 6.543243182558365
                 })))
+
+    composeTestRule.waitForIdle()
 
     composeTestRule
         .onNodeWithTag(RunHikeScreen.TEST_TAG_PROGRESS_TEXT)
