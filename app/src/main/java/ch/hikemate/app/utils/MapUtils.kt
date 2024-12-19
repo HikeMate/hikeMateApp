@@ -42,6 +42,7 @@ object MapUtils {
   private const val LOG_TAG = "MapUtils"
   const val MIN_DISTANCE_BETWEEN_FACILITIES = 15
   const val FACILITIES_RELATED_OBJECT_NAME = "facility_marker"
+  const val ROUTE_PRIORITY_DISPLAY = 0
 
   /**
    * Shows a hike on the map.
@@ -57,17 +58,7 @@ object MapUtils {
       color: Int,
       onLineClick: () -> Unit,
   ) {
-    val line =
-        Polyline(mapView).apply {
-          setPoints(waypoints.map { GeoPoint(it.lat, it.lon) })
-          outlinePaint.color = color
-          outlinePaint.strokeWidth = MapScreen.STROKE_WIDTH
-
-          setOnClickListener { _, _, _ ->
-            onLineClick()
-            true
-          }
-        }
+    val line = Polyline()
 
     line.setPoints(waypoints.map { GeoPoint(it.lat, it.lon) })
     line.outlinePaint.color = color
@@ -96,7 +87,7 @@ object MapUtils {
         }
     // The index provides the lowest priority so that the facilities and other overlays
     // are always displayed on top of it.
-    mapView.overlays.add(0, line)
+    mapView.overlays.add(ROUTE_PRIORITY_DISPLAY, line)
     mapView.overlays.add(startingMarker)
     mapView.invalidate()
   }
