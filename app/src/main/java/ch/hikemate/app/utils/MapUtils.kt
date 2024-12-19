@@ -39,6 +39,8 @@ object MapUtils {
   private const val LOG_TAG = "MapUtils"
   const val MIN_DISTANCE_BETWEEN_FACILITIES = 15
   const val FACILITIES_RELATED_OBJECT_NAME = "facility_marker"
+  const val LINE_DISPLAY_PRIORITY = 0
+  const val LOCATION_PUCK_DISPLAY_PRIORITY = 2
 
   /**
    * Shows a hike on the map.
@@ -54,7 +56,17 @@ object MapUtils {
       color: Int,
       onLineClick: () -> Unit,
   ) {
-    val line = Polyline()
+    val line =
+        Polyline(mapView).apply {
+          setPoints(waypoints.map { GeoPoint(it.lat, it.lon) })
+          outlinePaint.color = color
+          outlinePaint.strokeWidth = MapScreen.STROKE_WIDTH
+
+          setOnClickListener { _, _, _ ->
+            onLineClick()
+            true
+          }
+        }
 
     line.setPoints(waypoints.map { GeoPoint(it.lat, it.lon) })
     line.outlinePaint.color = color
@@ -68,6 +80,7 @@ object MapUtils {
     // The index provides the lowest priority so that the facilities and other overlays
     // are always displayed on top of it.
     mapView.overlays.add(0, line)
+    mapView.invalidate()
   }
 
   /**
@@ -334,15 +347,24 @@ object MapUtils {
    * @see [displayFacilities]
    */
   fun clearFacilities(mapView: MapView) {
-    mapView.overlays.removeAll { overlay ->
-      // The relatedObject was defined in displayFacilities for easier removal of the markers.
-      overlay is Marker && overlay.relatedObject == FACILITIES_RELATED_OBJECT_NAME
+    // Keep track of removed overlays to avoid concurrent modification
+    val overlaysToRemove =
+        mapView.overlays.filter { overlay ->
+          overlay is Marker && overlay.relatedObject == FACILITIES_RELATED_OBJECT_NAME
+        }
+
+    mapView.overlays.removeAll(overlaysToRemove)
+
+    // Force garbage collection of markers
+    overlaysToRemove.forEach { overlay ->
+      if (overlay is Marker) {
+        overlay.onDetach(mapView)
+      }
     }
 
-    // Trigger the map to be drawn again
+    // Clear the MapView's cache
     mapView.invalidate()
   }
-
   /**
    * Utility function designed to set the mapView listener which updates the state of the
    * BoundingBox and the ZoomLevel
@@ -363,7 +385,6 @@ object MapUtils {
             // On a Scroll event the boundingBox will change
             event?.let {
               val newBoundingBox = mapView.boundingBox
-              Log.d("Maputils", "Callback called")
               if (newBoundingBox != boundingBoxState.value) {
                 boundingBoxState.value = newBoundingBox
               }

@@ -108,7 +108,7 @@ object HikeDetailScreen {
   const val MAP_MIN_LONGITUDE = -180.0
   const val MAP_BOUNDS_MARGIN: Int = 100
 
-  const val DEBOUNCE_DURATION = 300L
+  const val DEBOUNCE_DURATION = 500L
 
   val BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT = 400.dp
   val MAP_BOTTOM_PADDING_ADJUSTMENT = 20.dp
