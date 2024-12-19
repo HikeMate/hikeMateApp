@@ -14,7 +14,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-private val colorScheme = lightColorScheme(primary = primaryColor)
+private val colorScheme = lightColorScheme(primary = primaryColor, tertiary = tertiary)
 
 @Composable
 fun HikeMateTheme(
@@ -27,8 +27,9 @@ fun HikeMateTheme(
       when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
           val context = LocalContext.current
-          if (darkTheme) dynamicDarkColorScheme(context)
-          else dynamicLightColorScheme(context).copy(primary = primaryColor)
+          if (darkTheme)
+              dynamicDarkColorScheme(context).copy(primary = primaryColor, tertiary = tertiary)
+          else dynamicLightColorScheme(context).copy(primary = primaryColor, tertiary = tertiary)
         }
         else -> colorScheme
       }
