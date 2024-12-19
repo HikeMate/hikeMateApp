@@ -29,11 +29,12 @@ object DetailRow {
 fun DetailRow(
     label: String,
     value: String,
+    modifier: Modifier = Modifier,
     valueColor: Color = MaterialTheme.colorScheme.onSurface
 ) {
   Row(
       horizontalArrangement = Arrangement.SpaceBetween,
-      modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+      modifier = modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         Text(
             text = label,
             style = MaterialTheme.typography.bodyLarge,
