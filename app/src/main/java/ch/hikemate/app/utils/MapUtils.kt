@@ -10,16 +10,26 @@ import android.location.Location
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.content.res.AppCompatResources
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import ch.hikemate.app.R
+import ch.hikemate.app.model.facilities.FacilitiesViewModel
 import ch.hikemate.app.model.facilities.Facility
 import ch.hikemate.app.model.facilities.FacilityType.Companion.mapFacilityTypeToDrawable
 import ch.hikemate.app.model.route.Bounds
+import ch.hikemate.app.model.route.DetailedHike
 import ch.hikemate.app.model.route.LatLong
+import ch.hikemate.app.ui.map.HikeDetailScreen
 import ch.hikemate.app.ui.map.MapInitialValues
 import ch.hikemate.app.ui.map.MapScreen
 import kotlin.math.cos
 import kotlin.math.max
+import kotlin.math.min
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
 import org.osmdroid.events.MapListener
 import org.osmdroid.events.ScrollEvent
 import org.osmdroid.events.ZoomEvent
@@ -33,6 +43,7 @@ object MapUtils {
   private const val LOG_TAG = "MapUtils"
   private const val MIN_DISTANCE_BETWEEN_FACILITIES = 15
   const val FACILITIES_RELATED_OBJECT_NAME = "facility_marker"
+  const val ROUTE_PRIORITY_DISPLAY = 0
 
   /**
    * Shows a hike on the map.
@@ -75,9 +86,11 @@ object MapUtils {
             true
           })
         }
-
-    mapView.overlays.add(line)
+    // The index provides the lowest priority so that the facilities and other overlays
+    // are always displayed on top of it.
+    mapView.overlays.add(ROUTE_PRIORITY_DISPLAY, line)
     mapView.overlays.add(startingMarker)
+    mapView.invalidate()
   }
 
   /**
@@ -379,15 +392,24 @@ object MapUtils {
    * @see [displayFacilities]
    */
   fun clearFacilities(mapView: MapView) {
-    mapView.overlays.removeAll { overlay ->
-      // The relatedObject was defined in displayFacilities for easier removal of the markers.
-      overlay is Marker && overlay.relatedObject == FACILITIES_RELATED_OBJECT_NAME
+    // Keep track of removed overlays to avoid concurrent modification
+    val overlaysToRemove =
+        mapView.overlays.filter { overlay ->
+          overlay is Marker && overlay.relatedObject == FACILITIES_RELATED_OBJECT_NAME
+        }
+
+    mapView.overlays.removeAll(overlaysToRemove)
+
+    // Force garbage collection of markers
+    overlaysToRemove.forEach { overlay ->
+      if (overlay is Marker) {
+        overlay.onDetach(mapView)
+      }
     }
 
-    // Trigger the map to be drawn again
+    // Clear the MapView's cache
     mapView.invalidate()
   }
-
   /**
    * Utility function designed to set the mapView listener which updates the state of the
    * BoundingBox and the ZoomLevel
@@ -398,8 +420,8 @@ object MapUtils {
    */
   fun setMapViewListenerForStates(
       mapView: MapView,
-      boundingBoxState: MutableStateFlow<BoundingBox>,
-      zoomLevelState: MutableStateFlow<Double>
+      boundingBoxState: MutableStateFlow<BoundingBox?>,
+      zoomLevelState: MutableStateFlow<Double?>
   ) {
     // Update the map listener to just update the StateFlows
     mapView.addMapListener(
@@ -444,4 +466,140 @@ object MapUtils {
       val center: GeoPoint = MapInitialValues().mapInitialCenter,
       val zoom: Double = MapInitialValues().mapInitialZoomLevel,
   )
+
+  /**
+   * This LaunchedEffect is used for the flow that updates the facilities for the current state of
+   * the MapView. It uses a combinedFlow to make debounced updates to the facilities
+   *
+   * @param mapView
+   * @param boundingBoxState
+   * @param zoomLevelState
+   * @param facilitiesViewModel
+   * @param hike
+   * @param context
+   */
+  @OptIn(FlowPreview::class)
+  @Composable
+  fun LaunchedEffectFacilitiesDisplay(
+      mapView: MapView,
+      boundingBoxState: MutableStateFlow<BoundingBox?>,
+      zoomLevelState: MutableStateFlow<Double?>,
+      facilitiesViewModel: FacilitiesViewModel,
+      hike: DetailedHike,
+      context: Context
+  ) {
+    LaunchedEffect(Unit) {
+      setMapViewListenerForStates(mapView, boundingBoxState, zoomLevelState)
+
+      // Create our combined flow which is limited by a debounce
+      val combinedFlow =
+          combine(
+              boundingBoxState.debounce(HikeDetailScreen.DEBOUNCE_DURATION),
+              zoomLevelState.debounce(HikeDetailScreen.DEBOUNCE_DURATION)) { boundingBox, zoomLevel
+                ->
+                boundingBox to zoomLevel
+              }
+
+      try {
+        combinedFlow.collectLatest { (boundingBox, zoomLevel) ->
+          if (boundingBoxState.value == null ||
+              zoomLevelState.value == null ||
+              mapView.repository == null)
+              return@collectLatest
+          facilitiesViewModel.filterFacilitiesForDisplay(
+              bounds = boundingBox!!,
+              zoomLevel = zoomLevel!!,
+              hikeRoute = hike,
+              onSuccess = { newFacilities ->
+                clearFacilities(mapView)
+                if (newFacilities.isNotEmpty()) {
+                  displayFacilities(newFacilities, mapView, context)
+                }
+              },
+              onNoFacilitiesForState = { clearFacilities(mapView) })
+        }
+      } catch (e: Exception) {
+        Log.e(HikeDetailScreen.LOG_TAG, "Error in facility updates flow", e)
+      }
+    }
+  }
+
+  /**
+   * This LaunchedEffect used for the HikeDetails and RunHike screens is the one that sets the first
+   * display of the facilities.
+   *
+   * @param facilities
+   * @param shouldLoadFacilities
+   * @param mapView
+   * @param facilitiesViewModel
+   * @param hike
+   * @param context
+   * @return the value of the shouldLoadFacilities
+   */
+  @Composable
+  fun launchedEffectLoadingOfFacilities(
+      facilities: List<Facility>?,
+      shouldLoadFacilities: Boolean,
+      mapView: MapView,
+      facilitiesViewModel: FacilitiesViewModel,
+      hike: DetailedHike,
+      context: Context
+  ): Boolean {
+    var shouldLoadFacilitiesCopy = shouldLoadFacilities
+    LaunchedEffect(facilities, shouldLoadFacilitiesCopy) {
+      if (facilities != null && mapView.repository != null) {
+        facilitiesViewModel.filterFacilitiesForDisplay(
+            bounds = mapView.boundingBox,
+            zoomLevel = mapView.zoomLevelDouble,
+            hikeRoute = hike,
+            onSuccess = { newFacilities ->
+              clearFacilities(mapView)
+              if (newFacilities.isNotEmpty()) {
+                displayFacilities(newFacilities, mapView, context)
+              }
+            },
+            onNoFacilitiesForState = { clearFacilities(mapView) })
+        // Reset the flag after loading
+        shouldLoadFacilitiesCopy = false
+      }
+    }
+    return shouldLoadFacilitiesCopy
+  }
+
+  /**
+   * Handles mapview first layout listener.
+   *
+   * @param mapView
+   * @param hike
+   * @param boundingBoxState
+   * @param zoomLevelState
+   * @param withBoundLimits whether or not to limit the Bounds of the Hike.
+   */
+  @Composable
+  fun LaunchedEffectMapviewListener(
+      mapView: MapView,
+      hike: DetailedHike,
+      boundingBoxState: MutableStateFlow<BoundingBox?>,
+      zoomLevelState: MutableStateFlow<Double?>,
+      withBoundLimits: Boolean = true
+  ) {
+    mapView.addOnFirstLayoutListener { _, _, _, _, _ ->
+      // Limit the vertical scrollable area to avoid the user scrolling too far from the hike
+      if (withBoundLimits) {
+        mapView.setScrollableAreaLimitLatitude(
+            min(MapScreen.MAP_MAX_LATITUDE, mapView.boundingBox.latNorth),
+            max(MapScreen.MAP_MIN_LATITUDE, mapView.boundingBox.latSouth),
+            HikeDetailScreen.MAP_BOUNDS_MARGIN)
+        if (hike.bounds.maxLon < HikeDetailScreen.MAP_MAX_LONGITUDE ||
+            hike.bounds.minLon > HikeDetailScreen.MAP_MIN_LONGITUDE) {
+          mapView.setScrollableAreaLimitLongitude(
+              max(HikeDetailScreen.MAP_MIN_LONGITUDE, mapView.boundingBox.lonWest),
+              min(HikeDetailScreen.MAP_MAX_LONGITUDE, mapView.boundingBox.lonEast),
+              HikeDetailScreen.MAP_BOUNDS_MARGIN)
+        }
+        boundingBoxState.value = mapView.boundingBox
+        zoomLevelState.value = mapView.zoomLevelDouble
+      }
+    }
+  }
 }
