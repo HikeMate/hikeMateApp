@@ -169,6 +169,12 @@ object MapScreen {
    */
   const val USER_LOCATION_MARKER_ICON_SIZE = 40
 
+  /**
+   * (Config) Size of the icon representing the starting point of a hike on the map. The size is
+   * defined empirically to make the icon visible and not too big.
+   */
+  const val HIKE_STARTING_MARKER_ICON_SIZE = 40
+
   // These are the limits of the map. They are defined by the
   // latitude values that the map can display.
   // The latitude goes from -85 to 85, because going beyond

@@ -216,7 +216,9 @@ fun HikeDetailScreen(
             actionIcon = Icons.AutoMirrored.Filled.ArrowBack,
             actionContentDescriptionStringId = R.string.go_back,
             onAction = { hikesViewModel.unselectHike() })
-      })
+      },
+      navigationActions = navigationActions,
+      onBackAction = { hikesViewModel.unselectHike() })
 }
 
 @Composable
