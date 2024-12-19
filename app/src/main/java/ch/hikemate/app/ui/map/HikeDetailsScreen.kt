@@ -465,7 +465,6 @@ fun HikeDetailsBottomScaffold(
       sheetPeekHeight = HikeDetailScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT,
       // Overwrites the device's max sheet width to avoid the bottomSheet not being wide enough
       sheetMaxWidth = Integer.MAX_VALUE.dp,
-      modifier = Modifier.fillMaxWidth(),
       sheetContent = {
         Column(
             modifier = Modifier.fillMaxSize().padding(16.dp),
