@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -34,13 +35,13 @@ fun CenteredLoadingAnimation(text: String? = null, textAboveLoadingAnimation: Bo
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp)) {
           if (text != null && textAboveLoadingAnimation) {
-            Text(text = text)
+            Text(text = text, style = MaterialTheme.typography.bodyLarge)
           }
           CircularProgressIndicator(
               modifier =
                   Modifier.testTag(CenteredLoadingAnimation.TEST_TAG_CENTERED_LOADING_ANIMATION))
           if (text != null && !textAboveLoadingAnimation) {
-            Text(text = text)
+            Text(text = text, style = MaterialTheme.typography.bodyLarge)
           }
         }
   }

@@ -1,8 +1,11 @@
 package ch.hikemate.app.model.route
 
-import androidx.annotation.ColorRes
 import androidx.annotation.StringRes
+import androidx.compose.ui.graphics.Color
 import ch.hikemate.app.R
+import ch.hikemate.app.ui.theme.hikeDifficultyDifficultColor
+import ch.hikemate.app.ui.theme.hikeDifficultyEasyColor
+import ch.hikemate.app.ui.theme.hikeDifficultyModerateColor
 
 /**
  * Represents the difficulty level of a hike route.
@@ -10,10 +13,10 @@ import ch.hikemate.app.R
  * Three possible levels: easy, moderate or difficult.
  *
  * @param nameResourceId The string resource ID of the localizable name of the difficulty level
- * @param colorResourceId The color resource ID of the color associated with the difficulty level
+ * @param color The color associated with the difficulty level
  */
-enum class HikeDifficulty(@StringRes val nameResourceId: Int, @ColorRes val colorResourceId: Int) {
-  EASY(R.string.hike_difficulty_easy, R.color.hike_difficulty_easy),
-  MODERATE(R.string.hike_difficulty_moderate, R.color.hike_difficulty_moderate),
-  DIFFICULT(R.string.hike_difficulty_difficult, R.color.hike_difficulty_difficult)
+enum class HikeDifficulty(@StringRes val nameResourceId: Int, val color: Color) {
+  EASY(R.string.hike_difficulty_easy, hikeDifficultyEasyColor),
+  MODERATE(R.string.hike_difficulty_moderate, hikeDifficultyModerateColor),
+  DIFFICULT(R.string.hike_difficulty_difficult, hikeDifficultyDifficultColor)
 }

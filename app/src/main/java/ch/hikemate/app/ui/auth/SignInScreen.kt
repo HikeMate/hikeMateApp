@@ -32,16 +32,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import ch.hikemate.app.R
 import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.ui.components.AppIcon
@@ -49,7 +45,6 @@ import ch.hikemate.app.ui.components.AsyncStateHandler
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.ui.navigation.TopLevelDestinations
-import ch.hikemate.app.ui.theme.kaushanTitleFontFamily
 import ch.hikemate.app.ui.theme.primaryColor
 
 object SignInScreen {
@@ -136,14 +131,7 @@ fun SignInScreen(
                 Text(
                     modifier = Modifier.testTag(SignInScreen.TEST_TAG_TITLE),
                     text = stringResource(R.string.app_name),
-                    style =
-                        TextStyle(
-                            color = Color.White,
-                            fontFamily = kaushanTitleFontFamily,
-                            fontSize = 60.sp,
-                            fontWeight = FontWeight.Bold,
-                        ),
-                )
+                    style = MaterialTheme.typography.displayLarge)
               }
 
               // Sign in with email button
@@ -211,9 +199,8 @@ fun SignInButton(
               // Text for the button
               Text(
                   text = text,
-                  color = MaterialTheme.colorScheme.onSurface, // Text color
-                  fontSize = 18.sp, // Font size
-                  fontWeight = FontWeight.Bold,
+                  style = MaterialTheme.typography.labelLarge,
+                  color = MaterialTheme.colorScheme.onSurface,
               )
             }
       }

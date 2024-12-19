@@ -45,7 +45,7 @@ class ProfileRepositoryFirestoreTest {
           id = "1",
           name = "John Doe",
           email = "john.doe@gmail.com",
-          hikingLevel = HikingLevel.INTERMEDIATE,
+          hikingLevel = HikingLevel.AMATEUR,
           joinedDate = Timestamp(1609459200, 0))
 
   @Before
@@ -109,7 +109,7 @@ class ProfileRepositoryFirestoreTest {
     `when`(mockDocumentSnapshot.id).thenReturn("1")
     `when`(mockDocumentSnapshot.getString("name")).thenReturn("John Doe")
     `when`(mockDocumentSnapshot.getString("email")).thenReturn("john.doe@gmail.com")
-    `when`(mockDocumentSnapshot.getString("hikingLevel")).thenReturn("INTERMEDIATE")
+    `when`(mockDocumentSnapshot.getString("hikingLevel")).thenReturn("AMATEUR")
     `when`(mockDocumentSnapshot.getTimestamp("joinedDate")).thenReturn(testTimestamp)
 
     val profile = repository.documentToProfile(mockDocumentSnapshot)
@@ -117,7 +117,7 @@ class ProfileRepositoryFirestoreTest {
     assert(profile!!.id == "1")
     assert(profile.name == "John Doe")
     assert(profile.email == "john.doe@gmail.com")
-    assert(profile.hikingLevel == HikingLevel.INTERMEDIATE)
+    assert(profile.hikingLevel == HikingLevel.AMATEUR)
     assert(profile.joinedDate == testTimestamp)
   }
 
@@ -126,7 +126,7 @@ class ProfileRepositoryFirestoreTest {
     `when`(mockDocumentSnapshot.id).thenReturn("1")
     `when`(mockDocumentSnapshot.getString("name")).thenReturn("John Doe")
     `when`(mockDocumentSnapshot.getString("email")).thenThrow(RuntimeException("No email field"))
-    `when`(mockDocumentSnapshot.getString("hikingLevel")).thenReturn("INTERMEDIATE")
+    `when`(mockDocumentSnapshot.getString("hikingLevel")).thenReturn("AMATEUR")
     `when`(mockDocumentSnapshot.getTimestamp("joinedDate")).thenReturn(Timestamp(1609459200, 0))
 
     val profile = repository.documentToProfile(mockDocumentSnapshot)
@@ -160,7 +160,7 @@ class ProfileRepositoryFirestoreTest {
     `when`(mockDocumentSnapshot.id).thenReturn("1")
     `when`(mockDocumentSnapshot.getString("name")).thenReturn("John Doe")
     `when`(mockDocumentSnapshot.getString("email")).thenReturn("john.doe@gmail.com")
-    `when`(mockDocumentSnapshot.getString("hikingLevel")).thenReturn("INTERMEDIATE")
+    `when`(mockDocumentSnapshot.getString("hikingLevel")).thenReturn("AMATEUR")
     `when`(mockDocumentSnapshot.getTimestamp("joinedDate")).thenReturn(Timestamp(1609459200, 0))
 
     // Simulate the task being completed
@@ -190,7 +190,7 @@ class ProfileRepositoryFirestoreTest {
     `when`(mockDocumentSnapshot.id).thenReturn("1")
     `when`(mockDocumentSnapshot.getString("name")).thenReturn("John Doe")
     `when`(mockDocumentSnapshot.getString("email")).thenThrow(RuntimeException("No email field"))
-    `when`(mockDocumentSnapshot.getString("hikingLevel")).thenReturn("INTERMEDIATE")
+    `when`(mockDocumentSnapshot.getString("hikingLevel")).thenReturn("AMATEUR")
     `when`(mockDocumentSnapshot.getTimestamp("joinedDate")).thenReturn(Timestamp(1609459200, 0))
 
     // Simulate the task being completed

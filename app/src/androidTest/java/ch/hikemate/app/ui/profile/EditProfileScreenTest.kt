@@ -51,7 +51,7 @@ class EditProfileScreenTest : TestCase() {
           id = "1",
           name = "John Doe",
           email = "john-doe@gmail.com",
-          hikingLevel = HikingLevel.INTERMEDIATE,
+          hikingLevel = HikingLevel.AMATEUR,
           joinedDate = Timestamp.now())
 
   @Before
@@ -90,7 +90,7 @@ class EditProfileScreenTest : TestCase() {
         .onNodeWithTag(EditProfileScreen.TEST_TAG_HIKING_LEVEL_CHOICE_BEGINNER)
         .assertIsDisplayed()
     composeTestRule
-        .onNodeWithTag(EditProfileScreen.TEST_TAG_HIKING_LEVEL_CHOICE_INTERMEDIATE)
+        .onNodeWithTag(EditProfileScreen.TEST_TAG_HIKING_LEVEL_CHOICE_AMATEUR)
         .assertIsDisplayed()
     composeTestRule
         .onNodeWithTag(EditProfileScreen.TEST_TAG_HIKING_LEVEL_CHOICE_EXPERT)
@@ -114,7 +114,7 @@ class EditProfileScreenTest : TestCase() {
         .assertTextContains(profile.name)
 
     composeTestRule
-        .onNodeWithTag(EditProfileScreen.TEST_TAG_HIKING_LEVEL_CHOICE_INTERMEDIATE)
+        .onNodeWithTag(EditProfileScreen.TEST_TAG_HIKING_LEVEL_CHOICE_AMATEUR)
         .assertIsSelected()
     composeTestRule
         .onNodeWithTag(EditProfileScreen.TEST_TAG_HIKING_LEVEL_CHOICE_BEGINNER)
@@ -154,7 +154,7 @@ class EditProfileScreenTest : TestCase() {
         .onNodeWithTag(EditProfileScreen.TEST_TAG_HIKING_LEVEL_CHOICE_BEGINNER)
         .assertIsSelected()
     composeTestRule
-        .onNodeWithTag(EditProfileScreen.TEST_TAG_HIKING_LEVEL_CHOICE_INTERMEDIATE)
+        .onNodeWithTag(EditProfileScreen.TEST_TAG_HIKING_LEVEL_CHOICE_AMATEUR)
         .assertIsNotSelected()
     composeTestRule
         .onNodeWithTag(EditProfileScreen.TEST_TAG_HIKING_LEVEL_CHOICE_EXPERT)
@@ -170,14 +170,14 @@ class EditProfileScreenTest : TestCase() {
         .onNodeWithTag(EditProfileScreen.TEST_TAG_HIKING_LEVEL_CHOICE_BEGINNER)
         .assertIsNotSelected()
     composeTestRule
-        .onNodeWithTag(EditProfileScreen.TEST_TAG_HIKING_LEVEL_CHOICE_INTERMEDIATE)
+        .onNodeWithTag(EditProfileScreen.TEST_TAG_HIKING_LEVEL_CHOICE_AMATEUR)
         .assertIsNotSelected()
 
     composeTestRule
-        .onNodeWithTag(EditProfileScreen.TEST_TAG_HIKING_LEVEL_CHOICE_INTERMEDIATE)
+        .onNodeWithTag(EditProfileScreen.TEST_TAG_HIKING_LEVEL_CHOICE_AMATEUR)
         .performClick()
     composeTestRule
-        .onNodeWithTag(EditProfileScreen.TEST_TAG_HIKING_LEVEL_CHOICE_INTERMEDIATE)
+        .onNodeWithTag(EditProfileScreen.TEST_TAG_HIKING_LEVEL_CHOICE_AMATEUR)
         .assertIsSelected()
     composeTestRule
         .onNodeWithTag(EditProfileScreen.TEST_TAG_HIKING_LEVEL_CHOICE_BEGINNER)
