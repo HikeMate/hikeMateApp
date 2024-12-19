@@ -512,7 +512,7 @@ private fun RunHikeBottomSheet(
       modifier = Modifier.testTag(RunHikeScreen.TEST_TAG_BOTTOM_SHEET),
       sheetContent = {
         Column(
-            modifier = Modifier.padding(16.dp).weight(1f),
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp).weight(1f),
         ) {
           Text(
               text = hike.name ?: stringResource(R.string.map_screen_hike_title_default),

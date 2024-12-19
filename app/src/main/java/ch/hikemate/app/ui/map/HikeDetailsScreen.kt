@@ -479,12 +479,12 @@ fun HikesDetailsBottomScaffold(
       sheetPeekHeight = HikeDetailScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT,
       sheetContent = {
         Column(
-            modifier = Modifier.fillMaxSize().padding(16.dp),
+            modifier = Modifier.fillMaxSize().padding(start = 16.dp, end = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
           Row {
             Column(
-                modifier = Modifier.padding(16.dp).weight(1f),
+                modifier = Modifier.weight(1f),
             ) {
               Text(
                   text =
@@ -660,7 +660,7 @@ fun DateDetailRow(
           value = stringResource(R.string.hike_detail_screen_value_saved),
           valueColor = primaryColor)
       Row(
-          modifier = Modifier.fillMaxWidth(),
+          modifier = Modifier.padding(vertical = 4.dp).fillMaxWidth(),
           horizontalArrangement = Arrangement.SpaceBetween,
       ) {
         Text(
@@ -689,7 +689,7 @@ fun DateDetailRow(
           value = stringResource(R.string.hike_detail_screen_value_planned),
           valueColor = primaryColor)
       Row(
-          modifier = Modifier.fillMaxWidth(),
+          modifier = Modifier.padding(vertical = 4.dp).fillMaxWidth(),
           horizontalArrangement = Arrangement.SpaceBetween,
       ) {
         Text(
@@ -776,7 +776,7 @@ fun AppropriatenessMessage(isSuitable: Boolean) {
     Text(
         modifier = Modifier.testTag(HikeDetailScreen.TEST_TAG_APPROPRIATENESS_MESSAGE),
         text = suitableLabelText,
-        style = MaterialTheme.typography.bodySmall,
+        style = MaterialTheme.typography.bodyMedium,
         color = suitableLabelColor)
   }
 }
