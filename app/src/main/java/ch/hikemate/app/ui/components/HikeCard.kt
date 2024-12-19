@@ -73,7 +73,10 @@ fun HikeCard(
     styleProperties: HikeCardStyleProperties = HikeCardStyleProperties(),
     showGraph: Boolean = true,
 ) {
-  val displayMessage = !elevationData.isNullOrEmpty() && messageContent != null
+  val displayMessage =
+      messageContent != null &&
+          styleProperties.messageColor != null &&
+          styleProperties.messageIcon != null
   Log.i(
       "HikeCard",
       "displayMessage: $displayMessage, title: $title, elevationData: $elevationData, messageContent: $messageContent")
