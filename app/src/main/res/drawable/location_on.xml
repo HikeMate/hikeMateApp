@@ -1,4 +1,17 @@
-<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zM12 11.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"
-        fill="currentColor"/>
-</svg>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="960"
+    android:viewportHeight="960">
+    <!-- Black outline path -->
+    <path
+        android:strokeColor="#000000"
+        android:strokeWidth="40"
+        android:fillColor="#00000000"
+        android:pathData="M480,480q33,0 56.5,-23.5T560,400q0,-33 -23.5,-56.5T480,320q-33,0 -56.5,23.5T400,400q0,33 23.5,56.5T480,480ZM480,880q-146,-127 -223,-237.5T180,444q0,-150 96.5,-239T480,116q107,0 203.5,89T780,444q0,88 -77,198.5T480,880Z"/>
+    <!-- Colored fill path -->
+    <path
+        android:fillColor="#5f6368"
+        android:pathData="M480,480q33,0 56.5,-23.5T560,400q0,-33 -23.5,-56.5T480,320q-33,0 -56.5,23.5T400,400q0,33 23.5,56.5T480,480ZM480,880q-146,-127 -223,-237.5T180,444q0,-150 96.5,-239T480,116q107,0 203.5,89T780,444q0,88 -77,198.5T480,880Z"/>
+</vector>
+

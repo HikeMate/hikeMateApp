@@ -10,8 +10,6 @@ import android.location.Location
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.content.res.AppCompatResources
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import ch.hikemate.app.R
@@ -59,6 +57,7 @@ object MapUtils {
       mapView: MapView,
       waypoints: List<LatLong>,
       color: Int,
+      withMarker: Boolean = false,
       onLineClick: () -> Unit,
   ) {
     val line = Polyline()
@@ -72,21 +71,27 @@ object MapUtils {
       true
     }
 
-    val startingMarker =
-        Marker(mapView).apply {
-          // Dynamically create the custom icon
-            icon = AppCompatResources.getDrawable(mapView.context, R.drawable.)
-          position = GeoPoint(waypoints.first().lat, waypoints.first().lon)
-          setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
-          setOnMarkerClickListener({ _, _ ->
-            onLineClick()
-            true
-          })
-        }
     // The index provides the lowest priority so that the facilities and other overlays
     // are always displayed on top of it.
     mapView.overlays.add(ROUTE_PRIORITY_DISPLAY, line)
-    mapView.overlays.add(startingMarker)
+
+    if (withMarker) {
+      val startingMarker =
+          Marker(mapView).apply {
+            // Dynamically create the custom icon
+            icon =
+                AppCompatResources.getDrawable(mapView.context, R.drawable.location_on)?.apply {
+                  setTint(color)
+                }
+            position = GeoPoint(waypoints.first().lat, waypoints.first().lon)
+            setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+            setOnMarkerClickListener({ _, _ ->
+              onLineClick()
+              true
+            })
+          }
+      mapView.overlays.add(startingMarker)
+    }
     mapView.invalidate()
   }
 
