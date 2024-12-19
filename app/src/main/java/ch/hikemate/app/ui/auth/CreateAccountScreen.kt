@@ -4,13 +4,10 @@ import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imeNestedScroll
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -106,7 +103,7 @@ fun CreateAccountScreen(
               .padding(
                   start = 16.dp,
                   end = 16.dp,
-                  top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding())
+              )
               .verticalScroll(scrollState)
               .imeNestedScroll()
               .safeDrawingPadding(),

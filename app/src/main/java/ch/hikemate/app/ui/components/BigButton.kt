@@ -25,8 +25,12 @@ import ch.hikemate.app.ui.theme.secondaryColor
  * @property textColor The text color of the button.
  * @property border The border of the button.
  */
-enum class ButtonType(val backgroundColor: Color, val textColor: Color, val border: BorderStroke) {
-  PRIMARY(primaryColor, onPrimaryColor, BorderStroke(0.dp, Color.Transparent)),
+enum class ButtonType(
+    val backgroundColor: Color,
+    val textColor: Color,
+    val border: BorderStroke? = null
+) {
+  PRIMARY(primaryColor, onPrimaryColor),
   SECONDARY(secondaryColor, onSecondaryColor, BorderStroke(1.dp, onSecondaryColor)),
 }
 
@@ -55,7 +59,9 @@ fun BigButton(
           modifier
               .fillMaxWidth()
               .height(44.dp)
-              .border(buttonType.border, shape = RoundedCornerShape(20))) {
+              .border(
+                  buttonType.border ?: BorderStroke(0.dp, Color.Transparent),
+                  shape = RoundedCornerShape(20))) {
         Text(
             text = label,
             color = buttonType.textColor,

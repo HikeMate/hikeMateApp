@@ -9,13 +9,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.BottomSheetScaffold
@@ -248,10 +245,7 @@ private fun RunHikeContent(
       BackButton(
           navigationActions = navigationActions,
           modifier =
-              Modifier.padding(
-                      top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),
-                      start = 16.dp,
-                      end = 16.dp)
+              Modifier.padding(start = 16.dp, end = 16.dp)
                   .testTag(RunHikeScreen.TEST_TAG_BACK_BUTTON),
           onClick = { wantToNavigateBack = true })
 
@@ -421,18 +415,6 @@ fun runHikeMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel): Ma
                           RunHikeScreen.MAP_BOTTOM_PADDING_ADJUSTMENT)
               .testTag(RunHikeScreen.TEST_TAG_MAP))
   return mapView
-}
-
-@Composable
-private fun LaunchedEffectMapviewListener(
-    mapView: MapView,
-    boundingBoxState: MutableStateFlow<BoundingBox?>,
-    zoomLevelState: MutableStateFlow<Double?>
-) {
-  mapView.addOnFirstLayoutListener { _, _, _, _, _ ->
-    boundingBoxState.value = mapView.boundingBox
-    zoomLevelState.value = mapView.zoomLevelDouble
-  }
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
