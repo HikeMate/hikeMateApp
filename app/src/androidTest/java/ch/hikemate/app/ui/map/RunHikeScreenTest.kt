@@ -1,6 +1,7 @@
 package ch.hikemate.app.ui.map
 
 import android.location.Location
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
@@ -12,6 +13,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
 import ch.hikemate.app.model.elevation.ElevationRepository
 import ch.hikemate.app.model.facilities.FacilitiesRepository
 import ch.hikemate.app.model.facilities.FacilitiesViewModel
@@ -126,12 +128,13 @@ class RunHikeScreenTest {
       )
 
   /** @param hike The hike to display on the screen. For test purposes, should always be saved. */
-  @OptIn(ExperimentalPermissionsApi::class)
+  @OptIn(ExperimentalTestApi::class)
   private suspend fun setupCompleteScreenWithSelected(
       hike: DetailedHike,
       waypointsRetrievalSucceeds: Boolean = true,
       elevationRetrievalSucceeds: Boolean = true,
-      alreadyLoadData: Boolean = true
+      alreadyLoadData: Boolean = true,
+      openTheBottomSheet: Boolean = true
   ) {
 
     // This setup function is designed for saved hikes only. If the provided hike is not saved, it
@@ -214,6 +217,18 @@ class RunHikeScreenTest {
           navigationActions = mockNavigationActions,
           facilitiesViewModel = facilitiesViewModel)
     }
+
+    if (openTheBottomSheet) {
+      // Open the bottom sheet
+      composeTestRule.waitUntilExactlyOneExists(
+          hasTestTag(RunHikeScreen.TEST_TAG_BOTTOM_SHEET), timeoutMillis = 10000)
+
+      composeTestRule.onNodeWithTag(RunHikeScreen.TEST_TAG_BOTTOM_SHEET).performTouchInput {
+        down(1, position = Offset(centerX, centerY))
+        moveTo(1, position = Offset(centerX, 100f))
+        up(1)
+      }
+    }
   }
 
   @OptIn(ExperimentalPermissionsApi::class)
@@ -235,7 +250,8 @@ class RunHikeScreenTest {
   @Test
   fun runHikeScreen_displaysError_whenWaypointsRetrievalFails() =
       runTest(timeout = 5.seconds) {
-        setupCompleteScreenWithSelected(detailedHike, waypointsRetrievalSucceeds = false)
+        setupCompleteScreenWithSelected(
+            detailedHike, waypointsRetrievalSucceeds = false, openTheBottomSheet = false)
 
         // So far, the waypoints retrieval should have happened once
         verify(hikesRepository, times(1)).getRoutesByIds(any(), any(), any())
@@ -255,7 +271,8 @@ class RunHikeScreenTest {
   @Test
   fun runHikeScreen_displaysError_whenElevationRetrievalFails() =
       runTest(timeout = 5.seconds) {
-        setupCompleteScreenWithSelected(detailedHike, elevationRetrievalSucceeds = false)
+        setupCompleteScreenWithSelected(
+            detailedHike, elevationRetrievalSucceeds = false, openTheBottomSheet = false)
 
         // So far, the elevation retrieval should have happened once
         verify(elevationRepository, times(1)).getElevation(any(), any(), any())

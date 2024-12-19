@@ -2,7 +2,6 @@ package ch.hikemate.app.ui.map
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.content.Context
 import android.location.Location
 import android.util.Log
 import android.view.MotionEvent
@@ -13,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -34,15 +34,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import ch.hikemate.app.R
 import ch.hikemate.app.model.facilities.FacilitiesViewModel
-import ch.hikemate.app.model.facilities.Facility
 import ch.hikemate.app.model.route.DetailedHike
 import ch.hikemate.app.model.route.HikesViewModel
 import ch.hikemate.app.model.route.LatLong
@@ -56,25 +53,26 @@ import ch.hikemate.app.ui.components.ElevationGraphStyleProperties
 import ch.hikemate.app.ui.components.LocationPermissionAlertDialog
 import ch.hikemate.app.ui.components.WithDetailedHike
 import ch.hikemate.app.ui.map.HikeDetailScreen.MAP_MAX_ZOOM
+import ch.hikemate.app.ui.map.RunHikeScreen.LOG_TAG
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Screen
 import ch.hikemate.app.utils.LocationUtils
 import ch.hikemate.app.utils.MapUtils
+import ch.hikemate.app.utils.RouteUtils
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationResult
 import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.debounce
 import org.osmdroid.util.BoundingBox
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 
 object RunHikeScreen {
-  val BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT = 400.dp
+  const val LOG_TAG = "RunHikeScreen"
+  val BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT = 170.dp
   val MAP_BOTTOM_PADDING_ADJUSTMENT = 20.dp
 
   const val TEST_TAG_MAP = "runHikeScreenMap"
@@ -173,7 +171,8 @@ private fun RunHikeContent(
     }
 
     var userLocationMarker: Marker? by remember { mutableStateOf(null) }
-    var completionPercentage: Int? by remember { mutableStateOf(null) }
+    var completionRatio: Double? by remember { mutableStateOf(null) }
+
     var userElevation: Double? by remember { mutableStateOf(null) }
 
     // We need to keep a reference to the instance of location callback, this way we can unregister
@@ -181,11 +180,13 @@ private fun RunHikeContent(
     val locationUpdatedCallback = remember {
       object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult) {
+
           val locationParsed =
               parseLocationUpdate(locationResult, userLocationMarker, mapView, hike)
           userLocationMarker = locationParsed.first
-          completionPercentage = locationParsed.second
+          completionRatio = locationParsed.second
           userElevation = locationParsed.third
+
           if (centerMapOnUserPosition &&
               userLocationMarker != null &&
               userLocationMarker?.position != null)
@@ -210,7 +211,7 @@ private fun RunHikeContent(
 
     DisposableEffect(Unit) {
       val hasLocationPermission = LocationUtils.hasLocationPermission(locationPermissionState)
-      Log.d("RunHikeScreen", "Has location permission: $hasLocationPermission")
+      Log.d(LOG_TAG, "Has location permission: $hasLocationPermission")
       // If the user has granted at least one of the two permissions, center the map
       // on the user's location
       if (hasLocationPermission) {
@@ -251,7 +252,7 @@ private fun RunHikeContent(
       BackButton(
           navigationActions = navigationActions,
           modifier =
-              Modifier.padding(top = 40.dp, start = 16.dp, end = 16.dp)
+              Modifier.padding(start = 16.dp, end = 16.dp)
                   .testTag(RunHikeScreen.TEST_TAG_BACK_BUTTON),
           onClick = { wantToNavigateBack = true })
 
@@ -264,7 +265,7 @@ private fun RunHikeContent(
           },
           modifier =
               Modifier.align(Alignment.BottomStart)
-                  .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
+                  .padding(bottom = RunHikeScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
                   .testTag(RunHikeScreen.TEST_TAG_CENTER_MAP_BUTTON))
 
       // Zoom buttons at the bottom right of the screen
@@ -279,9 +280,10 @@ private fun RunHikeContent(
       // Display the bottom sheet with the hike details
       RunHikeBottomSheet(
           hike = hike,
-          completionPercentage = completionPercentage,
+          completionRatio = completionRatio,
           userElevation = userElevation,
-          onStopTheRun = { wantToNavigateBack = true })
+          onStopTheRun = { wantToNavigateBack = true },
+      )
     }
   }
 }
@@ -301,9 +303,11 @@ private fun parseLocationUpdate(
     userLocationMarker: Marker?,
     mapView: MapView,
     hike: DetailedHike
-): Triple<Marker?, Int?, Double?> {
+): Triple<Marker?, Double?, Double?> {
   if (locationResult.lastLocation == null) {
+    Log.d(LOG_TAG, "Location null")
     MapUtils.clearUserPosition(userLocationMarker, mapView, invalidate = true)
+
     return Triple(null, null, null)
   }
 
@@ -334,11 +338,14 @@ private fun parseLocationUpdate(
   val completionPercentage =
       if (routeProjectionResponse.distanceFromRoute > RunHikeScreen.MAX_DISTANCE_TO_CONSIDER_HIKE)
           null
-      else (routeProjectionResponse.progressDistance * 0.1 / hike.distance).toInt()
+      else
+          (routeProjectionResponse.progressDistance /
+              (hike.distance * RouteUtils.METERS_PER_KIlOMETER))
   val currentElevation =
       if (routeProjectionResponse.distanceFromRoute > RunHikeScreen.MAX_DISTANCE_TO_CONSIDER_HIKE)
           null
       else routeProjectionResponse.projectedLocationElevation
+  Log.d(LOG_TAG, "completion:$completionPercentage")
   return Triple(marker, completionPercentage, currentElevation)
 }
 
@@ -375,13 +382,13 @@ fun runHikeMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel): Ma
 
   // Create state values that we can actually observe in the LaunchedEffect
   // We keep our StateFlows for debouncing
-  val boundingBoxState = remember { MutableStateFlow(mapView.boundingBox) }
-  val zoomLevelState = remember { MutableStateFlow(mapView.zoomLevelDouble) }
+  val boundingBoxState = remember { MutableStateFlow<BoundingBox?>(null) }
+  val zoomLevelState = remember { MutableStateFlow<Double?>(null) }
 
   // This effect handles both initial facility display and subsequent updates
   // It triggers when facilities are loaded or when the map view changes
   shouldLoadFacilities =
-      launchedEffectLoadingOfFacilities(
+      MapUtils.launchedEffectLoadingOfFacilities(
           facilities, shouldLoadFacilities, mapView, facilitiesViewModel, hike, context)
 
   // This solves the bug of the screen freezing by properly cleaning up resources
@@ -397,12 +404,14 @@ fun runHikeMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel): Ma
   }
 
   // This LaunchedEffect handles map updates with debouncing to prevent too frequent refreshes
-  LaunchedEffectFacilitiesDisplay(
+  MapUtils.LaunchedEffectFacilitiesDisplay(
       mapView, boundingBoxState, zoomLevelState, facilitiesViewModel, hike, context)
+
+  MapUtils.LaunchedEffectMapviewListener(mapView, hike, boundingBoxState, zoomLevelState, false)
 
   // Show the selected hike on the map
   // OnLineClick does nothing, the line should not be clickable
-  Log.d(HikeDetailScreen.LOG_TAG, "Drawing hike on map: ${hike.bounds}")
+  Log.d(LOG_TAG, "Drawing hike on map: ${hike.bounds}")
   MapUtils.showHikeOnMap(
       mapView = mapView, waypoints = hike.waypoints, color = hike.color, onLineClick = {})
 
@@ -411,91 +420,24 @@ fun runHikeMap(hike: DetailedHike, facilitiesViewModel: FacilitiesViewModel): Ma
       factory = { mapView },
       modifier =
           Modifier.fillMaxWidth()
+              // To avoid a bug where the map is not fully loaded at the top
+              .offset(y = (-MapScreen.MAP_BOTTOM_PADDING_ADJUSTMENT))
               // Reserve space for the scaffold at the bottom, -20.dp to avoid the map being to
               // small under the bottomSheet
               .padding(
                   bottom =
-                      RunHikeScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT -
-                          RunHikeScreen.MAP_BOTTOM_PADDING_ADJUSTMENT)
+                      (RunHikeScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT -
+                              RunHikeScreen.MAP_BOTTOM_PADDING_ADJUSTMENT)
+                          .div(2))
               .testTag(RunHikeScreen.TEST_TAG_MAP))
   return mapView
-}
-
-@Composable
-private fun LaunchedEffectFacilitiesDisplay(
-    mapView: MapView,
-    boundingBoxState: MutableStateFlow<BoundingBox>,
-    zoomLevelState: MutableStateFlow<Double>,
-    facilitiesViewModel: FacilitiesViewModel,
-    hike: DetailedHike,
-    context: Context
-) {
-  LaunchedEffect(Unit) {
-    MapUtils.setMapViewListenerForStates(mapView, boundingBoxState, zoomLevelState)
-
-    // Create our combined flow which is limited by a debounce
-    val combinedFlow =
-        combine(
-            boundingBoxState.debounce(HikeDetailScreen.DEBOUNCE_DURATION),
-            zoomLevelState.debounce(HikeDetailScreen.DEBOUNCE_DURATION)) { boundingBox, zoomLevel ->
-              boundingBox to zoomLevel
-            }
-
-    try {
-      combinedFlow.collect { (boundingBox, zoomLevel) ->
-        facilitiesViewModel.filterFacilitiesForDisplay(
-            bounds = boundingBox,
-            zoomLevel = zoomLevel,
-            hikeRoute = hike,
-            onSuccess = { newFacilities ->
-              MapUtils.clearFacilities(mapView)
-              if (newFacilities.isNotEmpty()) {
-                MapUtils.displayFacilities(newFacilities, mapView, context)
-              }
-            },
-            onNoFacilitiesForState = { MapUtils.clearFacilities(mapView) })
-      }
-    } catch (e: Exception) {
-      Log.e(HikeDetailScreen.LOG_TAG, "Error in facility updates flow", e)
-    }
-  }
-}
-
-@Composable
-private fun launchedEffectLoadingOfFacilities(
-    facilities: List<Facility>?,
-    shouldLoadFacilities: Boolean,
-    mapView: MapView,
-    facilitiesViewModel: FacilitiesViewModel,
-    hike: DetailedHike,
-    context: Context
-): Boolean {
-  var shouldLoadFacilities1 = shouldLoadFacilities
-  LaunchedEffect(facilities, shouldLoadFacilities1) {
-    if (facilities != null && mapView.repository != null) {
-      facilitiesViewModel.filterFacilitiesForDisplay(
-          bounds = mapView.boundingBox,
-          zoomLevel = mapView.zoomLevelDouble,
-          hikeRoute = hike,
-          onSuccess = { newFacilities ->
-            MapUtils.clearFacilities(mapView)
-            if (newFacilities.isNotEmpty()) {
-              MapUtils.displayFacilities(newFacilities, mapView, context)
-            }
-          },
-          onNoFacilitiesForState = { MapUtils.clearFacilities(mapView) })
-      // Reset the flag after loading
-      shouldLoadFacilities1 = false
-    }
-  }
-  return shouldLoadFacilities1
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
 private fun RunHikeBottomSheet(
     hike: DetailedHike,
-    completionPercentage: Int? = null,
+    completionRatio: Double? = null,
     userElevation: Double? = null,
     onStopTheRun: () -> Unit,
 ) {
@@ -505,53 +447,56 @@ private fun RunHikeBottomSheet(
       scaffoldState = scaffoldState,
       sheetContainerColor = MaterialTheme.colorScheme.surface,
       sheetPeekHeight = RunHikeScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT,
-      modifier = Modifier.testTag(RunHikeScreen.TEST_TAG_BOTTOM_SHEET),
+      // Overwrites the device's max sheet width to avoid the bottomSheet not being wide enough
+      sheetMaxWidth = Integer.MAX_VALUE.dp,
       sheetContent = {
         Column(
-            modifier = Modifier.padding(16.dp).weight(1f),
+            modifier =
+                Modifier.testTag(RunHikeScreen.TEST_TAG_BOTTOM_SHEET)
+                    .padding(start = 16.dp, end = 16.dp)
+                    .fillMaxWidth(),
         ) {
           Text(
               text = hike.name ?: stringResource(R.string.map_screen_hike_title_default),
-              style = MaterialTheme.typography.titleLarge,
+              style = MaterialTheme.typography.headlineLarge,
               textAlign = TextAlign.Left,
               modifier = Modifier.testTag(RunHikeScreen.TEST_TAG_HIKE_NAME))
 
-          // Elevation graph and the progress details below the graph
           Column {
+            // Progress details below the graph
+            // Elevation graph and the progress details below the graph
             val hikeColor = Color(hike.color)
             ElevationGraph(
                 elevations = hike.elevation,
                 styleProperties =
                     ElevationGraphStyleProperties(
-                        strokeColor = hikeColor, fillColor = hikeColor.copy(0.1f)),
+                        strokeColor = hikeColor, fillColor = hikeColor.copy(0.5f)),
                 modifier =
                     Modifier.fillMaxWidth()
                         .height(60.dp)
                         .padding(4.dp)
-                        .testTag(RunHikeScreen.TEST_TAG_ELEVATION_GRAPH))
-
-            // Progress details below the graph
+                        .testTag(RunHikeScreen.TEST_TAG_ELEVATION_GRAPH),
+                progressThroughHike = (completionRatio)?.toFloat())
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 20.dp),
                 horizontalArrangement = Arrangement.SpaceBetween) {
                   Text(
                       text = stringResource(R.string.run_hike_screen_zero_distance_progress_value),
-                      style = MaterialTheme.typography.bodyLarge,
-                      fontWeight = FontWeight.Bold,
+                      style = MaterialTheme.typography.bodyMedium,
                       textAlign = TextAlign.Left,
                   )
                   Text(
                       // Displays the progress percentage below the graph
                       text =
-                          if (completionPercentage == null)
+                          if (completionRatio == null)
                               stringResource(R.string.run_hike_screen_progress_percentage_no_data)
-                          else
-                              stringResource(
-                                  R.string.run_hike_screen_progress_percentage_format,
-                                  completionPercentage),
-                      style = MaterialTheme.typography.bodyLarge,
+                          else {
+                            val percentage = (completionRatio * 100).roundToInt()
+                            stringResource(
+                                R.string.run_hike_screen_progress_percentage_format, percentage)
+                          },
+                      style = MaterialTheme.typography.bodyMedium,
                       color = hikeColor,
-                      fontWeight = FontWeight.Bold,
                       textAlign = TextAlign.Right,
                       modifier = Modifier.testTag(RunHikeScreen.TEST_TAG_PROGRESS_TEXT),
                   )
@@ -560,8 +505,7 @@ private fun RunHikeBottomSheet(
                           stringResource(
                               R.string.run_hike_screen_distance_progress_value_format,
                               hike.distance),
-                      style = MaterialTheme.typography.bodyLarge,
-                      fontWeight = FontWeight.Bold,
+                      style = MaterialTheme.typography.bodyMedium,
                       textAlign = TextAlign.Right,
                       modifier = Modifier.testTag(RunHikeScreen.TEST_TAG_TOTAL_DISTANCE_TEXT),
                   )
@@ -599,15 +543,16 @@ private fun RunHikeBottomSheet(
             DetailRow(
                 label = stringResource(R.string.run_hike_screen_label_difficulty),
                 value = stringResource(hike.difficulty.nameResourceId),
-                valueColor = colorResource(hike.difficulty.colorResourceId))
+                valueColor = hike.difficulty.color)
 
             BigButton(
                 buttonType = ButtonType.PRIMARY,
                 label = stringResource(R.string.run_hike_screen_stop_run_button_label),
                 onClick = onStopTheRun,
                 modifier =
-                    Modifier.padding(top = 16.dp).testTag(RunHikeScreen.TEST_TAG_STOP_HIKE_BUTTON),
-                fillColor = colorResource(R.color.red),
+                    Modifier.padding(vertical = 16.dp)
+                        .testTag(RunHikeScreen.TEST_TAG_STOP_HIKE_BUTTON),
+                fillColor = MaterialTheme.colorScheme.tertiary,
             )
           }
         }

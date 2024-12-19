@@ -36,6 +36,7 @@ fun BottomBarNavigation(
             modifier = Modifier.testTag(TEST_TAG_BOTTOM_BAR),
         ) {
           tabList.forEach { tab ->
+            val selected = tab.route == selectedItem
             NavigationBarItem(
                 icon = {
                   Icon(
@@ -44,8 +45,8 @@ fun BottomBarNavigation(
                   )
                 },
                 label = { Text(stringResource(tab.textId)) },
-                selected = tab.route == selectedItem,
-                onClick = { onTabSelect(tab) },
+                selected = selected,
+                onClick = { if (!selected) onTabSelect(tab) },
                 modifier = Modifier.testTag(TEST_TAG_MENU_ITEM_PREFIX + tab.route),
             )
           }
