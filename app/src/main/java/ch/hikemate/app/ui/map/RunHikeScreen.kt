@@ -39,7 +39,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -518,7 +517,7 @@ private fun RunHikeBottomSheet(
         ) {
           Text(
               text = hike.name ?: stringResource(R.string.map_screen_hike_title_default),
-              style = MaterialTheme.typography.titleLarge,
+              style = MaterialTheme.typography.headlineLarge,
               textAlign = TextAlign.Left,
               modifier = Modifier.testTag(RunHikeScreen.TEST_TAG_HIKE_NAME))
 
@@ -542,8 +541,7 @@ private fun RunHikeBottomSheet(
                 horizontalArrangement = Arrangement.SpaceBetween) {
                   Text(
                       text = stringResource(R.string.run_hike_screen_zero_distance_progress_value),
-                      style = MaterialTheme.typography.bodyLarge,
-                      fontWeight = FontWeight.Bold,
+                      style = MaterialTheme.typography.bodyMedium,
                       textAlign = TextAlign.Left,
                   )
                   Text(
@@ -555,9 +553,8 @@ private fun RunHikeBottomSheet(
                               stringResource(
                                   R.string.run_hike_screen_progress_percentage_format,
                                   completionPercentage),
-                      style = MaterialTheme.typography.bodyLarge,
+                      style = MaterialTheme.typography.bodyMedium,
                       color = hikeColor,
-                      fontWeight = FontWeight.Bold,
                       textAlign = TextAlign.Right,
                       modifier = Modifier.testTag(RunHikeScreen.TEST_TAG_PROGRESS_TEXT),
                   )
@@ -566,8 +563,7 @@ private fun RunHikeBottomSheet(
                           stringResource(
                               R.string.run_hike_screen_distance_progress_value_format,
                               hike.distance),
-                      style = MaterialTheme.typography.bodyLarge,
-                      fontWeight = FontWeight.Bold,
+                      style = MaterialTheme.typography.bodyMedium,
                       textAlign = TextAlign.Right,
                       modifier = Modifier.testTag(RunHikeScreen.TEST_TAG_TOTAL_DISTANCE_TEXT),
                   )

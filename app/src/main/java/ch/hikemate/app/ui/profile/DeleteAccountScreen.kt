@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -20,10 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import ch.hikemate.app.R
 import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.ui.components.BackButton
@@ -71,12 +69,12 @@ fun DeleteAccountScreen(navigationActions: NavigationActions, authViewModel: Aut
         BackButton(navigationActions)
         Text(
             stringResource(R.string.delete_account_title),
-            style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 32.sp),
+            style = MaterialTheme.typography.headlineLarge,
             modifier = Modifier.testTag(DeleteAccountScreen.TEST_TAG_TITLE))
 
         Text(
             stringResource(R.string.delete_account_info),
-            style = TextStyle(fontSize = 16.sp),
+            style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier.testTag(DeleteAccountScreen.TEST_TAG_INFO_TEXT))
 
         if (authViewModel.isEmailProvider())

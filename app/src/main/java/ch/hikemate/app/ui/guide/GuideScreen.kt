@@ -194,7 +194,7 @@ private fun GuideHeader() {
         Spacer(modifier = Modifier.width(GuideScreen.HEADER_SPACING_DP.dp))
         Text(
             text = stringResource(R.string.guide_title),
-            style = MaterialTheme.typography.headlineMedium)
+            style = MaterialTheme.typography.headlineLarge)
       }
 }
 
@@ -204,7 +204,7 @@ private fun HikingGuideSection() {
   Spacer(modifier = Modifier.height(GuideScreen.SECTION_SPACING_DP.dp))
   Text(
       text = stringResource(R.string.guide_hiking_section_title),
-      style = MaterialTheme.typography.headlineMedium)
+      style = MaterialTheme.typography.headlineLarge)
   Spacer(modifier = Modifier.height(GuideScreen.HEADER_SPACING_DP.dp))
 }
 
@@ -262,7 +262,8 @@ private fun TopicCardContent(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically) {
           Text(
-              text = stringResource(topic.titleResId), style = MaterialTheme.typography.titleMedium)
+              text = stringResource(topic.titleResId),
+              style = MaterialTheme.typography.headlineSmall)
           Icon(
               imageVector =
                   if (isExpanded) Icons.Default.KeyboardArrowUp

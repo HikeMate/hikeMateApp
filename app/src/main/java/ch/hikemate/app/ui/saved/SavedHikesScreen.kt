@@ -162,7 +162,7 @@ private fun PlannedHikes(hikes: List<StateFlow<Hike>>?, hikesViewModel: HikesVie
   Column(modifier = Modifier.fillMaxSize()) {
     Text(
         context.getString(R.string.saved_hikes_screen_planned_section_title),
-        style = MaterialTheme.typography.titleLarge,
+        style = MaterialTheme.typography.headlineLarge,
         modifier =
             Modifier.padding(16.dp).testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_PLANNED_TITLE))
 
@@ -198,7 +198,7 @@ private fun SavedHikes(savedHikes: List<StateFlow<Hike>>?, hikesViewModel: Hikes
   Column(modifier = Modifier.fillMaxSize()) {
     Text(
         context.getString(R.string.saved_hikes_screen_saved_section_title),
-        style = MaterialTheme.typography.titleLarge,
+        style = MaterialTheme.typography.headlineLarge,
         modifier =
             Modifier.padding(16.dp).testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_SAVED_TITLE))
 

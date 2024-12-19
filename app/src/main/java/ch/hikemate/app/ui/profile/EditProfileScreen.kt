@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -28,10 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.hikemate.app.R
 import ch.hikemate.app.model.authentication.AuthViewModel
@@ -131,7 +129,7 @@ fun EditProfileScreen(
           BackButton(navigationActions)
           Text(
               context.getString(R.string.edit_profile_screen_title),
-              style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 32.sp),
+              style = MaterialTheme.typography.headlineLarge,
               modifier = Modifier.testTag(EditProfileScreen.TEST_TAG_TITLE))
 
           CustomTextField(
@@ -147,7 +145,7 @@ fun EditProfileScreen(
           ) {
             Text(
                 context.getString(R.string.profile_screen_hiking_level_label),
-                style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 20.sp),
+                style = MaterialTheme.typography.labelLarge,
                 modifier = Modifier.testTag(EditProfileScreen.TEST_TAG_HIKING_LEVEL_LABEL))
             SingleChoiceSegmentedButtonRow {
               HikingLevel.values().forEachIndexed { index, fitLevel ->
@@ -174,7 +172,9 @@ fun EditProfileScreen(
                     onClick = { hikingLevel = index },
                     selected = hikingLevel == index,
                 ) {
-                  Text(fitLevel.getDisplayString(context))
+                  Text(
+                      fitLevel.getDisplayString(context),
+                      style = MaterialTheme.typography.titleMedium)
                 }
               }
             }

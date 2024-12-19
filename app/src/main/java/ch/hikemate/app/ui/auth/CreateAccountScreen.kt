@@ -4,12 +4,16 @@ import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imeNestedScroll
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -20,10 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import ch.hikemate.app.R
 import ch.hikemate.app.model.authentication.AuthViewModel
 import ch.hikemate.app.ui.components.BackButton
@@ -105,7 +106,7 @@ fun CreateAccountScreen(
               .padding(
                   start = 16.dp,
                   end = 16.dp,
-              )
+                  top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding())
               .verticalScroll(scrollState)
               .imeNestedScroll()
               .safeDrawingPadding(),
@@ -113,7 +114,7 @@ fun CreateAccountScreen(
         BackButton(navigationActions)
         Text(
             stringResource(R.string.create_account_title),
-            style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 32.sp),
+            style = MaterialTheme.typography.headlineLarge,
             modifier = Modifier.testTag(CreateAccountScreen.TEST_TAG_TITLE))
 
         CustomTextField(

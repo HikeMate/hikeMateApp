@@ -7,14 +7,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import ch.hikemate.app.ui.theme.primaryColor
 
 /**
@@ -57,8 +55,8 @@ fun BigButton(
               .border(buttonType.border, shape = RoundedCornerShape(20))) {
         Text(
             text = label,
-            style =
-                TextStyle(
-                    color = buttonType.textColor, fontSize = 20.sp, fontWeight = FontWeight(600)))
+            color = buttonType.textColor,
+            style = MaterialTheme.typography.titleLarge,
+        )
       }
 }

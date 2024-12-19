@@ -558,6 +558,7 @@ fun MapSearchButton(onClick: () -> Unit, modifier: Modifier = Modifier, enabled:
       enabled = enabled) {
         Text(
             text = LocalContext.current.getString(R.string.map_screen_search_button_text),
+            style = MaterialTheme.typography.bodyMedium,
             color =
                 if (enabled) MaterialTheme.colorScheme.onSurface
                 else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))

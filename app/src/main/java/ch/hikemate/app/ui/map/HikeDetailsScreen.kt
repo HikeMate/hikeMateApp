@@ -56,7 +56,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -487,7 +486,7 @@ fun HikesDetailsBottomScaffold(
               Text(
                   text =
                       detailedHike.name ?: stringResource(R.string.map_screen_hike_title_default),
-                  style = MaterialTheme.typography.titleLarge,
+                  style = MaterialTheme.typography.headlineLarge,
                   textAlign = TextAlign.Left,
                   modifier = Modifier.testTag(TEST_TAG_HIKE_NAME))
               AppropriatenessMessage(isSuitable)
@@ -681,7 +680,6 @@ fun DateDetailRow(
           Text(
               text = stringResource(R.string.hike_detail_screen_add_a_date_button_text),
               style = MaterialTheme.typography.bodySmall,
-              fontWeight = FontWeight.Bold,
           )
         }
       }
