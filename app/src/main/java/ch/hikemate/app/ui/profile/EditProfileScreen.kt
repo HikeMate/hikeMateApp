@@ -26,7 +26,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
@@ -45,6 +44,7 @@ import ch.hikemate.app.ui.components.CustomTextField
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
+import ch.hikemate.app.ui.theme.onPrimaryColor
 import ch.hikemate.app.ui.theme.primaryColor
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -167,7 +167,7 @@ fun EditProfileScreen(
                         SegmentedButtonDefaults.colors()
                             .copy(
                                 activeContainerColor = primaryColor,
-                                activeContentColor = Color.White,
+                                activeContentColor = onPrimaryColor,
                             ),
                     onClick = { hikingLevel = index },
                     selected = hikingLevel == index,

@@ -37,7 +37,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -601,7 +600,7 @@ private fun RunHikeBottomSheet(
             DetailRow(
                 label = stringResource(R.string.run_hike_screen_label_difficulty),
                 value = stringResource(hike.difficulty.nameResourceId),
-                valueColor = colorResource(hike.difficulty.colorResourceId))
+                valueColor = hike.difficulty.color)
 
             BigButton(
                 buttonType = ButtonType.PRIMARY,
@@ -609,7 +608,7 @@ private fun RunHikeBottomSheet(
                 onClick = onStopTheRun,
                 modifier =
                     Modifier.padding(top = 16.dp).testTag(RunHikeScreen.TEST_TAG_STOP_HIKE_BUTTON),
-                fillColor = colorResource(R.color.red),
+                fillColor = MaterialTheme.colorScheme.error,
             )
           }
         }

@@ -13,7 +13,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import ch.hikemate.app.ui.theme.onPrimaryColor
+import ch.hikemate.app.ui.theme.onSecondaryColor
 import ch.hikemate.app.ui.theme.primaryColor
+import ch.hikemate.app.ui.theme.secondaryColor
 
 /**
  * An enum class representing the different types of buttons that can be displayed.
@@ -23,8 +26,8 @@ import ch.hikemate.app.ui.theme.primaryColor
  * @property border The border of the button.
  */
 enum class ButtonType(val backgroundColor: Color, val textColor: Color, val border: BorderStroke) {
-  PRIMARY(primaryColor, Color.White, BorderStroke(0.dp, Color.Transparent)),
-  SECONDARY(Color.White, Color.Black, BorderStroke(1.dp, Color.Black)),
+  PRIMARY(primaryColor, onPrimaryColor, BorderStroke(0.dp, Color.Transparent)),
+  SECONDARY(secondaryColor, onSecondaryColor, BorderStroke(1.dp, onSecondaryColor)),
 }
 
 /**

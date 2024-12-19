@@ -59,7 +59,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.hikemate.app.R
 import ch.hikemate.app.model.authentication.AuthViewModel
@@ -92,6 +91,10 @@ import ch.hikemate.app.ui.map.HikeDetailScreen.TEST_TAG_RUN_HIKE_BUTTON
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
+import ch.hikemate.app.ui.theme.challengingColor
+import ch.hikemate.app.ui.theme.onPrimaryColor
+import ch.hikemate.app.ui.theme.primaryColor
+import ch.hikemate.app.ui.theme.suitableColor
 import ch.hikemate.app.utils.MapUtils
 import ch.hikemate.app.utils.humanReadableFormat
 import com.google.firebase.Timestamp
@@ -560,10 +563,7 @@ fun HikesDetailsBottomScaffold(
           DetailRow(
               label = stringResource(R.string.hike_detail_screen_label_difficulty),
               value = stringResource(detailedHike.difficulty.nameResourceId),
-              valueColor =
-                  Color(
-                      ContextCompat.getColor(
-                          LocalContext.current, detailedHike.difficulty.colorResourceId)),
+              valueColor = detailedHike.difficulty.color,
           )
           DateDetailRow(
               isSaved = detailedHike.isSaved,
@@ -658,7 +658,7 @@ fun DateDetailRow(
       DetailRow(
           label = stringResource(R.string.hike_detail_screen_label_status),
           value = stringResource(R.string.hike_detail_screen_value_saved),
-          valueColor = Color(0xFF3B9DE8))
+          valueColor = primaryColor)
       Row(
           modifier = Modifier.fillMaxWidth(),
           horizontalArrangement = Arrangement.SpaceBetween,
@@ -673,8 +673,8 @@ fun DateDetailRow(
             contentPadding = PaddingValues(0.dp),
             colors =
                 ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF4285F4), // Blue color to match the image
-                    contentColor = Color.White),
+                    containerColor = primaryColor, // Blue color to match the image
+                    contentColor = onPrimaryColor),
             onClick = { showDatePicker() },
         ) {
           Text(
@@ -687,7 +687,7 @@ fun DateDetailRow(
       DetailRow(
           label = stringResource(R.string.hike_detail_screen_label_status),
           value = stringResource(R.string.hike_detail_screen_value_planned),
-          valueColor = Color(0xFF3B9DE8))
+          valueColor = primaryColor)
       Row(
           modifier = Modifier.fillMaxWidth(),
           horizontalArrangement = Arrangement.SpaceBetween,
@@ -755,7 +755,7 @@ private fun confirmDateDetailButton(
 fun AppropriatenessMessage(isSuitable: Boolean) {
   // The text, icon and color of the card's message are chosen based on whether the hike is suitable
   // or not
-  val suitableLabelColor = if (isSuitable) Color(0xFF4CAF50) else Color(0xFFFFC107)
+  val suitableLabelColor = if (isSuitable) suitableColor else challengingColor
 
   val suitableLabelText =
       if (isSuitable) LocalContext.current.getString(R.string.map_screen_suitable_hike_label)

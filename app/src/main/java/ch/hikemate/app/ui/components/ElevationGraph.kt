@@ -24,6 +24,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.math.MathUtils
 import ch.hikemate.app.R
+import ch.hikemate.app.ui.theme.primaryColor
 import ch.hikemate.app.utils.MapUtils
 import kotlin.math.ceil
 
@@ -36,8 +37,8 @@ import kotlin.math.ceil
  * @param locationMarkerSize The size of the location marker drawable (default to 24f)
  */
 data class ElevationGraphStyleProperties(
-    val strokeColor: Color = Color.Black,
-    val fillColor: Color = Color.Black,
+    val strokeColor: Color = primaryColor,
+    val fillColor: Color = primaryColor,
     val strokeWidth: Float = 7f,
     val locationMarkerSize: Float = 24f // Size for the location marker drawable
 )
