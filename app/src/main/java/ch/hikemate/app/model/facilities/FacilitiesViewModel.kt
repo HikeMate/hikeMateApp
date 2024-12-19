@@ -53,6 +53,7 @@ class FacilitiesViewModel(
 
   private val _facilities = MutableStateFlow<List<Facility>?>(null)
   val facilities = _facilities.asStateFlow()
+
   /**
    * Filters facilities for display based on the current map view state and zoom level. The function
    * performs several checks to determine which facilities should be displayed:
