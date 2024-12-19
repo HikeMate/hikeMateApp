@@ -514,7 +514,7 @@ fun DateDetailRow(
           initialSelectedDateMillis = plannedDate?.toDate()?.time ?: System.currentTimeMillis(),
       )
 
-  var previouslySelectedDate by remember { mutableStateOf<Long?>(plannedDate?.toDate()?.time) }
+  val previouslySelectedDate = plannedDate?.toDate()?.time
 
   fun showDatePicker() {
     showingDatePicker.value = true
@@ -542,9 +542,7 @@ fun DateDetailRow(
           Button(
               modifier = Modifier.testTag(TEST_TAG_DATE_PICKER_CONFIRM_BUTTON),
               onClick = {
-                previouslySelectedDate =
-                    confirmDateDetailButton(
-                        datePickerState, previouslySelectedDate, updatePlannedDate)
+                confirmDateDetailButton(datePickerState, previouslySelectedDate, updatePlannedDate)
                 dismissDatePicker()
               },
               colors =
