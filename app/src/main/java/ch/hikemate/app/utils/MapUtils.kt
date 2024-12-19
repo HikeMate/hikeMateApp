@@ -40,7 +40,7 @@ import org.osmdroid.views.overlay.Polyline
 
 object MapUtils {
   private const val LOG_TAG = "MapUtils"
-  const val MIN_DISTANCE_BETWEEN_FACILITIES = 15
+  private const val MIN_DISTANCE_BETWEEN_FACILITIES = 15
   const val FACILITIES_RELATED_OBJECT_NAME = "facility_marker"
   const val ROUTE_PRIORITY_DISPLAY = 0
 
