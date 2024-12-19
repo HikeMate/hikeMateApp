@@ -29,8 +29,8 @@ object DetailRow {
 fun DetailRow(
     label: String,
     value: String,
-    valueColor: Color = MaterialTheme.colorScheme.onSurface,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    valueColor: Color = MaterialTheme.colorScheme.onSurface
 ) {
   Row(
       horizontalArrangement = Arrangement.SpaceBetween,
