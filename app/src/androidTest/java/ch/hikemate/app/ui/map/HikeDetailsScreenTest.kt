@@ -7,7 +7,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.test.*
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertAny
 import androidx.compose.ui.test.assertCountEquals
@@ -22,6 +21,7 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import androidx.test.core.app.ApplicationProvider
@@ -180,7 +180,7 @@ class HikeDetailScreenTest {
       onRunThisHike: () -> Unit = {}
   ) {
     composeTestRule.setContent {
-      HikesDetailsBottomScaffold(
+      HikeDetailsBottomScaffold(
           detailedHike = hike,
           hikesViewModel = hikesViewModel,
           userHikingLevel = HikingLevel.BEGINNER,
