@@ -105,7 +105,9 @@ fun ProfileScreen(
                       .padding(
                           start = 16.dp,
                           end = 16.dp,
-                          top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 16.0.dp),
+                          top =
+                              WindowInsets.statusBars.asPaddingValues().calculateTopPadding() +
+                                  16.0.dp),
               verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text(
                     context.getString(R.string.profile_screen_title),

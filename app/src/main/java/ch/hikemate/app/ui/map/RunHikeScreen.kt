@@ -75,7 +75,7 @@ import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 
 object RunHikeScreen {
-  val BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT = 400.dp
+  val BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT = 170.dp
   val MAP_BOTTOM_PADDING_ADJUSTMENT = 20.dp
 
   const val TEST_TAG_MAP = "runHikeScreenMap"
@@ -268,7 +268,7 @@ private fun RunHikeContent(
           },
           modifier =
               Modifier.align(Alignment.BottomStart)
-                  .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
+                  .padding(bottom = RunHikeScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp)
                   .testTag(RunHikeScreen.TEST_TAG_CENTER_MAP_BUTTON))
 
       // Zoom buttons at the bottom right of the screen
@@ -512,7 +512,7 @@ private fun RunHikeBottomSheet(
       modifier = Modifier.testTag(RunHikeScreen.TEST_TAG_BOTTOM_SHEET),
       sheetContent = {
         Column(
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp).weight(1f),
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp).fillMaxWidth(),
         ) {
           Text(
               text = hike.name ?: stringResource(R.string.map_screen_hike_title_default),
@@ -607,7 +607,8 @@ private fun RunHikeBottomSheet(
                 label = stringResource(R.string.run_hike_screen_stop_run_button_label),
                 onClick = onStopTheRun,
                 modifier =
-                    Modifier.padding(top = 16.dp).testTag(RunHikeScreen.TEST_TAG_STOP_HIKE_BUTTON),
+                    Modifier.padding(vertical = 16.dp)
+                        .testTag(RunHikeScreen.TEST_TAG_STOP_HIKE_BUTTON),
                 fillColor = MaterialTheme.colorScheme.error,
             )
           }

@@ -120,7 +120,7 @@ object HikeDetailScreen {
 
   const val DEBOUNCE_DURATION = 300L
 
-  val BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT = 400.dp
+  val BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT = 190.dp
   val MAP_BOTTOM_PADDING_ADJUSTMENT = 20.dp
 
   const val LOG_TAG = "HikeDetailScreen"
@@ -263,7 +263,7 @@ fun HikeDetailsContent(
         onZoomOut = { mapViewState.value?.controller?.zoomOut() },
         modifier =
             Modifier.align(Alignment.BottomEnd)
-                .padding(bottom = MapScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
+                .padding(bottom = HikeDetailScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT + 8.dp))
 
     // Prevent the app from crashing when the "run hike" button is spammed
     var wantToRunHike by remember { mutableStateOf(false) }
@@ -479,7 +479,7 @@ fun HikesDetailsBottomScaffold(
       sheetPeekHeight = HikeDetailScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT,
       sheetContent = {
         Column(
-            modifier = Modifier.fillMaxSize().padding(start = 16.dp, end = 16.dp),
+            modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
           Row {
@@ -513,16 +513,14 @@ fun HikesDetailsBottomScaffold(
             )
           }
 
-          ElevationGraph(
-              elevations = detailedHike.elevation,
-              modifier =
-                  Modifier.fillMaxWidth()
-                      .height(60.dp)
-                      .padding(4.dp)
-                      .testTag(TEST_TAG_ELEVATION_GRAPH),
-              styleProperties =
-                  ElevationGraphStyleProperties(
-                      strokeColor = hikeColor, fillColor = hikeColor.copy(0.5f)))
+          Column(modifier = Modifier.padding(bottom = 24.dp)) {
+            ElevationGraph(
+                elevations = detailedHike.elevation,
+                modifier = Modifier.fillMaxWidth().height(60.dp).testTag(TEST_TAG_ELEVATION_GRAPH),
+                styleProperties =
+                    ElevationGraphStyleProperties(
+                        strokeColor = hikeColor, fillColor = hikeColor.copy(0.5f)))
+          }
 
           val distanceString =
               String.format(
@@ -578,7 +576,9 @@ fun HikesDetailsBottomScaffold(
               label = stringResource(R.string.hike_detail_screen_run_this_hike_button_label),
               onClick = { onRunThisHike() },
               modifier =
-                  Modifier.padding(top = 16.dp).fillMaxWidth().testTag(TEST_TAG_RUN_HIKE_BUTTON))
+                  Modifier.padding(vertical = 16.dp)
+                      .fillMaxWidth()
+                      .testTag(TEST_TAG_RUN_HIKE_BUTTON))
         }
       },
   ) {}
