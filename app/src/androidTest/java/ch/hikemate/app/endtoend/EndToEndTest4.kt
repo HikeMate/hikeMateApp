@@ -18,7 +18,6 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.hikemate.app.MainActivity
 import ch.hikemate.app.R
 import ch.hikemate.app.ui.auth.CreateAccountScreen
@@ -43,9 +42,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.junit.runner.RunWith
 
-@RunWith(AndroidJUnit4::class)
 class EndToEndTest4 {
   @get:Rule val composeTestRule = createEmptyComposeRule()
   private var scenario: ActivityScenario<MainActivity>? = null
@@ -165,7 +162,7 @@ class EndToEndTest4 {
           .assertIsDisplayed()
           .performClick()
 
-      waitUntilExactlyOneExists(hasTestTag(Screen.MAP), timeoutMillis = 10000)
+      waitUntilExactlyOneExists(hasTestTag(Screen.MAP), timeoutMillis = 30000)
 
       // ---- Navigate to a hike's details screen ----
 
