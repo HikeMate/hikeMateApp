@@ -26,6 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -44,6 +45,8 @@ import ch.hikemate.app.ui.navigation.LIST_TOP_LEVEL_DESTINATIONS
 import ch.hikemate.app.ui.navigation.NavigationActions
 import ch.hikemate.app.ui.navigation.Route
 import ch.hikemate.app.ui.navigation.Screen
+import ch.hikemate.app.ui.theme.plannedDateMessageColor
+import ch.hikemate.app.utils.humanReadablePlannedLabel
 import kotlinx.coroutines.flow.StateFlow
 
 object SavedHikesScreen {
@@ -182,7 +185,7 @@ private fun PlannedHikes(hikes: List<StateFlow<Hike>>?, hikesViewModel: HikesVie
       LazyColumn {
         items(plannedHikes.size, key = { plannedHikes[it].value.id }) { index ->
           val hike by plannedHikes[index].collectAsState()
-          SavedHikeCardFor(hike, hikesViewModel)
+          SavedHikeCardFor(hike, hikesViewModel, true)
         }
       }
     }
@@ -215,7 +218,7 @@ private fun SavedHikes(savedHikes: List<StateFlow<Hike>>?, hikesViewModel: Hikes
       LazyColumn {
         items(savedHikes.size, key = { savedHikes[it].value.id }) { index ->
           val hike by savedHikes[index].collectAsState()
-          SavedHikeCardFor(hike, hikesViewModel)
+          SavedHikeCardFor(hike, hikesViewModel, false)
         }
       }
     }
@@ -223,7 +226,7 @@ private fun SavedHikes(savedHikes: List<StateFlow<Hike>>?, hikesViewModel: Hikes
 }
 
 @Composable
-private fun SavedHikeCardFor(hike: Hike, hikesViewModel: HikesViewModel) {
+private fun SavedHikeCardFor(hike: Hike, hikesViewModel: HikesViewModel, displayDate: Boolean) {
   // This variable contains the current state of the hike's elevation data. It can be:
   // - null: the elevation data is not available yet
   // - emptyList(): the elevation data is not available because of an error
@@ -241,13 +244,32 @@ private fun SavedHikeCardFor(hike: Hike, hikesViewModel: HikesViewModel) {
     elevation = hike.elevation.getOrNull()
   }
 
+  // Only display the planned date text if needed
+  val messageContent: String?
+  val messageIcon: Painter?
+  val messageColor: Color?
+  if (displayDate) {
+    messageContent = hike.plannedDate?.humanReadablePlannedLabel(LocalContext.current)
+    messageIcon = painterResource(R.drawable.calendar_today)
+    messageColor = plannedDateMessageColor
+  } else {
+    messageContent = null
+    messageIcon = null
+    messageColor = null
+  }
+
   // Display the hike card
   HikeCard(
       title = hike.name ?: stringResource(R.string.map_screen_hike_title_default),
       elevationData = elevation,
       onClick = { hikesViewModel.selectHike(hike.id) },
       modifier = Modifier.testTag(SavedHikesScreen.TEST_TAG_SAVED_HIKES_HIKE_CARD),
-      styleProperties = HikeCardStyleProperties(graphColor = Color(hike.getColor())))
+      messageContent = messageContent,
+      styleProperties =
+          HikeCardStyleProperties(
+              messageIcon = messageIcon,
+              messageColor = messageColor,
+              graphColor = Color(hike.getColor())))
 }
 
 @Composable
