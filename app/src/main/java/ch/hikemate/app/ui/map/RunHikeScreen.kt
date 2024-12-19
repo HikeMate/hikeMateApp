@@ -511,7 +511,6 @@ private fun RunHikeBottomSheet(
       sheetPeekHeight = RunHikeScreen.BOTTOM_SHEET_SCAFFOLD_MID_HEIGHT,
       // Overwrites the device's max sheet width to avoid the bottomSheet not being wide enough
       sheetMaxWidth = Integer.MAX_VALUE.dp,
-      modifier = Modifier.testTag(RunHikeScreen.TEST_TAG_BOTTOM_SHEET),
       sheetContent = {
         Column(
             modifier =
