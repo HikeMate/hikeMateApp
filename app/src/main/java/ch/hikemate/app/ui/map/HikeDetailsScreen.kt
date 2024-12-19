@@ -1,11 +1,8 @@
 package ch.hikemate.app.ui.map
 
 import android.annotation.SuppressLint
-
-import android.content.Context
 import android.os.Handler
 import android.os.Looper
-
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -413,7 +410,8 @@ fun HikeDetailsBottomScaffold(
                               Handler(Looper.getMainLooper()).post {
                                 Toast.makeText(
                                         context,
-                                        context.getString(R.string.generic_error_message_internet_connection),
+                                        context.getString(
+                                            R.string.generic_error_message_internet_connection),
                                         Toast.LENGTH_SHORT)
                                     .show()
                               }
@@ -425,7 +423,8 @@ fun HikeDetailsBottomScaffold(
                               Handler(Looper.getMainLooper()).post {
                                 Toast.makeText(
                                         context,
-                                        context.getString(R.string.generic_error_message_internet_connection),
+                                        context.getString(
+                                            R.string.generic_error_message_internet_connection),
                                         Toast.LENGTH_SHORT)
                                     .show()
                               }
@@ -502,7 +501,8 @@ fun HikeDetailsBottomScaffold(
                       Handler(Looper.getMainLooper()).post {
                         Toast.makeText(
                                 context,
-                                context.getString(R.string.generic_error_message_internet_connection),
+                                context.getString(
+                                    R.string.generic_error_message_internet_connection),
                                 Toast.LENGTH_SHORT)
                             .show()
                       }

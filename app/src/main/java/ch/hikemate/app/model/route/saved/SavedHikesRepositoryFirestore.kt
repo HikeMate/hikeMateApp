@@ -28,9 +28,12 @@ class SavedHikesRepositoryFirestore(
     checkNotNull(auth.currentUser) { ERROR_MSG_USER_NOT_AUTHENTICATED }
     withTimeout(TIMEOUT_IN_MILLIS) {
       val documentReference = db.collection(SAVED_HIKES_COLLECTION).document(auth.currentUser!!.uid)
+
+      // Check that the document exists before updating it
       val documentExists = documentReference.get().await().exists()
+
       if (!documentExists) {
-        documentReference.set(UserSavedHikes(listOf(hike))).await()
+        documentReference.set(UserSavedHikes(listOf(hike)))
       } else {
         documentReference.update(UserSavedHikes::savedHikes.name, arrayUnion(hike)).await()
       }
